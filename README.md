@@ -10,7 +10,7 @@ import SplitMainArtifact from '@0xsplits/splits-sdk/artifacts/splits/ethereum/co
 
 const SPLIT_MAIN_ADDRESS = '0x2ed6c4B5dA6378c7897AC67Ba9e43102Feb694EE'
 const DONATION_SPLIT_ADDRESS = '0xF8843981e7846945960f53243cA2Fd42a579f719'
-const RPC_URL = YOUR_RPC_URL
+const RPC_URL = YOUR_RPC_URL // Update this with your rpc url
 
 const provider = new JsonRpcProvider(RPC_URL)
 const splitMainInterface = new utils.Interface(SplitMainArtifact.abi)
