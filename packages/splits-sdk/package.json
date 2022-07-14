@@ -1,0 +1,21 @@
+{
+  "name": "@0xsplits/splits-sdk",
+  "version": "1.0.3",
+  "description": "SDK for the 0xSplits protocol",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/0xSplits/splits-sdk.git"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/0xSplits/splits-sdk/issues"
+  },
+  "homepage": "https://github.com/0xSplits/splits-sdk#readme",
+  "dependencies": {
+    "ethers": "^5.6.9"
+  }
+}
