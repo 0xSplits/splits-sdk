@@ -4,10 +4,6 @@
   "description": "SDK for the 0xSplits protocol",
   "main": "dist/src/index.js",
   "typings": "dist/src/index.d.ts",
-  "files": [
-    "dist/**/*",
-    "src/**/*"
-  ],
   "keywords": [
     "0xSplits",
     "splits",
