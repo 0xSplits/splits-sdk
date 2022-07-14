@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.json",
+  "baseUrl": "./src",
+  "compilerOptions": {
+    "outDir": "./dist"
+  },
+  "include": ["./src"],
+  "exclude": ["artifacts", "typechain"]
+}
