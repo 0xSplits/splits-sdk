@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commonjs",
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ES2015"
+    ],
+    "outDir": "./dist",
+    "allowJs": false,
+    "skipLibCheck": true,
+    "strict": true,
+    "declaration": true,
+    "sourceMap": true,
+    "noUnusedParameters": true,
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "incremental": true
+  },
+  "exclude": [
+    "dist",
+    "node_modules",
+    "./**/*.test.ts"
+  ]
+}
