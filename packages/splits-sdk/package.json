@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "rm dist && tsc"
+    "build": "rm -rf dist && tsc && cp -r src/artifacts src/typechain dist/"
   },
   "author": "0xSplits (https://0xsplits.com)",
   "publishConfig": {
