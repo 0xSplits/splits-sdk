@@ -4,6 +4,5 @@
   "compilerOptions": {
     "outDir": "./dist"
   },
-  "include": ["./src"],
-  "exclude": ["./src/artifacts", "./src/typechain"]
+  "include": ["./src"]
 }
