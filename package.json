@@ -2,6 +2,10 @@
   "name": "0xsplits",
   "private": true,
   "scripts": {
+    "eslint": "eslint . --ext '.ts,.tsx'",
+    "eslint:fix": "eslint . --ext '.ts,.tsx' --fix",
+    "prettier": "prettier --check --config .prettierrc './**/src/*.{.js,jsx,ts,tsx}'",
+    "prettier:fix": "prettier --config .prettierrc './**/src/*.{.js,jsx,ts,tsx}' --write",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "workspaces": {
@@ -14,6 +18,7 @@
     "@typescript-eslint/parser": "^5.30.6",
     "eslint": "^8.19.0",
     "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-no-loops": "^0.3.0",
     "eslint-plugin-prettier": "^4.2.1",
     "lerna": "^5.1.8",
     "prettier": "2.7.1",
