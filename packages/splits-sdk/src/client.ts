@@ -91,43 +91,48 @@ const getNumDigitsAfterDecimal = (value: number): number => {
   return decimalStr.length
 }
 
-const validateRecipients = (recipients: SplitRecipient[]): boolean => {
+const validateRecipients = (recipients: SplitRecipient[]): void => {
   const seenAddresses = new Set<string>([])
   let totalPercentAllocation = 0
 
-  const areRecipientsValid = recipients.reduce((acc, recipient) => {
-    if (!acc) return false
-
-    if (!isAddress(recipient.address)) return false
-    if (seenAddresses.has(recipient.address.toLowerCase())) return false
+  recipients.forEach((recipient) => {
+    if (!isAddress(recipient.address))
+      throw new InvalidRecipientsError(`Invalid address: ${recipient.address}`)
+    if (seenAddresses.has(recipient.address.toLowerCase()))
+      throw new InvalidRecipientsError(
+        `Address cannot be used for multiple recipients: ${recipient.address}`,
+      )
 
     if (recipient.percentAllocation <= 0 || recipient.percentAllocation >= 100)
-      return false
+      throw new InvalidRecipientsError(
+        `Invalid percent allocation: ${recipient.percentAllocation}. Must be between 0 and 100`,
+      )
     if (
       getNumDigitsAfterDecimal(recipient.percentAllocation) >
       PERCENT_ALLOCATION_MAX_PRECISION_DECIMALS
     )
-      return false
+      throw new InvalidRecipientsError(
+        `Invalid precision on percent allocation: ${recipient.percentAllocation}. Maxiumum allowed precision is ${PERCENT_ALLOCATION_MAX_PRECISION_DECIMALS} decimals`,
+      )
 
     seenAddresses.add(recipient.address.toLowerCase())
     totalPercentAllocation += recipient.percentAllocation
-
-    return true
-  }, true)
-  if (!areRecipientsValid) return false
+  })
 
   // Cutoff any decimals beyond the max precision, they may get introduced due
   // to javascript floating point precision
   const factorOfTen = Math.pow(10, PERCENT_ALLOCATION_MAX_PRECISION_DECIMALS)
   totalPercentAllocation =
     Math.round(totalPercentAllocation * factorOfTen) / factorOfTen
-  if (totalPercentAllocation !== 100) return false
-
-  return true
+  if (totalPercentAllocation !== 100)
+    throw new InvalidRecipientsError(
+      `Percent allocation must add up to 100. Currently adds up to ${totalPercentAllocation}`,
+    )
 }
 
-const validateDistributorFeePercent = (distributorFee: number): boolean => {
-  return distributorFee >= 0 && distributorFee <= 10
+const validateDistributorFeePercent = (distributorFeePercent: number): void => {
+  if (distributorFeePercent < 0 || distributorFeePercent > 10)
+    throw new InvalidDistributorFeePercentError(distributorFeePercent)
 }
 
 export class SplitsClient {
@@ -151,9 +156,8 @@ export class SplitsClient {
     splitId: string
     event: Event
   }> {
-    if (!validateRecipients(recipients)) throw new InvalidRecipientsError()
-    if (!validateDistributorFeePercent(distributorFeePercent))
-      throw new InvalidDistributorFeePercentError(distributorFeePercent)
+    validateRecipients(recipients)
+    validateDistributorFeePercent(distributorFeePercent)
 
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
@@ -189,9 +193,8 @@ export class SplitsClient {
   }: UpdateSplitConfig): Promise<{
     event: Event
   }> {
-    if (!validateRecipients(recipients)) throw new InvalidRecipientsError()
-    if (!validateDistributorFeePercent(distributorFeePercent))
-      throw new InvalidDistributorFeePercentError(distributorFeePercent)
+    validateRecipients(recipients)
+    validateDistributorFeePercent(distributorFeePercent)
 
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
