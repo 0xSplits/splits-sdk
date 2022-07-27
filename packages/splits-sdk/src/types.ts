@@ -34,3 +34,8 @@ export type DistributeTokenConfig = {
   distributorFeePercent: number
   distributorAddress?: string
 }
+
+export type WithdrawFundsConfig = {
+  address: string
+  tokens: string[]
+}

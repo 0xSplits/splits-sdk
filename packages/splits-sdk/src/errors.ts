@@ -23,3 +23,7 @@ export class InvalidDistributorFeePercentError extends Error {
     )
   }
 }
+
+export class TransactionFailedError extends Error {
+  name = 'TransactionFailedError'
+}

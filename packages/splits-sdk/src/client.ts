@@ -8,13 +8,14 @@ import {
   PERCENTAGE_SCALE,
   POLYGON_CHAIN_IDS,
 } from './constants'
-import { UnsupportedChainIdError } from './errors'
+import { TransactionFailedError, UnsupportedChainIdError } from './errors'
 import type {
   SplitMainType,
   SplitsClientConfig,
   CreateSplitConfig,
   UpdateSplitConfig,
   DistributeTokenConfig,
+  WithdrawFundsConfig,
 } from './types'
 import {
   getRecipientSortedAddressesAndAllocations,
@@ -71,7 +72,7 @@ export class SplitsClient {
         }
     }
 
-    throw new Error('Failed to complete transaction')
+    throw new TransactionFailedError()
   }
 
   async updateSplit({
@@ -106,7 +107,7 @@ export class SplitsClient {
         }
     }
 
-    throw new Error('Failed to complete transaction')
+    throw new TransactionFailedError()
   }
 
   async distributeToken({
@@ -164,6 +165,31 @@ export class SplitsClient {
         }
     }
 
-    throw new Error('Failed to complete transaction')
+    throw new TransactionFailedError()
+  }
+
+  async withdrawFunds({ address, tokens }: WithdrawFundsConfig): Promise<{
+    event: Event
+  }> {
+    const withdrawEth = tokens.includes(AddressZero) ? 1 : 0
+    const erc20s = tokens.filter((token) => token !== AddressZero)
+
+    const withdrawTx = await this.splitMain
+      .connect(this.signer)
+      .withdraw(address, withdrawEth, erc20s)
+    const withdrawReceipt = await withdrawTx.wait()
+    if (withdrawReceipt.status == 1) {
+      const we = withdrawReceipt.events?.filter(
+        (e) =>
+          e.eventSignature ===
+          this.splitMain.interface.getEvent('Withdrawal').format(),
+      )[0]
+      if (we)
+        return {
+          event: we,
+        }
+    }
+
+    throw new TransactionFailedError()
   }
 }
