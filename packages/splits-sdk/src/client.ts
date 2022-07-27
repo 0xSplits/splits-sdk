@@ -60,6 +60,14 @@ export type UpdateSplitConfig = {
   distributorFeePercent: number
 }
 
+export type DistributeTokenConfig = {
+  splitId: string
+  token?: string
+  recipients: SplitRecipient[]
+  distributorFeePercent: number
+  distributorAddress?: string
+}
+
 const getRecipientSortedAddressesAndAllocations = (
   recipients: SplitRecipient[],
 ): [string[], BigNumber[]] => {
@@ -161,7 +169,6 @@ export class SplitsClient {
 
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
-
     const distributorFee = BigNumber.from(
       (PERCENTAGE_SCALE.toNumber() * distributorFeePercent) / 100,
     )
@@ -198,7 +205,6 @@ export class SplitsClient {
 
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
-
     const distributorFee = BigNumber.from(
       (PERCENTAGE_SCALE.toNumber() * distributorFeePercent) / 100,
     )
@@ -216,6 +222,64 @@ export class SplitsClient {
       if (cse)
         return {
           event: cse,
+        }
+    }
+
+    throw new Error('Failed to complete transaction')
+  }
+
+  async distributeToken({
+    splitId,
+    token = AddressZero,
+    recipients,
+    distributorFeePercent,
+    distributorAddress,
+  }: DistributeTokenConfig): Promise<{
+    event: Event
+  }> {
+    const [accounts, percentAllocations] =
+      getRecipientSortedAddressesAndAllocations(recipients)
+    const distributorFee = BigNumber.from(
+      (PERCENTAGE_SCALE.toNumber() * distributorFeePercent) / 100,
+    )
+
+    const distributorPayoutAddress = distributorAddress
+      ? distributorAddress
+      : await this.signer.getAddress()
+
+    const distributeTokenTx = await (token === AddressZero
+      ? this.splitMain
+          .connect(this.signer)
+          .distributeETH(
+            splitId,
+            accounts,
+            percentAllocations,
+            distributorFee,
+            distributorPayoutAddress,
+          )
+      : this.splitMain
+          .connect(this.signer)
+          .distributeERC20(
+            splitId,
+            token,
+            accounts,
+            percentAllocations,
+            distributorFee,
+            distributorPayoutAddress,
+          ))
+    const distributeTokenReceipt = await distributeTokenTx.wait()
+    if (distributeTokenReceipt.status === 1) {
+      const dte = distributeTokenReceipt.events?.filter(
+        (e) =>
+          e.eventSignature ===
+          (token === AddressZero
+            ? this.splitMain.interface.getEvent('DistributeETH').format()
+            : this.splitMain.interface.getEvent('DistributeERC20').format()),
+      )?.[0]
+
+      if (dte)
+        return {
+          event: dte,
         }
     }
 
