@@ -1,7 +1,9 @@
+import { Interface } from '@ethersproject/abi'
+import type { Signer } from '@ethersproject/abstract-signer'
 import { isAddress } from '@ethersproject/address'
+import { BigNumber } from '@ethersproject/bignumber'
 import { AddressZero } from '@ethersproject/constants'
-import { Contract, utils } from 'ethers'
-import type { Signer } from 'ethers'
+import { Contract, Event } from '@ethersproject/contracts'
 
 import SPLIT_MAIN_ARTIFACT_ETHEREUM from './artifacts/splits/ethereum/contracts/SplitMain.sol/SplitMain.json'
 import SPLIT_MAIN_ARTIFACT_POLYGON from './artifacts/splits/polygon/contracts/SplitMain.sol/SplitMain.json'
@@ -14,15 +16,16 @@ import {
 } from './errors'
 import {
   ETHEREUM_CHAIN_IDS,
+  PERCENTAGE_SCALE,
   PERCENT_ALLOCATION_MAX_PRECISION_DECIMALS,
   POLYGON_CHAIN_IDS,
   SPLIT_MAIN_ADDRESS,
 } from './constants'
 
 const SPLIT_MAIN_ABI_ETHEREUM = SPLIT_MAIN_ARTIFACT_ETHEREUM.abi
-const splitMainInterfaceEthereum = new utils.Interface(SPLIT_MAIN_ABI_ETHEREUM)
+const splitMainInterfaceEthereum = new Interface(SPLIT_MAIN_ABI_ETHEREUM)
 const SPLIT_MAIN_ABI_POLYGON = SPLIT_MAIN_ARTIFACT_POLYGON.abi
-const splitMainInterfacePolygon = new utils.Interface(SPLIT_MAIN_ABI_POLYGON)
+const splitMainInterfacePolygon = new Interface(SPLIT_MAIN_ABI_POLYGON)
 
 const SplitMainEthereum = new Contract(
   SPLIT_MAIN_ADDRESS,
@@ -53,9 +56,9 @@ export type CreateSplitConfig = {
 
 const getRecipientSortedAddressesAndAllocations = (
   recipients: SplitRecipient[],
-): [string[], number[]] => {
+): [string[], BigNumber[]] => {
   const accounts: string[] = []
-  const percentAllocations: number[] = []
+  const percentAllocations: BigNumber[] = []
 
   recipients
     .sort((a, b) => {
@@ -64,7 +67,12 @@ const getRecipientSortedAddressesAndAllocations = (
     })
     .map((value) => {
       accounts.push(value.address)
-      percentAllocations.push(value.percentAllocation)
+      percentAllocations.push(
+        BigNumber.from(
+          Math.round(PERCENTAGE_SCALE.toNumber() * value.percentAllocation) /
+            100,
+        ),
+      )
     })
 
   return [accounts, percentAllocations]
@@ -116,7 +124,7 @@ const validateDistributorFeePercent = (distributorFee: number): boolean => {
   return distributorFee >= 0 && distributorFee <= 10
 }
 
-class SplitsClient {
+export class SplitsClient {
   private readonly signer: Signer
   private readonly splitMain: SplitMainType
 
@@ -133,7 +141,10 @@ class SplitsClient {
     recipients,
     distributorFeePercent,
     controller = AddressZero,
-  }: CreateSplitConfig): Promise<string> {
+  }: CreateSplitConfig): Promise<{
+    splitId: string
+    event: Event
+  }> {
     if (!validateRecipients(recipients)) throw new InvalidRecipientsError()
     if (!validateDistributorFeePercent(distributorFeePercent))
       throw new InvalidDistributorFeePercentError(distributorFeePercent)
@@ -141,14 +152,13 @@ class SplitsClient {
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
 
+    const distributorFee = BigNumber.from(
+      (PERCENTAGE_SCALE.toNumber() * distributorFeePercent) / 100,
+    )
+
     const createSplitTx = await this.splitMain
       .connect(this.signer)
-      .createSplit(
-        accounts,
-        percentAllocations,
-        distributorFeePercent,
-        controller,
-      )
+      .createSplit(accounts, percentAllocations, distributorFee, controller)
     const createSplitReceipt = await createSplitTx.wait()
     if (createSplitReceipt.status === 1) {
       const cse = createSplitReceipt.events?.filter(
@@ -156,11 +166,13 @@ class SplitsClient {
           e.eventSignature ===
           this.splitMain.interface.getEvent('CreateSplit').format(),
       )?.[0]
-      if (cse && cse.args) return cse.args.split
+      if (cse && cse.args)
+        return {
+          splitId: cse.args.split,
+          event: cse,
+        }
     }
 
     throw new Error('Failed to complete transaction')
   }
 }
-
-export default SplitsClient
