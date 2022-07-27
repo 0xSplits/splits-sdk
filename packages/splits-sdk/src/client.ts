@@ -16,6 +16,10 @@ import type {
   UpdateSplitConfig,
   DistributeTokenConfig,
   WithdrawFundsConfig,
+  InititateControlTransferConfig,
+  CancelControlTransferConfig,
+  AcceptControlTransferConfig,
+  MakeSplitImmutableConfig,
 } from './types'
 import {
   getRecipientSortedAddressesAndAllocations,
@@ -187,6 +191,101 @@ export class SplitsClient {
       if (we)
         return {
           event: we,
+        }
+    }
+
+    throw new TransactionFailedError()
+  }
+
+  async initiateControlTransfer({
+    splitId,
+    newController,
+  }: InititateControlTransferConfig): Promise<{
+    event: Event
+  }> {
+    const transferSplitTx = await this.splitMain
+      .connect(this.signer)
+      .transferControl(splitId, newController)
+    const transferSplitReceipt = await transferSplitTx.wait()
+    if (transferSplitReceipt.status == 1) {
+      const icte = transferSplitReceipt.events?.filter(
+        (e) =>
+          e.eventSignature ===
+          this.splitMain.interface.getEvent('InitiateControlTransfer').format(),
+      )?.[0]
+      if (icte)
+        return {
+          event: icte,
+        }
+    }
+
+    throw new TransactionFailedError()
+  }
+
+  async cancelControlTransfer({
+    splitId,
+  }: CancelControlTransferConfig): Promise<{
+    event: Event
+  }> {
+    const cancelTransferSplitTx = await this.splitMain
+      .connect(this.signer)
+      .cancelControlTransfer(splitId)
+    const cancelTransferSplitReceipt = await cancelTransferSplitTx.wait()
+    if (cancelTransferSplitReceipt.status == 1) {
+      const ccte = cancelTransferSplitReceipt.events?.filter(
+        (e) =>
+          e.eventSignature ===
+          this.splitMain.interface.getEvent('CancelControlTransfer').format(),
+      )?.[0]
+      if (ccte)
+        return {
+          event: ccte,
+        }
+    }
+
+    throw new TransactionFailedError()
+  }
+
+  async acceptControlTransfer({
+    splitId,
+  }: AcceptControlTransferConfig): Promise<{
+    event: Event
+  }> {
+    const acceptTransferSplitTx = await this.splitMain
+      .connect(this.signer)
+      .acceptControl(splitId)
+    const acceptTransferSplitReceipt = await acceptTransferSplitTx.wait()
+    if (acceptTransferSplitReceipt.status == 1) {
+      const acte = acceptTransferSplitReceipt.events?.filter(
+        (e) =>
+          e.eventSignature ===
+          this.splitMain.interface.getEvent('ControlTransfer').format(),
+      )?.[0]
+      if (acte)
+        return {
+          event: acte,
+        }
+    }
+
+    throw new TransactionFailedError()
+  }
+
+  async makeSplitImmutable({ splitId }: MakeSplitImmutableConfig): Promise<{
+    event: Event
+  }> {
+    const makeSplitImmutableTx = await this.splitMain
+      .connect(this.signer)
+      .makeSplitImmutable(splitId)
+    const makeSplitImmutableReceipt = await makeSplitImmutableTx.wait()
+    if (makeSplitImmutableReceipt.status == 1) {
+      const msie = makeSplitImmutableReceipt.events?.filter(
+        (e) =>
+          e.eventSignature ===
+          this.splitMain.interface.getEvent('ControlTransfer').format(),
+      )?.[0]
+      if (msie)
+        return {
+          event: msie,
         }
     }
 

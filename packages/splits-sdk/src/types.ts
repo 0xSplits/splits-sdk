@@ -39,3 +39,20 @@ export type WithdrawFundsConfig = {
   address: string
   tokens: string[]
 }
+
+export type InititateControlTransferConfig = {
+  splitId: string
+  newController: string
+}
+
+export type CancelControlTransferConfig = {
+  splitId: string
+}
+
+export type AcceptControlTransferConfig = {
+  splitId: string
+}
+
+export type MakeSplitImmutableConfig = {
+  splitId: string
+}
