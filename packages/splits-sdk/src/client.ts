@@ -54,6 +54,12 @@ export type CreateSplitConfig = {
   controller?: string
 }
 
+export type UpdateSplitConfig = {
+  splitId: string
+  recipients: SplitRecipient[]
+  distributorFeePercent: number
+}
+
 const getRecipientSortedAddressesAndAllocations = (
   recipients: SplitRecipient[],
 ): [string[], BigNumber[]] => {
@@ -169,6 +175,43 @@ export class SplitsClient {
       if (cse && cse.args)
         return {
           splitId: cse.args.split,
+          event: cse,
+        }
+    }
+
+    throw new Error('Failed to complete transaction')
+  }
+
+  async updateSplit({
+    splitId,
+    recipients,
+    distributorFeePercent,
+  }: UpdateSplitConfig): Promise<{
+    event: Event
+  }> {
+    if (!validateRecipients(recipients)) throw new InvalidRecipientsError()
+    if (!validateDistributorFeePercent(distributorFeePercent))
+      throw new InvalidDistributorFeePercentError(distributorFeePercent)
+
+    const [accounts, percentAllocations] =
+      getRecipientSortedAddressesAndAllocations(recipients)
+
+    const distributorFee = BigNumber.from(
+      (PERCENTAGE_SCALE.toNumber() * distributorFeePercent) / 100,
+    )
+
+    const updateSplitTx = await this.splitMain
+      .connect(this.signer)
+      .updateSplit(splitId, accounts, percentAllocations, distributorFee)
+    const updateSplitReceipt = await updateSplitTx.wait()
+    if (updateSplitReceipt.status === 1) {
+      const cse = updateSplitReceipt.events?.filter(
+        (e) =>
+          e.eventSignature ===
+          this.splitMain.interface.getEvent('UpdateSplit').format(),
+      )?.[0]
+      if (cse)
+        return {
           event: cse,
         }
     }
