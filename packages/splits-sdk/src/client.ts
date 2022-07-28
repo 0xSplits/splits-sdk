@@ -20,6 +20,7 @@ import type {
   CancelControlTransferConfig,
   AcceptControlTransferConfig,
   MakeSplitImmutableConfig,
+  GetTokenBalanceConfig,
 } from './types'
 import {
   getRecipientSortedAddressesAndAllocations,
@@ -290,5 +291,21 @@ export class SplitsClient {
     }
 
     throw new TransactionFailedError()
+  }
+
+  async getTokenBalance({
+    splitId,
+    token = AddressZero,
+  }: GetTokenBalanceConfig): Promise<{
+    balance: BigNumber
+  }> {
+    const balance =
+      token === AddressZero
+        ? await this.splitMain.getETHBalance(splitId)
+        : await this.splitMain.getERC20Balance(splitId, token)
+
+    return {
+      balance,
+    }
   }
 }

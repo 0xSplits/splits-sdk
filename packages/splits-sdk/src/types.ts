@@ -56,3 +56,8 @@ export type AcceptControlTransferConfig = {
 export type MakeSplitImmutableConfig = {
   splitId: string
 }
+
+export type GetTokenBalanceConfig = {
+  splitId: string
+  token?: string
+}
