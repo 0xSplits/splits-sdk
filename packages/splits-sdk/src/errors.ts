@@ -18,6 +18,14 @@ export class InvalidDistributorFeePercentError extends Error {
   name = 'InvalidDistributorFeePercent'
 }
 
+export class InvalidAuthError extends Error {
+  name = 'InvalidAuthError'
+}
+
+export class InvalidHashError extends Error {
+  name = 'InvalidHashError'
+}
+
 export class TransactionFailedError extends Error {
   name = 'TransactionFailedError'
 }

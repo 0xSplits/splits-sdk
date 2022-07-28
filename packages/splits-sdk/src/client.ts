@@ -4,7 +4,12 @@ import { AddressZero } from '@ethersproject/constants'
 import { Event } from '@ethersproject/contracts'
 
 import { ETHEREUM_CHAIN_IDS, POLYGON_CHAIN_IDS } from './constants'
-import { TransactionFailedError, UnsupportedChainIdError } from './errors'
+import {
+  InvalidAuthError,
+  InvalidHashError,
+  TransactionFailedError,
+  UnsupportedChainIdError,
+} from './errors'
 import type {
   SplitMainType,
   SplitsClientConfig,
@@ -28,21 +33,24 @@ import {
   SplitMainPolygon,
   getTransactionEvent,
   getBigNumberValue,
+  getSplitHash,
 } from './utils'
 
 export class SplitsClient {
-  private readonly signer: Signer
-  private readonly splitMain: SplitMainType
+  private readonly _signer: Signer
+  private readonly _splitMain: SplitMainType
 
   constructor({ chainId, signer }: SplitsClientConfig) {
-    this.signer = signer
+    this._signer = signer
 
-    if (ETHEREUM_CHAIN_IDS.includes(chainId)) this.splitMain = SplitMainEthereum
+    if (ETHEREUM_CHAIN_IDS.includes(chainId))
+      this._splitMain = SplitMainEthereum
     else if (POLYGON_CHAIN_IDS.includes(chainId))
-      this.splitMain = SplitMainPolygon
+      this._splitMain = SplitMainPolygon
     else throw new UnsupportedChainIdError(chainId)
   }
 
+  // Write actions
   async createSplit({
     recipients,
     distributorFeePercent,
@@ -58,12 +66,12 @@ export class SplitsClient {
       getRecipientSortedAddressesAndAllocations(recipients)
     const distributorFee = getBigNumberValue(distributorFeePercent)
 
-    const createSplitTx = await this.splitMain
-      .connect(this.signer)
+    const createSplitTx = await this._splitMain
+      .connect(this._signer)
       .createSplit(accounts, percentAllocations, distributorFee, controller)
     const event = await getTransactionEvent(
       createSplitTx,
-      this.splitMain.interface.getEvent('CreateSplit').format(),
+      this._splitMain.interface.getEvent('CreateSplit').format(),
     )
     if (event && event.args)
       return {
@@ -83,17 +91,18 @@ export class SplitsClient {
   }> {
     validateRecipients(recipients)
     validateDistributorFeePercent(distributorFeePercent)
+    await this._requireController(splitId)
 
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
     const distributorFee = getBigNumberValue(distributorFeePercent)
 
-    const updateSplitTx = await this.splitMain
-      .connect(this.signer)
+    const updateSplitTx = await this._splitMain
+      .connect(this._signer)
       .updateSplit(splitId, accounts, percentAllocations, distributorFee)
     const event = await getTransactionEvent(
       updateSplitTx,
-      this.splitMain.interface.getEvent('UpdateSplit').format(),
+      this._splitMain.interface.getEvent('UpdateSplit').format(),
     )
     if (event) return { event }
 
@@ -112,14 +121,20 @@ export class SplitsClient {
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
     const distributorFee = getBigNumberValue(distributorFeePercent)
-
     const distributorPayoutAddress = distributorAddress
       ? distributorAddress
-      : await this.signer.getAddress()
+      : await this._signer.getAddress()
+
+    await this._requireHashMatch(
+      splitId,
+      accounts,
+      percentAllocations,
+      distributorFee,
+    )
 
     const distributeTokenTx = await (token === AddressZero
-      ? this.splitMain
-          .connect(this.signer)
+      ? this._splitMain
+          .connect(this._signer)
           .distributeETH(
             splitId,
             accounts,
@@ -127,8 +142,8 @@ export class SplitsClient {
             distributorFee,
             distributorPayoutAddress,
           )
-      : this.splitMain
-          .connect(this.signer)
+      : this._splitMain
+          .connect(this._signer)
           .distributeERC20(
             splitId,
             token,
@@ -139,8 +154,8 @@ export class SplitsClient {
           ))
     const eventSignature =
       token === AddressZero
-        ? this.splitMain.interface.getEvent('DistributeETH').format()
-        : this.splitMain.interface.getEvent('DistributeERC20').format()
+        ? this._splitMain.interface.getEvent('DistributeETH').format()
+        : this._splitMain.interface.getEvent('DistributeERC20').format()
     const event = await getTransactionEvent(distributeTokenTx, eventSignature)
     if (event) return { event }
 
@@ -158,17 +173,18 @@ export class SplitsClient {
   }> {
     validateRecipients(recipients)
     validateDistributorFeePercent(distributorFeePercent)
+    await this._requireController(splitId)
 
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
     const distributorFee = getBigNumberValue(distributorFeePercent)
     const distributorPayoutAddress = distributorAddress
       ? distributorAddress
-      : await this.signer.getAddress()
+      : await this._signer.getAddress()
 
     const updateAndDistributeTx = await (token === AddressZero
-      ? this.splitMain
-          .connect(this.signer)
+      ? this._splitMain
+          .connect(this._signer)
           .updateAndDistributeETH(
             splitId,
             accounts,
@@ -176,8 +192,8 @@ export class SplitsClient {
             distributorFee,
             distributorPayoutAddress,
           )
-      : this.splitMain
-          .connect(this.signer)
+      : this._splitMain
+          .connect(this._signer)
           .updateAndDistributeERC20(
             splitId,
             token,
@@ -188,8 +204,8 @@ export class SplitsClient {
           ))
     const eventSignature =
       token === AddressZero
-        ? this.splitMain.interface.getEvent('DistributeETH').format()
-        : this.splitMain.interface.getEvent('DistributeERC20').format()
+        ? this._splitMain.interface.getEvent('DistributeETH').format()
+        : this._splitMain.interface.getEvent('DistributeERC20').format()
     const event = await getTransactionEvent(
       updateAndDistributeTx,
       eventSignature,
@@ -205,12 +221,12 @@ export class SplitsClient {
     const withdrawEth = tokens.includes(AddressZero) ? 1 : 0
     const erc20s = tokens.filter((token) => token !== AddressZero)
 
-    const withdrawTx = await this.splitMain
-      .connect(this.signer)
+    const withdrawTx = await this._splitMain
+      .connect(this._signer)
       .withdraw(address, withdrawEth, erc20s)
     const event = await getTransactionEvent(
       withdrawTx,
-      this.splitMain.interface.getEvent('Withdrawal').format(),
+      this._splitMain.interface.getEvent('Withdrawal').format(),
     )
     if (event) return { event }
 
@@ -223,12 +239,14 @@ export class SplitsClient {
   }: InititateControlTransferConfig): Promise<{
     event: Event
   }> {
-    const transferSplitTx = await this.splitMain
-      .connect(this.signer)
+    await this._requireController(splitId)
+
+    const transferSplitTx = await this._splitMain
+      .connect(this._signer)
       .transferControl(splitId, newController)
     const event = await getTransactionEvent(
       transferSplitTx,
-      this.splitMain.interface.getEvent('InitiateControlTransfer').format(),
+      this._splitMain.interface.getEvent('InitiateControlTransfer').format(),
     )
     if (event) return { event }
 
@@ -240,12 +258,14 @@ export class SplitsClient {
   }: CancelControlTransferConfig): Promise<{
     event: Event
   }> {
-    const cancelTransferSplitTx = await this.splitMain
-      .connect(this.signer)
+    await this._requireController(splitId)
+
+    const cancelTransferSplitTx = await this._splitMain
+      .connect(this._signer)
       .cancelControlTransfer(splitId)
     const event = await getTransactionEvent(
       cancelTransferSplitTx,
-      this.splitMain.interface.getEvent('CancelControlTransfer').format(),
+      this._splitMain.interface.getEvent('CancelControlTransfer').format(),
     )
     if (event) return { event }
 
@@ -257,12 +277,14 @@ export class SplitsClient {
   }: AcceptControlTransferConfig): Promise<{
     event: Event
   }> {
-    const acceptTransferSplitTx = await this.splitMain
-      .connect(this.signer)
+    await this._requireNewPotentialController(splitId)
+
+    const acceptTransferSplitTx = await this._splitMain
+      .connect(this._signer)
       .acceptControl(splitId)
     const event = await getTransactionEvent(
       acceptTransferSplitTx,
-      this.splitMain.interface.getEvent('ControlTransfer').format(),
+      this._splitMain.interface.getEvent('ControlTransfer').format(),
     )
     if (event) return { event }
 
@@ -272,18 +294,21 @@ export class SplitsClient {
   async makeSplitImmutable({ splitId }: MakeSplitImmutableConfig): Promise<{
     event: Event
   }> {
-    const makeSplitImmutableTx = await this.splitMain
-      .connect(this.signer)
+    await this._requireController(splitId)
+
+    const makeSplitImmutableTx = await this._splitMain
+      .connect(this._signer)
       .makeSplitImmutable(splitId)
     const event = await getTransactionEvent(
       makeSplitImmutableTx,
-      this.splitMain.interface.getEvent('ControlTransfer').format(),
+      this._splitMain.interface.getEvent('ControlTransfer').format(),
     )
     if (event) return { event }
 
     throw new TransactionFailedError()
   }
 
+  // Read actions
   async getSplitBalance({
     splitId,
     token = AddressZero,
@@ -292,8 +317,8 @@ export class SplitsClient {
   }> {
     const balance =
       token === AddressZero
-        ? await this.splitMain.getETHBalance(splitId)
-        : await this.splitMain.getERC20Balance(splitId, token)
+        ? await this._splitMain.getETHBalance(splitId)
+        : await this._splitMain.getERC20Balance(splitId, token)
 
     return { balance }
   }
@@ -313,7 +338,7 @@ export class SplitsClient {
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
     const distributorFee = getBigNumberValue(distributorFeePercent)
-    const splitId = await this.splitMain.predictImmutableSplitAddress(
+    const splitId = await this._splitMain.predictImmutableSplitAddress(
       accounts,
       percentAllocations,
       distributorFee,
@@ -325,7 +350,7 @@ export class SplitsClient {
   async getController({ splitId }: { splitId: string }): Promise<{
     controller: string
   }> {
-    const controller = await this.splitMain.getController(splitId)
+    const controller = await this._splitMain.getController(splitId)
 
     return { controller }
   }
@@ -334,7 +359,7 @@ export class SplitsClient {
     newPotentialController: string
   }> {
     const newPotentialController =
-      await this.splitMain.getNewPotentialController(splitId)
+      await this._splitMain.getNewPotentialController(splitId)
 
     return { newPotentialController }
   }
@@ -342,8 +367,50 @@ export class SplitsClient {
   async getHash({ splitId }: { splitId: string }): Promise<{
     hash: string
   }> {
-    const hash = await this.splitMain.getHash(splitId)
+    const hash = await this._splitMain.getHash(splitId)
 
     return { hash }
+  }
+
+  // Helper functions
+  private async _requireController(splitId: string) {
+    const { controller } = await this.getController({ splitId })
+    const signerAddress = await this._signer.getAddress()
+
+    if (controller !== signerAddress)
+      throw new InvalidAuthError(
+        `Action only available to the split controller. Split controller: ${controller}. Signer: ${signerAddress}`,
+      )
+  }
+
+  private async _requireNewPotentialController(splitId: string) {
+    const { newPotentialController } = await this.getNewPotentialController({
+      splitId,
+    })
+    const signerAddress = await this._signer.getAddress()
+
+    if (newPotentialController !== signerAddress)
+      throw new InvalidAuthError(
+        `Action only available to the split's new potential controller. Split new potential controller: ${newPotentialController}. Signer: ${signerAddress}`,
+      )
+  }
+
+  private async _requireHashMatch(
+    splitId: string,
+    accounts: string[],
+    percentAllocations: BigNumber[],
+    distributorFee: BigNumber,
+  ) {
+    const { hash } = await this.getHash({ splitId })
+    const inputsHash = getSplitHash(
+      accounts,
+      percentAllocations,
+      distributorFee,
+    )
+
+    if (hash !== inputsHash)
+      throw new InvalidHashError(
+        `Hash from accounts, percent allocations, and distributor fee does not match split hash. Split hash: ${hash}, inputs hash: ${inputsHash}`,
+      )
   }
 }

@@ -2,6 +2,7 @@ import { Interface } from '@ethersproject/abi'
 import { isAddress } from '@ethersproject/address'
 import { BigNumber } from '@ethersproject/bignumber'
 import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
+import { keccak256 } from '@ethersproject/solidity'
 
 import SPLIT_MAIN_ARTIFACT_ETHEREUM from './artifacts/splits/ethereum/contracts/SplitMain.sol/SplitMain.json'
 import SPLIT_MAIN_ARTIFACT_POLYGON from './artifacts/splits/polygon/contracts/SplitMain.sol/SplitMain.json'
@@ -127,4 +128,15 @@ export const getTransactionEvent = async (
 
     return event
   }
+}
+
+export const getSplitHash = (
+  accounts: string[],
+  percentAllocations: BigNumber[],
+  distributorFee: BigNumber,
+): string => {
+  return keccak256(
+    ['address[]', 'uint32[]', 'uint32'],
+    [accounts, percentAllocations, distributorFee],
+  )
 }
