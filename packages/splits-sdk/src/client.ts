@@ -20,7 +20,7 @@ import type {
   CancelControlTransferConfig,
   AcceptControlTransferConfig,
   MakeSplitImmutableConfig,
-  GetTokenBalanceConfig,
+  GetSplitBalanceConfig,
 } from './types'
 import {
   getRecipientSortedAddressesAndAllocations,
@@ -28,6 +28,7 @@ import {
   validateRecipients,
   SplitMainEthereum,
   SplitMainPolygon,
+  getTransactionEvent,
 } from './utils'
 
 export class SplitsClient {
@@ -63,19 +64,15 @@ export class SplitsClient {
     const createSplitTx = await this.splitMain
       .connect(this.signer)
       .createSplit(accounts, percentAllocations, distributorFee, controller)
-    const createSplitReceipt = await createSplitTx.wait()
-    if (createSplitReceipt.status === 1) {
-      const cse = createSplitReceipt.events?.filter(
-        (e) =>
-          e.eventSignature ===
-          this.splitMain.interface.getEvent('CreateSplit').format(),
-      )?.[0]
-      if (cse && cse.args)
-        return {
-          splitId: cse.args.split,
-          event: cse,
-        }
-    }
+    const event = await getTransactionEvent(
+      createSplitTx,
+      this.splitMain.interface.getEvent('CreateSplit').format(),
+    )
+    if (event && event.args)
+      return {
+        splitId: event.args.split,
+        event,
+      }
 
     throw new TransactionFailedError()
   }
@@ -99,18 +96,11 @@ export class SplitsClient {
     const updateSplitTx = await this.splitMain
       .connect(this.signer)
       .updateSplit(splitId, accounts, percentAllocations, distributorFee)
-    const updateSplitReceipt = await updateSplitTx.wait()
-    if (updateSplitReceipt.status === 1) {
-      const cse = updateSplitReceipt.events?.filter(
-        (e) =>
-          e.eventSignature ===
-          this.splitMain.interface.getEvent('UpdateSplit').format(),
-      )?.[0]
-      if (cse)
-        return {
-          event: cse,
-        }
-    }
+    const event = await getTransactionEvent(
+      updateSplitTx,
+      this.splitMain.interface.getEvent('UpdateSplit').format(),
+    )
+    if (event) return { event }
 
     throw new TransactionFailedError()
   }
@@ -154,21 +144,12 @@ export class SplitsClient {
             distributorFee,
             distributorPayoutAddress,
           ))
-    const distributeTokenReceipt = await distributeTokenTx.wait()
-    if (distributeTokenReceipt.status === 1) {
-      const dte = distributeTokenReceipt.events?.filter(
-        (e) =>
-          e.eventSignature ===
-          (token === AddressZero
-            ? this.splitMain.interface.getEvent('DistributeETH').format()
-            : this.splitMain.interface.getEvent('DistributeERC20').format()),
-      )?.[0]
-
-      if (dte)
-        return {
-          event: dte,
-        }
-    }
+    const eventSignature =
+      token === AddressZero
+        ? this.splitMain.interface.getEvent('DistributeETH').format()
+        : this.splitMain.interface.getEvent('DistributeERC20').format()
+    const event = await getTransactionEvent(distributeTokenTx, eventSignature)
+    if (event) return { event }
 
     throw new TransactionFailedError()
   }
@@ -182,18 +163,11 @@ export class SplitsClient {
     const withdrawTx = await this.splitMain
       .connect(this.signer)
       .withdraw(address, withdrawEth, erc20s)
-    const withdrawReceipt = await withdrawTx.wait()
-    if (withdrawReceipt.status == 1) {
-      const we = withdrawReceipt.events?.filter(
-        (e) =>
-          e.eventSignature ===
-          this.splitMain.interface.getEvent('Withdrawal').format(),
-      )[0]
-      if (we)
-        return {
-          event: we,
-        }
-    }
+    const event = await getTransactionEvent(
+      withdrawTx,
+      this.splitMain.interface.getEvent('Withdrawal').format(),
+    )
+    if (event) return { event }
 
     throw new TransactionFailedError()
   }
@@ -207,18 +181,11 @@ export class SplitsClient {
     const transferSplitTx = await this.splitMain
       .connect(this.signer)
       .transferControl(splitId, newController)
-    const transferSplitReceipt = await transferSplitTx.wait()
-    if (transferSplitReceipt.status == 1) {
-      const icte = transferSplitReceipt.events?.filter(
-        (e) =>
-          e.eventSignature ===
-          this.splitMain.interface.getEvent('InitiateControlTransfer').format(),
-      )?.[0]
-      if (icte)
-        return {
-          event: icte,
-        }
-    }
+    const event = await getTransactionEvent(
+      transferSplitTx,
+      this.splitMain.interface.getEvent('InitiateControlTransfer').format(),
+    )
+    if (event) return { event }
 
     throw new TransactionFailedError()
   }
@@ -232,17 +199,11 @@ export class SplitsClient {
       .connect(this.signer)
       .cancelControlTransfer(splitId)
     const cancelTransferSplitReceipt = await cancelTransferSplitTx.wait()
-    if (cancelTransferSplitReceipt.status == 1) {
-      const ccte = cancelTransferSplitReceipt.events?.filter(
-        (e) =>
-          e.eventSignature ===
-          this.splitMain.interface.getEvent('CancelControlTransfer').format(),
-      )?.[0]
-      if (ccte)
-        return {
-          event: ccte,
-        }
-    }
+    const event = await getTransactionEvent(
+      cancelTransferSplitTx,
+      this.splitMain.interface.getEvent('CancelControlTransfer').format(),
+    )
+    if (event) return { event }
 
     throw new TransactionFailedError()
   }
@@ -255,18 +216,11 @@ export class SplitsClient {
     const acceptTransferSplitTx = await this.splitMain
       .connect(this.signer)
       .acceptControl(splitId)
-    const acceptTransferSplitReceipt = await acceptTransferSplitTx.wait()
-    if (acceptTransferSplitReceipt.status == 1) {
-      const acte = acceptTransferSplitReceipt.events?.filter(
-        (e) =>
-          e.eventSignature ===
-          this.splitMain.interface.getEvent('ControlTransfer').format(),
-      )?.[0]
-      if (acte)
-        return {
-          event: acte,
-        }
-    }
+    const event = await getTransactionEvent(
+      acceptTransferSplitTx,
+      this.splitMain.interface.getEvent('ControlTransfer').format(),
+    )
+    if (event) return { event }
 
     throw new TransactionFailedError()
   }
@@ -277,26 +231,19 @@ export class SplitsClient {
     const makeSplitImmutableTx = await this.splitMain
       .connect(this.signer)
       .makeSplitImmutable(splitId)
-    const makeSplitImmutableReceipt = await makeSplitImmutableTx.wait()
-    if (makeSplitImmutableReceipt.status == 1) {
-      const msie = makeSplitImmutableReceipt.events?.filter(
-        (e) =>
-          e.eventSignature ===
-          this.splitMain.interface.getEvent('ControlTransfer').format(),
-      )?.[0]
-      if (msie)
-        return {
-          event: msie,
-        }
-    }
+    const event = await getTransactionEvent(
+      makeSplitImmutableTx,
+      this.splitMain.interface.getEvent('ControlTransfer').format(),
+    )
+    if (event) return { event }
 
     throw new TransactionFailedError()
   }
 
-  async getTokenBalance({
+  async getSplitBalance({
     splitId,
     token = AddressZero,
-  }: GetTokenBalanceConfig): Promise<{
+  }: GetSplitBalanceConfig): Promise<{
     balance: BigNumber
   }> {
     const balance =

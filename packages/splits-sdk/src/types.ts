@@ -57,7 +57,7 @@ export type MakeSplitImmutableConfig = {
   splitId: string
 }
 
-export type GetTokenBalanceConfig = {
+export type GetSplitBalanceConfig = {
   splitId: string
   token?: string
 }

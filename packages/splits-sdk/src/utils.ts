@@ -1,7 +1,7 @@
 import { Interface } from '@ethersproject/abi'
 import { isAddress } from '@ethersproject/address'
 import { BigNumber } from '@ethersproject/bignumber'
-import { Contract } from '@ethersproject/contracts'
+import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
 
 import SPLIT_MAIN_ARTIFACT_ETHEREUM from './artifacts/splits/ethereum/contracts/SplitMain.sol/SplitMain.json'
 import SPLIT_MAIN_ARTIFACT_POLYGON from './artifacts/splits/polygon/contracts/SplitMain.sol/SplitMain.json'
@@ -107,4 +107,18 @@ export const validateDistributorFeePercent = (
 ): void => {
   if (distributorFeePercent < 0 || distributorFeePercent > 10)
     throw new InvalidDistributorFeePercentError(distributorFeePercent)
+}
+
+export const getTransactionEvent = async (
+  transaction: ContractTransaction,
+  eventSignature: string,
+): Promise<Event | undefined> => {
+  const receipt = await transaction.wait()
+  if (receipt.status === 1) {
+    const event = receipt.events?.filter(
+      (e) => e.eventSignature === eventSignature,
+    )[0]
+
+    return event
+  }
 }
