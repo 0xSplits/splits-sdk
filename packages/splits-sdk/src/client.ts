@@ -299,4 +299,30 @@ export class SplitsClient {
       balance,
     }
   }
+
+  async predictImmutableSplitAddress({
+    recipients,
+    distributorFeePercent,
+  }: {
+    recipients: SplitRecipient[]
+    distributorFeePercent: number
+  }): Promise<{
+    splitId: string
+  }> {
+    validateRecipients(recipients)
+    validateDistributorFeePercent(distributorFeePercent)
+
+    const [accounts, percentAllocations] =
+      getRecipientSortedAddressesAndAllocations(recipients)
+    const distributorFee = getBigNumberValue(distributorFeePercent)
+    const splitId = await this.splitMain.predictImmutableSplitAddress(
+      accounts,
+      percentAllocations,
+      distributorFee,
+    )
+
+    return {
+      splitId,
+    }
+  }
 }
