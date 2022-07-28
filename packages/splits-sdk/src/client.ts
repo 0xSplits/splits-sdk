@@ -21,6 +21,7 @@ import type {
   AcceptControlTransferConfig,
   MakeSplitImmutableConfig,
   GetSplitBalanceConfig,
+  UpdateSplitAndDistributeTokenConfig,
 } from './types'
 import {
   getRecipientSortedAddressesAndAllocations,
@@ -149,6 +150,60 @@ export class SplitsClient {
         ? this.splitMain.interface.getEvent('DistributeETH').format()
         : this.splitMain.interface.getEvent('DistributeERC20').format()
     const event = await getTransactionEvent(distributeTokenTx, eventSignature)
+    if (event) return { event }
+
+    throw new TransactionFailedError()
+  }
+
+  async updateSplitAndDistributeToken({
+    splitId,
+    token = AddressZero,
+    recipients,
+    distributorFeePercent,
+    distributorAddress,
+  }: UpdateSplitAndDistributeTokenConfig): Promise<{
+    event: Event
+  }> {
+    validateRecipients(recipients)
+    validateDistributorFeePercent(distributorFeePercent)
+
+    const [accounts, percentAllocations] =
+      getRecipientSortedAddressesAndAllocations(recipients)
+    const distributorFee = BigNumber.from(
+      (PERCENTAGE_SCALE.toNumber() * distributorFeePercent) / 100,
+    )
+    const distributorPayoutAddress = distributorAddress
+      ? distributorAddress
+      : await this.signer.getAddress()
+
+    const updateAndDistributeTx = await (token === AddressZero
+      ? this.splitMain
+          .connect(this.signer)
+          .updateAndDistributeETH(
+            splitId,
+            accounts,
+            percentAllocations,
+            distributorFee,
+            distributorPayoutAddress,
+          )
+      : this.splitMain
+          .connect(this.signer)
+          .updateAndDistributeERC20(
+            splitId,
+            token,
+            accounts,
+            percentAllocations,
+            distributorFee,
+            distributorPayoutAddress,
+          ))
+    const eventSignature =
+      token === AddressZero
+        ? this.splitMain.interface.getEvent('DistributeETH').format()
+        : this.splitMain.interface.getEvent('DistributeERC20').format()
+    const event = await getTransactionEvent(
+      updateAndDistributeTx,
+      eventSignature,
+    )
     if (event) return { event }
 
     throw new TransactionFailedError()
