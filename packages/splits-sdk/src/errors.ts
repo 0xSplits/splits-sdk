@@ -16,12 +16,6 @@ export class InvalidRecipientsError extends Error {
 
 export class InvalidDistributorFeePercentError extends Error {
   name = 'InvalidDistributorFeePercent'
-
-  constructor(invalidDistributorFeePercent: number) {
-    super(
-      `Invalid distributor fee percent: ${invalidDistributorFeePercent}. Distributor fee percent must be >= 0 and <= 10`,
-    )
-  }
 }
 
 export class TransactionFailedError extends Error {

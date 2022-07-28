@@ -6,7 +6,7 @@ import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
 import SPLIT_MAIN_ARTIFACT_ETHEREUM from './artifacts/splits/ethereum/contracts/SplitMain.sol/SplitMain.json'
 import SPLIT_MAIN_ARTIFACT_POLYGON from './artifacts/splits/polygon/contracts/SplitMain.sol/SplitMain.json'
 import {
-  PERCENT_ALLOCATION_MAX_PRECISION_DECIMALS,
+  MAX_PRECISION_DECIMALS,
   PERCENTAGE_SCALE,
   SPLIT_MAIN_ADDRESS,
 } from './constants'
@@ -45,12 +45,7 @@ export const getRecipientSortedAddressesAndAllocations = (
     })
     .map((value) => {
       accounts.push(value.address)
-      percentAllocations.push(
-        BigNumber.from(
-          Math.round(PERCENTAGE_SCALE.toNumber() * value.percentAllocation) /
-            100,
-        ),
-      )
+      percentAllocations.push(getBigNumberValue(value.percentAllocation))
     })
 
   return [accounts, percentAllocations]
@@ -81,10 +76,10 @@ export const validateRecipients = (recipients: SplitRecipient[]): void => {
       )
     if (
       getNumDigitsAfterDecimal(recipient.percentAllocation) >
-      PERCENT_ALLOCATION_MAX_PRECISION_DECIMALS
+      MAX_PRECISION_DECIMALS
     )
       throw new InvalidRecipientsError(
-        `Invalid precision on percent allocation: ${recipient.percentAllocation}. Maxiumum allowed precision is ${PERCENT_ALLOCATION_MAX_PRECISION_DECIMALS} decimals`,
+        `Invalid precision on percent allocation: ${recipient.percentAllocation}. Maxiumum allowed precision is ${MAX_PRECISION_DECIMALS} decimals`,
       )
 
     seenAddresses.add(recipient.address.toLowerCase())
@@ -93,7 +88,7 @@ export const validateRecipients = (recipients: SplitRecipient[]): void => {
 
   // Cutoff any decimals beyond the max precision, they may get introduced due
   // to javascript floating point precision
-  const factorOfTen = Math.pow(10, PERCENT_ALLOCATION_MAX_PRECISION_DECIMALS)
+  const factorOfTen = Math.pow(10, MAX_PRECISION_DECIMALS)
   totalPercentAllocation =
     Math.round(totalPercentAllocation * factorOfTen) / factorOfTen
   if (totalPercentAllocation !== 100)
@@ -106,7 +101,18 @@ export const validateDistributorFeePercent = (
   distributorFeePercent: number,
 ): void => {
   if (distributorFeePercent < 0 || distributorFeePercent > 10)
-    throw new InvalidDistributorFeePercentError(distributorFeePercent)
+    throw new InvalidDistributorFeePercentError(
+      `Invalid distributor fee percent: ${distributorFeePercent}. Distributor fee percent must be >= 0 and <= 10`,
+    )
+
+  if (getNumDigitsAfterDecimal(distributorFeePercent) > MAX_PRECISION_DECIMALS)
+    throw new InvalidDistributorFeePercentError(
+      `Invalid precision on distributor fee: ${distributorFeePercent}. Maxiumum allowed precision is ${MAX_PRECISION_DECIMALS} decimals`,
+    )
+}
+
+export const getBigNumberValue = (value: number): BigNumber => {
+  return BigNumber.from(Math.round(PERCENTAGE_SCALE.toNumber() * value) / 100)
 }
 
 export const getTransactionEvent = async (

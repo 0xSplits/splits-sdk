@@ -3,11 +3,7 @@ import { BigNumber } from '@ethersproject/bignumber'
 import { AddressZero } from '@ethersproject/constants'
 import { Event } from '@ethersproject/contracts'
 
-import {
-  ETHEREUM_CHAIN_IDS,
-  PERCENTAGE_SCALE,
-  POLYGON_CHAIN_IDS,
-} from './constants'
+import { ETHEREUM_CHAIN_IDS, POLYGON_CHAIN_IDS } from './constants'
 import { TransactionFailedError, UnsupportedChainIdError } from './errors'
 import type {
   SplitMainType,
@@ -22,6 +18,7 @@ import type {
   MakeSplitImmutableConfig,
   GetSplitBalanceConfig,
   UpdateSplitAndDistributeTokenConfig,
+  SplitRecipient,
 } from './types'
 import {
   getRecipientSortedAddressesAndAllocations,
@@ -30,6 +27,7 @@ import {
   SplitMainEthereum,
   SplitMainPolygon,
   getTransactionEvent,
+  getBigNumberValue,
 } from './utils'
 
 export class SplitsClient {
@@ -58,9 +56,7 @@ export class SplitsClient {
 
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
-    const distributorFee = BigNumber.from(
-      (PERCENTAGE_SCALE.toNumber() * distributorFeePercent) / 100,
-    )
+    const distributorFee = getBigNumberValue(distributorFeePercent)
 
     const createSplitTx = await this.splitMain
       .connect(this.signer)
@@ -90,9 +86,7 @@ export class SplitsClient {
 
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
-    const distributorFee = BigNumber.from(
-      (PERCENTAGE_SCALE.toNumber() * distributorFeePercent) / 100,
-    )
+    const distributorFee = getBigNumberValue(distributorFeePercent)
 
     const updateSplitTx = await this.splitMain
       .connect(this.signer)
@@ -117,9 +111,7 @@ export class SplitsClient {
   }> {
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
-    const distributorFee = BigNumber.from(
-      (PERCENTAGE_SCALE.toNumber() * distributorFeePercent) / 100,
-    )
+    const distributorFee = getBigNumberValue(distributorFeePercent)
 
     const distributorPayoutAddress = distributorAddress
       ? distributorAddress
@@ -169,9 +161,7 @@ export class SplitsClient {
 
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
-    const distributorFee = BigNumber.from(
-      (PERCENTAGE_SCALE.toNumber() * distributorFeePercent) / 100,
-    )
+    const distributorFee = getBigNumberValue(distributorFeePercent)
     const distributorPayoutAddress = distributorAddress
       ? distributorAddress
       : await this.signer.getAddress()
@@ -253,7 +243,6 @@ export class SplitsClient {
     const cancelTransferSplitTx = await this.splitMain
       .connect(this.signer)
       .cancelControlTransfer(splitId)
-    const cancelTransferSplitReceipt = await cancelTransferSplitTx.wait()
     const event = await getTransactionEvent(
       cancelTransferSplitTx,
       this.splitMain.interface.getEvent('CancelControlTransfer').format(),
