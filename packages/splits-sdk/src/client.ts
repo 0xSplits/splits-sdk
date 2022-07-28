@@ -295,9 +295,7 @@ export class SplitsClient {
         ? await this.splitMain.getETHBalance(splitId)
         : await this.splitMain.getERC20Balance(splitId, token)
 
-    return {
-      balance,
-    }
+    return { balance }
   }
 
   async predictImmutableSplitAddress({
@@ -321,8 +319,31 @@ export class SplitsClient {
       distributorFee,
     )
 
-    return {
-      splitId,
-    }
+    return { splitId }
+  }
+
+  async getController({ splitId }: { splitId: string }): Promise<{
+    controller: string
+  }> {
+    const controller = await this.splitMain.getController(splitId)
+
+    return { controller }
+  }
+
+  async getNewPotentialController({ splitId }: { splitId: string }): Promise<{
+    newPotentialController: string
+  }> {
+    const newPotentialController =
+      await this.splitMain.getNewPotentialController(splitId)
+
+    return { newPotentialController }
+  }
+
+  async getHash({ splitId }: { splitId: string }): Promise<{
+    hash: string
+  }> {
+    const hash = await this.splitMain.getHash(splitId)
+
+    return { hash }
   }
 }
