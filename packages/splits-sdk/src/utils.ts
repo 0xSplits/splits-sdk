@@ -1,37 +1,14 @@
-import { Interface } from '@ethersproject/abi'
 import { isAddress } from '@ethersproject/address'
 import { BigNumber } from '@ethersproject/bignumber'
-import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
+import { ContractTransaction, Event } from '@ethersproject/contracts'
 import { keccak256 } from '@ethersproject/solidity'
 
-import SPLIT_MAIN_ARTIFACT_ETHEREUM from './artifacts/splits/ethereum/contracts/SplitMain.sol/SplitMain.json'
-import SPLIT_MAIN_ARTIFACT_POLYGON from './artifacts/splits/polygon/contracts/SplitMain.sol/SplitMain.json'
-import {
-  MAX_PRECISION_DECIMALS,
-  PERCENTAGE_SCALE,
-  SPLIT_MAIN_ADDRESS,
-} from './constants'
+import { MAX_PRECISION_DECIMALS, PERCENTAGE_SCALE } from './constants'
 import {
   InvalidRecipientsError,
   InvalidDistributorFeePercentError,
 } from './errors'
-import type { SplitMain as SplitMainEthereumType } from './typechain/ethereum'
-import type { SplitMain as SplitMainPolygonType } from './typechain/polygon'
 import type { SplitRecipient } from './types'
-
-const SPLIT_MAIN_ABI_ETHEREUM = SPLIT_MAIN_ARTIFACT_ETHEREUM.abi
-const splitMainInterfaceEthereum = new Interface(SPLIT_MAIN_ABI_ETHEREUM)
-const SPLIT_MAIN_ABI_POLYGON = SPLIT_MAIN_ARTIFACT_POLYGON.abi
-const splitMainInterfacePolygon = new Interface(SPLIT_MAIN_ABI_POLYGON)
-
-export const SplitMainEthereum = new Contract(
-  SPLIT_MAIN_ADDRESS,
-  splitMainInterfaceEthereum,
-) as SplitMainEthereumType
-export const SplitMainPolygon = new Contract(
-  SPLIT_MAIN_ADDRESS,
-  splitMainInterfacePolygon,
-) as SplitMainPolygonType
 
 export const getRecipientSortedAddressesAndAllocations = (
   recipients: SplitRecipient[],
