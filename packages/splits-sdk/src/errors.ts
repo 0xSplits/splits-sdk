@@ -1,4 +1,4 @@
-import { SUPPORTED_CHAIN_IDS } from './constants'
+import { SUBGRAPH_CHAIN_IDS, SUPPORTED_CHAIN_IDS } from './constants'
 
 export class UnsupportedChainIdError extends Error {
   name = 'UnsupportedChainIdError'
@@ -10,12 +10,26 @@ export class UnsupportedChainIdError extends Error {
   }
 }
 
+export class UnsupportedSubgraphChainIdError extends Error {
+  name = 'UnsupportedSubgraphChainIdError'
+
+  constructor() {
+    super(
+      `Unsupported subgraph chain. Supported subgraph chains are: ${SUBGRAPH_CHAIN_IDS}`,
+    )
+  }
+}
+
 export class InvalidRecipientsError extends Error {
   name = 'InvalidRecipientsError'
 }
 
 export class InvalidDistributorFeePercentError extends Error {
   name = 'InvalidDistributorFeePercent'
+}
+
+export class InvalidArgumentError extends Error {
+  name = 'InvalidArgumentError'
 }
 
 export class InvalidAuthError extends Error {

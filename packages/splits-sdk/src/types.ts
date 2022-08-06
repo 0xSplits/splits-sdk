@@ -69,3 +69,13 @@ export type UpdateSplitAndDistributeTokenConfig = {
   distributorFeePercent: number
   distributorAddress?: string
 }
+
+export type Split = {
+  id: string
+  controller?: string
+  newPotentialController?: string
+  distributorFeePercent: number
+  recipients: SplitRecipient[]
+  createdBlock: number
+  latestBlock: number
+}

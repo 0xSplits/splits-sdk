@@ -1,7 +1,9 @@
 import { Interface } from '@ethersproject/abi'
+import { isAddress } from '@ethersproject/address'
 import { BigNumber } from '@ethersproject/bignumber'
 import { AddressZero } from '@ethersproject/constants'
 import { Contract, Event } from '@ethersproject/contracts'
+import { GraphQLClient, Variables } from 'graphql-request'
 
 import SPLIT_MAIN_ARTIFACT_ETHEREUM from './artifacts/splits/ethereum/contracts/SplitMain.sol/SplitMain.json'
 import SPLIT_MAIN_ARTIFACT_POLYGON from './artifacts/splits/polygon/contracts/SplitMain.sol/SplitMain.json'
@@ -11,11 +13,15 @@ import {
   SPLIT_MAIN_ADDRESS,
 } from './constants'
 import {
+  InvalidArgumentError,
   InvalidAuthError,
   InvalidHashError,
   TransactionFailedError,
   UnsupportedChainIdError,
+  UnsupportedSubgraphChainIdError,
 } from './errors'
+import { formatSplit, getGraphqlClient, SPLIT_QUERY } from './subgraph'
+import type { GqlSplit } from './subgraph/types'
 import type {
   SplitMainType,
   SplitsClientConfig,
@@ -30,6 +36,7 @@ import type {
   GetSplitBalanceConfig,
   UpdateSplitAndDistributeTokenConfig,
   SplitRecipient,
+  Split,
 } from './types'
 import {
   getRecipientSortedAddressesAndAllocations,
@@ -49,6 +56,7 @@ const splitMainInterfacePolygon = new Interface(SPLIT_MAIN_ABI_POLYGON)
 
 export class SplitsClient {
   private readonly _splitMain: SplitMainType
+  private readonly _graphqlClient: GraphQLClient | undefined
 
   constructor({ chainId, signer }: SplitsClientConfig) {
     if (ETHEREUM_CHAIN_IDS.includes(chainId))
@@ -64,6 +72,8 @@ export class SplitsClient {
         signer,
       ) as SplitMainPolygonType
     else throw new UnsupportedChainIdError(chainId)
+
+    this._graphqlClient = getGraphqlClient(chainId)
   }
 
   // Write actions
@@ -389,6 +399,21 @@ export class SplitsClient {
     return { hash }
   }
 
+  // Graphql read actions
+  async getSplitMetadata({ splitId }: { splitId: string }): Promise<Split> {
+    if (!isAddress(splitId))
+      throw new InvalidArgumentError(`Invalid address: ${splitId}`)
+
+    const response = await this._makeGqlRequest<{ split: GqlSplit }>(
+      SPLIT_QUERY,
+      {
+        splitId: splitId.toLowerCase(),
+      },
+    )
+
+    return formatSplit(response.split)
+  }
+
   // Helper functions
   private async _requireController(splitId: string) {
     const { controller } = await this.getController({ splitId })
@@ -429,5 +454,18 @@ export class SplitsClient {
       throw new InvalidHashError(
         `Hash from accounts, percent allocations, and distributor fee does not match split hash. Split hash: ${hash}, inputs hash: ${inputsHash}`,
       )
+  }
+
+  private async _makeGqlRequest<ResponseType>(
+    query: string,
+    variables?: Variables,
+  ): Promise<ResponseType> {
+    if (!this._graphqlClient) {
+      throw new UnsupportedSubgraphChainIdError()
+    }
+
+    // TODO: any error handling? need to add try/catch if so
+    const result = await this._graphqlClient.request(query, variables)
+    return result
   }
 }

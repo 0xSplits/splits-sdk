@@ -93,6 +93,11 @@ export const getBigNumberValue = (value: number): BigNumber => {
   return BigNumber.from(Math.round(PERCENTAGE_SCALE.toNumber() * value) / 100)
 }
 
+export const fromBigNumberValue = (value: BigNumber | number): number => {
+  const numberVal = value instanceof BigNumber ? value.toNumber() : value
+  return (numberVal * 100) / PERCENTAGE_SCALE.toNumber()
+}
+
 export const getTransactionEvent = async (
   transaction: ContractTransaction,
   eventSignature: string,
