@@ -13,7 +13,6 @@ import {
 } from './constants'
 import {
   InvalidAuthError,
-  InvalidHashError,
   MissingProviderError,
   MissingSignerError,
   TransactionFailedError,
@@ -52,7 +51,6 @@ import {
   validateRecipients,
   getTransactionEvent,
   getBigNumberValue,
-  getSplitHash,
   validateAddress,
 } from './utils'
 import type { SplitMain as SplitMainEthereumType } from './typechain/ethereum'
