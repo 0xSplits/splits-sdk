@@ -7,6 +7,7 @@ import { MAX_PRECISION_DECIMALS, PERCENTAGE_SCALE } from './constants'
 import {
   InvalidRecipientsError,
   InvalidDistributorFeePercentError,
+  InvalidArgumentError,
 } from './errors'
 import type { SplitRecipient } from './types'
 
@@ -87,6 +88,11 @@ export const validateDistributorFeePercent = (
     throw new InvalidDistributorFeePercentError(
       `Invalid precision on distributor fee: ${distributorFeePercent}. Maxiumum allowed precision is ${MAX_PRECISION_DECIMALS} decimals`,
     )
+}
+
+export const validateAddress = (address: string): void => {
+  if (!isAddress(address))
+    throw new InvalidArgumentError(`Invalid address: ${address}`)
 }
 
 export const getBigNumberValue = (value: number): BigNumber => {

@@ -1,5 +1,4 @@
 import { Interface } from '@ethersproject/abi'
-import { isAddress } from '@ethersproject/address'
 import { BigNumber } from '@ethersproject/bignumber'
 import { AddressZero } from '@ethersproject/constants'
 import { Contract, Event } from '@ethersproject/contracts'
@@ -13,7 +12,6 @@ import {
   SPLIT_MAIN_ADDRESS,
 } from './constants'
 import {
-  InvalidArgumentError,
   InvalidAuthError,
   InvalidHashError,
   TransactionFailedError,
@@ -21,12 +19,14 @@ import {
   UnsupportedSubgraphChainIdError,
 } from './errors'
 import {
+  ACCOUNT_BALANCES_QUERY,
+  formatAccountBalances,
   formatSplit,
   getGraphqlClient,
   RELATED_SPLITS_QUERY,
   SPLIT_QUERY,
 } from './subgraph'
-import type { GqlSplit } from './subgraph/types'
+import type { GqlAccountBalances, GqlSplit } from './subgraph/types'
 import type {
   SplitMainType,
   SplitsClientConfig,
@@ -42,6 +42,7 @@ import type {
   UpdateSplitAndDistributeTokenConfig,
   SplitRecipient,
   Split,
+  TokenBalances,
 } from './types'
 import {
   getRecipientSortedAddressesAndAllocations,
@@ -50,6 +51,7 @@ import {
   getTransactionEvent,
   getBigNumberValue,
   getSplitHash,
+  validateAddress,
 } from './utils'
 import type { SplitMain as SplitMainEthereumType } from './typechain/ethereum'
 import type { SplitMain as SplitMainPolygonType } from './typechain/polygon'
@@ -406,8 +408,7 @@ export class SplitsClient {
 
   // Graphql read actions
   async getSplitMetadata({ splitId }: { splitId: string }): Promise<Split> {
-    if (!isAddress(splitId))
-      throw new InvalidArgumentError(`Invalid address: ${splitId}`)
+    validateAddress(splitId)
 
     const response = await this._makeGqlRequest<{ split: GqlSplit }>(
       SPLIT_QUERY,
@@ -424,8 +425,7 @@ export class SplitsClient {
     controlling: Split[]
     pendingControl: Split[]
   }> {
-    if (!isAddress(address))
-      throw new InvalidArgumentError(`Invalid address: ${address}`)
+    validateAddress(address)
 
     const response = await this._makeGqlRequest<{
       receivingFrom: { split: GqlSplit }[]
@@ -444,6 +444,48 @@ export class SplitsClient {
         formatSplit(gqlSplit),
       ),
     }
+  }
+
+  async getSplitEarnings({ splitId }: { splitId: string }): Promise<{
+    distributed: TokenBalances
+  }> {
+    validateAddress(splitId)
+
+    const response = await this._makeGqlRequest<{
+      accountBalances: GqlAccountBalances
+    }>(ACCOUNT_BALANCES_QUERY, {
+      accountId: splitId.toLowerCase(),
+    })
+
+    const distributed = formatAccountBalances(
+      response.accountBalances.withdrawals,
+    )
+
+    return {
+      distributed,
+    }
+  }
+
+  async getUserEarnings({ userId }: { userId: string }): Promise<{
+    withdrawn: TokenBalances
+    activeBalances: TokenBalances
+  }> {
+    validateAddress(userId)
+
+    const response = await this._makeGqlRequest<{
+      accountBalances: GqlAccountBalances
+    }>(ACCOUNT_BALANCES_QUERY, {
+      accountId: userId.toLowerCase(),
+    })
+
+    const withdrawn = formatAccountBalances(
+      response.accountBalances.withdrawals,
+    )
+    const activeBalances = formatAccountBalances(
+      response.accountBalances.internalBalances,
+    )
+
+    return { withdrawn, activeBalances }
   }
 
   // Helper functions

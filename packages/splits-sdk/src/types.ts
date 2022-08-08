@@ -1,4 +1,5 @@
 import type { Signer } from '@ethersproject/abstract-signer'
+import { BigNumber } from '@ethersproject/bignumber'
 
 import type { SplitMain as SplitMainEthereumType } from './typechain/ethereum'
 import type { SplitMain as SplitMainPolygonType } from './typechain/polygon'
@@ -68,6 +69,10 @@ export type UpdateSplitAndDistributeTokenConfig = {
   recipients: SplitRecipient[]
   distributorFeePercent: number
   distributorAddress?: string
+}
+
+export type TokenBalances = {
+  [token: string]: BigNumber
 }
 
 export type Split = {

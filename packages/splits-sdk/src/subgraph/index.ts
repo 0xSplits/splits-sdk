@@ -1,10 +1,12 @@
 import { getAddress } from '@ethersproject/address'
-import { AddressZero } from '@ethersproject/constants'
+import { BigNumber } from '@ethersproject/bignumber'
+import { AddressZero, One } from '@ethersproject/constants'
 import { GraphQLClient, gql } from 'graphql-request'
+
 import { SUBGRAPH_CHAIN_IDS } from '../constants'
-import type { Split, SplitRecipient } from '../types'
+import type { Split, SplitRecipient, TokenBalances } from '../types'
 import { fromBigNumberValue } from '../utils'
-import { GqlRecipient, GqlSplit } from './types'
+import { GqlRecipient, GqlSplit, GqlTokenBalance } from './types'
 
 const GQL_ENDPOINTS: { [chainId: number]: string } = {
   1: 'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-ethereum',
@@ -51,22 +53,30 @@ const SPLIT_FIELDS_FRAGMENT = gql`
   ${RECIPIENT_FIELDS_FRAGMENT}
 `
 
-const ACCOUNT_FIELDS_FRAGMENT = gql`
-  fragment AccountFieldsFragment on Account {
-    id
+const ACCOUNT_BALANCES_FRAGMENT = gql`
+  fragment AccountBalancesFragment on Account {
     internalBalances {
       ...TokenBalanceFieldsFragment
     }
     withdrawals {
       ...TokenBalanceFieldsFragment
     }
-    upstream {
-      ...RecipientFieldsFragment
-    }
   }
 
   ${TOKEN_BALANCE_FIELDS_FRAGMENT}
+`
+
+const ACCOUNT_FIELDS_FRAGMENT = gql`
+  fragment AccountFieldsFragment on Account {
+    id
+    upstream {
+      ...RecipientFieldsFragment
+    }
+    ...AccountBalancesFragment
+  }
+
   ${RECIPIENT_FIELDS_FRAGMENT}
+  ${ACCOUNT_BALANCES_FRAGMENT}
 `
 
 const FULL_SPLIT_FIELDS_FRAGMENT = gql`
@@ -105,8 +115,20 @@ export const formatSplit = (gqlSplit: GqlSplit): Split => {
   }
 }
 
+export const formatAccountBalances = (
+  gqlTokenBalances: GqlTokenBalance[],
+): TokenBalances => {
+  return gqlTokenBalances.reduce((acc, gqlTokenBalance) => {
+    const tokenId = getAddress(gqlTokenBalance.token.id)
+    const amount = BigNumber.from(gqlTokenBalance.amount)
+
+    if (amount > One) acc[tokenId] = amount
+    return acc
+  }, {} as TokenBalances)
+}
+
 export const SPLIT_QUERY = gql`
-  query split($splitId: ID) {
+  query split($splitId: ID!) {
     split(id: $splitId) {
       ...FullSplitFieldsFragment
     }
@@ -131,6 +153,16 @@ export const RELATED_SPLITS_QUERY = gql`
   }
 
   ${FULL_SPLIT_FIELDS_FRAGMENT}
+`
+
+export const ACCOUNT_BALANCES_QUERY = gql`
+  query accountBalances($accountId: ID!) {
+    accountBalances: account(id: $accountId) {
+      ...AccountBalancesFragment
+    }
+  }
+
+  ${ACCOUNT_BALANCES_FRAGMENT}
 `
 
 export const getGraphqlClient = (

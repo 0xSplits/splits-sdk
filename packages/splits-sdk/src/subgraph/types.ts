@@ -7,6 +7,22 @@ type Scalars = {
   DateTime: string
 }
 
+type GqlToken = {
+  id: Scalars['ID']
+}
+
+export type GqlTokenBalance = {
+  id: Scalars['ID']
+  amount: Scalars['Int']
+  token: GqlToken
+  account: GqlAccount
+}
+
+export type GqlAccountBalances = {
+  withdrawals: GqlTokenBalance[]
+  internalBalances: GqlTokenBalance[]
+}
+
 export type GqlRecipient = {
   id: Scalars['ID']
   split: GqlSplit
@@ -25,7 +41,6 @@ export type GqlSplit = {
 }
 
 export type GqlUser = {
-  __typename: 'User'
   id: Scalars['ID']
   upstream?: GqlRecipient[]
 }
