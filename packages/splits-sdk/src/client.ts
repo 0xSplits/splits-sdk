@@ -14,6 +14,8 @@ import {
 import {
   InvalidAuthError,
   InvalidHashError,
+  MissingProviderError,
+  MissingSignerError,
   TransactionFailedError,
   UnsupportedChainIdError,
   UnsupportedSubgraphChainIdError,
@@ -65,18 +67,18 @@ export class SplitsClient {
   private readonly _splitMain: SplitMainType
   private readonly _graphqlClient: GraphQLClient | undefined
 
-  constructor({ chainId, signer }: SplitsClientConfig) {
+  constructor({ chainId, providerOrSigner }: SplitsClientConfig) {
     if (ETHEREUM_CHAIN_IDS.includes(chainId))
       this._splitMain = new Contract(
         SPLIT_MAIN_ADDRESS,
         splitMainInterfaceEthereum,
-        signer,
+        providerOrSigner,
       ) as SplitMainEthereumType
     else if (POLYGON_CHAIN_IDS.includes(chainId))
       this._splitMain = new Contract(
         SPLIT_MAIN_ADDRESS,
         splitMainInterfacePolygon,
-        signer,
+        providerOrSigner,
       ) as SplitMainPolygonType
     else throw new UnsupportedChainIdError(chainId)
 
@@ -94,6 +96,7 @@ export class SplitsClient {
   }> {
     validateRecipients(recipients)
     validateDistributorFeePercent(distributorFeePercent)
+    this._requireSplitMainSigner()
 
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
@@ -125,8 +128,10 @@ export class SplitsClient {
   }: UpdateSplitConfig): Promise<{
     event: Event
   }> {
+    validateAddress(splitId)
     validateRecipients(recipients)
     validateDistributorFeePercent(distributorFeePercent)
+    this._requireSplitMainSigner()
     await this._requireController(splitId)
 
     const [accounts, percentAllocations] =
@@ -208,8 +213,10 @@ export class SplitsClient {
   }: UpdateSplitAndDistributeTokenConfig): Promise<{
     event: Event
   }> {
+    validateAddress(splitId)
     validateRecipients(recipients)
     validateDistributorFeePercent(distributorFeePercent)
+    this._requireSplitMainSigner()
     await this._requireController(splitId)
 
     const [accounts, percentAllocations] =
@@ -251,6 +258,9 @@ export class SplitsClient {
   async withdrawFunds({ address, tokens }: WithdrawFundsConfig): Promise<{
     event: Event
   }> {
+    validateAddress(address)
+    this._requireSplitMainSigner()
+
     const withdrawEth = tokens.includes(AddressZero) ? 1 : 0
     const erc20s = tokens.filter((token) => token !== AddressZero)
 
@@ -274,6 +284,8 @@ export class SplitsClient {
   }: InititateControlTransferConfig): Promise<{
     event: Event
   }> {
+    validateAddress(splitId)
+    this._requireSplitMainSigner()
     await this._requireController(splitId)
 
     const transferSplitTx = await this._splitMain.transferControl(
@@ -294,6 +306,8 @@ export class SplitsClient {
   }: CancelControlTransferConfig): Promise<{
     event: Event
   }> {
+    validateAddress(splitId)
+    this._requireSplitMainSigner()
     await this._requireController(splitId)
 
     const cancelTransferSplitTx = await this._splitMain.cancelControlTransfer(
@@ -313,6 +327,8 @@ export class SplitsClient {
   }: AcceptControlTransferConfig): Promise<{
     event: Event
   }> {
+    validateAddress(splitId)
+    this._requireSplitMainSigner()
     await this._requireNewPotentialController(splitId)
 
     const acceptTransferSplitTx = await this._splitMain.acceptControl(splitId)
@@ -328,6 +344,8 @@ export class SplitsClient {
   async makeSplitImmutable({ splitId }: MakeSplitImmutableConfig): Promise<{
     event: Event
   }> {
+    validateAddress(splitId)
+    this._requireSplitMainSigner()
     await this._requireController(splitId)
 
     const makeSplitImmutableTx = await this._splitMain.makeSplitImmutable(
@@ -349,6 +367,9 @@ export class SplitsClient {
   }: GetSplitBalanceConfig): Promise<{
     balance: BigNumber
   }> {
+    validateAddress(splitId)
+    this._requireSplitMain()
+
     const balance =
       token === AddressZero
         ? await this._splitMain.getETHBalance(splitId)
@@ -368,6 +389,7 @@ export class SplitsClient {
   }> {
     validateRecipients(recipients)
     validateDistributorFeePercent(distributorFeePercent)
+    this._requireSplitMain()
 
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
@@ -384,6 +406,9 @@ export class SplitsClient {
   async getController({ splitId }: { splitId: string }): Promise<{
     controller: string
   }> {
+    validateAddress(splitId)
+    this._requireSplitMain()
+
     const controller = await this._splitMain.getController(splitId)
 
     return { controller }
@@ -392,6 +417,9 @@ export class SplitsClient {
   async getNewPotentialController({ splitId }: { splitId: string }): Promise<{
     newPotentialController: string
   }> {
+    validateAddress(splitId)
+    this._requireSplitMain()
+
     const newPotentialController =
       await this._splitMain.getNewPotentialController(splitId)
 
@@ -401,6 +429,9 @@ export class SplitsClient {
   async getHash({ splitId }: { splitId: string }): Promise<{
     hash: string
   }> {
+    validateAddress(splitId)
+    this._requireSplitMain()
+
     const hash = await this._splitMain.getHash(splitId)
 
     return { hash }
@@ -489,6 +520,20 @@ export class SplitsClient {
   }
 
   // Helper functions
+  private async _requireSplitMain() {
+    if (!this._splitMain)
+      throw new MissingProviderError(
+        'Provider required to perform this action, please update your call to the SplitsClient constructor',
+      )
+  }
+
+  private async _requireSplitMainSigner() {
+    if (!this._splitMain?.signer)
+      throw new MissingSignerError(
+        'Signer required to perform this action, please update your call to the SplitsClient constructor',
+      )
+  }
+
   private async _requireController(splitId: string) {
     const { controller } = await this.getController({ splitId })
     const signerAddress = await this._splitMain.signer.getAddress()

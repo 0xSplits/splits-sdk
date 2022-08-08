@@ -43,3 +43,11 @@ export class InvalidHashError extends Error {
 export class TransactionFailedError extends Error {
   name = 'TransactionFailedError'
 }
+
+export class MissingProviderError extends Error {
+  name = 'MissingProviderError'
+}
+
+export class MissingSignerError extends Error {
+  name = 'MissingSignerError'
+}

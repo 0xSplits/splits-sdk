@@ -1,3 +1,4 @@
+import type { Provider } from '@ethersproject/abstract-provider'
 import type { Signer } from '@ethersproject/abstract-signer'
 import { BigNumber } from '@ethersproject/bignumber'
 
@@ -8,7 +9,7 @@ export type SplitMainType = SplitMainEthereumType | SplitMainPolygonType
 
 export type SplitsClientConfig = {
   chainId: number
-  signer: Signer
+  providerOrSigner?: Provider | Signer
 }
 
 export type SplitRecipient = {
