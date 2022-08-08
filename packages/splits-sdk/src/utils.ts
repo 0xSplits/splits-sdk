@@ -117,14 +117,3 @@ export const getTransactionEvent = async (
     return event
   }
 }
-
-export const getSplitHash = (
-  accounts: string[],
-  percentAllocations: BigNumber[],
-  distributorFee: BigNumber,
-): string => {
-  return keccak256(
-    ['address[]', 'uint32[]', 'uint32'],
-    [accounts, percentAllocations, distributorFee],
-  )
-}

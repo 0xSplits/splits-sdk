@@ -156,27 +156,24 @@ export class SplitsClient {
   async distributeToken({
     splitId,
     token = AddressZero,
-    recipients,
-    distributorFeePercent,
     distributorAddress,
   }: DistributeTokenConfig): Promise<{
     event: Event
   }> {
-    validateRecipients(recipients)
-    validateDistributorFeePercent(distributorFeePercent)
-    const [accounts, percentAllocations] =
-      getRecipientSortedAddressesAndAllocations(recipients)
-    const distributorFee = getBigNumberValue(distributorFeePercent)
+    validateAddress(splitId)
+    this._requireSplitMainSigner()
     const distributorPayoutAddress = distributorAddress
       ? distributorAddress
       : await this._splitMain.signer.getAddress()
+    validateAddress(distributorPayoutAddress)
 
-    await this._requireHashMatch(
+    // TO DO: handle bad split id/no metadata found
+    const { recipients, distributorFeePercent } = await this.getSplitMetadata({
       splitId,
-      accounts,
-      percentAllocations,
-      distributorFee,
-    )
+    })
+    const [accounts, percentAllocations] =
+      getRecipientSortedAddressesAndAllocations(recipients)
+    const distributorFee = getBigNumberValue(distributorFeePercent)
 
     const distributeTokenTx = await (token === AddressZero
       ? this._splitMain.distributeETH(
@@ -553,25 +550,6 @@ export class SplitsClient {
     if (newPotentialController !== signerAddress)
       throw new InvalidAuthError(
         `Action only available to the split's new potential controller. Split new potential controller: ${newPotentialController}. Signer: ${signerAddress}`,
-      )
-  }
-
-  private async _requireHashMatch(
-    splitId: string,
-    accounts: string[],
-    percentAllocations: BigNumber[],
-    distributorFee: BigNumber,
-  ) {
-    const { hash } = await this.getHash({ splitId })
-    const inputsHash = getSplitHash(
-      accounts,
-      percentAllocations,
-      distributorFee,
-    )
-
-    if (hash !== inputsHash)
-      throw new InvalidHashError(
-        `Hash from accounts, percent allocations, and distributor fee does not match split hash. Split hash: ${hash}, inputs hash: ${inputsHash}`,
       )
   }
 
