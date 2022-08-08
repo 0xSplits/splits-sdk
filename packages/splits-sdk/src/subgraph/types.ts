@@ -22,7 +22,6 @@ export type GqlSplit = {
   controller: Scalars['String']
   newPotentialController: Scalars['String']
   createdBlock: Scalars['Int']
-  latestBlock: Scalars['Int']
 }
 
 export type GqlUser = {

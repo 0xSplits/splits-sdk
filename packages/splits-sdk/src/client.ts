@@ -20,7 +20,12 @@ import {
   UnsupportedChainIdError,
   UnsupportedSubgraphChainIdError,
 } from './errors'
-import { formatSplit, getGraphqlClient, SPLIT_QUERY } from './subgraph'
+import {
+  formatSplit,
+  getGraphqlClient,
+  RELATED_SPLITS_QUERY,
+  SPLIT_QUERY,
+} from './subgraph'
 import type { GqlSplit } from './subgraph/types'
 import type {
   SplitMainType,
@@ -412,6 +417,33 @@ export class SplitsClient {
     )
 
     return formatSplit(response.split)
+  }
+
+  async getRelatedSplits({ address }: { address: string }): Promise<{
+    receivingFrom: Split[]
+    controlling: Split[]
+    pendingControl: Split[]
+  }> {
+    if (!isAddress(address))
+      throw new InvalidArgumentError(`Invalid address: ${address}`)
+
+    const response = await this._makeGqlRequest<{
+      receivingFrom: { split: GqlSplit }[]
+      controlling: GqlSplit[]
+      pendingControl: GqlSplit[]
+    }>(RELATED_SPLITS_QUERY, { accountId: address.toLowerCase() })
+
+    return {
+      receivingFrom: response.receivingFrom.map((recipient) =>
+        formatSplit(recipient.split),
+      ),
+      controlling: response.controlling.map((gqlSplit) =>
+        formatSplit(gqlSplit),
+      ),
+      pendingControl: response.pendingControl.map((gqlSplit) =>
+        formatSplit(gqlSplit),
+      ),
+    }
   }
 
   // Helper functions

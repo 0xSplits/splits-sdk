@@ -81,7 +81,7 @@ const FULL_SPLIT_FIELDS_FRAGMENT = gql`
 
 const formatRecipient = (gqlRecipient: GqlRecipient): SplitRecipient => {
   return {
-    address: gqlRecipient.account.id,
+    address: getAddress(gqlRecipient.account.id),
     percentAllocation: fromBigNumberValue(gqlRecipient.ownership),
   }
 }
@@ -90,14 +90,15 @@ export const formatSplit = (gqlSplit: GqlSplit): Split => {
   return {
     id: getAddress(gqlSplit.id),
     controller:
-      gqlSplit.controller !== AddressZero ? gqlSplit.controller : undefined,
+      gqlSplit.controller !== AddressZero
+        ? getAddress(gqlSplit.controller)
+        : null,
     newPotentialController:
       gqlSplit.newPotentialController !== AddressZero
-        ? gqlSplit.newPotentialController
-        : undefined,
+        ? getAddress(gqlSplit.newPotentialController)
+        : null,
     distributorFeePercent: fromBigNumberValue(gqlSplit.distributorFee),
     createdBlock: gqlSplit.createdBlock,
-    latestBlock: gqlSplit.latestBlock,
     recipients: gqlSplit.recipients.map((gqlRecipient) =>
       formatRecipient(gqlRecipient),
     ),
@@ -107,6 +108,24 @@ export const formatSplit = (gqlSplit: GqlSplit): Split => {
 export const SPLIT_QUERY = gql`
   query split($splitId: ID) {
     split(id: $splitId) {
+      ...FullSplitFieldsFragment
+    }
+  }
+
+  ${FULL_SPLIT_FIELDS_FRAGMENT}
+`
+
+export const RELATED_SPLITS_QUERY = gql`
+  query relatedSplits($accountId: String!) {
+    receivingFrom: recipients(where: { account: $accountId }) {
+      split {
+        ...FullSplitFieldsFragment
+      }
+    }
+    controlling: splits(where: { controller: $accountId }) {
+      ...FullSplitFieldsFragment
+    }
+    pendingControl: splits(where: { newPotentialController: $accountId }) {
       ...FullSplitFieldsFragment
     }
   }

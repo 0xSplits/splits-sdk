@@ -72,10 +72,9 @@ export type UpdateSplitAndDistributeTokenConfig = {
 
 export type Split = {
   id: string
-  controller?: string
-  newPotentialController?: string
+  controller: string | null
+  newPotentialController: string | null
   distributorFeePercent: number
   recipients: SplitRecipient[]
   createdBlock: number
-  latestBlock: number
 }
