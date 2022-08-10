@@ -1,34 +1,12 @@
 import { isAddress } from '@ethersproject/address'
-import { BigNumber } from '@ethersproject/bignumber'
-import { ContractTransaction, Event } from '@ethersproject/contracts'
-import { keccak256 } from '@ethersproject/solidity'
 
-import { MAX_PRECISION_DECIMALS, PERCENTAGE_SCALE } from './constants'
+import { MAX_PRECISION_DECIMALS } from '../constants'
 import {
   InvalidRecipientsError,
   InvalidDistributorFeePercentError,
   InvalidArgumentError,
-} from './errors'
-import type { SplitRecipient } from './types'
-
-export const getRecipientSortedAddressesAndAllocations = (
-  recipients: SplitRecipient[],
-): [string[], BigNumber[]] => {
-  const accounts: string[] = []
-  const percentAllocations: BigNumber[] = []
-
-  recipients
-    .sort((a, b) => {
-      if (a.address.toLowerCase() > b.address.toLowerCase()) return 1
-      return -1
-    })
-    .map((value) => {
-      accounts.push(value.address)
-      percentAllocations.push(getBigNumberValue(value.percentAllocation))
-    })
-
-  return [accounts, percentAllocations]
-}
+} from '../errors'
+import type { SplitRecipient } from '../types'
 
 const getNumDigitsAfterDecimal = (value: number): number => {
   if (Number.isInteger(value)) return 0
@@ -93,27 +71,4 @@ export const validateDistributorFeePercent = (
 export const validateAddress = (address: string): void => {
   if (!isAddress(address))
     throw new InvalidArgumentError(`Invalid address: ${address}`)
-}
-
-export const getBigNumberValue = (value: number): BigNumber => {
-  return BigNumber.from(Math.round(PERCENTAGE_SCALE.toNumber() * value) / 100)
-}
-
-export const fromBigNumberValue = (value: BigNumber | number): number => {
-  const numberVal = value instanceof BigNumber ? value.toNumber() : value
-  return (numberVal * 100) / PERCENTAGE_SCALE.toNumber()
-}
-
-export const getTransactionEvent = async (
-  transaction: ContractTransaction,
-  eventSignature: string,
-): Promise<Event | undefined> => {
-  const receipt = await transaction.wait()
-  if (receipt.status === 1) {
-    const event = receipt.events?.filter(
-      (e) => e.eventSignature === eventSignature,
-    )[0]
-
-    return event
-  }
 }

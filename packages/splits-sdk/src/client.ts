@@ -47,12 +47,14 @@ import type {
 } from './types'
 import {
   getRecipientSortedAddressesAndAllocations,
-  validateDistributorFeePercent,
-  validateRecipients,
   getTransactionEvent,
   getBigNumberValue,
-  validateAddress,
 } from './utils'
+import {
+  validateRecipients,
+  validateDistributorFeePercent,
+  validateAddress,
+} from './utils/validation'
 import type { SplitMain as SplitMainEthereumType } from './typechain/ethereum'
 import type { SplitMain as SplitMainPolygonType } from './typechain/polygon'
 
