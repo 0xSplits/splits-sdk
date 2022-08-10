@@ -162,12 +162,13 @@ export class SplitsClient {
 
   async distributeToken({
     splitId,
-    token = AddressZero,
+    token,
     distributorAddress,
   }: DistributeTokenConfig): Promise<{
     event: Event
   }> {
     validateAddress(splitId)
+    validateAddress(token)
     this._requireSplitMainSigner()
     const distributorPayoutAddress = distributorAddress
       ? distributorAddress
@@ -210,7 +211,7 @@ export class SplitsClient {
 
   async updateSplitAndDistributeToken({
     splitId,
-    token = AddressZero,
+    token,
     recipients,
     distributorFeePercent,
     distributorAddress,
@@ -218,6 +219,7 @@ export class SplitsClient {
     event: Event
   }> {
     validateAddress(splitId)
+    validateAddress(token)
     validateRecipients(recipients)
     validateDistributorFeePercent(distributorFeePercent)
     this._requireSplitMainSigner()

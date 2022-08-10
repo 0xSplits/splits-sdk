@@ -32,7 +32,7 @@ export type UpdateSplitConfig = {
 
 export type DistributeTokenConfig = {
   splitId: string
-  token?: string
+  token: string
   distributorAddress?: string
 }
 
@@ -65,7 +65,7 @@ export type GetSplitBalanceConfig = {
 
 export type UpdateSplitAndDistributeTokenConfig = {
   splitId: string
-  token?: string
+  token: string
   recipients: SplitRecipient[]
   distributorFeePercent: number
   distributorAddress?: string

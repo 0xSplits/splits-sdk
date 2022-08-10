@@ -50,7 +50,7 @@ Outputs: {
 #### **distributeToken**
 Inputs: {
   splitId: string
-  token?: string (default AddressZero)
+  token: string
   distributorAddress?: string (defaults to signer)
 }
 <br>
@@ -61,7 +61,7 @@ Outputs: {
 #### **updateSplitAndDistributeToken**
 Inputs: {
   splitId: string
-  token?: string (defaults to AddressZero)
+  token: string
   recipients: { address: string; percentAllocation: number }[]
   distributorFeePercent: number
   distributorAddress?: string (defaults to signer)
