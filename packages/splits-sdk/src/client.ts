@@ -70,7 +70,6 @@ const splitMainInterfacePolygon = new Interface(SPLIT_MAIN_ABI_POLYGON)
 export class SplitsClient {
   private readonly _chainId: number
   private readonly _provider: Provider | undefined
-  private readonly _signer: Signer | undefined
   private readonly _splitMain: SplitMainType
   private readonly _graphqlClient: GraphQLClient | undefined
 
@@ -91,7 +90,6 @@ export class SplitsClient {
 
     this._chainId = chainId
     this._provider = provider
-    this._signer = signer
     this._graphqlClient = getGraphqlClient(chainId)
   }
 

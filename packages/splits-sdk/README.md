@@ -218,10 +218,14 @@ Outputs: {
 #### **getSplitEarnings**
 Inputs: {
   splitId: string
+  includeActiveBalances?: boolean (defaults true)
 }
 <br>
 Outputs: {
   distributed: {
+    \[token: string\]: BigNumber
+  }
+  activeBalances?: {
     \[token: string\]: BigNumber
   }
 }
