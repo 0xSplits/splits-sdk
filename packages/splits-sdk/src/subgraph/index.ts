@@ -3,7 +3,7 @@ import { BigNumber } from '@ethersproject/bignumber'
 import { AddressZero, One } from '@ethersproject/constants'
 import { GraphQLClient, gql } from 'graphql-request'
 
-import { SUBGRAPH_CHAIN_IDS } from '../constants'
+import { SPLITS_SUBGRAPH_CHAIN_IDS } from '../constants'
 import type { Split, SplitRecipient, TokenBalances } from '../types'
 import { fromBigNumberValue } from '../utils'
 import { GqlRecipient, GqlSplit, GqlTokenBalance } from './types'
@@ -168,7 +168,7 @@ export const ACCOUNT_BALANCES_QUERY = gql`
 export const getGraphqlClient = (
   chainId: number,
 ): GraphQLClient | undefined => {
-  if (!SUBGRAPH_CHAIN_IDS.includes(chainId)) return
+  if (!SPLITS_SUBGRAPH_CHAIN_IDS.includes(chainId)) return
 
   return new GraphQLClient(GQL_ENDPOINTS[chainId])
 }
