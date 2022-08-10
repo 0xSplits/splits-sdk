@@ -1,6 +1,6 @@
 import { isAddress } from '@ethersproject/address'
 
-import { MAX_PRECISION_DECIMALS } from '../constants'
+import { SPLITS_MAX_PRECISION_DECIMALS } from '../constants'
 import {
   InvalidRecipientsError,
   InvalidDistributorFeePercentError,
@@ -33,10 +33,10 @@ export const validateRecipients = (recipients: SplitRecipient[]): void => {
       )
     if (
       getNumDigitsAfterDecimal(recipient.percentAllocation) >
-      MAX_PRECISION_DECIMALS
+      SPLITS_MAX_PRECISION_DECIMALS
     )
       throw new InvalidRecipientsError(
-        `Invalid precision on percent allocation: ${recipient.percentAllocation}. Maxiumum allowed precision is ${MAX_PRECISION_DECIMALS} decimals`,
+        `Invalid precision on percent allocation: ${recipient.percentAllocation}. Maxiumum allowed precision is ${SPLITS_MAX_PRECISION_DECIMALS} decimals`,
       )
 
     seenAddresses.add(recipient.address.toLowerCase())
@@ -45,7 +45,7 @@ export const validateRecipients = (recipients: SplitRecipient[]): void => {
 
   // Cutoff any decimals beyond the max precision, they may get introduced due
   // to javascript floating point precision
-  const factorOfTen = Math.pow(10, MAX_PRECISION_DECIMALS)
+  const factorOfTen = Math.pow(10, SPLITS_MAX_PRECISION_DECIMALS)
   totalPercentAllocation =
     Math.round(totalPercentAllocation * factorOfTen) / factorOfTen
   if (totalPercentAllocation !== 100)
@@ -62,9 +62,12 @@ export const validateDistributorFeePercent = (
       `Invalid distributor fee percent: ${distributorFeePercent}. Distributor fee percent must be >= 0 and <= 10`,
     )
 
-  if (getNumDigitsAfterDecimal(distributorFeePercent) > MAX_PRECISION_DECIMALS)
+  if (
+    getNumDigitsAfterDecimal(distributorFeePercent) >
+    SPLITS_MAX_PRECISION_DECIMALS
+  )
     throw new InvalidDistributorFeePercentError(
-      `Invalid precision on distributor fee: ${distributorFeePercent}. Maxiumum allowed precision is ${MAX_PRECISION_DECIMALS} decimals`,
+      `Invalid precision on distributor fee: ${distributorFeePercent}. Maxiumum allowed precision is ${SPLITS_MAX_PRECISION_DECIMALS} decimals`,
     )
 }
 
