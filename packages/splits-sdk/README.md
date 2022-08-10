@@ -17,7 +17,8 @@ import { SplitsClient } from '@0xsplits/splits-sdk'
 
 const splitsClient = new SplitsClient({
   chainId,
-  signer
+  provider,
+  signer,
 })
 ```
 

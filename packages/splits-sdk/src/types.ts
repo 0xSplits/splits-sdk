@@ -9,7 +9,8 @@ export type SplitMainType = SplitMainEthereumType | SplitMainPolygonType
 
 export type SplitsClientConfig = {
   chainId: number
-  providerOrSigner?: Provider | Signer
+  provider?: Provider
+  signer?: Signer
 }
 
 export type SplitRecipient = {

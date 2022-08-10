@@ -1,8 +1,11 @@
+import { Provider } from '@ethersproject/abstract-provider'
 import { BigNumber } from '@ethersproject/bignumber'
+import { hexZeroPad } from '@ethersproject/bytes'
 import { ContractTransaction, Event } from '@ethersproject/contracts'
 
-import { PERCENTAGE_SCALE } from '../constants'
+import { CHAIN_INFO, PERCENTAGE_SCALE } from '../constants'
 import type { SplitRecipient } from '../types'
+import { ierc20Interface } from './ierc20'
 
 export const getRecipientSortedAddressesAndAllocations = (
   recipients: SplitRecipient[],
@@ -44,4 +47,28 @@ export const getTransactionEvent = async (
 
     return event
   }
+}
+
+export const fetchERC20TransferredTokens = async (
+  chainId: number,
+  provider: Provider,
+  splitId: string,
+): Promise<string[]> => {
+  const tokens = new Set<string>([])
+
+  const transferLogs = await provider.getLogs({
+    topics: [
+      ierc20Interface.getEventTopic('Transfer'),
+      null,
+      hexZeroPad(splitId, 32),
+    ],
+    fromBlock: CHAIN_INFO[chainId].startBlock,
+    toBlock: 'latest',
+  })
+  transferLogs.map((log) => {
+    const erc20Address = log.address
+    tokens.add(erc20Address)
+  })
+
+  return Array.from(tokens)
 }

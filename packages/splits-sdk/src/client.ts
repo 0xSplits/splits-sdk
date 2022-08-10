@@ -1,6 +1,9 @@
 import { Interface } from '@ethersproject/abi'
+import { Provider } from '@ethersproject/abstract-provider'
+import { Signer } from '@ethersproject/abstract-signer'
+import { getAddress } from '@ethersproject/address'
 import { BigNumber } from '@ethersproject/bignumber'
-import { AddressZero } from '@ethersproject/constants'
+import { AddressZero, One } from '@ethersproject/constants'
 import { Contract, Event } from '@ethersproject/contracts'
 import { GraphQLClient, Variables } from 'graphql-request'
 
@@ -49,6 +52,7 @@ import {
   getRecipientSortedAddressesAndAllocations,
   getTransactionEvent,
   getBigNumberValue,
+  fetchERC20TransferredTokens,
 } from './utils'
 import {
   validateRecipients,
@@ -64,24 +68,30 @@ const SPLIT_MAIN_ABI_POLYGON = SPLIT_MAIN_ARTIFACT_POLYGON.abi
 const splitMainInterfacePolygon = new Interface(SPLIT_MAIN_ABI_POLYGON)
 
 export class SplitsClient {
+  private readonly _chainId: number
+  private readonly _provider: Provider | undefined
+  private readonly _signer: Signer | undefined
   private readonly _splitMain: SplitMainType
   private readonly _graphqlClient: GraphQLClient | undefined
 
-  constructor({ chainId, providerOrSigner }: SplitsClientConfig) {
+  constructor({ chainId, provider, signer }: SplitsClientConfig) {
     if (ETHEREUM_CHAIN_IDS.includes(chainId))
       this._splitMain = new Contract(
         SPLIT_MAIN_ADDRESS,
         splitMainInterfaceEthereum,
-        providerOrSigner,
+        signer ?? provider,
       ) as SplitMainEthereumType
     else if (POLYGON_CHAIN_IDS.includes(chainId))
       this._splitMain = new Contract(
         SPLIT_MAIN_ADDRESS,
         splitMainInterfacePolygon,
-        providerOrSigner,
+        signer ?? provider,
       ) as SplitMainPolygonType
     else throw new UnsupportedChainIdError(chainId)
 
+    this._chainId = chainId
+    this._provider = provider
+    this._signer = signer
     this._graphqlClient = getGraphqlClient(chainId)
   }
 
@@ -474,10 +484,21 @@ export class SplitsClient {
     }
   }
 
-  async getSplitEarnings({ splitId }: { splitId: string }): Promise<{
+  async getSplitEarnings({
+    splitId,
+    includeActiveBalances = true,
+  }: {
+    splitId: string
+    includeActiveBalances: boolean
+  }): Promise<{
+    activeBalances?: TokenBalances
     distributed: TokenBalances
   }> {
     validateAddress(splitId)
+    if (includeActiveBalances && !this._provider)
+      throw new MissingProviderError(
+        'Provider required to get split active balances. Please update your call to the SplitsClient constructor with a valid provider, or set includeActiveBalances to false',
+      )
 
     const response = await this._makeGqlRequest<{
       accountBalances: GqlAccountBalances
@@ -489,7 +510,43 @@ export class SplitsClient {
       response.accountBalances.withdrawals,
     )
 
+    if (!includeActiveBalances)
+      return {
+        distributed,
+      }
+
+    const internalBalances = formatAccountBalances(
+      response.accountBalances.internalBalances,
+    )
+    const internalTokens = Object.keys(internalBalances)
+
+    // TODO: how to get rid of this if statement? typescript is complaining without it
+    const erc20Tokens = this._provider
+      ? await fetchERC20TransferredTokens(
+          this._chainId,
+          this._provider,
+          splitId,
+        )
+      : []
+
+    const tokens = Array.from(
+      new Set(internalTokens.concat(erc20Tokens).concat([AddressZero])),
+    )
+
+    const activeBalances = (
+      await Promise.all(
+        tokens.map((token) => this.getSplitBalance({ splitId, token })),
+      )
+    ).reduce((acc, balanceDict, index) => {
+      const balance = balanceDict.balance
+      const token = getAddress(tokens[index])
+
+      if (balance > One) acc[token] = balance
+      return acc
+    }, {} as TokenBalances)
+
     return {
+      activeBalances,
       distributed,
     }
   }
@@ -517,14 +574,14 @@ export class SplitsClient {
   }
 
   // Helper functions
-  private async _requireSplitMain() {
+  private _requireSplitMain() {
     if (!this._splitMain)
       throw new MissingProviderError(
         'Provider required to perform this action, please update your call to the SplitsClient constructor',
       )
   }
 
-  private async _requireSplitMainSigner() {
+  private _requireSplitMainSigner() {
     if (!this._splitMain?.signer)
       throw new MissingSignerError(
         'Signer required to perform this action, please update your call to the SplitsClient constructor',

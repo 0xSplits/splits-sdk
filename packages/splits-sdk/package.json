@@ -17,6 +17,7 @@
   "publishConfig": {
     "access": "public"
   },
+  "funding": "https://app.0xsplits.xyz/accounts/0xF8843981e7846945960f53243cA2Fd42a579f719/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/0xSplits/splits-sdk.git"
