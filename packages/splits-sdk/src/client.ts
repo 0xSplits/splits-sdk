@@ -584,13 +584,14 @@ export class SplitsClient {
 
   // Helper functions
   private _requireSplitMain() {
-    if (!this._splitMain)
+    if (!this._splitMain.provider)
       throw new MissingProviderError(
         'Provider required to perform this action, please update your call to the SplitsClient constructor',
       )
   }
 
   private _requireSigner() {
+    this._requireSplitMain()
     if (!this._signer)
       throw new MissingSignerError(
         'Signer required to perform this action, please update your call to the SplitsClient constructor',
