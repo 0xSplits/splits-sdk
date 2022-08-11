@@ -1,5 +1,4 @@
 import { Interface } from '@ethersproject/abi'
-import { Provider } from '@ethersproject/abstract-provider'
 import { getAddress } from '@ethersproject/address'
 import { BigNumber } from '@ethersproject/bignumber'
 import { AddressZero, One } from '@ethersproject/constants'
@@ -60,6 +59,9 @@ import {
 } from './utils/validation'
 import type { SplitMain as SplitMainEthereumType } from './typechain/ethereum'
 import type { SplitMain as SplitMainPolygonType } from './typechain/polygon'
+import { Signer } from '@ethersproject/abstract-signer'
+
+const MISSING_SIGNER = ''
 
 const SPLIT_MAIN_ABI_ETHEREUM = SPLIT_MAIN_ARTIFACT_ETHEREUM.abi
 const splitMainInterfaceEthereum = new Interface(SPLIT_MAIN_ABI_ETHEREUM)
@@ -68,7 +70,8 @@ const splitMainInterfacePolygon = new Interface(SPLIT_MAIN_ABI_POLYGON)
 
 export class SplitsClient {
   private readonly _chainId: number
-  private readonly _provider: Provider | undefined
+  // TODO: something better we can do here to handle typescript check for missing signer?
+  private readonly _signer: Signer | typeof MISSING_SIGNER
   private readonly _splitMain: SplitMainType
   private readonly _graphqlClient: GraphQLClient | undefined
 
@@ -77,18 +80,18 @@ export class SplitsClient {
       this._splitMain = new Contract(
         SPLIT_MAIN_ADDRESS,
         splitMainInterfaceEthereum,
-        signer ?? provider,
+        provider,
       ) as SplitMainEthereumType
     else if (POLYGON_CHAIN_IDS.includes(chainId))
       this._splitMain = new Contract(
         SPLIT_MAIN_ADDRESS,
         splitMainInterfacePolygon,
-        signer ?? provider,
+        provider,
       ) as SplitMainPolygonType
     else throw new UnsupportedChainIdError(chainId)
 
     this._chainId = chainId
-    this._provider = provider
+    this._signer = signer ?? MISSING_SIGNER
     this._graphqlClient = getGraphqlClient(chainId)
   }
 
@@ -103,18 +106,15 @@ export class SplitsClient {
   }> {
     validateRecipients(recipients)
     validateDistributorFeePercent(distributorFeePercent)
-    this._requireSplitMainSigner()
+    this._requireSigner()
 
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
     const distributorFee = getBigNumberValue(distributorFeePercent)
 
-    const createSplitTx = await this._splitMain.createSplit(
-      accounts,
-      percentAllocations,
-      distributorFee,
-      controller,
-    )
+    const createSplitTx = await this._splitMain
+      .connect(this._signer)
+      .createSplit(accounts, percentAllocations, distributorFee, controller)
     const event = await getTransactionEvent(
       createSplitTx,
       this._splitMain.interface.getEvent('CreateSplit').format(),
@@ -138,19 +138,16 @@ export class SplitsClient {
     validateAddress(splitId)
     validateRecipients(recipients)
     validateDistributorFeePercent(distributorFeePercent)
-    this._requireSplitMainSigner()
+    this._requireSigner()
     await this._requireController(splitId)
 
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
     const distributorFee = getBigNumberValue(distributorFeePercent)
 
-    const updateSplitTx = await this._splitMain.updateSplit(
-      splitId,
-      accounts,
-      percentAllocations,
-      distributorFee,
-    )
+    const updateSplitTx = await this._splitMain
+      .connect(this._signer)
+      .updateSplit(splitId, accounts, percentAllocations, distributorFee)
     const event = await getTransactionEvent(
       updateSplitTx,
       this._splitMain.interface.getEvent('UpdateSplit').format(),
@@ -169,10 +166,13 @@ export class SplitsClient {
   }> {
     validateAddress(splitId)
     validateAddress(token)
-    this._requireSplitMainSigner()
+    this._requireSigner()
+    // TODO: how to remove this, needed for typescript check right now
+    if (!this._signer) throw new Error()
+
     const distributorPayoutAddress = distributorAddress
       ? distributorAddress
-      : await this._splitMain.signer.getAddress()
+      : await this._signer.getAddress()
     validateAddress(distributorPayoutAddress)
 
     // TO DO: handle bad split id/no metadata found
@@ -184,21 +184,25 @@ export class SplitsClient {
     const distributorFee = getBigNumberValue(distributorFeePercent)
 
     const distributeTokenTx = await (token === AddressZero
-      ? this._splitMain.distributeETH(
-          splitId,
-          accounts,
-          percentAllocations,
-          distributorFee,
-          distributorPayoutAddress,
-        )
-      : this._splitMain.distributeERC20(
-          splitId,
-          token,
-          accounts,
-          percentAllocations,
-          distributorFee,
-          distributorPayoutAddress,
-        ))
+      ? this._splitMain
+          .connect(this._signer)
+          .distributeETH(
+            splitId,
+            accounts,
+            percentAllocations,
+            distributorFee,
+            distributorPayoutAddress,
+          )
+      : this._splitMain
+          .connect(this._signer)
+          .distributeERC20(
+            splitId,
+            token,
+            accounts,
+            percentAllocations,
+            distributorFee,
+            distributorPayoutAddress,
+          ))
     const eventSignature =
       token === AddressZero
         ? this._splitMain.interface.getEvent('DistributeETH').format()
@@ -222,32 +226,39 @@ export class SplitsClient {
     validateAddress(token)
     validateRecipients(recipients)
     validateDistributorFeePercent(distributorFeePercent)
-    this._requireSplitMainSigner()
+    this._requireSigner()
     await this._requireController(splitId)
+
+    // TODO: how to remove this, needed for typescript check right now
+    if (!this._signer) throw new Error()
 
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
     const distributorFee = getBigNumberValue(distributorFeePercent)
     const distributorPayoutAddress = distributorAddress
       ? distributorAddress
-      : await this._splitMain.signer.getAddress()
+      : await this._signer.getAddress()
 
     const updateAndDistributeTx = await (token === AddressZero
-      ? this._splitMain.updateAndDistributeETH(
-          splitId,
-          accounts,
-          percentAllocations,
-          distributorFee,
-          distributorPayoutAddress,
-        )
-      : this._splitMain.updateAndDistributeERC20(
-          splitId,
-          token,
-          accounts,
-          percentAllocations,
-          distributorFee,
-          distributorPayoutAddress,
-        ))
+      ? this._splitMain
+          .connect(this._signer)
+          .updateAndDistributeETH(
+            splitId,
+            accounts,
+            percentAllocations,
+            distributorFee,
+            distributorPayoutAddress,
+          )
+      : this._splitMain
+          .connect(this._signer)
+          .updateAndDistributeERC20(
+            splitId,
+            token,
+            accounts,
+            percentAllocations,
+            distributorFee,
+            distributorPayoutAddress,
+          ))
     const eventSignature =
       token === AddressZero
         ? this._splitMain.interface.getEvent('DistributeETH').format()
@@ -265,16 +276,14 @@ export class SplitsClient {
     event: Event
   }> {
     validateAddress(address)
-    this._requireSplitMainSigner()
+    this._requireSigner()
 
     const withdrawEth = tokens.includes(AddressZero) ? 1 : 0
     const erc20s = tokens.filter((token) => token !== AddressZero)
 
-    const withdrawTx = await this._splitMain.withdraw(
-      address,
-      withdrawEth,
-      erc20s,
-    )
+    const withdrawTx = await this._splitMain
+      .connect(this._signer)
+      .withdraw(address, withdrawEth, erc20s)
     const event = await getTransactionEvent(
       withdrawTx,
       this._splitMain.interface.getEvent('Withdrawal').format(),
@@ -291,13 +300,12 @@ export class SplitsClient {
     event: Event
   }> {
     validateAddress(splitId)
-    this._requireSplitMainSigner()
+    this._requireSigner()
     await this._requireController(splitId)
 
-    const transferSplitTx = await this._splitMain.transferControl(
-      splitId,
-      newController,
-    )
+    const transferSplitTx = await this._splitMain
+      .connect(this._signer)
+      .transferControl(splitId, newController)
     const event = await getTransactionEvent(
       transferSplitTx,
       this._splitMain.interface.getEvent('InitiateControlTransfer').format(),
@@ -313,12 +321,12 @@ export class SplitsClient {
     event: Event
   }> {
     validateAddress(splitId)
-    this._requireSplitMainSigner()
+    this._requireSigner()
     await this._requireController(splitId)
 
-    const cancelTransferSplitTx = await this._splitMain.cancelControlTransfer(
-      splitId,
-    )
+    const cancelTransferSplitTx = await this._splitMain
+      .connect(this._signer)
+      .cancelControlTransfer(splitId)
     const event = await getTransactionEvent(
       cancelTransferSplitTx,
       this._splitMain.interface.getEvent('CancelControlTransfer').format(),
@@ -334,10 +342,12 @@ export class SplitsClient {
     event: Event
   }> {
     validateAddress(splitId)
-    this._requireSplitMainSigner()
+    this._requireSigner()
     await this._requireNewPotentialController(splitId)
 
-    const acceptTransferSplitTx = await this._splitMain.acceptControl(splitId)
+    const acceptTransferSplitTx = await this._splitMain
+      .connect(this._signer)
+      .acceptControl(splitId)
     const event = await getTransactionEvent(
       acceptTransferSplitTx,
       this._splitMain.interface.getEvent('ControlTransfer').format(),
@@ -351,12 +361,12 @@ export class SplitsClient {
     event: Event
   }> {
     validateAddress(splitId)
-    this._requireSplitMainSigner()
+    this._requireSigner()
     await this._requireController(splitId)
 
-    const makeSplitImmutableTx = await this._splitMain.makeSplitImmutable(
-      splitId,
-    )
+    const makeSplitImmutableTx = await this._splitMain
+      .connect(this._signer)
+      .makeSplitImmutable(splitId)
     const event = await getTransactionEvent(
       makeSplitImmutableTx,
       this._splitMain.interface.getEvent('ControlTransfer').format(),
@@ -488,13 +498,13 @@ export class SplitsClient {
     includeActiveBalances = true,
   }: {
     splitId: string
-    includeActiveBalances: boolean
+    includeActiveBalances?: boolean
   }): Promise<{
     activeBalances?: TokenBalances
     distributed: TokenBalances
   }> {
     validateAddress(splitId)
-    if (includeActiveBalances && !this._provider)
+    if (includeActiveBalances && !this._splitMain.provider)
       throw new MissingProviderError(
         'Provider required to get split active balances. Please update your call to the SplitsClient constructor with a valid provider, or set includeActiveBalances to false',
       )
@@ -520,10 +530,10 @@ export class SplitsClient {
     const internalTokens = Object.keys(internalBalances)
 
     // TODO: how to get rid of this if statement? typescript is complaining without it
-    const erc20Tokens = this._provider
+    const erc20Tokens = this._splitMain.provider
       ? await fetchERC20TransferredTokens(
           this._chainId,
-          this._provider,
+          this._splitMain.provider,
           splitId,
         )
       : []
@@ -580,8 +590,8 @@ export class SplitsClient {
       )
   }
 
-  private _requireSplitMainSigner() {
-    if (!this._splitMain?.signer)
+  private _requireSigner() {
+    if (!this._signer)
       throw new MissingSignerError(
         'Signer required to perform this action, please update your call to the SplitsClient constructor',
       )
@@ -589,11 +599,14 @@ export class SplitsClient {
 
   private async _requireController(splitId: string) {
     const { controller } = await this.getController({ splitId })
-    const signerAddress = await this._splitMain.signer.getAddress()
+    // TODO: how to get rid of this, needed for typescript check
+    if (!this._signer) throw new Error()
+
+    const signerAddress = await this._signer.getAddress()
 
     if (controller !== signerAddress)
       throw new InvalidAuthError(
-        `Action only available to the split controller. Split controller: ${controller}. Signer: ${signerAddress}`,
+        `Action only available to the split controller. Split id: ${splitId}, split controller: ${controller}, signer: ${signerAddress}`,
       )
   }
 
