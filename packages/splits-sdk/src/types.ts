@@ -11,11 +11,13 @@ export type SplitsClientConfig = {
   chainId: number
   provider?: Provider
   signer?: Signer
+  includeEnsNames?: boolean
 }
 
 export type SplitRecipient = {
   address: string
   percentAllocation: number
+  ensName?: string
 }
 
 export type CreateSplitConfig = {

@@ -1,11 +1,17 @@
 import { Provider } from '@ethersproject/abstract-provider'
 import { BigNumber } from '@ethersproject/bignumber'
 import { hexZeroPad } from '@ethersproject/bytes'
-import { ContractTransaction, Event } from '@ethersproject/contracts'
+import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
+import { nameprep } from '@ethersproject/strings'
 
-import { CHAIN_INFO, PERCENTAGE_SCALE } from '../constants'
+import {
+  CHAIN_INFO,
+  PERCENTAGE_SCALE,
+  REVERSE_RECORDS_ADDRESS,
+} from '../constants'
 import type { SplitRecipient } from '../types'
 import { ierc20Interface } from './ierc20'
+import { reverseRecordsInterface } from './reverseRecords'
 
 export const getRecipientSortedAddressesAndAllocations = (
   recipients: SplitRecipient[],
@@ -71,4 +77,23 @@ export const fetchERC20TransferredTokens = async (
   })
 
   return Array.from(tokens)
+}
+
+export const addEnsNames = async (
+  provider: Provider,
+  recipients: SplitRecipient[],
+): Promise<void> => {
+  const reverseRecords = new Contract(
+    REVERSE_RECORDS_ADDRESS,
+    reverseRecordsInterface,
+    provider,
+  )
+
+  const addresses = recipients.map((recipient) => recipient.address)
+  const allNames: string[] = await reverseRecords.getNames(addresses)
+  allNames.map((ens, index) => {
+    if (ens && nameprep(ens)) {
+      recipients[index].ensName = ens
+    }
+  })
 }

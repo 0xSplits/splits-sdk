@@ -50,3 +50,7 @@ export class MissingProviderError extends Error {
 export class MissingSignerError extends Error {
   name = 'MissingSignerError'
 }
+
+export class InvalidConfigError extends Error {
+  name = 'InvalidConfigError'
+}

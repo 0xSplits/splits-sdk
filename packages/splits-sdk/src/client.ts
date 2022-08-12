@@ -14,6 +14,7 @@ import {
 } from './constants'
 import {
   InvalidAuthError,
+  InvalidConfigError,
   MissingProviderError,
   MissingSignerError,
   TransactionFailedError,
@@ -23,8 +24,8 @@ import {
 import {
   ACCOUNT_BALANCES_QUERY,
   formatAccountBalances,
-  formatSplit,
   getGraphqlClient,
+  protectedFormatSplit,
   RELATED_SPLITS_QUERY,
   SPLIT_QUERY,
 } from './subgraph'
@@ -51,6 +52,7 @@ import {
   getTransactionEvent,
   getBigNumberValue,
   fetchERC20TransferredTokens,
+  addEnsNames,
 } from './utils'
 import {
   validateRecipients,
@@ -74,8 +76,19 @@ export class SplitsClient {
   private readonly _signer: Signer | typeof MISSING_SIGNER
   private readonly _splitMain: SplitMainType
   private readonly _graphqlClient: GraphQLClient | undefined
+  private readonly _includeEnsNames: boolean
 
-  constructor({ chainId, provider, signer }: SplitsClientConfig) {
+  constructor({
+    chainId,
+    provider,
+    signer,
+    includeEnsNames = false,
+  }: SplitsClientConfig) {
+    if (includeEnsNames && !provider)
+      throw new InvalidConfigError(
+        'Must include a provider if includeEnsNames is set to true',
+      )
+
     if (ETHEREUM_CHAIN_IDS.includes(chainId))
       this._splitMain = new Contract(
         SPLIT_MAIN_ADDRESS,
@@ -93,6 +106,7 @@ export class SplitsClient {
     this._chainId = chainId
     this._signer = signer ?? MISSING_SIGNER
     this._graphqlClient = getGraphqlClient(chainId)
+    this._includeEnsNames = includeEnsNames
   }
 
   // Write actions
@@ -464,7 +478,7 @@ export class SplitsClient {
       },
     )
 
-    return formatSplit(response.split)
+    return await this._formatSplit(response.split)
   }
 
   async getRelatedSplits({ address }: { address: string }): Promise<{
@@ -480,16 +494,28 @@ export class SplitsClient {
       pendingControl: GqlSplit[]
     }>(RELATED_SPLITS_QUERY, { accountId: address.toLowerCase() })
 
+    const [receivingFrom, controlling, pendingControl] = await Promise.all([
+      Promise.all(
+        response.receivingFrom.map(
+          async (recipient) => await this._formatSplit(recipient.split),
+        ),
+      ),
+      Promise.all(
+        response.controlling.map(
+          async (gqlSplit) => await this._formatSplit(gqlSplit),
+        ),
+      ),
+      Promise.all(
+        response.pendingControl.map(
+          async (gqlSplit) => await this._formatSplit(gqlSplit),
+        ),
+      ),
+    ])
+
     return {
-      receivingFrom: response.receivingFrom.map((recipient) =>
-        formatSplit(recipient.split),
-      ),
-      controlling: response.controlling.map((gqlSplit) =>
-        formatSplit(gqlSplit),
-      ),
-      pendingControl: response.pendingControl.map((gqlSplit) =>
-        formatSplit(gqlSplit),
-      ),
+      receivingFrom,
+      controlling,
+      pendingControl,
     }
   }
 
@@ -634,5 +660,14 @@ export class SplitsClient {
     // TODO: any error handling? need to add try/catch if so
     const result = await this._graphqlClient.request(query, variables)
     return result
+  }
+
+  private async _formatSplit(gqlSplit: GqlSplit): Promise<Split> {
+    const split = protectedFormatSplit(gqlSplit)
+    if (this._includeEnsNames) {
+      await addEnsNames(this._splitMain.provider, split.recipients)
+    }
+
+    return split
   }
 }

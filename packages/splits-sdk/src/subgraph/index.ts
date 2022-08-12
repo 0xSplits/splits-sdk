@@ -96,7 +96,8 @@ const formatRecipient = (gqlRecipient: GqlRecipient): SplitRecipient => {
   }
 }
 
-export const formatSplit = (gqlSplit: GqlSplit): Split => {
+// Should only be called by _formatSplit on SplitsClient
+export const protectedFormatSplit = (gqlSplit: GqlSplit): Split => {
   return {
     id: getAddress(gqlSplit.id),
     controller:
