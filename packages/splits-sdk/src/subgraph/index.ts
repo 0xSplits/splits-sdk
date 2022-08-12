@@ -109,9 +109,11 @@ export const formatSplit = (gqlSplit: GqlSplit): Split => {
         : null,
     distributorFeePercent: fromBigNumberValue(gqlSplit.distributorFee),
     createdBlock: gqlSplit.createdBlock,
-    recipients: gqlSplit.recipients.map((gqlRecipient) =>
-      formatRecipient(gqlRecipient),
-    ),
+    recipients: gqlSplit.recipients
+      .map((gqlRecipient) => formatRecipient(gqlRecipient))
+      .sort((a, b) => {
+        return b.percentAllocation - a.percentAllocation
+      }),
   }
 }
 
