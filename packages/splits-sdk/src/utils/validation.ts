@@ -18,6 +18,8 @@ const getNumDigitsAfterDecimal = (value: number): number => {
 export const validateRecipients = (recipients: SplitRecipient[]): void => {
   const seenAddresses = new Set<string>([])
   let totalPercentAllocation = 0
+  if (recipients.length < 2)
+    throw new InvalidRecipientsError('At least two recipients are required')
 
   recipients.forEach((recipient) => {
     if (!isAddress(recipient.address))
