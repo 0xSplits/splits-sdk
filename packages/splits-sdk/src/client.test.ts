@@ -2,7 +2,6 @@ import { Provider } from '@ethersproject/abstract-provider'
 import { Signer } from '@ethersproject/abstract-signer'
 import { BigNumber } from '@ethersproject/bignumber'
 import { AddressZero } from '@ethersproject/constants'
-import { Contract } from '@ethersproject/contracts'
 import type { Event } from '@ethersproject/contracts'
 
 import { SplitsClient } from './client'
@@ -31,6 +30,12 @@ const mockCreateSplit = jest.fn().mockReturnValue('create_split_tx')
 const mockUpdateSplit = jest.fn().mockReturnValue('update_split_tx')
 const mockDistributeEth = jest.fn().mockReturnValue('distribute_eth_tx')
 const mockDistributeErc20 = jest.fn().mockReturnValue('distribute_erc20_tx')
+const mockUpdateAndDistributeEth = jest
+  .fn()
+  .mockReturnValue('update_and_distribute_eth_tx')
+const mockUpdateAndDistributeErc20 = jest
+  .fn()
+  .mockReturnValue('update_and_distribute_erc20_tx')
 
 class MockContract {
   provider: Provider
@@ -60,6 +65,8 @@ class MockContract {
       updateSplit: mockUpdateSplit,
       distributeETH: mockDistributeEth,
       distributeERC20: mockDistributeErc20,
+      updateAndDistributeETH: mockUpdateAndDistributeEth,
+      updateAndDistributeERC20: mockUpdateAndDistributeErc20,
     }
   }
 
@@ -90,14 +97,16 @@ const getTransactionEventSpy = jest
     } as unknown as Event
     return event
   })
-jest
+const getSortedRecipientsMock = jest
   .spyOn(utils, 'getRecipientSortedAddressesAndAllocations')
   .mockImplementation(() => {
     return [SORTED_ADDRESSES, SORTED_ALLOCATIONS]
   })
-jest.spyOn(utils, 'getBigNumberValue').mockImplementation(() => {
-  return DISTRIBUTOR_FEE
-})
+const getBigNumberMock = jest
+  .spyOn(utils, 'getBigNumberValue')
+  .mockImplementation(() => {
+    return DISTRIBUTOR_FEE
+  })
 
 const mockProvider = jest.fn<Provider, unknown[]>()
 const mockSigner = jest.fn<Signer, unknown[]>(() => {
@@ -156,16 +165,26 @@ describe('SplitMain writes', () => {
     ;(validateDistributorFeePercent as jest.Mock).mockClear()
     ;(validateAddress as jest.Mock).mockClear()
     getTransactionEventSpy.mockClear()
+    getSortedRecipientsMock.mockClear()
+    getBigNumberMock.mockClear()
 
     expect(validateRecipients).not.toBeCalled()
     expect(validateDistributorFeePercent).not.toBeCalled()
     expect(validateAddress).not.toBeCalled()
     expect(getTransactionEventSpy).not.toBeCalled()
+    expect(getSortedRecipientsMock).not.toBeCalled()
+    expect(getBigNumberMock).not.toBeCalled()
   })
 
   describe('Create split tests', () => {
     const recipients = [{ address: '0xuser', percentAllocation: 45 }]
     const distributorFeePercent = 7.35
+
+    beforeEach(() => {
+      mockCreateSplit.mockClear()
+
+      expect(mockCreateSplit).not.toBeCalled()
+    })
 
     test('Create split fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
@@ -208,6 +227,8 @@ describe('SplitMain writes', () => {
       expect(validateDistributorFeePercent).toBeCalledWith(
         distributorFeePercent,
       )
+      expect(getSortedRecipientsMock).toBeCalledWith(recipients)
+      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
       expect(mockCreateSplit).toBeCalledWith(
         SORTED_ADDRESSES,
         SORTED_ALLOCATIONS,
@@ -234,6 +255,8 @@ describe('SplitMain writes', () => {
       expect(validateDistributorFeePercent).toBeCalledWith(
         distributorFeePercent,
       )
+      expect(getSortedRecipientsMock).toBeCalledWith(recipients)
+      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
       expect(mockCreateSplit).toBeCalledWith(
         SORTED_ADDRESSES,
         SORTED_ALLOCATIONS,
@@ -251,6 +274,12 @@ describe('SplitMain writes', () => {
     const recipients = [{ address: '0xhey', percentAllocation: 12 }]
     const distributorFeePercent = 9
     const splitId = '0xupdate'
+
+    beforeEach(() => {
+      mockUpdateSplit.mockClear()
+
+      expect(mockUpdateSplit).not.toBeCalled()
+    })
 
     test('Update split fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
@@ -314,6 +343,8 @@ describe('SplitMain writes', () => {
       expect(validateDistributorFeePercent).toBeCalledWith(
         distributorFeePercent,
       )
+      expect(getSortedRecipientsMock).toBeCalledWith(recipients)
+      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
       expect(mockUpdateSplit).toBeCalledWith(
         splitId,
         SORTED_ADDRESSES,
@@ -341,6 +372,11 @@ describe('SplitMain writes', () => {
             distributorFeePercent,
           } as Split
         })
+      mockDistributeEth.mockClear()
+      mockDistributeErc20.mockClear()
+
+      expect(mockDistributeEth).not.toBeCalled()
+      expect(mockDistributeErc20).not.toBeCalled()
     })
 
     test('Distribute token fails with no provider', async () => {
@@ -382,6 +418,8 @@ describe('SplitMain writes', () => {
       expect(validateAddress).toBeCalledWith(splitId)
       expect(validateAddress).toBeCalledWith(AddressZero)
       expect(validateAddress).toBeCalledWith(CONTROLLER_ADDRESS)
+      expect(getSortedRecipientsMock).toBeCalledWith(recipients)
+      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
       expect(mockDistributeEth).toBeCalledWith(
         splitId,
         SORTED_ADDRESSES,
@@ -406,6 +444,8 @@ describe('SplitMain writes', () => {
       expect(validateAddress).toBeCalledWith(splitId)
       expect(validateAddress).toBeCalledWith(token)
       expect(validateAddress).toBeCalledWith(CONTROLLER_ADDRESS)
+      expect(getSortedRecipientsMock).toBeCalledWith(recipients)
+      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
       expect(mockDistributeErc20).toBeCalledWith(
         splitId,
         token,
@@ -432,6 +472,8 @@ describe('SplitMain writes', () => {
       expect(validateAddress).toBeCalledWith(splitId)
       expect(validateAddress).toBeCalledWith(AddressZero)
       expect(validateAddress).toBeCalledWith(distributorAddress)
+      expect(getSortedRecipientsMock).toBeCalledWith(recipients)
+      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
       expect(mockDistributeEth).toBeCalledWith(
         splitId,
         SORTED_ADDRESSES,
@@ -458,6 +500,8 @@ describe('SplitMain writes', () => {
       expect(validateAddress).toBeCalledWith(splitId)
       expect(validateAddress).toBeCalledWith(token)
       expect(validateAddress).toBeCalledWith(distributorAddress)
+      expect(getSortedRecipientsMock).toBeCalledWith(recipients)
+      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
       expect(mockDistributeErc20).toBeCalledWith(
         splitId,
         token,
@@ -468,6 +512,204 @@ describe('SplitMain writes', () => {
       )
       expect(getTransactionEventSpy).toBeCalledWith(
         'distribute_erc20_tx',
+        'format_DistributeERC20',
+      )
+    })
+  })
+
+  describe('Update and distribute tests', () => {
+    const splitId = '0xupdateanddisribute'
+    const recipients = [{ address: '0x829', percentAllocation: 71 }]
+    const distributorFeePercent = 4
+
+    beforeEach(() => {
+      mockUpdateAndDistributeEth.mockClear()
+      mockUpdateAndDistributeErc20.mockClear()
+
+      expect(mockUpdateAndDistributeEth).not.toBeCalled()
+      expect(mockUpdateAndDistributeErc20).not.toBeCalled()
+    })
+
+    test('Update and distribute fails with no provider', async () => {
+      const badSplitsClient = new SplitsClient({
+        chainId: 1,
+      })
+
+      await expect(
+        async () =>
+          await badSplitsClient.updateSplitAndDistributeToken({
+            splitId,
+            recipients,
+            distributorFeePercent,
+            token: AddressZero,
+          }),
+      ).rejects.toThrow(MissingProviderError)
+    })
+
+    test('Update and distribute fails with no signer', async () => {
+      const badSplitsClient = new SplitsClient({
+        chainId: 1,
+        provider,
+      })
+
+      await expect(
+        async () =>
+          await badSplitsClient.updateSplitAndDistributeToken({
+            splitId,
+            recipients,
+            distributorFeePercent,
+            token: AddressZero,
+          }),
+      ).rejects.toThrow(MissingSignerError)
+    })
+
+    test('Update and distribute fails from non controller', async () => {
+      const nonControllerSigner = new mockSignerNonController()
+      const badSplitsClient = new SplitsClient({
+        chainId: 1,
+        provider,
+        signer: nonControllerSigner,
+      })
+
+      await expect(
+        async () =>
+          await badSplitsClient.updateSplitAndDistributeToken({
+            splitId,
+            recipients,
+            distributorFeePercent,
+            token: AddressZero,
+          }),
+      ).rejects.toThrow(InvalidAuthError)
+    })
+
+    test('Update and distribute eth passes', async () => {
+      const { event } = await splitsClient.updateSplitAndDistributeToken({
+        splitId,
+        recipients,
+        distributorFeePercent,
+        token: AddressZero,
+      })
+
+      expect(event.blockNumber).toEqual(12345)
+      expect(validateAddress).toBeCalledWith(splitId)
+      expect(validateAddress).toBeCalledWith(AddressZero)
+      expect(validateAddress).toBeCalledWith(CONTROLLER_ADDRESS)
+      expect(validateRecipients).toBeCalledWith(recipients)
+      expect(validateDistributorFeePercent).toBeCalledWith(
+        distributorFeePercent,
+      )
+      expect(getSortedRecipientsMock).toBeCalledWith(recipients)
+      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
+      expect(mockUpdateAndDistributeEth).toBeCalledWith(
+        splitId,
+        SORTED_ADDRESSES,
+        SORTED_ALLOCATIONS,
+        DISTRIBUTOR_FEE,
+        CONTROLLER_ADDRESS,
+      )
+      expect(getTransactionEventSpy).toBeCalledWith(
+        'update_and_distribute_eth_tx',
+        'format_DistributeETH',
+      )
+    })
+
+    test('Update and distribute erc20 passes', async () => {
+      const token = '0xtoken'
+      const { event } = await splitsClient.updateSplitAndDistributeToken({
+        splitId,
+        recipients,
+        distributorFeePercent,
+        token,
+      })
+
+      expect(event.blockNumber).toEqual(12345)
+      expect(validateAddress).toBeCalledWith(splitId)
+      expect(validateAddress).toBeCalledWith(token)
+      expect(validateAddress).toBeCalledWith(CONTROLLER_ADDRESS)
+      expect(validateRecipients).toBeCalledWith(recipients)
+      expect(validateDistributorFeePercent).toBeCalledWith(
+        distributorFeePercent,
+      )
+      expect(getSortedRecipientsMock).toBeCalledWith(recipients)
+      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
+      expect(mockUpdateAndDistributeErc20).toBeCalledWith(
+        splitId,
+        token,
+        SORTED_ADDRESSES,
+        SORTED_ALLOCATIONS,
+        DISTRIBUTOR_FEE,
+        CONTROLLER_ADDRESS,
+      )
+      expect(getTransactionEventSpy).toBeCalledWith(
+        'update_and_distribute_erc20_tx',
+        'format_DistributeERC20',
+      )
+    })
+
+    test('Update and distribute eth to payout address passes', async () => {
+      const distributorAddress = '0xupdateDistributor'
+      const { event } = await splitsClient.updateSplitAndDistributeToken({
+        splitId,
+        recipients,
+        distributorFeePercent,
+        token: AddressZero,
+        distributorAddress,
+      })
+
+      expect(event.blockNumber).toEqual(12345)
+      expect(validateAddress).toBeCalledWith(splitId)
+      expect(validateAddress).toBeCalledWith(AddressZero)
+      expect(validateAddress).toBeCalledWith(distributorAddress)
+      expect(validateRecipients).toBeCalledWith(recipients)
+      expect(validateDistributorFeePercent).toBeCalledWith(
+        distributorFeePercent,
+      )
+      expect(getSortedRecipientsMock).toBeCalledWith(recipients)
+      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
+      expect(mockUpdateAndDistributeEth).toBeCalledWith(
+        splitId,
+        SORTED_ADDRESSES,
+        SORTED_ALLOCATIONS,
+        DISTRIBUTOR_FEE,
+        distributorAddress,
+      )
+      expect(getTransactionEventSpy).toBeCalledWith(
+        'update_and_distribute_eth_tx',
+        'format_DistributeETH',
+      )
+    })
+
+    test('Update and distribute erc20 to payout address passes', async () => {
+      const token = '0xtoken'
+      const distributorAddress = '0xupdateDistributor'
+      const { event } = await splitsClient.updateSplitAndDistributeToken({
+        splitId,
+        recipients,
+        distributorFeePercent,
+        token,
+        distributorAddress,
+      })
+
+      expect(event.blockNumber).toEqual(12345)
+      expect(validateAddress).toBeCalledWith(splitId)
+      expect(validateAddress).toBeCalledWith(token)
+      expect(validateAddress).toBeCalledWith(distributorAddress)
+      expect(validateRecipients).toBeCalledWith(recipients)
+      expect(validateDistributorFeePercent).toBeCalledWith(
+        distributorFeePercent,
+      )
+      expect(getSortedRecipientsMock).toBeCalledWith(recipients)
+      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
+      expect(mockUpdateAndDistributeErc20).toBeCalledWith(
+        splitId,
+        token,
+        SORTED_ADDRESSES,
+        SORTED_ALLOCATIONS,
+        DISTRIBUTOR_FEE,
+        distributorAddress,
+      )
+      expect(getTransactionEventSpy).toBeCalledWith(
+        'update_and_distribute_erc20_tx',
         'format_DistributeERC20',
       )
     })

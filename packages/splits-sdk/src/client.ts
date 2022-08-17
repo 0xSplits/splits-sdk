@@ -252,6 +252,7 @@ export class SplitsClient {
     const distributorPayoutAddress = distributorAddress
       ? distributorAddress
       : await this._signer.getAddress()
+    validateAddress(distributorPayoutAddress)
 
     const updateAndDistributeTx = await (token === AddressZero
       ? this._splitMain
