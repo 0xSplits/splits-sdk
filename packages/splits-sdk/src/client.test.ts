@@ -36,6 +36,7 @@ const mockUpdateAndDistributeEth = jest
 const mockUpdateAndDistributeErc20 = jest
   .fn()
   .mockReturnValue('update_and_distribute_erc20_tx')
+const mockWithdraw = jest.fn().mockReturnValue('withdraw_tx')
 
 class MockContract {
   provider: Provider
@@ -67,6 +68,7 @@ class MockContract {
       distributeERC20: mockDistributeErc20,
       updateAndDistributeETH: mockUpdateAndDistributeEth,
       updateAndDistributeERC20: mockUpdateAndDistributeErc20,
+      withdraw: mockWithdraw,
     }
   }
 
@@ -711,6 +713,79 @@ describe('SplitMain writes', () => {
       expect(getTransactionEventSpy).toBeCalledWith(
         'update_and_distribute_erc20_tx',
         'format_DistributeERC20',
+      )
+    })
+  })
+
+  describe('Withdraw funds test', () => {
+    const address = '0xwithdraw'
+
+    beforeEach(() => {
+      mockWithdraw.mockClear()
+
+      expect(mockWithdraw).not.toBeCalled()
+    })
+
+    test('Withdraw fails with no provider', async () => {
+      const badSplitsClient = new SplitsClient({
+        chainId: 1,
+      })
+
+      await expect(
+        async () =>
+          await badSplitsClient.withdrawFunds({
+            address,
+            tokens: [AddressZero],
+          }),
+      ).rejects.toThrow(MissingProviderError)
+    })
+
+    test('Withdraw fails with no signer', async () => {
+      const badSplitsClient = new SplitsClient({
+        chainId: 1,
+        provider,
+      })
+
+      await expect(
+        async () =>
+          await badSplitsClient.withdrawFunds({
+            address,
+            tokens: [AddressZero],
+          }),
+      ).rejects.toThrow(MissingSignerError)
+    })
+
+    test('Withdraw passes with erc20 and eth', async () => {
+      const tokens = [AddressZero, '0xerc20']
+
+      const { event } = await splitsClient.withdrawFunds({
+        address,
+        tokens,
+      })
+
+      expect(event.blockNumber).toEqual(12345)
+      expect(validateAddress).toBeCalledWith(address)
+      expect(mockWithdraw).toBeCalledWith(address, 1, ['0xerc20'])
+      expect(getTransactionEventSpy).toBeCalledWith(
+        'withdraw_tx',
+        'format_Withdrawal',
+      )
+    })
+
+    test('Withdraw passes with only erc20', async () => {
+      const tokens = ['0xerc20', '0xerc202']
+
+      const { event } = await splitsClient.withdrawFunds({
+        address,
+        tokens,
+      })
+
+      expect(event.blockNumber).toEqual(12345)
+      expect(validateAddress).toBeCalledWith(address)
+      expect(mockWithdraw).toBeCalledWith(address, 0, ['0xerc20', '0xerc202'])
+      expect(getTransactionEventSpy).toBeCalledWith(
+        'withdraw_tx',
+        'format_Withdrawal',
       )
     })
   })
