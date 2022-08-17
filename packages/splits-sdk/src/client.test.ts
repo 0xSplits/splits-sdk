@@ -5,6 +5,7 @@ import type { Event } from '@ethersproject/contracts'
 
 import { SplitsClient } from './client'
 import {
+  InvalidAuthError,
   InvalidConfigError,
   MissingProviderError,
   MissingSignerError,
@@ -74,11 +75,18 @@ const getTransactionEventSpy = jest
     return event
   })
 
-const mockProvider = jest.fn<Provider, void[]>()
-const mockSigner = jest.fn<Signer, void[]>(() => {
+const mockProvider = jest.fn<Provider, unknown[]>()
+const mockSigner = jest.fn<Signer, unknown[]>(() => {
   return {
     getAddress: () => {
       return 'controllerAddress'
+    },
+  } as unknown as Signer
+})
+const mockSignerNonController = jest.fn<Signer, unknown[]>(() => {
+  return {
+    getAddress: () => {
+      return 'nonControllerAddress'
     },
   } as unknown as Signer
 })
@@ -132,12 +140,13 @@ describe('SplitMain writes', () => {
   })
 
   describe('Create split tests', () => {
+    const recipients = [{ address: '0xuser', percentAllocation: 45 }]
+    const distributorFeePercent = 7.35
+
     test('Create split fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
       })
-      const recipients = [{ address: '0xuser', percentAllocation: 45 }]
-      const distributorFeePercent = 7.35
 
       await expect(
         async () =>
@@ -153,8 +162,6 @@ describe('SplitMain writes', () => {
         chainId: 1,
         provider,
       })
-      const recipients = [{ address: '0xuser', percentAllocation: 45 }]
-      const distributorFeePercent = 7.35
 
       await expect(
         async () =>
@@ -166,8 +173,6 @@ describe('SplitMain writes', () => {
     })
 
     test('Create split passes', async () => {
-      const recipients = [{ address: '0xuser', percentAllocation: 45 }]
-      const distributorFeePercent = 7.35
       const { event, splitId } = await splitsClient.createSplit({
         recipients,
         distributorFeePercent,
@@ -184,10 +189,60 @@ describe('SplitMain writes', () => {
   })
 
   describe('Update split tests', () => {
+    const recipients = [{ address: '0xhey', percentAllocation: 12 }]
+    const distributorFeePercent = 9
+    const splitId = '0xupdate'
+
+    test('Update split fails with no provider', async () => {
+      const badSplitsClient = new SplitsClient({
+        chainId: 1,
+      })
+
+      await expect(
+        async () =>
+          await badSplitsClient.updateSplit({
+            splitId,
+            recipients,
+            distributorFeePercent,
+          }),
+      ).rejects.toThrow(MissingProviderError)
+    })
+
+    test('Update split fails with no signer', async () => {
+      const badSplitsClient = new SplitsClient({
+        chainId: 1,
+        provider,
+      })
+
+      await expect(
+        async () =>
+          await badSplitsClient.updateSplit({
+            splitId,
+            recipients,
+            distributorFeePercent,
+          }),
+      ).rejects.toThrow(MissingSignerError)
+    })
+
+    test('Update split fails from non controller', async () => {
+      const nonControllerSigner = new mockSignerNonController()
+      const badSplitsClient = new SplitsClient({
+        chainId: 1,
+        provider,
+        signer: nonControllerSigner,
+      })
+
+      await expect(
+        async () =>
+          await badSplitsClient.updateSplit({
+            splitId,
+            recipients,
+            distributorFeePercent,
+          }),
+      ).rejects.toThrow(InvalidAuthError)
+    })
+
     test('Update split passes', async () => {
-      const splitId = '0xabc'
-      const recipients = [{ address: '0xhey', percentAllocation: 12 }]
-      const distributorFeePercent = 9
       const { event } = await splitsClient.updateSplit({
         splitId,
         recipients,
