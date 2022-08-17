@@ -1,5 +1,8 @@
 import { BigNumber } from '@ethersproject/bignumber'
-import { getRecipientSortedAddressesAndAllocations } from './index'
+import {
+  getBigNumberValue,
+  getRecipientSortedAddressesAndAllocations,
+} from './index'
 
 describe('Test sorting recipients', () => {
   test('Recipients come back sorted by address', () => {
@@ -64,5 +67,12 @@ describe('Test sorting recipients', () => {
 
     expect(sortedAddresses).toEqual(expectedAddresses)
     expect(sortedPercentAllocations).toEqual(expectedPercentAllocations)
+  })
+  test('Getting big number value', () => {
+    const value = 10
+    const expectedBigNumber = BigNumber.from(10 * 1e4)
+
+    const result = getBigNumberValue(value)
+    expect(result).toEqual(expectedBigNumber)
   })
 })
