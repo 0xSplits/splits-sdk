@@ -17,36 +17,49 @@ import {
   validateAddress,
 } from './utils/validation'
 
+class MockContract {
+  provider: Provider
+
+  interface: {
+    getEvent: () => {
+      format: () => string
+    }
+  }
+
+  constructor(provider: Provider) {
+    this.provider = provider
+    this.interface = {
+      getEvent: () => {
+        return {
+          format: () => {
+            return 'format'
+          },
+        }
+      },
+    }
+  }
+
+  connect() {
+    return {
+      createSplit: () => 'create_split_tx',
+      updateSplit: () => 'update_split_tx',
+    }
+  }
+
+  getController() {
+    return 'controllerAddress'
+  }
+}
 jest.mock('@ethersproject/contracts', () => {
   return {
-    Contract: () => {
-      return {
-        provider: 1,
-
-        interface: {
-          getEvent: () => {
-            return {
-              format: () => {
-                return 'format'
-              },
-            }
-          },
-        },
-
-        connect: () => {
-          return {
-            createSplit: () => 'create_split_tx',
-            updateSplit: () => 'update_split_tx',
-          }
-        },
-
-        getController: () => {
-          return 'controllerAddress'
-        },
-      }
-    },
+    Contract: jest
+      .fn()
+      .mockImplementation((_contractAddress, _contractInterface, provider) => {
+        return new MockContract(provider)
+      }),
   }
 })
+
 jest.mock('./utils/validation')
 
 const getTransactionEventSpy = jest
@@ -118,35 +131,76 @@ describe('SplitMain writes', () => {
     expect(getTransactionEventSpy).not.toBeCalled()
   })
 
-  test('Create split passes', async () => {
-    const recipients = [{ address: '0xuser', percentAllocation: 45 }]
-    const distributorFeePercent = 7.35
-    const { event, splitId } = await splitsClient.createSplit({
-      recipients,
-      distributorFeePercent,
+  describe('Create split tests', () => {
+    test('Create split fails with no provider', async () => {
+      const badSplitsClient = new SplitsClient({
+        chainId: 1,
+      })
+      const recipients = [{ address: '0xuser', percentAllocation: 45 }]
+      const distributorFeePercent = 7.35
+
+      await expect(
+        async () =>
+          await badSplitsClient.createSplit({
+            recipients,
+            distributorFeePercent,
+          }),
+      ).rejects.toThrow(MissingProviderError)
     })
 
-    expect(event.blockNumber).toEqual(12345)
-    expect(splitId).toEqual('0xsplit')
-    expect(validateRecipients).toBeCalledWith(recipients)
-    expect(validateDistributorFeePercent).toBeCalledWith(distributorFeePercent)
-    expect(getTransactionEventSpy).toBeCalledWith('create_split_tx', 'format')
+    test('Create split fails with no signer', async () => {
+      const badSplitsClient = new SplitsClient({
+        chainId: 1,
+        provider,
+      })
+      const recipients = [{ address: '0xuser', percentAllocation: 45 }]
+      const distributorFeePercent = 7.35
+
+      await expect(
+        async () =>
+          await badSplitsClient.createSplit({
+            recipients,
+            distributorFeePercent,
+          }),
+      ).rejects.toThrow(MissingSignerError)
+    })
+
+    test('Create split passes', async () => {
+      const recipients = [{ address: '0xuser', percentAllocation: 45 }]
+      const distributorFeePercent = 7.35
+      const { event, splitId } = await splitsClient.createSplit({
+        recipients,
+        distributorFeePercent,
+      })
+
+      expect(event.blockNumber).toEqual(12345)
+      expect(splitId).toEqual('0xsplit')
+      expect(validateRecipients).toBeCalledWith(recipients)
+      expect(validateDistributorFeePercent).toBeCalledWith(
+        distributorFeePercent,
+      )
+      expect(getTransactionEventSpy).toBeCalledWith('create_split_tx', 'format')
+    })
   })
 
-  test('Update split passes', async () => {
-    const splitId = '0xabc'
-    const recipients = [{ address: '0xhey', percentAllocation: 12 }]
-    const distributorFeePercent = 9
-    const { event } = await splitsClient.updateSplit({
-      splitId,
-      recipients,
-      distributorFeePercent,
-    })
+  describe('Update split tests', () => {
+    test('Update split passes', async () => {
+      const splitId = '0xabc'
+      const recipients = [{ address: '0xhey', percentAllocation: 12 }]
+      const distributorFeePercent = 9
+      const { event } = await splitsClient.updateSplit({
+        splitId,
+        recipients,
+        distributorFeePercent,
+      })
 
-    expect(event.blockNumber).toEqual(12345)
-    expect(validateAddress).toBeCalledWith(splitId)
-    expect(validateRecipients).toBeCalledWith(recipients)
-    expect(validateDistributorFeePercent).toBeCalledWith(distributorFeePercent)
-    expect(getTransactionEventSpy).toBeCalledWith('update_split_tx', 'format')
+      expect(event.blockNumber).toEqual(12345)
+      expect(validateAddress).toBeCalledWith(splitId)
+      expect(validateRecipients).toBeCalledWith(recipients)
+      expect(validateDistributorFeePercent).toBeCalledWith(
+        distributorFeePercent,
+      )
+      expect(getTransactionEventSpy).toBeCalledWith('update_split_tx', 'format')
+    })
   })
 })
