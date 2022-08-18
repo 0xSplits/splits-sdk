@@ -22,6 +22,7 @@ import type { Split } from './types'
 
 const CONTROLLER_ADDRESS = '0xcontroller'
 const NON_CONTROLLER_ADDRESS = '0xnonController'
+const NEW_CONTROLLER_ADDRESS = '0xnewController'
 const SORTED_ADDRESSES = ['0xsorted']
 const SORTED_ALLOCATIONS = [BigNumber.from(50)]
 const DISTRIBUTOR_FEE = BigNumber.from(9)
@@ -37,6 +38,14 @@ const mockUpdateAndDistributeErc20 = jest
   .fn()
   .mockReturnValue('update_and_distribute_erc20_tx')
 const mockWithdraw = jest.fn().mockReturnValue('withdraw_tx')
+const mockTransferControl = jest.fn().mockReturnValue('transfer_control_tx')
+const mockCancelControlTransfer = jest
+  .fn()
+  .mockReturnValue('cancel_control_transfer_tx')
+const mockAcceptControl = jest.fn().mockReturnValue('accept_control_tx')
+const mockMakeSplitImmutable = jest
+  .fn()
+  .mockReturnValue('make_split_immutable_tx')
 
 class MockContract {
   provider: Provider
@@ -69,11 +78,19 @@ class MockContract {
       updateAndDistributeETH: mockUpdateAndDistributeEth,
       updateAndDistributeERC20: mockUpdateAndDistributeErc20,
       withdraw: mockWithdraw,
+      transferControl: mockTransferControl,
+      cancelControlTransfer: mockCancelControlTransfer,
+      acceptControl: mockAcceptControl,
+      makeSplitImmutable: mockMakeSplitImmutable,
     }
   }
 
   getController() {
     return CONTROLLER_ADDRESS
+  }
+
+  getNewPotentialController() {
+    return NEW_CONTROLLER_ADDRESS
   }
 }
 jest.mock('@ethersproject/contracts', () => {
@@ -122,6 +139,13 @@ const mockSignerNonController = jest.fn<Signer, unknown[]>(() => {
   return {
     getAddress: () => {
       return NON_CONTROLLER_ADDRESS
+    },
+  } as unknown as Signer
+})
+const mockSignerNewController = jest.fn<Signer, unknown[]>(() => {
+  return {
+    getAddress: () => {
+      return NEW_CONTROLLER_ADDRESS
     },
   } as unknown as Signer
 })
@@ -717,7 +741,7 @@ describe('SplitMain writes', () => {
     })
   })
 
-  describe('Withdraw funds test', () => {
+  describe('Withdraw funds tests', () => {
     const address = '0xwithdraw'
 
     beforeEach(() => {
@@ -786,6 +810,279 @@ describe('SplitMain writes', () => {
       expect(getTransactionEventSpy).toBeCalledWith(
         'withdraw_tx',
         'format_Withdrawal',
+      )
+    })
+  })
+
+  describe('Initiate control transfer tests', () => {
+    const splitId = '0xitransfer'
+    const newController = '0xnewController'
+
+    beforeEach(() => {
+      mockTransferControl.mockClear()
+
+      expect(mockTransferControl).not.toBeCalled()
+    })
+
+    test('Initiate transfer fails with no provider', async () => {
+      const badSplitsClient = new SplitsClient({
+        chainId: 1,
+      })
+
+      await expect(
+        async () =>
+          await badSplitsClient.initiateControlTransfer({
+            splitId,
+            newController,
+          }),
+      ).rejects.toThrow(MissingProviderError)
+    })
+
+    test('Initate transfer fails with no signer', async () => {
+      const badSplitsClient = new SplitsClient({
+        chainId: 1,
+        provider,
+      })
+
+      await expect(
+        async () =>
+          await badSplitsClient.initiateControlTransfer({
+            splitId,
+            newController,
+          }),
+      ).rejects.toThrow(MissingSignerError)
+    })
+
+    test('Initiate transfer fails from non controller', async () => {
+      const nonControllerSigner = new mockSignerNonController()
+      const badSplitsClient = new SplitsClient({
+        chainId: 1,
+        provider,
+        signer: nonControllerSigner,
+      })
+
+      await expect(
+        async () =>
+          await badSplitsClient.initiateControlTransfer({
+            splitId,
+            newController,
+          }),
+      ).rejects.toThrow(InvalidAuthError)
+    })
+
+    test('Initate transfer passes', async () => {
+      const { event } = await splitsClient.initiateControlTransfer({
+        splitId,
+        newController,
+      })
+
+      expect(event.blockNumber).toEqual(12345)
+      expect(validateAddress).toBeCalledWith(splitId)
+      expect(mockTransferControl).toBeCalledWith(splitId, newController)
+      expect(getTransactionEventSpy).toBeCalledWith(
+        'transfer_control_tx',
+        'format_InitiateControlTransfer',
+      )
+    })
+  })
+
+  describe('Cancel control transfer tests', () => {
+    const splitId = '0xcancelTransfer'
+
+    beforeEach(() => {
+      mockCancelControlTransfer.mockClear()
+
+      expect(mockCancelControlTransfer).not.toBeCalled()
+    })
+
+    test('Cancel transfer fails with no provider', async () => {
+      const badSplitsClient = new SplitsClient({
+        chainId: 1,
+      })
+
+      await expect(
+        async () =>
+          await badSplitsClient.cancelControlTransfer({
+            splitId,
+          }),
+      ).rejects.toThrow(MissingProviderError)
+    })
+
+    test('Cancel transfer fails with no signer', async () => {
+      const badSplitsClient = new SplitsClient({
+        chainId: 1,
+        provider,
+      })
+
+      await expect(
+        async () =>
+          await badSplitsClient.cancelControlTransfer({
+            splitId,
+          }),
+      ).rejects.toThrow(MissingSignerError)
+    })
+
+    test('Cancel transfer fails from non controller', async () => {
+      const nonControllerSigner = new mockSignerNonController()
+      const badSplitsClient = new SplitsClient({
+        chainId: 1,
+        provider,
+        signer: nonControllerSigner,
+      })
+
+      await expect(
+        async () =>
+          await badSplitsClient.cancelControlTransfer({
+            splitId,
+          }),
+      ).rejects.toThrow(InvalidAuthError)
+    })
+
+    test('Cancel transfer passes', async () => {
+      const { event } = await splitsClient.cancelControlTransfer({
+        splitId,
+      })
+
+      expect(event.blockNumber).toEqual(12345)
+      expect(validateAddress).toBeCalledWith(splitId)
+      expect(mockCancelControlTransfer).toBeCalledWith(splitId)
+      expect(getTransactionEventSpy).toBeCalledWith(
+        'cancel_control_transfer_tx',
+        'format_CancelControlTransfer',
+      )
+    })
+  })
+
+  describe('Accept control transfer tests', () => {
+    const splitId = '0xacceptTransfer'
+
+    beforeEach(() => {
+      mockAcceptControl.mockClear()
+
+      expect(mockAcceptControl).not.toBeCalled()
+    })
+
+    test('Accept transfer fails with no provider', async () => {
+      const badSplitsClient = new SplitsClient({
+        chainId: 1,
+      })
+
+      await expect(
+        async () =>
+          await badSplitsClient.acceptControlTransfer({
+            splitId,
+          }),
+      ).rejects.toThrow(MissingProviderError)
+    })
+
+    test('Accept transfer fails with no signer', async () => {
+      const badSplitsClient = new SplitsClient({
+        chainId: 1,
+        provider,
+      })
+
+      await expect(
+        async () =>
+          await badSplitsClient.acceptControlTransfer({
+            splitId,
+          }),
+      ).rejects.toThrow(MissingSignerError)
+    })
+
+    test('Accept transfer fails from non new controller', async () => {
+      await expect(
+        async () =>
+          await splitsClient.acceptControlTransfer({
+            splitId,
+          }),
+      ).rejects.toThrow(InvalidAuthError)
+    })
+
+    test('Accept transfer passes', async () => {
+      const signer = new mockSignerNewController()
+      const splitsClient = new SplitsClient({
+        chainId: 1,
+        provider,
+        signer,
+      })
+
+      const { event } = await splitsClient.acceptControlTransfer({
+        splitId,
+      })
+
+      expect(event.blockNumber).toEqual(12345)
+      expect(validateAddress).toBeCalledWith(splitId)
+      expect(mockAcceptControl).toBeCalledWith(splitId)
+      expect(getTransactionEventSpy).toBeCalledWith(
+        'accept_control_tx',
+        'format_ControlTransfer',
+      )
+    })
+  })
+
+  describe('Make split immutable tests', () => {
+    const splitId = '0xmakeImmutable'
+
+    beforeEach(() => {
+      mockMakeSplitImmutable.mockClear()
+
+      expect(mockMakeSplitImmutable).not.toBeCalled()
+    })
+
+    test('Make immutable fails with no provider', async () => {
+      const badSplitsClient = new SplitsClient({
+        chainId: 1,
+      })
+
+      await expect(
+        async () =>
+          await badSplitsClient.makeSplitImmutable({
+            splitId,
+          }),
+      ).rejects.toThrow(MissingProviderError)
+    })
+
+    test('Make immutable fails with no signer', async () => {
+      const badSplitsClient = new SplitsClient({
+        chainId: 1,
+        provider,
+      })
+
+      await expect(
+        async () =>
+          await badSplitsClient.makeSplitImmutable({
+            splitId,
+          }),
+      ).rejects.toThrow(MissingSignerError)
+    })
+
+    test('Make immutable fails from non controller', async () => {
+      const nonControllerSigner = new mockSignerNonController()
+      const badSplitsClient = new SplitsClient({
+        chainId: 1,
+        provider,
+        signer: nonControllerSigner,
+      })
+
+      await expect(
+        async () =>
+          await badSplitsClient.makeSplitImmutable({
+            splitId,
+          }),
+      ).rejects.toThrow(InvalidAuthError)
+    })
+
+    test('Make immutable passes', async () => {
+      const { event } = await splitsClient.makeSplitImmutable({
+        splitId,
+      })
+
+      expect(event.blockNumber).toEqual(12345)
+      expect(validateAddress).toBeCalledWith(splitId)
+      expect(mockMakeSplitImmutable).toBeCalledWith(splitId)
+      expect(getTransactionEventSpy).toBeCalledWith(
+        'make_split_immutable_tx',
+        'format_ControlTransfer',
       )
     })
   })

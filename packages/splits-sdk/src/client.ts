@@ -642,7 +642,9 @@ export class SplitsClient {
     const { newPotentialController } = await this.getNewPotentialController({
       splitId,
     })
-    const signerAddress = await this._splitMain.signer.getAddress()
+    // TODO: how to get rid of this, needed for typescript check
+    if (!this._signer) throw new Error()
+    const signerAddress = await this._signer.getAddress()
 
     if (newPotentialController !== signerAddress)
       throw new InvalidAuthError(
