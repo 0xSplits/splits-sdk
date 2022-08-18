@@ -12,7 +12,7 @@ Developer tools for integrating with the 0xSplits contracts and subgraph data
 ## Testing
  Run tests with `yarn test`
 
-## Build and Release
+## Local development
 
 ### Build the packages
 From the root directory:

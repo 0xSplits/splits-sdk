@@ -11,7 +11,9 @@ import {
   MissingProviderError,
   MissingSignerError,
   UnsupportedChainIdError,
+  UnsupportedSubgraphChainIdError,
 } from './errors'
+import * as subgraph from './subgraph'
 import * as utils from './utils'
 import {
   validateRecipients,
@@ -25,6 +27,7 @@ import {
   CONTROLLER_ADDRESS,
   NEW_CONTROLLER_ADDRESS,
 } from './testing/constants'
+import { MockGraphqlClient } from './testing/mocks/graphql'
 import {
   MockSplitMain,
   readActions,
@@ -132,13 +135,6 @@ describe('SplitMain writes', () => {
     getTransactionEventSpy.mockClear()
     getSortedRecipientsMock.mockClear()
     getBigNumberMock.mockClear()
-
-    expect(validateRecipients).not.toBeCalled()
-    expect(validateDistributorFeePercent).not.toBeCalled()
-    expect(validateAddress).not.toBeCalled()
-    expect(getTransactionEventSpy).not.toBeCalled()
-    expect(getSortedRecipientsMock).not.toBeCalled()
-    expect(getBigNumberMock).not.toBeCalled()
   })
 
   describe('Create split tests', () => {
@@ -1026,12 +1022,6 @@ describe('SplitMain reads', () => {
     ;(validateAddress as jest.Mock).mockClear()
     getSortedRecipientsMock.mockClear()
     getBigNumberMock.mockClear()
-
-    expect(validateRecipients).not.toBeCalled()
-    expect(validateDistributorFeePercent).not.toBeCalled()
-    expect(validateAddress).not.toBeCalled()
-    expect(getSortedRecipientsMock).not.toBeCalled()
-    expect(getBigNumberMock).not.toBeCalled()
   })
 
   describe('Get split balance test', () => {
@@ -1204,6 +1194,155 @@ describe('SplitMain reads', () => {
       expect(hash).toEqual('hash')
       expect(validateAddress).toBeCalledWith(splitId)
       expect(readActions.getHash).toBeCalledWith(splitId)
+    })
+  })
+})
+
+const mockGqlClient = new MockGraphqlClient()
+jest.mock('graphql-request', () => {
+  return {
+    GraphQLClient: jest.fn().mockImplementation(() => {
+      return mockGqlClient
+    }),
+    gql: jest.fn(),
+  }
+})
+
+describe('Graphql reads', () => {
+  const mockFormatSplit = jest
+    .spyOn(subgraph, 'protectedFormatSplit')
+    .mockReturnValue('formatted_split' as unknown as Split)
+  const mockAddEnsNames = jest.spyOn(utils, 'addEnsNames').mockImplementation()
+
+  const splitId = '0xsplit'
+  const userId = '0xuser'
+  const splitsClient = new SplitsClient({
+    chainId: 1,
+  })
+
+  beforeEach(() => {
+    ;(validateAddress as jest.Mock).mockClear()
+    mockGqlClient.request.mockClear()
+    mockFormatSplit.mockClear()
+    mockAddEnsNames.mockClear()
+  })
+
+  describe('Get split metadata tests', () => {
+    beforeEach(() => {
+      mockGqlClient.request.mockReturnValue({ split: 'gqlSplit' })
+    })
+
+    test('Invalid chain id', async () => {
+      const badSplitsClient = new SplitsClient({
+        chainId: 4,
+      })
+
+      expect(
+        async () => await badSplitsClient.getSplitMetadata({ splitId }),
+      ).rejects.toThrow(UnsupportedSubgraphChainIdError)
+    })
+
+    test('Get split metadata passes', async () => {
+      const split = await splitsClient.getSplitMetadata({ splitId })
+
+      expect(validateAddress).toBeCalledWith(splitId)
+      expect(mockGqlClient.request).toBeCalledWith(subgraph.SPLIT_QUERY, {
+        splitId,
+      })
+      expect(mockFormatSplit).toBeCalledWith('gqlSplit')
+      expect(split).toEqual('formatted_split')
+      expect(mockAddEnsNames).not.toBeCalled()
+    })
+
+    test('Adds ens names', async () => {
+      const provider = new mockProvider()
+      const ensSplitsClient = new SplitsClient({
+        chainId: 1,
+        provider,
+        includeEnsNames: true,
+      })
+
+      const split = await ensSplitsClient.getSplitMetadata({ splitId })
+
+      expect(validateAddress).toBeCalledWith(splitId)
+      expect(mockGqlClient.request).toBeCalledWith(subgraph.SPLIT_QUERY, {
+        splitId,
+      })
+      expect(mockFormatSplit).toBeCalledWith('gqlSplit')
+      expect(split).toEqual('formatted_split')
+      expect(mockAddEnsNames).toBeCalled()
+    })
+  })
+
+  describe('Get related splits tests', () => {
+    beforeEach(() => {
+      mockGqlClient.request.mockReturnValueOnce({
+        receivingFrom: [{ split: 'gqlReceivingSplit' }],
+        controlling: ['gqlControllingSplit1', 'gqlControllingSplit2'],
+        pendingControl: ['gqlPendingControlSplit'],
+      })
+      mockFormatSplit.mockImplementation((input) => {
+        return input as unknown as Split
+      })
+    })
+
+    test('Invalid chain id', async () => {
+      const badSplitsClient = new SplitsClient({
+        chainId: 4,
+      })
+
+      expect(
+        async () => await badSplitsClient.getRelatedSplits({ address: userId }),
+      ).rejects.toThrow(UnsupportedSubgraphChainIdError)
+    })
+
+    test('Get related splits passes', async () => {
+      const { receivingFrom, controlling, pendingControl } =
+        await splitsClient.getRelatedSplits({ address: userId })
+
+      expect(validateAddress).toBeCalledWith(userId)
+      expect(mockGqlClient.request).toBeCalledWith(
+        subgraph.RELATED_SPLITS_QUERY,
+        {
+          accountId: userId,
+        },
+      )
+      expect(mockFormatSplit).toBeCalledTimes(4)
+      expect(receivingFrom).toEqual(['gqlReceivingSplit'])
+      expect(controlling).toEqual([
+        'gqlControllingSplit1',
+        'gqlControllingSplit2',
+      ])
+      expect(pendingControl).toEqual(['gqlPendingControlSplit'])
+      expect(mockAddEnsNames).not.toBeCalled()
+    })
+
+    test('Adds ens names', async () => {
+      const provider = new mockProvider()
+      const ensSplitsClient = new SplitsClient({
+        chainId: 1,
+        provider,
+        includeEnsNames: true,
+      })
+
+      const { receivingFrom, controlling, pendingControl } =
+        await ensSplitsClient.getRelatedSplits({ address: userId })
+
+      expect(validateAddress).toBeCalledWith(userId)
+      expect(mockGqlClient.request).toBeCalledWith(
+        subgraph.RELATED_SPLITS_QUERY,
+        {
+          accountId: userId,
+        },
+      )
+      expect(mockFormatSplit).toBeCalledTimes(4)
+      expect(receivingFrom).toEqual(['gqlReceivingSplit'])
+      expect(controlling).toEqual([
+        'gqlControllingSplit1',
+        'gqlControllingSplit2',
+      ])
+      expect(pendingControl).toEqual(['gqlPendingControlSplit'])
+      expect(mockAddEnsNames).toBeCalledTimes(4)
     })
   })
 })
