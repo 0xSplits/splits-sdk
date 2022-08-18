@@ -45,7 +45,7 @@ const SPLIT_FIELDS_FRAGMENT = gql`
     newPotentialController
     createdBlock
     latestBlock
-    recipients {
+    recipients(first: 1000, orderBy: ownership, orderDirection: desc) {
       ...RecipientFieldsFragment
     }
   }
@@ -55,10 +55,10 @@ const SPLIT_FIELDS_FRAGMENT = gql`
 
 const ACCOUNT_BALANCES_FRAGMENT = gql`
   fragment AccountBalancesFragment on Account {
-    internalBalances {
+    internalBalances(first: 1000, orderBy: amount, orderDirection: desc) {
       ...TokenBalanceFieldsFragment
     }
-    withdrawals {
+    withdrawals(first: 1000, orderBy: amount, orderDirection: desc) {
       ...TokenBalanceFieldsFragment
     }
   }
@@ -69,7 +69,7 @@ const ACCOUNT_BALANCES_FRAGMENT = gql`
 const ACCOUNT_FIELDS_FRAGMENT = gql`
   fragment AccountFieldsFragment on Account {
     id
-    upstream {
+    upstream(first: 1000) {
       ...RecipientFieldsFragment
     }
     ...AccountBalancesFragment
