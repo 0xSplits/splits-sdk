@@ -18,99 +18,26 @@ import {
   validateDistributorFeePercent,
   validateAddress,
 } from './utils/validation'
+import {
+  SORTED_ADDRESSES,
+  SORTED_ALLOCATIONS,
+  DISTRIBUTOR_FEE,
+  CONTROLLER_ADDRESS,
+  NEW_CONTROLLER_ADDRESS,
+} from './testing/constants'
+import {
+  MockSplitMain,
+  readActions,
+  writeActions,
+} from './testing/mocks/splitMain'
 import type { Split } from './types'
 
-const CONTROLLER_ADDRESS = '0xcontroller'
-const NON_CONTROLLER_ADDRESS = '0xnonController'
-const NEW_CONTROLLER_ADDRESS = '0xnewController'
-const SORTED_ADDRESSES = ['0xsorted']
-const SORTED_ALLOCATIONS = [BigNumber.from(50)]
-const DISTRIBUTOR_FEE = BigNumber.from(9)
-
-const mockCreateSplit = jest.fn().mockReturnValue('create_split_tx')
-const mockUpdateSplit = jest.fn().mockReturnValue('update_split_tx')
-const mockDistributeEth = jest.fn().mockReturnValue('distribute_eth_tx')
-const mockDistributeErc20 = jest.fn().mockReturnValue('distribute_erc20_tx')
-const mockUpdateAndDistributeEth = jest
-  .fn()
-  .mockReturnValue('update_and_distribute_eth_tx')
-const mockUpdateAndDistributeErc20 = jest
-  .fn()
-  .mockReturnValue('update_and_distribute_erc20_tx')
-const mockWithdraw = jest.fn().mockReturnValue('withdraw_tx')
-const mockTransferControl = jest.fn().mockReturnValue('transfer_control_tx')
-const mockCancelControlTransfer = jest
-  .fn()
-  .mockReturnValue('cancel_control_transfer_tx')
-const mockAcceptControl = jest.fn().mockReturnValue('accept_control_tx')
-const mockMakeSplitImmutable = jest
-  .fn()
-  .mockReturnValue('make_split_immutable_tx')
-const mockGetEthBalance = jest.fn()
-const mockGetErc20Balance = jest.fn()
-const mockPredictAddress = jest.fn()
-const mockGetController = jest.fn().mockReturnValue(CONTROLLER_ADDRESS)
-const mockGetPotentialController = jest
-  .fn()
-  .mockReturnValue(NEW_CONTROLLER_ADDRESS)
-const mockGetHash = jest.fn()
-
-class MockContract {
-  provider: Provider
-  interface: {
-    getEvent: (eventName: string) => {
-      format: () => string
-    }
-  }
-  getETHBalance: typeof mockGetEthBalance
-  getERC20Balance: typeof mockGetErc20Balance
-  predictImmutableSplitAddress: typeof mockPredictAddress
-  getController: typeof mockGetController
-  getNewPotentialController: typeof mockGetPotentialController
-  getHash: typeof mockGetHash
-
-  constructor(provider: Provider) {
-    this.provider = provider
-    this.interface = {
-      getEvent: (eventName: string) => {
-        return {
-          format: () => {
-            return `format_${eventName}`
-          },
-        }
-      },
-    }
-
-    this.getETHBalance = mockGetEthBalance
-    this.getERC20Balance = mockGetErc20Balance
-    this.predictImmutableSplitAddress = mockPredictAddress
-    this.getController = mockGetController
-    this.getNewPotentialController = mockGetPotentialController
-    this.getHash = mockGetHash
-  }
-
-  connect() {
-    return {
-      createSplit: mockCreateSplit,
-      updateSplit: mockUpdateSplit,
-      distributeETH: mockDistributeEth,
-      distributeERC20: mockDistributeErc20,
-      updateAndDistributeETH: mockUpdateAndDistributeEth,
-      updateAndDistributeERC20: mockUpdateAndDistributeErc20,
-      withdraw: mockWithdraw,
-      transferControl: mockTransferControl,
-      cancelControlTransfer: mockCancelControlTransfer,
-      acceptControl: mockAcceptControl,
-      makeSplitImmutable: mockMakeSplitImmutable,
-    }
-  }
-}
 jest.mock('@ethersproject/contracts', () => {
   return {
     Contract: jest
       .fn()
       .mockImplementation((_contractAddress, _contractInterface, provider) => {
-        return new MockContract(provider)
+        return new MockSplitMain(provider)
       }),
   }
 })
@@ -150,7 +77,7 @@ const mockSigner = jest.fn<Signer, unknown[]>(() => {
 const mockSignerNonController = jest.fn<Signer, unknown[]>(() => {
   return {
     getAddress: () => {
-      return NON_CONTROLLER_ADDRESS
+      return '0xnotController'
     },
   } as unknown as Signer
 })
@@ -219,9 +146,7 @@ describe('SplitMain writes', () => {
     const distributorFeePercent = 7.35
 
     beforeEach(() => {
-      mockCreateSplit.mockClear()
-
-      expect(mockCreateSplit).not.toBeCalled()
+      writeActions.createSplit.mockClear()
     })
 
     test('Create split fails with no provider', async () => {
@@ -267,7 +192,7 @@ describe('SplitMain writes', () => {
       )
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
-      expect(mockCreateSplit).toBeCalledWith(
+      expect(writeActions.createSplit).toBeCalledWith(
         SORTED_ADDRESSES,
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
@@ -295,7 +220,7 @@ describe('SplitMain writes', () => {
       )
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
-      expect(mockCreateSplit).toBeCalledWith(
+      expect(writeActions.createSplit).toBeCalledWith(
         SORTED_ADDRESSES,
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
@@ -314,9 +239,7 @@ describe('SplitMain writes', () => {
     const splitId = '0xupdate'
 
     beforeEach(() => {
-      mockUpdateSplit.mockClear()
-
-      expect(mockUpdateSplit).not.toBeCalled()
+      writeActions.updateSplit.mockClear()
     })
 
     test('Update split fails with no provider', async () => {
@@ -383,7 +306,7 @@ describe('SplitMain writes', () => {
       )
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
-      expect(mockUpdateSplit).toBeCalledWith(
+      expect(writeActions.updateSplit).toBeCalledWith(
         splitId,
         SORTED_ADDRESSES,
         SORTED_ALLOCATIONS,
@@ -410,11 +333,8 @@ describe('SplitMain writes', () => {
             distributorFeePercent,
           } as Split
         })
-      mockDistributeEth.mockClear()
-      mockDistributeErc20.mockClear()
-
-      expect(mockDistributeEth).not.toBeCalled()
-      expect(mockDistributeErc20).not.toBeCalled()
+      writeActions.distributeETH.mockClear()
+      writeActions.distributeERC20.mockClear()
     })
 
     test('Distribute token fails with no provider', async () => {
@@ -458,7 +378,7 @@ describe('SplitMain writes', () => {
       expect(validateAddress).toBeCalledWith(CONTROLLER_ADDRESS)
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
-      expect(mockDistributeEth).toBeCalledWith(
+      expect(writeActions.distributeETH).toBeCalledWith(
         splitId,
         SORTED_ADDRESSES,
         SORTED_ALLOCATIONS,
@@ -484,7 +404,7 @@ describe('SplitMain writes', () => {
       expect(validateAddress).toBeCalledWith(CONTROLLER_ADDRESS)
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
-      expect(mockDistributeErc20).toBeCalledWith(
+      expect(writeActions.distributeERC20).toBeCalledWith(
         splitId,
         token,
         SORTED_ADDRESSES,
@@ -512,7 +432,7 @@ describe('SplitMain writes', () => {
       expect(validateAddress).toBeCalledWith(distributorAddress)
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
-      expect(mockDistributeEth).toBeCalledWith(
+      expect(writeActions.distributeETH).toBeCalledWith(
         splitId,
         SORTED_ADDRESSES,
         SORTED_ALLOCATIONS,
@@ -540,7 +460,7 @@ describe('SplitMain writes', () => {
       expect(validateAddress).toBeCalledWith(distributorAddress)
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
-      expect(mockDistributeErc20).toBeCalledWith(
+      expect(writeActions.distributeERC20).toBeCalledWith(
         splitId,
         token,
         SORTED_ADDRESSES,
@@ -561,11 +481,8 @@ describe('SplitMain writes', () => {
     const distributorFeePercent = 4
 
     beforeEach(() => {
-      mockUpdateAndDistributeEth.mockClear()
-      mockUpdateAndDistributeErc20.mockClear()
-
-      expect(mockUpdateAndDistributeEth).not.toBeCalled()
-      expect(mockUpdateAndDistributeErc20).not.toBeCalled()
+      writeActions.updateAndDistributeETH.mockClear()
+      writeActions.updateAndDistributeERC20.mockClear()
     })
 
     test('Update and distribute fails with no provider', async () => {
@@ -638,7 +555,7 @@ describe('SplitMain writes', () => {
       )
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
-      expect(mockUpdateAndDistributeEth).toBeCalledWith(
+      expect(writeActions.updateAndDistributeETH).toBeCalledWith(
         splitId,
         SORTED_ADDRESSES,
         SORTED_ALLOCATIONS,
@@ -670,7 +587,7 @@ describe('SplitMain writes', () => {
       )
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
-      expect(mockUpdateAndDistributeErc20).toBeCalledWith(
+      expect(writeActions.updateAndDistributeERC20).toBeCalledWith(
         splitId,
         token,
         SORTED_ADDRESSES,
@@ -704,7 +621,7 @@ describe('SplitMain writes', () => {
       )
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
-      expect(mockUpdateAndDistributeEth).toBeCalledWith(
+      expect(writeActions.updateAndDistributeETH).toBeCalledWith(
         splitId,
         SORTED_ADDRESSES,
         SORTED_ALLOCATIONS,
@@ -738,7 +655,7 @@ describe('SplitMain writes', () => {
       )
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
-      expect(mockUpdateAndDistributeErc20).toBeCalledWith(
+      expect(writeActions.updateAndDistributeERC20).toBeCalledWith(
         splitId,
         token,
         SORTED_ADDRESSES,
@@ -757,9 +674,7 @@ describe('SplitMain writes', () => {
     const address = '0xwithdraw'
 
     beforeEach(() => {
-      mockWithdraw.mockClear()
-
-      expect(mockWithdraw).not.toBeCalled()
+      writeActions.withdraw.mockClear()
     })
 
     test('Withdraw fails with no provider', async () => {
@@ -801,7 +716,7 @@ describe('SplitMain writes', () => {
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(address)
-      expect(mockWithdraw).toBeCalledWith(address, 1, ['0xerc20'])
+      expect(writeActions.withdraw).toBeCalledWith(address, 1, ['0xerc20'])
       expect(getTransactionEventSpy).toBeCalledWith(
         'withdraw_tx',
         'format_Withdrawal',
@@ -818,7 +733,10 @@ describe('SplitMain writes', () => {
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(address)
-      expect(mockWithdraw).toBeCalledWith(address, 0, ['0xerc20', '0xerc202'])
+      expect(writeActions.withdraw).toBeCalledWith(address, 0, [
+        '0xerc20',
+        '0xerc202',
+      ])
       expect(getTransactionEventSpy).toBeCalledWith(
         'withdraw_tx',
         'format_Withdrawal',
@@ -831,9 +749,7 @@ describe('SplitMain writes', () => {
     const newController = '0xnewController'
 
     beforeEach(() => {
-      mockTransferControl.mockClear()
-
-      expect(mockTransferControl).not.toBeCalled()
+      writeActions.transferControl.mockClear()
     })
 
     test('Initiate transfer fails with no provider', async () => {
@@ -890,7 +806,10 @@ describe('SplitMain writes', () => {
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitId)
-      expect(mockTransferControl).toBeCalledWith(splitId, newController)
+      expect(writeActions.transferControl).toBeCalledWith(
+        splitId,
+        newController,
+      )
       expect(getTransactionEventSpy).toBeCalledWith(
         'transfer_control_tx',
         'format_InitiateControlTransfer',
@@ -902,9 +821,7 @@ describe('SplitMain writes', () => {
     const splitId = '0xcancelTransfer'
 
     beforeEach(() => {
-      mockCancelControlTransfer.mockClear()
-
-      expect(mockCancelControlTransfer).not.toBeCalled()
+      writeActions.cancelControlTransfer.mockClear()
     })
 
     test('Cancel transfer fails with no provider', async () => {
@@ -957,7 +874,7 @@ describe('SplitMain writes', () => {
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitId)
-      expect(mockCancelControlTransfer).toBeCalledWith(splitId)
+      expect(writeActions.cancelControlTransfer).toBeCalledWith(splitId)
       expect(getTransactionEventSpy).toBeCalledWith(
         'cancel_control_transfer_tx',
         'format_CancelControlTransfer',
@@ -969,9 +886,7 @@ describe('SplitMain writes', () => {
     const splitId = '0xacceptTransfer'
 
     beforeEach(() => {
-      mockAcceptControl.mockClear()
-
-      expect(mockAcceptControl).not.toBeCalled()
+      writeActions.acceptControl.mockClear()
     })
 
     test('Accept transfer fails with no provider', async () => {
@@ -1024,7 +939,7 @@ describe('SplitMain writes', () => {
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitId)
-      expect(mockAcceptControl).toBeCalledWith(splitId)
+      expect(writeActions.acceptControl).toBeCalledWith(splitId)
       expect(getTransactionEventSpy).toBeCalledWith(
         'accept_control_tx',
         'format_ControlTransfer',
@@ -1036,9 +951,7 @@ describe('SplitMain writes', () => {
     const splitId = '0xmakeImmutable'
 
     beforeEach(() => {
-      mockMakeSplitImmutable.mockClear()
-
-      expect(mockMakeSplitImmutable).not.toBeCalled()
+      writeActions.makeSplitImmutable.mockClear()
     })
 
     test('Make immutable fails with no provider', async () => {
@@ -1091,7 +1004,7 @@ describe('SplitMain writes', () => {
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitId)
-      expect(mockMakeSplitImmutable).toBeCalledWith(splitId)
+      expect(writeActions.makeSplitImmutable).toBeCalledWith(splitId)
       expect(getTransactionEventSpy).toBeCalledWith(
         'make_split_immutable_tx',
         'format_ControlTransfer',
@@ -1124,6 +1037,10 @@ describe('SplitMain reads', () => {
   describe('Get split balance test', () => {
     const splitId = '0xgetbalance'
 
+    beforeEach(() => {
+      readActions.getETHBalance.mockClear()
+    })
+
     test('Get balance fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
@@ -1138,28 +1055,32 @@ describe('SplitMain reads', () => {
     })
 
     test('Returns eth balance', async () => {
-      mockGetEthBalance.mockReturnValueOnce(BigNumber.from(12))
+      readActions.getETHBalance.mockReturnValueOnce(BigNumber.from(12))
       const { balance } = await splitsClient.getSplitBalance({ splitId })
 
       expect(balance).toEqual(BigNumber.from(12))
       expect(validateAddress).toBeCalledWith(splitId)
-      expect(mockGetEthBalance).toBeCalledWith(splitId)
+      expect(readActions.getETHBalance).toBeCalledWith(splitId)
     })
 
     test('Returns ERC20 balance', async () => {
       const token = '0xerc20'
-      mockGetErc20Balance.mockReturnValueOnce(BigNumber.from(19))
+      readActions.getERC20Balance.mockReturnValueOnce(BigNumber.from(19))
       const { balance } = await splitsClient.getSplitBalance({ splitId, token })
 
       expect(balance).toEqual(BigNumber.from(19))
       expect(validateAddress).toBeCalledWith(splitId)
-      expect(mockGetErc20Balance).toBeCalledWith(splitId, token)
+      expect(readActions.getERC20Balance).toBeCalledWith(splitId, token)
     })
   })
 
   describe('Predict immutable split address tests', () => {
     const recipients = [{ address: '0x54321', percentAllocation: 21 }]
     const distributorFeePercent = 8
+
+    beforeEach(() => {
+      readActions.predictImmutableSplitAddress.mockClear()
+    })
 
     test('Predict immutable address fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
@@ -1176,7 +1097,7 @@ describe('SplitMain reads', () => {
     })
 
     test('Predicts immutable address', async () => {
-      mockPredictAddress.mockReturnValueOnce('0xpredict')
+      readActions.predictImmutableSplitAddress.mockReturnValueOnce('0xpredict')
       const { splitId } = await splitsClient.predictImmutableSplitAddress({
         recipients,
         distributorFeePercent,
@@ -1189,7 +1110,7 @@ describe('SplitMain reads', () => {
       )
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
-      expect(mockPredictAddress).toBeCalledWith(
+      expect(readActions.predictImmutableSplitAddress).toBeCalledWith(
         SORTED_ADDRESSES,
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
@@ -1199,6 +1120,10 @@ describe('SplitMain reads', () => {
 
   describe('Get controller tests', () => {
     const splitId = '0xgetController'
+
+    beforeEach(() => {
+      readActions.getController.mockClear()
+    })
 
     test('Get controller fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
@@ -1218,12 +1143,16 @@ describe('SplitMain reads', () => {
 
       expect(controller).toEqual(CONTROLLER_ADDRESS)
       expect(validateAddress).toBeCalledWith(splitId)
-      expect(mockGetController).toBeCalledWith(splitId)
+      expect(readActions.getController).toBeCalledWith(splitId)
     })
   })
 
   describe('Get new potential controller tests', () => {
     const splitId = '0xgetPotentialController'
+
+    beforeEach(() => {
+      readActions.getNewPotentialController.mockClear()
+    })
 
     test('Get potential controller fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
@@ -1244,12 +1173,16 @@ describe('SplitMain reads', () => {
 
       expect(newPotentialController).toEqual(NEW_CONTROLLER_ADDRESS)
       expect(validateAddress).toBeCalledWith(splitId)
-      expect(mockGetPotentialController).toBeCalledWith(splitId)
+      expect(readActions.getNewPotentialController).toBeCalledWith(splitId)
     })
   })
 
   describe('Get hash tests', () => {
     const splitId = '0xhash'
+
+    beforeEach(() => {
+      readActions.getHash.mockClear()
+    })
 
     test('Get hash fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
@@ -1265,12 +1198,12 @@ describe('SplitMain reads', () => {
     })
 
     test('Get hash passes', async () => {
-      mockGetHash.mockReturnValueOnce('hash')
+      readActions.getHash.mockReturnValueOnce('hash')
       const { hash } = await splitsClient.getHash({ splitId })
 
       expect(hash).toEqual('hash')
       expect(validateAddress).toBeCalledWith(splitId)
-      expect(mockGetHash).toBeCalledWith(splitId)
+      expect(readActions.getHash).toBeCalledWith(splitId)
     })
   })
 })
