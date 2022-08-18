@@ -5,8 +5,8 @@ import { AddressZero, One } from '@ethersproject/constants'
 import { Contract, Event } from '@ethersproject/contracts'
 import { GraphQLClient, Variables } from 'graphql-request'
 
-import SPLIT_MAIN_ARTIFACT_ETHEREUM from './artifacts/splits/ethereum/contracts/SplitMain.sol/SplitMain.json'
-import SPLIT_MAIN_ARTIFACT_POLYGON from './artifacts/splits/polygon/contracts/SplitMain.sol/SplitMain.json'
+import SPLIT_MAIN_ARTIFACT_ETHEREUM from './artifacts/contracts/SplitMain/ethereum/SplitMain.json'
+import SPLIT_MAIN_ARTIFACT_POLYGON from './artifacts/contracts/SplitMain/polygon/SplitMain.json'
 import {
   ETHEREUM_CHAIN_IDS,
   POLYGON_CHAIN_IDS,
@@ -59,8 +59,8 @@ import {
   validateDistributorFeePercent,
   validateAddress,
 } from './utils/validation'
-import type { SplitMain as SplitMainEthereumType } from './typechain/ethereum'
-import type { SplitMain as SplitMainPolygonType } from './typechain/polygon'
+import type { SplitMain as SplitMainEthereumType } from './typechain/SplitMain/ethereum'
+import type { SplitMain as SplitMainPolygonType } from './typechain/SplitMain/polygon'
 import { Signer } from '@ethersproject/abstract-signer'
 
 const MISSING_SIGNER = ''

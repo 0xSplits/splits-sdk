@@ -4,5 +4,11 @@
   "compilerOptions": {
     "outDir": "./dist"
   },
-  "include": ["./src"]
+  "include": ["./src"],
+  "exclude": [
+    "dist",
+    "node_modules",
+    "./**/*.test.ts",
+    "./src/testing/**/*"
+  ]
 }

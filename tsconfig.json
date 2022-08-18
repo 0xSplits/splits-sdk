@@ -21,10 +21,5 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true
-  },
-  "exclude": [
-    "dist",
-    "node_modules",
-    "./**/*.test.ts"
-  ]
+  }
 }

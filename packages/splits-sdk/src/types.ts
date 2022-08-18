@@ -2,8 +2,8 @@ import type { Provider } from '@ethersproject/abstract-provider'
 import type { Signer } from '@ethersproject/abstract-signer'
 import { BigNumber } from '@ethersproject/bignumber'
 
-import type { SplitMain as SplitMainEthereumType } from './typechain/ethereum'
-import type { SplitMain as SplitMainPolygonType } from './typechain/polygon'
+import type { SplitMain as SplitMainEthereumType } from './typechain/SplitMain/ethereum'
+import type { SplitMain as SplitMainPolygonType } from './typechain/SplitMain/polygon'
 
 export type SplitMainType = SplitMainEthereumType | SplitMainPolygonType
 

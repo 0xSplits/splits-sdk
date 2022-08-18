@@ -1,0 +1,6 @@
+# Test files
+*.test.ts
+src/testing/**/*
+
+# Typescript files
+*/tsconfig.tsbuildinfo
