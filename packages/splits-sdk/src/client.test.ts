@@ -46,15 +46,28 @@ const mockAcceptControl = jest.fn().mockReturnValue('accept_control_tx')
 const mockMakeSplitImmutable = jest
   .fn()
   .mockReturnValue('make_split_immutable_tx')
+const mockGetEthBalance = jest.fn()
+const mockGetErc20Balance = jest.fn()
+const mockPredictAddress = jest.fn()
+const mockGetController = jest.fn().mockReturnValue(CONTROLLER_ADDRESS)
+const mockGetPotentialController = jest
+  .fn()
+  .mockReturnValue(NEW_CONTROLLER_ADDRESS)
+const mockGetHash = jest.fn()
 
 class MockContract {
   provider: Provider
-
   interface: {
     getEvent: (eventName: string) => {
       format: () => string
     }
   }
+  getETHBalance: typeof mockGetEthBalance
+  getERC20Balance: typeof mockGetErc20Balance
+  predictImmutableSplitAddress: typeof mockPredictAddress
+  getController: typeof mockGetController
+  getNewPotentialController: typeof mockGetPotentialController
+  getHash: typeof mockGetHash
 
   constructor(provider: Provider) {
     this.provider = provider
@@ -67,6 +80,13 @@ class MockContract {
         }
       },
     }
+
+    this.getETHBalance = mockGetEthBalance
+    this.getERC20Balance = mockGetErc20Balance
+    this.predictImmutableSplitAddress = mockPredictAddress
+    this.getController = mockGetController
+    this.getNewPotentialController = mockGetPotentialController
+    this.getHash = mockGetHash
   }
 
   connect() {
@@ -83,14 +103,6 @@ class MockContract {
       acceptControl: mockAcceptControl,
       makeSplitImmutable: mockMakeSplitImmutable,
     }
-  }
-
-  getController() {
-    return CONTROLLER_ADDRESS
-  }
-
-  getNewPotentialController() {
-    return NEW_CONTROLLER_ADDRESS
   }
 }
 jest.mock('@ethersproject/contracts', () => {
@@ -1084,6 +1096,181 @@ describe('SplitMain writes', () => {
         'make_split_immutable_tx',
         'format_ControlTransfer',
       )
+    })
+  })
+})
+
+describe('SplitMain reads', () => {
+  const provider = new mockProvider()
+  const splitsClient = new SplitsClient({
+    chainId: 1,
+    provider,
+  })
+
+  beforeEach(() => {
+    ;(validateRecipients as jest.Mock).mockClear()
+    ;(validateDistributorFeePercent as jest.Mock).mockClear()
+    ;(validateAddress as jest.Mock).mockClear()
+    getSortedRecipientsMock.mockClear()
+    getBigNumberMock.mockClear()
+
+    expect(validateRecipients).not.toBeCalled()
+    expect(validateDistributorFeePercent).not.toBeCalled()
+    expect(validateAddress).not.toBeCalled()
+    expect(getSortedRecipientsMock).not.toBeCalled()
+    expect(getBigNumberMock).not.toBeCalled()
+  })
+
+  describe('Get split balance test', () => {
+    const splitId = '0xgetbalance'
+
+    test('Get balance fails with no provider', async () => {
+      const badSplitsClient = new SplitsClient({
+        chainId: 1,
+      })
+
+      await expect(
+        async () =>
+          await badSplitsClient.getSplitBalance({
+            splitId,
+          }),
+      ).rejects.toThrow(MissingProviderError)
+    })
+
+    test('Returns eth balance', async () => {
+      mockGetEthBalance.mockReturnValueOnce(BigNumber.from(12))
+      const { balance } = await splitsClient.getSplitBalance({ splitId })
+
+      expect(balance).toEqual(BigNumber.from(12))
+      expect(validateAddress).toBeCalledWith(splitId)
+      expect(mockGetEthBalance).toBeCalledWith(splitId)
+    })
+
+    test('Returns ERC20 balance', async () => {
+      const token = '0xerc20'
+      mockGetErc20Balance.mockReturnValueOnce(BigNumber.from(19))
+      const { balance } = await splitsClient.getSplitBalance({ splitId, token })
+
+      expect(balance).toEqual(BigNumber.from(19))
+      expect(validateAddress).toBeCalledWith(splitId)
+      expect(mockGetErc20Balance).toBeCalledWith(splitId, token)
+    })
+  })
+
+  describe('Predict immutable split address tests', () => {
+    const recipients = [{ address: '0x54321', percentAllocation: 21 }]
+    const distributorFeePercent = 8
+
+    test('Predict immutable address fails with no provider', async () => {
+      const badSplitsClient = new SplitsClient({
+        chainId: 1,
+      })
+
+      await expect(
+        async () =>
+          await badSplitsClient.predictImmutableSplitAddress({
+            recipients,
+            distributorFeePercent,
+          }),
+      ).rejects.toThrow(MissingProviderError)
+    })
+
+    test('Predicts immutable address', async () => {
+      mockPredictAddress.mockReturnValueOnce('0xpredict')
+      const { splitId } = await splitsClient.predictImmutableSplitAddress({
+        recipients,
+        distributorFeePercent,
+      })
+
+      expect(splitId).toEqual('0xpredict')
+      expect(validateRecipients).toBeCalledWith(recipients)
+      expect(validateDistributorFeePercent).toBeCalledWith(
+        distributorFeePercent,
+      )
+      expect(getSortedRecipientsMock).toBeCalledWith(recipients)
+      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
+      expect(mockPredictAddress).toBeCalledWith(
+        SORTED_ADDRESSES,
+        SORTED_ALLOCATIONS,
+        DISTRIBUTOR_FEE,
+      )
+    })
+  })
+
+  describe('Get controller tests', () => {
+    const splitId = '0xgetController'
+
+    test('Get controller fails with no provider', async () => {
+      const badSplitsClient = new SplitsClient({
+        chainId: 1,
+      })
+
+      await expect(
+        async () =>
+          await badSplitsClient.getController({
+            splitId,
+          }),
+      ).rejects.toThrow(MissingProviderError)
+    })
+
+    test('Get controller passes', async () => {
+      const { controller } = await splitsClient.getController({ splitId })
+
+      expect(controller).toEqual(CONTROLLER_ADDRESS)
+      expect(validateAddress).toBeCalledWith(splitId)
+      expect(mockGetController).toBeCalledWith(splitId)
+    })
+  })
+
+  describe('Get new potential controller tests', () => {
+    const splitId = '0xgetPotentialController'
+
+    test('Get potential controller fails with no provider', async () => {
+      const badSplitsClient = new SplitsClient({
+        chainId: 1,
+      })
+
+      await expect(
+        async () =>
+          await badSplitsClient.getNewPotentialController({
+            splitId,
+          }),
+      ).rejects.toThrow(MissingProviderError)
+    })
+
+    test('Get potential controller passes', async () => {
+      const { newPotentialController } =
+        await splitsClient.getNewPotentialController({ splitId })
+
+      expect(newPotentialController).toEqual(NEW_CONTROLLER_ADDRESS)
+      expect(validateAddress).toBeCalledWith(splitId)
+      expect(mockGetPotentialController).toBeCalledWith(splitId)
+    })
+  })
+
+  describe('Get hash tests', () => {
+    const splitId = '0xhash'
+
+    test('Get hash fails with no provider', async () => {
+      const badSplitsClient = new SplitsClient({
+        chainId: 1,
+      })
+
+      await expect(
+        async () =>
+          await badSplitsClient.getHash({
+            splitId,
+          }),
+      ).rejects.toThrow(MissingProviderError)
+    })
+
+    test('Get hash passes', async () => {
+      mockGetHash.mockReturnValueOnce('hash')
+      const { hash } = await splitsClient.getHash({ splitId })
+
+      expect(hash).toEqual('hash')
+      expect(validateAddress).toBeCalledWith(splitId)
+      expect(mockGetHash).toBeCalledWith(splitId)
     })
   })
 })
