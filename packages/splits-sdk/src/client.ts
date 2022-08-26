@@ -13,6 +13,7 @@ import {
   SPLIT_MAIN_ADDRESS,
 } from './constants'
 import {
+  FailedToEstimateGasError,
   InvalidAuthError,
   InvalidConfigError,
   MissingProviderError,
@@ -140,6 +141,40 @@ export class SplitsClient {
       }
 
     throw new TransactionFailedError()
+  }
+
+  async estimateSplitDeploymentCost({
+    recipients,
+    distributorFeePercent,
+    controller = AddressZero,
+  }: CreateSplitConfig) {
+    validateRecipients(recipients)
+    validateDistributorFeePercent(distributorFeePercent)
+    if (!this._splitMain.provider)
+      throw new MissingProviderError(
+        'Provider required to get split active balances. Please update your call to the SplitsClient constructor with a valid provider, or set includeActiveBalances to false',
+      )
+
+    const [accounts, percentAllocations] =
+      getRecipientSortedAddressesAndAllocations(recipients)
+    const distributorFee = getBigNumberValue(distributorFeePercent)
+
+    // Estimate the gas cost of the createSplit transaction
+    const [gasEstimation, feeRate] = await Promise.all([
+      await this._splitMain.estimateGas.createSplit(
+        accounts,
+        percentAllocations,
+        distributorFee,
+        controller,
+      ),
+      await this._splitMain.provider.getFeeData(),
+    ])
+
+    if (gasEstimation && feeRate && feeRate.gasPrice) {
+      return gasEstimation.mul(feeRate.gasPrice)
+    }
+
+    throw new FailedToEstimateGasError()
   }
 
   async updateSplit({

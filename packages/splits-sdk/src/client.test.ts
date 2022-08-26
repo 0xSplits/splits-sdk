@@ -26,6 +26,7 @@ import {
   DISTRIBUTOR_FEE,
   CONTROLLER_ADDRESS,
   NEW_CONTROLLER_ADDRESS,
+  MOCK_FEE_DATA,
 } from './testing/constants'
 import { MockGraphqlClient } from './testing/mocks/graphql'
 import {
@@ -69,7 +70,14 @@ const getBigNumberMock = jest
     return DISTRIBUTOR_FEE
   })
 
-const mockProvider = jest.fn<Provider, unknown[]>()
+const mockProvider = jest.fn<Provider, unknown[]>(() => {
+  return {
+    getFeeData: () => {
+      return MOCK_FEE_DATA
+    },
+  } as unknown as Provider
+})
+
 const mockSigner = jest.fn<Signer, unknown[]>(() => {
   return {
     getAddress: () => {
@@ -225,6 +233,72 @@ describe('SplitMain writes', () => {
       expect(getTransactionEventSpy).toBeCalledWith(
         'create_split_tx',
         'format_CreateSplit',
+      )
+    })
+  })
+
+  describe('Estimate Deployment Cost', () => {
+    const recipients = [{ address: '0xuser', percentAllocation: 45 }]
+    const distributorFeePercent = 7.35
+
+    beforeEach(() => {
+      writeActions.createSplit.mockClear()
+    })
+
+    test('Estimate cost for create split fails with no provider', async () => {
+      const badSplitsClient = new SplitsClient({
+        chainId: 1,
+      })
+
+      await expect(
+        async () =>
+          await badSplitsClient.estimateSplitDeploymentCost({
+            recipients,
+            distributorFeePercent,
+          }),
+      ).rejects.toThrow(MissingProviderError)
+    })
+
+    test('Estimate create immutable split gas cost passes', async () => {
+      const gasCost = await splitsClient.estimateSplitDeploymentCost({
+        recipients,
+        distributorFeePercent,
+      })
+
+      expect(validateRecipients).toBeCalledWith(recipients)
+      expect(validateDistributorFeePercent).toBeCalledWith(
+        distributorFeePercent,
+      )
+      expect(getSortedRecipientsMock).toBeCalledWith(recipients)
+      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
+      expect(readActions.estimateGas.createSplit).toBeCalledWith(
+        SORTED_ADDRESSES,
+        SORTED_ALLOCATIONS,
+        DISTRIBUTOR_FEE,
+        AddressZero,
+      )
+    })
+
+    test('Estimate create mutable split gas cost passes', async () => {
+      const controller = '0xSplitController'
+      const gasCost = await splitsClient.estimateSplitDeploymentCost({
+        recipients,
+        distributorFeePercent,
+        controller,
+      })
+
+      expect(gasCost).toBeDefined()
+      expect(validateRecipients).toBeCalledWith(recipients)
+      expect(validateDistributorFeePercent).toBeCalledWith(
+        distributorFeePercent,
+      )
+      expect(getSortedRecipientsMock).toBeCalledWith(recipients)
+      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
+      expect(readActions.estimateGas.createSplit).toBeCalledWith(
+        SORTED_ADDRESSES,
+        SORTED_ALLOCATIONS,
+        DISTRIBUTOR_FEE,
+        controller,
       )
     })
   })

@@ -82,6 +82,15 @@ export class MissingProviderError extends Error {
   }
 }
 
+export class FailedToEstimateGasError extends Error {
+  name = 'FailedToEstimateGasError'
+
+  constructor(m?: string) {
+    super(m)
+    Object.setPrototypeOf(this, FailedToEstimateGasError.prototype)
+  }
+}
+
 export class MissingSignerError extends Error {
   name = 'MissingSignerError'
 

@@ -1,6 +1,11 @@
 import { Provider } from '@ethersproject/abstract-provider'
 
-import { CONTROLLER_ADDRESS, NEW_CONTROLLER_ADDRESS } from '../constants'
+import {
+  CONTROLLER_ADDRESS,
+  GAS_ESTIMATION,
+  MOCK_FEE_DATA,
+  NEW_CONTROLLER_ADDRESS,
+} from '../constants'
 
 export const writeActions = {
   createSplit: jest.fn().mockReturnValue('create_split_tx'),
@@ -22,6 +27,10 @@ export const writeActions = {
   makeSplitImmutable: jest.fn().mockReturnValue('make_split_immutable_tx'),
 }
 
+export const gasEstimationOptions = {
+  createSplit: jest.fn().mockReturnValue(GAS_ESTIMATION),
+}
+
 export const readActions = {
   getETHBalance: jest.fn(),
   getERC20Balance: jest.fn(),
@@ -29,6 +38,8 @@ export const readActions = {
   getController: jest.fn().mockReturnValue(CONTROLLER_ADDRESS),
   getNewPotentialController: jest.fn().mockReturnValue(NEW_CONTROLLER_ADDRESS),
   getHash: jest.fn(),
+  getFeeData: jest.fn().mockReturnValue(MOCK_FEE_DATA),
+  estimateGas: gasEstimationOptions,
 }
 
 export class MockSplitMain {
@@ -37,6 +48,9 @@ export class MockSplitMain {
     getEvent: (eventName: string) => {
       format: () => string
     }
+  }
+  estimateGas: {
+    createSplit: () => {}
   }
   getETHBalance: jest.Mock
   getERC20Balance: jest.Mock
@@ -63,6 +77,7 @@ export class MockSplitMain {
     this.getController = readActions.getController
     this.getNewPotentialController = readActions.getNewPotentialController
     this.getHash = readActions.getHash
+    this.estimateGas = readActions.estimateGas
   }
 
   connect() {
