@@ -11,3 +11,4 @@ export const MOCK_FEE_DATA = {
   maxPriorityFeePerGas: BigNumber.from(1500000000),
 }
 export const GAS_ESTIMATION = BigNumber.from(27938)
+export const DEPLOYMENT_COST_ESTIMATION = BigNumber.from('0x0257ee221cebd4')

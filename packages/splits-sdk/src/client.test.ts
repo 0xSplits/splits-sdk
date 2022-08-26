@@ -27,6 +27,7 @@ import {
   CONTROLLER_ADDRESS,
   NEW_CONTROLLER_ADDRESS,
   MOCK_FEE_DATA,
+  DEPLOYMENT_COST_ESTIMATION,
 } from './testing/constants'
 import { MockGraphqlClient } from './testing/mocks/graphql'
 import {
@@ -265,6 +266,8 @@ describe('SplitMain writes', () => {
         distributorFeePercent,
       })
 
+      expect(gasCost).toBeDefined()
+      expect(gasCost).toEqual(DEPLOYMENT_COST_ESTIMATION)
       expect(validateRecipients).toBeCalledWith(recipients)
       expect(validateDistributorFeePercent).toBeCalledWith(
         distributorFeePercent,
@@ -288,6 +291,7 @@ describe('SplitMain writes', () => {
       })
 
       expect(gasCost).toBeDefined()
+      expect(gasCost).toEqual(DEPLOYMENT_COST_ESTIMATION)
       expect(validateRecipients).toBeCalledWith(recipients)
       expect(validateDistributorFeePercent).toBeCalledWith(
         distributorFeePercent,
