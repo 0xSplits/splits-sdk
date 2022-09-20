@@ -31,6 +31,7 @@ export type GqlRecipient = {
 }
 
 export type GqlSplit = {
+  __typename: 'Split'
   id: Scalars['ID']
   recipients: GqlRecipient[]
   upstream?: GqlRecipient[]
@@ -41,8 +42,26 @@ export type GqlSplit = {
 }
 
 export type GqlUser = {
+  __typename: 'User'
   id: Scalars['ID']
   upstream?: GqlRecipient[]
 }
 
-export type GqlAccount = GqlUser | GqlSplit
+export type GqlWaterfallModule = {
+  __typename: 'WaterfallModule'
+  id: Scalars['ID']
+  token: GqlToken
+  tranches: GqlWaterfallTranche[]
+  latestBlock: Scalars['Int']
+}
+
+export type GqlWaterfallTranche = {
+  id: Scalars['ID']
+  startAmount: Scalars['Int']
+  size?: Scalars['Int']
+  claimedAmount: Scalars['Int']
+  account: GqlWaterfallModule
+  recipient: GqlAccount
+}
+
+export type GqlAccount = GqlUser | GqlSplit | GqlWaterfallModule

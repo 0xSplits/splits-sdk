@@ -3,6 +3,8 @@ import { BigNumber } from '@ethersproject/bignumber'
 export const PERCENTAGE_SCALE = BigNumber.from(1e6)
 
 export const SPLIT_MAIN_ADDRESS = '0x2ed6c4B5dA6378c7897AC67Ba9e43102Feb694EE'
+export const WATERFALL_MODULE_FACTORY_ADDRESS =
+  '0xB8c2853b9850Cf9E6B5418D25Bf8644aEeD5D80c'
 export const REVERSE_RECORDS_ADDRESS =
   '0x3671aE578E63FdF66ad4F3E12CC0c0d71Ac7510C'
 
@@ -24,6 +26,7 @@ export const SPLITS_SUBGRAPH_CHAIN_IDS = [
   ...OPTIMISM_CHAIN_IDS,
   ...ARBITRUM_CHAIN_IDS,
 ]
+export const WATERFALL_CHAIN_IDS = [1, 5, 137, 80001]
 
 export const SPLITS_MAX_PRECISION_DECIMALS = 4
 

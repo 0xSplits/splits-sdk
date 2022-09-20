@@ -12,4 +12,7 @@ export type {
   SplitRecipient,
   Split,
   TokenBalances,
+  WaterfallTranche,
+  WaterfallModule,
+  WaterfallTrancheInput,
 } from './types'
