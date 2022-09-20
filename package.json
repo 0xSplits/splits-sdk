@@ -2,6 +2,7 @@
   "name": "0xsplits",
   "private": true,
   "scripts": {
+    "build": "lerna run build",
     "eslint": "eslint . --ext '.ts,.tsx'",
     "eslint:fix": "eslint . --ext '.ts,.tsx' --fix",
     "prettier": "prettier --check --config .prettierrc './**/src/*.{.js,jsx,ts,tsx}'",

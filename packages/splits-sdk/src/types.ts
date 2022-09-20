@@ -78,6 +78,7 @@ export type TokenBalances = {
 }
 
 export type Split = {
+  type: 'Split'
   id: string
   controller: string | null
   newPotentialController: string | null
@@ -85,3 +86,24 @@ export type Split = {
   recipients: SplitRecipient[]
   createdBlock: number
 }
+
+export type WaterfallTrancheInput = {
+  recipient: string
+  size?: number
+}
+
+export type WaterfallTranche = {
+  recipientAddress: string
+  recipientEnsName?: string
+  startAmount: number
+  size?: number
+}
+
+export type WaterfallModule = {
+  type: 'WaterfallModule'
+  id: string
+  token: string
+  tranches: WaterfallTranche[]
+}
+
+export type Account = Split | WaterfallModule

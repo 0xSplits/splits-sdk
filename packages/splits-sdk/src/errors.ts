@@ -9,9 +9,9 @@ import {
 export class UnsupportedChainIdError extends Error {
   name = 'UnsupportedChainIdError'
 
-  constructor(invalidChainId: number) {
+  constructor(invalidChainId: number, supportedChains: number[]) {
     super(
-      `Unsupported chain: ${invalidChainId}. Supported chains are: ${SPLITS_SUPPORTED_CHAIN_IDS}`,
+      `Unsupported chain: ${invalidChainId}. Supported chains are: ${supportedChains}`,
     )
     Object.setPrototypeOf(this, UnsupportedChainIdError.prototype)
   }

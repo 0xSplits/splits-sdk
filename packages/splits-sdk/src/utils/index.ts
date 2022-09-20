@@ -1,6 +1,7 @@
 import { Provider } from '@ethersproject/abstract-provider'
 import { BigNumber } from '@ethersproject/bignumber'
 import { hexZeroPad } from '@ethersproject/bytes'
+import { AddressZero } from '@ethersproject/constants'
 import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
 import { nameprep } from '@ethersproject/strings'
 
@@ -9,7 +10,11 @@ import {
   PERCENTAGE_SCALE,
   REVERSE_RECORDS_ADDRESS,
 } from '../constants'
-import type { SplitRecipient } from '../types'
+import type {
+  SplitRecipient,
+  WaterfallTranche,
+  WaterfallTrancheInput,
+} from '../types'
 import { ierc20Interface } from './ierc20'
 import { reverseRecordsInterface } from './reverseRecords'
 
@@ -104,4 +109,60 @@ export const addEnsNames = async (
       }
     }
   })
+}
+
+export const addWaterfallEnsNames = async (
+  provider: Provider,
+  tranches: WaterfallTranche[],
+): Promise<void> => {
+  const reverseRecords = new Contract(
+    REVERSE_RECORDS_ADDRESS,
+    reverseRecordsInterface,
+    provider,
+  )
+
+  const addresses = tranches.map((tranche) => tranche.recipientAddress)
+  const allNames: string[] = await reverseRecords.getNames(addresses)
+  allNames.map((ens, index) => {
+    if (ens) {
+      try {
+        if (nameprep(ens)) {
+          tranches[index].recipientEnsName = ens
+        }
+      } catch (e) {
+        // nameprep generates an error for certain characters (like emojis).
+        // Let's just ignore for now and not add the ens
+        return
+      }
+    }
+  })
+}
+
+export const getTrancheRecipientsAndSizes = async (
+  token: string,
+  tranches: WaterfallTrancheInput[],
+  provider: Provider,
+): Promise<[string[], BigNumber[]]> => {
+  const recipients: string[] = []
+  const sizes: BigNumber[] = []
+
+  const tokenDecimals = await getTokenDecimals(token, provider)
+
+  tranches.forEach((tranche) => {
+    recipients.push(tranche.recipient)
+    if (tranche.size)
+      sizes.push(BigNumber.from(tranche.size * Math.pow(10, tokenDecimals)))
+  })
+
+  return [recipients, sizes]
+}
+
+export const getTokenDecimals = async (
+  token: string,
+  provider: Provider,
+): Promise<number> => {
+  const tokenContract = new Contract(token, ierc20Interface, provider)
+  const tokenDecimals =
+    token !== AddressZero ? await tokenContract.decimals() : 18
+  return tokenDecimals
 }

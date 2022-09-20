@@ -6,7 +6,11 @@ import {
   InvalidDistributorFeePercentError,
   InvalidArgumentError,
 } from '../errors'
-import type { SplitRecipient } from '../types'
+import type {
+  SplitRecipient,
+  WaterfallTranche,
+  WaterfallTrancheInput,
+} from '../types'
 
 const getNumDigitsAfterDecimal = (value: number): number => {
   if (Number.isInteger(value)) return 0
@@ -76,4 +80,25 @@ export const validateDistributorFeePercent = (
 export const validateAddress = (address: string): void => {
   if (!isAddress(address))
     throw new InvalidArgumentError(`Invalid address: ${address}`)
+}
+
+export const validateTranches = (tranches: WaterfallTrancheInput[]): void => {
+  tranches.forEach((tranche, index) => {
+    if (!isAddress(tranche.recipient))
+      throw new InvalidArgumentError(
+        `Invalid recipient address: ${tranche.recipient}`,
+      )
+
+    if (index === tranches.length - 1) {
+      if (tranche.size !== undefined)
+        throw new InvalidArgumentError(
+          'Residual tranche cannot have a size. Please leave as undefined.',
+        )
+    } else {
+      if (!tranche.size)
+        throw new InvalidArgumentError(
+          'Size required for all tranches except the residual',
+        )
+    }
+  })
 }
