@@ -75,7 +75,7 @@ import {
   addEnsNames,
   getTrancheRecipientsAndSizes,
   addWaterfallEnsNames,
-  getTokenDecimals,
+  getTokenData,
 } from './utils'
 import {
   validateRecipients,
@@ -101,6 +101,7 @@ const waterfallModuleInterface = new Interface(WATERFALL_MODULE_ARTIFACT.abi)
 
 export class SplitsClient {
   private readonly _chainId: number
+  private readonly _ensProvider: Provider | undefined
   // TODO: something better we can do here to handle typescript check for missing signer?
   private readonly _signer: Signer | typeof MISSING_SIGNER
   private readonly _splitMain: SplitMainType
@@ -114,6 +115,7 @@ export class SplitsClient {
   constructor({
     chainId,
     provider,
+    ensProvider,
     signer,
     includeEnsNames = false,
     ensProvider,
@@ -151,6 +153,7 @@ export class SplitsClient {
       ) as WaterfallModuleFactoryType
     }
 
+    this._ensProvider = ensProvider
     this._chainId = chainId
     this._signer = signer ?? MISSING_SIGNER
     this._graphqlClient = getGraphqlClient(chainId)
@@ -904,19 +907,20 @@ export class SplitsClient {
     this._requireWaterfallChain()
     if (!this._waterfallModuleFactory) throw new Error()
 
-    const tokenDecimals = await getTokenDecimals(
+    const tokenData = await getTokenData(
       gqlWaterfallModule.token.id,
       this._waterfallModuleFactory.provider,
     )
 
     const waterfallModule = protectedFormatWaterfallModule(
       gqlWaterfallModule,
-      tokenDecimals,
+      tokenData.symbol,
+      tokenData.decimals,
     )
     if (this._includeEnsNames) {
       if (!this._waterfallModuleFactory) throw new Error()
       await addWaterfallEnsNames(
-        this._waterfallModuleFactory.provider,
+        this._ensProvider ?? this._waterfallModuleFactory.provider,
         waterfallModule.tranches,
       )
     }
