@@ -175,12 +175,17 @@ export const protectedFormatSplit = (gqlSplit: GqlSplit): Split => {
 // Should only be called by _formatWaterfallModule on WaterfallClient
 export const protectedFormatWaterfallModule = (
   gqlWaterfallModule: GqlWaterfallModule,
+  tokenSymbol: string,
   tokenDecimals: number,
 ): WaterfallModule => {
   return {
     type: 'WaterfallModule',
     id: getAddress(gqlWaterfallModule.id),
-    token: getAddress(gqlWaterfallModule.token.id),
+    token: {
+      address: getAddress(gqlWaterfallModule.token.id),
+      symbol: tokenSymbol,
+      decimals: tokenDecimals,
+    },
     tranches: gqlWaterfallModule.tranches.map((tranche) =>
       formatWaterfallModuleTranche(tranche, tokenDecimals),
     ),

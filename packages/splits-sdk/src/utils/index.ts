@@ -146,23 +146,42 @@ export const getTrancheRecipientsAndSizes = async (
   const recipients: string[] = []
   const sizes: BigNumber[] = []
 
-  const tokenDecimals = await getTokenDecimals(token, provider)
+  const tokenData = await getTokenData(token, provider)
 
   tranches.forEach((tranche) => {
     recipients.push(tranche.recipient)
     if (tranche.size)
-      sizes.push(BigNumber.from(tranche.size * Math.pow(10, tokenDecimals)))
+      sizes.push(
+        BigNumber.from(tranche.size * Math.pow(10, tokenData.decimals)),
+      )
   })
 
   return [recipients, sizes]
 }
 
-export const getTokenDecimals = async (
+export const getTokenData = async (
   token: string,
   provider: Provider,
-): Promise<number> => {
+): Promise<{
+  symbol: string
+  decimals: number
+}> => {
+  if (token === AddressZero)
+    return {
+      symbol: 'ETH',
+      decimals: 18,
+    }
+
   const tokenContract = new Contract(token, ierc20Interface, provider)
-  const tokenDecimals =
-    token !== AddressZero ? await tokenContract.decimals() : 18
-  return tokenDecimals
+  // TODO: error handling? For bad erc20...
+
+  const [decimals, symbol] = await Promise.all([
+    tokenContract.decimals(),
+    tokenContract.symbol(),
+  ])
+
+  return {
+    symbol,
+    decimals,
+  }
 }
