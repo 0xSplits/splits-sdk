@@ -1,4 +1,5 @@
 import { Interface } from '@ethersproject/abi'
+import { Provider } from '@ethersproject/abstract-provider'
 import { Signer } from '@ethersproject/abstract-signer'
 import { getAddress } from '@ethersproject/address'
 import { BigNumber } from '@ethersproject/bignumber'
@@ -72,7 +73,7 @@ import {
   addEnsNames,
   getTrancheRecipientsAndSizes,
   addWaterfallEnsNames,
-  getTokenDecimals,
+  getTokenData,
 } from './utils'
 import {
   validateRecipients,
@@ -98,6 +99,7 @@ const waterfallModuleInterface = new Interface(WATERFALL_MODULE_ARTIFACT.abi)
 
 export class SplitsClient {
   private readonly _chainId: number
+  private readonly _ensProvider: Provider | undefined
   // TODO: something better we can do here to handle typescript check for missing signer?
   private readonly _signer: Signer | typeof MISSING_SIGNER
   private readonly _splitMain: SplitMainType
@@ -110,10 +112,11 @@ export class SplitsClient {
   constructor({
     chainId,
     provider,
+    ensProvider,
     signer,
     includeEnsNames = false,
   }: SplitsClientConfig) {
-    if (includeEnsNames && !provider)
+    if (includeEnsNames && !provider && !ensProvider)
       throw new InvalidConfigError(
         'Must include a provider if includeEnsNames is set to true',
       )
@@ -140,6 +143,7 @@ export class SplitsClient {
       ) as WaterfallModuleFactoryType
     }
 
+    this._ensProvider = ensProvider
     this._chainId = chainId
     this._signer = signer ?? MISSING_SIGNER
     this._graphqlClient = getGraphqlClient(chainId)
@@ -879,7 +883,10 @@ export class SplitsClient {
   private async _formatSplit(gqlSplit: GqlSplit): Promise<Split> {
     const split = protectedFormatSplit(gqlSplit)
     if (this._includeEnsNames) {
-      await addEnsNames(this._splitMain.provider, split.recipients)
+      await addEnsNames(
+        this._ensProvider ?? this._splitMain.provider,
+        split.recipients,
+      )
     }
 
     return split
@@ -892,19 +899,20 @@ export class SplitsClient {
     this._requireWaterfallChain()
     if (!this._waterfallModuleFactory) throw new Error()
 
-    const tokenDecimals = await getTokenDecimals(
+    const tokenData = await getTokenData(
       gqlWaterfallModule.token.id,
       this._waterfallModuleFactory.provider,
     )
 
     const waterfallModule = protectedFormatWaterfallModule(
       gqlWaterfallModule,
-      tokenDecimals,
+      tokenData.symbol,
+      tokenData.decimals,
     )
     if (this._includeEnsNames) {
       if (!this._waterfallModuleFactory) throw new Error()
       await addWaterfallEnsNames(
-        this._waterfallModuleFactory.provider,
+        this._ensProvider ?? this._waterfallModuleFactory.provider,
         waterfallModule.tranches,
       )
     }
