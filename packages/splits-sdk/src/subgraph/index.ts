@@ -4,9 +4,21 @@ import { AddressZero, One } from '@ethersproject/constants'
 import { GraphQLClient, gql } from 'graphql-request'
 
 import { SPLITS_SUBGRAPH_CHAIN_IDS } from '../constants'
-import type { Split, SplitRecipient, TokenBalances } from '../types'
+import type {
+  Split,
+  SplitRecipient,
+  TokenBalances,
+  WaterfallModule,
+  WaterfallTranche,
+} from '../types'
 import { fromBigNumberValue } from '../utils'
-import { GqlRecipient, GqlSplit, GqlTokenBalance } from './types'
+import {
+  GqlRecipient,
+  GqlSplit,
+  GqlTokenBalance,
+  GqlWaterfallModule,
+  GqlWaterfallTranche,
+} from './types'
 
 const GQL_ENDPOINTS: { [chainId: number]: string } = {
   1: 'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-ethereum',
@@ -59,6 +71,31 @@ const SPLIT_FIELDS_FRAGMENT = gql`
   ${RECIPIENT_FIELDS_FRAGMENT}
 `
 
+const WATERFALL_TRANCHE_FIELDS_FRAGMENT = gql`
+  fragment WaterfallTrancheFieldsFragment on WaterfallTranche {
+    startAmount
+    size
+    claimedAmount
+    recipient {
+      id
+    }
+  }
+`
+
+const WATERFALL_MODULE_FIELDS_FRAGMENT = gql`
+  fragment WaterfallModuleFieldsFragment on WaterfallModule {
+    token {
+      id
+    }
+    latestBlock
+    tranches(first: 1000) {
+      ...WaterfallTrancheFieldsFragment
+    }
+  }
+
+  ${WATERFALL_TRANCHE_FIELDS_FRAGMENT}
+`
+
 const ACCOUNT_BALANCES_FRAGMENT = gql`
   fragment AccountBalancesFragment on Account {
     internalBalances(first: 1000, orderBy: amount, orderDirection: desc) {
@@ -95,6 +132,16 @@ const FULL_SPLIT_FIELDS_FRAGMENT = gql`
   ${SPLIT_FIELDS_FRAGMENT}
 `
 
+const FULL_WATERFALL_MODULE_FIELDS_FRAGMENT = gql`
+  fragment FullWaterfallModuleFieldsFragment on WaterfallModule {
+    ...AccountFieldsFragment
+    ...WaterfallModuleFieldsFragment
+  }
+
+  ${ACCOUNT_FIELDS_FRAGMENT}
+  ${WATERFALL_MODULE_FIELDS_FRAGMENT}
+`
+
 const formatRecipient = (gqlRecipient: GqlRecipient): SplitRecipient => {
   return {
     address: getAddress(gqlRecipient.account.id),
@@ -105,6 +152,7 @@ const formatRecipient = (gqlRecipient: GqlRecipient): SplitRecipient => {
 // Should only be called by _formatSplit on SplitsClient
 export const protectedFormatSplit = (gqlSplit: GqlSplit): Split => {
   return {
+    type: 'Split',
     id: getAddress(gqlSplit.id),
     controller:
       gqlSplit.controller !== AddressZero
@@ -121,6 +169,34 @@ export const protectedFormatSplit = (gqlSplit: GqlSplit): Split => {
       .sort((a, b) => {
         return b.percentAllocation - a.percentAllocation
       }),
+  }
+}
+
+// Should only be called by _formatWaterfallModule on WaterfallClient
+export const protectedFormatWaterfallModule = (
+  gqlWaterfallModule: GqlWaterfallModule,
+  tokenDecimals: number,
+): WaterfallModule => {
+  return {
+    type: 'WaterfallModule',
+    id: getAddress(gqlWaterfallModule.id),
+    token: getAddress(gqlWaterfallModule.token.id),
+    tranches: gqlWaterfallModule.tranches.map((tranche) =>
+      formatWaterfallModuleTranche(tranche, tokenDecimals),
+    ),
+  }
+}
+
+const formatWaterfallModuleTranche = (
+  gqlWaterfallTranche: GqlWaterfallTranche,
+  tokenDecimals: number,
+): WaterfallTranche => {
+  return {
+    recipientAddress: getAddress(gqlWaterfallTranche.recipient.id),
+    startAmount: gqlWaterfallTranche.startAmount / Math.pow(10, tokenDecimals),
+    size: gqlWaterfallTranche.size
+      ? gqlWaterfallTranche.size / Math.pow(10, tokenDecimals)
+      : undefined,
   }
 }
 
@@ -144,6 +220,31 @@ export const SPLIT_QUERY = gql`
   }
 
   ${FULL_SPLIT_FIELDS_FRAGMENT}
+`
+
+export const WATERFALL_MODULE_QUERY = gql`
+  query waterfallModule($waterfallModule: ID!) {
+    waterfallModule(id: $waterfallModule) {
+      ...FullWaterfallModuleFieldsFragment
+    }
+  }
+
+  ${FULL_WATERFALL_MODULE_FIELDS_FRAGMENT}
+`
+
+export const ACCOUNT_QUERY = gql`
+  query account($accountId: ID!) {
+    account(id: $accountId) {
+      __typename
+      ...AccountFieldsFragment
+      ...SplitFieldsFragment
+      ...WaterfallModuleFieldsFragment
+    }
+  }
+
+  ${ACCOUNT_FIELDS_FRAGMENT}
+  ${SPLIT_FIELDS_FRAGMENT}
+  ${WATERFALL_MODULE_FIELDS_FRAGMENT}
 `
 
 export const RELATED_SPLITS_QUERY = gql`
