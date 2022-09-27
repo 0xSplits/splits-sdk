@@ -2,12 +2,13 @@
   "name": "0xsplits",
   "private": true,
   "scripts": {
-    "build": "lerna run build",
+    "lerna-build": "lerna run build",
     "eslint": "eslint . --ext '.ts,.tsx'",
     "eslint:fix": "eslint . --ext '.ts,.tsx' --fix",
     "prettier": "prettier --check --config .prettierrc './**/src/*.{.js,jsx,ts,tsx}'",
     "prettier:fix": "prettier --config .prettierrc './**/src/*.{.js,jsx,ts,tsx}' --write",
-    "test": "jest"
+    "test": "jest",
+    "lerna-version": "lerna version --no-private"
   },
   "workspaces": {
     "packages": [
