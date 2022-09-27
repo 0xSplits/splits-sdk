@@ -7,8 +7,7 @@
     "eslint:fix": "eslint . --ext '.ts,.tsx' --fix",
     "prettier": "prettier --check --config .prettierrc './**/src/*.{.js,jsx,ts,tsx}'",
     "prettier:fix": "prettier --config .prettierrc './**/src/*.{.js,jsx,ts,tsx}' --write",
-    "test": "jest",
-    "version": "lerna version --no-private"
+    "test": "jest"
   },
   "workspaces": {
     "packages": [
