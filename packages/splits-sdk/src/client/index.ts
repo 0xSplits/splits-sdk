@@ -1,50 +1,40 @@
 import { Interface } from '@ethersproject/abi'
-import { Provider } from '@ethersproject/abstract-provider'
-import { Signer } from '@ethersproject/abstract-signer'
 import { getAddress } from '@ethersproject/address'
 import { BigNumber } from '@ethersproject/bignumber'
 import { AddressZero, One } from '@ethersproject/constants'
 import { Contract, Event } from '@ethersproject/contracts'
-import { GraphQLClient, Variables } from 'graphql-request'
 
-import SPLIT_MAIN_ARTIFACT_ETHEREUM from './artifacts/contracts/SplitMain/ethereum/SplitMain.json'
-import SPLIT_MAIN_ARTIFACT_POLYGON from './artifacts/contracts/SplitMain/polygon/SplitMain.json'
-import WATERFALL_MODULE_FACTORY_ARTIFACT from './artifacts/contracts/WaterfallModuleFactory/WaterfallModuleFactory.json'
-import WATERFALL_MODULE_ARTIFACT from './artifacts/contracts/WaterfallModule/WaterfallModule.json'
+import SPLIT_MAIN_ARTIFACT_ETHEREUM from '../artifacts/contracts/SplitMain/ethereum/SplitMain.json'
+import SPLIT_MAIN_ARTIFACT_POLYGON from '../artifacts/contracts/SplitMain/polygon/SplitMain.json'
+import BaseClient from '../client/base'
+import WaterfallClient from '../client/waterfall'
 import {
   ETHEREUM_CHAIN_IDS,
   POLYGON_CHAIN_IDS,
   SPLITS_SUPPORTED_CHAIN_IDS,
   SPLIT_MAIN_ADDRESS,
   WATERFALL_CHAIN_IDS,
-  WATERFALL_MODULE_FACTORY_ADDRESS,
-} from './constants'
+} from '../constants'
 import {
   InvalidAuthError,
   InvalidConfigError,
   MissingProviderError,
-  MissingSignerError,
   TransactionFailedError,
   UnsupportedChainIdError,
-  UnsupportedSubgraphChainIdError,
-} from './errors'
+} from '../errors'
 import {
   ACCOUNT_BALANCES_QUERY,
   ACCOUNT_QUERY,
   formatAccountBalances,
-  getGraphqlClient,
   protectedFormatSplit,
-  protectedFormatWaterfallModule,
   RELATED_SPLITS_QUERY,
   SPLIT_QUERY,
-  WATERFALL_MODULE_QUERY,
-} from './subgraph'
+} from '../subgraph'
 import type {
   GqlAccount,
   GqlAccountBalances,
   GqlSplit,
-  GqlWaterfallModule,
-} from './subgraph/types'
+} from '../subgraph/types'
 import type {
   SplitMainType,
   SplitsClientConfig,
@@ -61,53 +51,31 @@ import type {
   SplitRecipient,
   Split,
   TokenBalances,
-  WaterfallModule,
-  WaterfallTrancheInput,
   Account,
-} from './types'
+} from '../types'
 import {
   getRecipientSortedAddressesAndAllocations,
   getTransactionEvent,
   getBigNumberValue,
   fetchERC20TransferredTokens,
   addEnsNames,
-  getTrancheRecipientsAndSizes,
-  addWaterfallEnsNames,
-  getTokenData,
-} from './utils'
+} from '../utils'
 import {
   validateRecipients,
   validateDistributorFeePercent,
   validateAddress,
-  validateTranches,
-} from './utils/validation'
-import type { SplitMain as SplitMainEthereumType } from './typechain/SplitMain/ethereum'
-import type { SplitMain as SplitMainPolygonType } from './typechain/SplitMain/polygon'
-import type { WaterfallModuleFactory as WaterfallModuleFactoryType } from './typechain/WaterfallModuleFactory'
-import type { WaterfallModule as WaterfallModuleType } from './typechain/WaterfallModule'
-
-const MISSING_SIGNER = ''
+} from '../utils/validation'
+import type { SplitMain as SplitMainEthereumType } from '../typechain/SplitMain/ethereum'
+import type { SplitMain as SplitMainPolygonType } from '../typechain/SplitMain/polygon'
 
 const splitMainInterfaceEthereum = new Interface(
   SPLIT_MAIN_ARTIFACT_ETHEREUM.abi,
 )
 const splitMainInterfacePolygon = new Interface(SPLIT_MAIN_ARTIFACT_POLYGON.abi)
-const waterfallModuleFactoryInterface = new Interface(
-  WATERFALL_MODULE_FACTORY_ARTIFACT.abi,
-)
-const waterfallModuleInterface = new Interface(WATERFALL_MODULE_ARTIFACT.abi)
 
-export class SplitsClient {
-  private readonly _chainId: number
-  private readonly _ensProvider: Provider | undefined
-  // TODO: something better we can do here to handle typescript check for missing signer?
-  private readonly _signer: Signer | typeof MISSING_SIGNER
+export class SplitsClient extends BaseClient {
   private readonly _splitMain: SplitMainType
-  private readonly _waterfallModuleFactory:
-    | WaterfallModuleFactoryType
-    | undefined
-  private readonly _graphqlClient: GraphQLClient | undefined
-  private readonly _includeEnsNames: boolean
+  readonly waterfall: WaterfallClient | undefined
 
   constructor({
     chainId,
@@ -116,6 +84,13 @@ export class SplitsClient {
     signer,
     includeEnsNames = false,
   }: SplitsClientConfig) {
+    super({
+      chainId,
+      provider,
+      ensProvider,
+      signer,
+      includeEnsNames,
+    })
     if (includeEnsNames && !provider && !ensProvider)
       throw new InvalidConfigError(
         'Must include a provider if includeEnsNames is set to true',
@@ -136,18 +111,14 @@ export class SplitsClient {
     else throw new UnsupportedChainIdError(chainId, SPLITS_SUPPORTED_CHAIN_IDS)
 
     if (WATERFALL_CHAIN_IDS.includes(chainId)) {
-      this._waterfallModuleFactory = new Contract(
-        WATERFALL_MODULE_FACTORY_ADDRESS,
-        waterfallModuleFactoryInterface,
+      this.waterfall = new WaterfallClient({
+        chainId,
         provider,
-      ) as WaterfallModuleFactoryType
+        ensProvider,
+        signer,
+        includeEnsNames,
+      })
     }
-
-    this._ensProvider = ensProvider
-    this._chainId = chainId
-    this._signer = signer ?? MISSING_SIGNER
-    this._graphqlClient = getGraphqlClient(chainId)
-    this._includeEnsNames = includeEnsNames
   }
 
   /*
@@ -657,138 +628,6 @@ export class SplitsClient {
 
   /*
   /
-  / WATERFALL ACTIONS
-  /
-  */
-  // Write actions
-  async createWaterfallModule({
-    token,
-    tranches,
-  }: {
-    token: string
-    tranches: WaterfallTrancheInput[]
-  }): Promise<{
-    waterfallModule: string
-    event: Event
-  }> {
-    validateAddress(token)
-    validateTranches(tranches)
-    this._requireSigner()
-    this._requireWaterfallChain()
-    if (!this._waterfallModuleFactory) throw new Error()
-
-    const [recipients, trancheSizes] = await getTrancheRecipientsAndSizes(
-      token,
-      tranches,
-      this._waterfallModuleFactory.provider,
-    )
-    const createWaterfallTx = await this._waterfallModuleFactory
-      .connect(this._signer)
-      .createWaterfallModule(token, recipients, trancheSizes)
-    const event = await getTransactionEvent(
-      createWaterfallTx,
-      this._waterfallModuleFactory.interface
-        .getEvent('CreateWaterfallModule')
-        .format(),
-    )
-    if (event && event.args)
-      return {
-        waterfallModule: event.args.waterfallModuleId,
-        event,
-      }
-
-    throw new TransactionFailedError()
-  }
-
-  async waterfallFunds({
-    waterfallModule,
-  }: {
-    waterfallModule: string
-  }): Promise<{
-    event: Event
-  }> {
-    validateAddress(waterfallModule)
-    this._requireSigner()
-
-    if (!this._signer) throw new Error()
-
-    const waterfallContract = new Contract(
-      waterfallModule,
-      waterfallModuleInterface,
-      this._signer,
-    ) as WaterfallModuleType
-    const waterfallFundsTx = await waterfallContract.waterfallFunds()
-    const event = await getTransactionEvent(
-      waterfallFundsTx,
-      waterfallContract.interface.getEvent('WaterfallFunds').format(),
-    )
-    if (event)
-      return {
-        event,
-      }
-
-    throw new TransactionFailedError()
-  }
-
-  async recoverNonWaterfallFunds({
-    waterfallModule,
-    token,
-    recipient,
-  }: {
-    waterfallModule: string
-    token: string
-    recipient: string
-  }): Promise<{
-    event: Event
-  }> {
-    validateAddress(waterfallModule)
-    validateAddress(token)
-    validateAddress(recipient)
-    // Load waterfall and confirm token is not primary token and recipient is valid???
-    this._requireSigner()
-
-    if (!this._signer) throw new Error()
-
-    const waterfallContract = new Contract(
-      waterfallModule,
-      waterfallModuleInterface,
-      this._signer,
-    ) as WaterfallModuleType
-    const recoverFundsTx = await waterfallContract.recoverNonWaterfallFunds(
-      token,
-      recipient,
-    )
-    const event = await getTransactionEvent(
-      recoverFundsTx,
-      waterfallContract.interface.getEvent('RecoverNonWaterfallFunds').format(),
-    )
-    if (event)
-      return {
-        event,
-      }
-
-    throw new TransactionFailedError()
-  }
-
-  // Graphql read actions
-  async getWaterfallMetadata({
-    waterfallModule,
-  }: {
-    waterfallModule: string
-  }): Promise<WaterfallModule> {
-    validateAddress(waterfallModule)
-
-    const response = await this._makeGqlRequest<{
-      waterfallModule: GqlWaterfallModule
-    }>(WATERFALL_MODULE_QUERY, {
-      waterfallModule: waterfallModule.toLowerCase(),
-    })
-
-    return await this._formatWaterfallModule(response.waterfallModule)
-  }
-
-  /*
-  /
   / ACCOUNT ACTIONS
   /
   */
@@ -811,21 +650,6 @@ export class SplitsClient {
   }
 
   // Helper functions
-  private _requireProvider() {
-    if (!this._splitMain.provider)
-      throw new MissingProviderError(
-        'Provider required to perform this action, please update your call to the SplitsClient constructor',
-      )
-  }
-
-  private _requireSigner() {
-    this._requireProvider()
-    if (!this._signer)
-      throw new MissingSignerError(
-        'Signer required to perform this action, please update your call to the SplitsClient constructor',
-      )
-  }
-
   private async _requireController(splitId: string) {
     const { controller } = await this.getController({ splitId })
     // TODO: how to get rid of this, needed for typescript check
@@ -853,70 +677,24 @@ export class SplitsClient {
       )
   }
 
-  private _requireWaterfallChain() {
-    if (!this._waterfallModuleFactory)
-      throw new UnsupportedChainIdError(this._chainId, WATERFALL_CHAIN_IDS)
-  }
-
-  private async _makeGqlRequest<ResponseType>(
-    query: string,
-    variables?: Variables,
-  ): Promise<ResponseType> {
-    if (!this._graphqlClient) {
-      throw new UnsupportedSubgraphChainIdError()
-    }
-
-    // TODO: any error handling? need to add try/catch if so
-    const result = await this._graphqlClient.request(query, variables)
-    return result
-  }
-
   private async _formatAccount(
     gqlAccount: GqlAccount,
   ): Promise<Account | undefined> {
+    if (!gqlAccount) return
+
     if (gqlAccount.__typename === 'Split')
       return await this._formatSplit(gqlAccount)
-    else if (gqlAccount.__typename === 'WaterfallModule')
-      return await this._formatWaterfallModule(gqlAccount)
+    else if (gqlAccount.__typename === 'WaterfallModule' && this.waterfall)
+      return await this.waterfall.formatWaterfallModule(gqlAccount)
   }
 
   private async _formatSplit(gqlSplit: GqlSplit): Promise<Split> {
     const split = protectedFormatSplit(gqlSplit)
     if (this._includeEnsNames) {
-      await addEnsNames(
-        this._ensProvider ?? this._splitMain.provider,
-        split.recipients,
-      )
+      if (!this._ensProvider) throw new Error()
+      await addEnsNames(this._ensProvider, split.recipients)
     }
 
     return split
-  }
-
-  private async _formatWaterfallModule(
-    gqlWaterfallModule: GqlWaterfallModule,
-  ): Promise<WaterfallModule> {
-    this._requireProvider()
-    this._requireWaterfallChain()
-    if (!this._waterfallModuleFactory) throw new Error()
-
-    const tokenData = await getTokenData(
-      gqlWaterfallModule.token.id,
-      this._waterfallModuleFactory.provider,
-    )
-
-    const waterfallModule = protectedFormatWaterfallModule(
-      gqlWaterfallModule,
-      tokenData.symbol,
-      tokenData.decimals,
-    )
-    if (this._includeEnsNames) {
-      if (!this._waterfallModuleFactory) throw new Error()
-      await addWaterfallEnsNames(
-        this._ensProvider ?? this._waterfallModuleFactory.provider,
-        waterfallModule.tranches,
-      )
-    }
-
-    return waterfallModule
   }
 }
