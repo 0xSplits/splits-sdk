@@ -92,8 +92,16 @@ export const addEnsNames = async (
   const addresses = recipients.map((recipient) => recipient.address)
   const allNames: string[] = await reverseRecords.getNames(addresses)
   allNames.map((ens, index) => {
-    if (ens && nameprep(ens)) {
-      recipients[index].ensName = ens
+    if (ens) {
+      try {
+        if (nameprep(ens)) {
+          recipients[index].ensName = ens
+        }
+      } catch (e) {
+        // nameprep generates an error for certain characters (like emojis).
+        // Let's just ignore for now and not add the ens
+        return
+      }
     }
   })
 }
