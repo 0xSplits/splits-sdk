@@ -1,4 +1,7 @@
-export * from './client'
+import WaterfallClient from './client/waterfall'
+import { SplitsClient } from './client'
+
+export { SplitsClient, WaterfallClient }
 export * from './errors'
 
 export {

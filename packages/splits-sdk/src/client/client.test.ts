@@ -4,7 +4,7 @@ import { BigNumber } from '@ethersproject/bignumber'
 import { AddressZero } from '@ethersproject/constants'
 import type { Event } from '@ethersproject/contracts'
 
-import { SplitsClient } from './client'
+import { SplitsClient } from './index'
 import {
   InvalidAuthError,
   InvalidConfigError,
@@ -12,28 +12,28 @@ import {
   MissingSignerError,
   UnsupportedChainIdError,
   UnsupportedSubgraphChainIdError,
-} from './errors'
-import * as subgraph from './subgraph'
-import * as utils from './utils'
+} from '../errors'
+import * as subgraph from '../subgraph'
+import * as utils from '../utils'
 import {
   validateRecipients,
   validateDistributorFeePercent,
   validateAddress,
-} from './utils/validation'
+} from '../utils/validation'
 import {
   SORTED_ADDRESSES,
   SORTED_ALLOCATIONS,
   DISTRIBUTOR_FEE,
   CONTROLLER_ADDRESS,
   NEW_CONTROLLER_ADDRESS,
-} from './testing/constants'
-import { MockGraphqlClient } from './testing/mocks/graphql'
+} from '../testing/constants'
+import { MockGraphqlClient } from '../testing/mocks/graphql'
 import {
   MockSplitMain,
   readActions,
   writeActions,
-} from './testing/mocks/splitMain'
-import type { Split } from './types'
+} from '../testing/mocks/splitMain'
+import type { Split } from '../types'
 
 jest.mock('@ethersproject/contracts', () => {
   return {
@@ -45,7 +45,7 @@ jest.mock('@ethersproject/contracts', () => {
   }
 })
 
-jest.mock('./utils/validation')
+jest.mock('../utils/validation')
 
 const getTransactionEventSpy = jest
   .spyOn(utils, 'getTransactionEvent')
