@@ -18,6 +18,7 @@ import {
   WATERFALL_CHAIN_IDS,
 } from '../constants'
 import {
+  AccountNotFoundError,
   InvalidAuthError,
   InvalidConfigError,
   MissingProviderError,
@@ -505,6 +506,11 @@ export class SplitsClient extends BaseClient {
       },
     )
 
+    if (!response.split)
+      throw new AccountNotFoundError(
+        `No split found at address ${splitId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
+      )
+
     return await this._formatSplit(response.split)
   }
 
@@ -568,6 +574,11 @@ export class SplitsClient extends BaseClient {
       accountId: splitId.toLowerCase(),
     })
 
+    if (!response.accountBalances)
+      throw new AccountNotFoundError(
+        `No split found at address ${splitId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
+      )
+
     const distributed = formatAccountBalances(
       response.accountBalances.withdrawals,
     )
@@ -625,6 +636,11 @@ export class SplitsClient extends BaseClient {
       accountId: userId.toLowerCase(),
     })
 
+    if (!response.accountBalances)
+      throw new AccountNotFoundError(
+        `No user found at address ${userId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
+      )
+
     const withdrawn = formatAccountBalances(
       response.accountBalances.withdrawals,
     )
@@ -654,6 +670,11 @@ export class SplitsClient extends BaseClient {
     }>(ACCOUNT_QUERY, {
       accountId: accountId.toLowerCase(),
     })
+
+    if (!response.account)
+      throw new AccountNotFoundError(
+        `No account found at address ${accountId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
+      )
 
     return await this._formatAccount(response.account)
   }

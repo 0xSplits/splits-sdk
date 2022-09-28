@@ -99,3 +99,12 @@ export class InvalidConfigError extends Error {
     Object.setPrototypeOf(this, InvalidConfigError.prototype)
   }
 }
+
+export class AccountNotFoundError extends Error {
+  name = 'AccountNotFoundError'
+
+  constructor(m?: string) {
+    super(m)
+    Object.setPrototypeOf(this, AccountNotFoundError.prototype)
+  }
+}
