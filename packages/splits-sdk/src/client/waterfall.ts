@@ -9,6 +9,7 @@ import {
   WATERFALL_MODULE_FACTORY_ADDRESS,
 } from '../constants'
 import {
+  AccountNotFoundError,
   InvalidArgumentError,
   InvalidConfigError,
   TransactionFailedError,
@@ -189,6 +190,11 @@ export default class WaterfallClient extends BaseClient {
     }>(WATERFALL_MODULE_QUERY, {
       waterfallModule: waterfallModuleId.toLowerCase(),
     })
+
+    if (!response.waterfallModule)
+      throw new AccountNotFoundError(
+        `No waterfall module found at address ${waterfallModuleId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
+      )
 
     return await this.formatWaterfallModule(response.waterfallModule)
   }
