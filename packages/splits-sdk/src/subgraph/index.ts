@@ -11,7 +11,7 @@ import type {
   WaterfallModule,
   WaterfallTranche,
 } from '../types'
-import { fromBigNumberValue } from '../utils'
+import { fromBigNumberToPercent } from '../utils'
 import {
   GqlRecipient,
   GqlSplit,
@@ -145,7 +145,7 @@ const FULL_WATERFALL_MODULE_FIELDS_FRAGMENT = gql`
 const formatRecipient = (gqlRecipient: GqlRecipient): SplitRecipient => {
   return {
     address: getAddress(gqlRecipient.account.id),
-    percentAllocation: fromBigNumberValue(gqlRecipient.ownership),
+    percentAllocation: fromBigNumberToPercent(gqlRecipient.ownership),
   }
 }
 
@@ -162,7 +162,7 @@ export const protectedFormatSplit = (gqlSplit: GqlSplit): Split => {
       gqlSplit.newPotentialController !== AddressZero
         ? getAddress(gqlSplit.newPotentialController)
         : null,
-    distributorFeePercent: fromBigNumberValue(gqlSplit.distributorFee),
+    distributorFeePercent: fromBigNumberToPercent(gqlSplit.distributorFee),
     createdBlock: gqlSplit.createdBlock,
     recipients: gqlSplit.recipients
       .map((gqlRecipient) => formatRecipient(gqlRecipient))

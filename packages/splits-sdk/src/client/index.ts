@@ -58,9 +58,9 @@ import type {
 import {
   getRecipientSortedAddressesAndAllocations,
   getTransactionEvent,
-  getBigNumberValue,
   fetchERC20TransferredTokens,
   addEnsNames,
+  getBigNumberFromPercent,
 } from '../utils'
 import {
   validateRecipients,
@@ -150,7 +150,7 @@ export class SplitsClient extends BaseClient {
 
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
-    const distributorFee = getBigNumberValue(distributorFeePercent)
+    const distributorFee = getBigNumberFromPercent(distributorFeePercent)
 
     const createSplitTx = await this._splitMain
       .connect(this._signer)
@@ -183,7 +183,7 @@ export class SplitsClient extends BaseClient {
 
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
-    const distributorFee = getBigNumberValue(distributorFeePercent)
+    const distributorFee = getBigNumberFromPercent(distributorFeePercent)
 
     const updateSplitTx = await this._splitMain
       .connect(this._signer)
@@ -221,7 +221,7 @@ export class SplitsClient extends BaseClient {
     })
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
-    const distributorFee = getBigNumberValue(distributorFeePercent)
+    const distributorFee = getBigNumberFromPercent(distributorFeePercent)
 
     const distributeTokenTx = await (token === AddressZero
       ? this._splitMain
@@ -274,7 +274,7 @@ export class SplitsClient extends BaseClient {
 
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
-    const distributorFee = getBigNumberValue(distributorFeePercent)
+    const distributorFee = getBigNumberFromPercent(distributorFeePercent)
     const distributorPayoutAddress = distributorAddress
       ? distributorAddress
       : await this._signer.getAddress()
@@ -450,7 +450,7 @@ export class SplitsClient extends BaseClient {
 
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
-    const distributorFee = getBigNumberValue(distributorFeePercent)
+    const distributorFee = getBigNumberFromPercent(distributorFeePercent)
     const splitId = await this._splitMain.predictImmutableSplitAddress(
       accounts,
       percentAllocations,
