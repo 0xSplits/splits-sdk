@@ -9,6 +9,7 @@ import {
   WATERFALL_MODULE_FACTORY_ADDRESS,
 } from '../constants'
 import {
+  InvalidArgumentError,
   InvalidConfigError,
   TransactionFailedError,
   UnsupportedChainIdError,
@@ -77,7 +78,7 @@ export default class WaterfallClient extends BaseClient {
     token: string
     tranches: WaterfallTrancheInput[]
   }): Promise<{
-    waterfallModule: string
+    waterfallModuleId: string
     event: Event
   }> {
     validateAddress(token)
@@ -102,7 +103,7 @@ export default class WaterfallClient extends BaseClient {
     )
     if (event && event.args)
       return {
-        waterfallModule: event.args.waterfallModule,
+        waterfallModuleId: event.args.waterfallModule,
         event,
       }
 
@@ -110,18 +111,18 @@ export default class WaterfallClient extends BaseClient {
   }
 
   async waterfallFunds({
-    waterfallModule,
+    waterfallModuleId,
   }: {
-    waterfallModule: string
+    waterfallModuleId: string
   }): Promise<{
     event: Event
   }> {
-    validateAddress(waterfallModule)
+    validateAddress(waterfallModuleId)
     this._requireSigner()
 
     if (!this._signer) throw new Error()
 
-    const waterfallContract = this._getWaterfallContract(waterfallModule)
+    const waterfallContract = this._getWaterfallContract(waterfallModuleId)
     const waterfallFundsTx = await waterfallContract.waterfallFunds()
     const event = await getTransactionEvent(
       waterfallFundsTx,
@@ -136,25 +137,29 @@ export default class WaterfallClient extends BaseClient {
   }
 
   async recoverNonWaterfallFunds({
-    waterfallModule,
+    waterfallModuleId,
     token,
     recipient,
   }: {
-    waterfallModule: string
+    waterfallModuleId: string
     token: string
     recipient: string
   }): Promise<{
     event: Event
   }> {
-    validateAddress(waterfallModule)
+    validateAddress(waterfallModuleId)
     validateAddress(token)
     validateAddress(recipient)
-    // Load waterfall and confirm token is not primary token and recipient is valid???
     this._requireSigner()
+    await this._validateRecoverTokensWaterfallData({
+      waterfallModuleId,
+      token,
+      recipient,
+    })
 
     if (!this._signer) throw new Error()
 
-    const waterfallContract = this._getWaterfallContract(waterfallModule)
+    const waterfallContract = this._getWaterfallContract(waterfallModuleId)
     const recoverFundsTx = await waterfallContract.recoverNonWaterfallFunds(
       token,
       recipient,
@@ -173,22 +178,51 @@ export default class WaterfallClient extends BaseClient {
 
   // Graphql read actions
   async getWaterfallMetadata({
-    waterfallModule,
+    waterfallModuleId,
   }: {
-    waterfallModule: string
+    waterfallModuleId: string
   }): Promise<WaterfallModule> {
-    validateAddress(waterfallModule)
+    validateAddress(waterfallModuleId)
 
     const response = await this._makeGqlRequest<{
       waterfallModule: GqlWaterfallModule
     }>(WATERFALL_MODULE_QUERY, {
-      waterfallModule: waterfallModule.toLowerCase(),
+      waterfallModule: waterfallModuleId.toLowerCase(),
     })
 
     return await this.formatWaterfallModule(response.waterfallModule)
   }
 
   // Helper functions
+  async _validateRecoverTokensWaterfallData({
+    waterfallModuleId,
+    token,
+    recipient,
+  }: {
+    waterfallModuleId: string
+    token: string
+    recipient: string
+  }) {
+    const waterfallMetadata = await this.getWaterfallMetadata({
+      waterfallModuleId,
+    })
+
+    if (token.toLowerCase() === waterfallMetadata.token.address.toLowerCase())
+      throw new InvalidArgumentError(
+        `You must call recover tokens with a token other than the given waterfall's primary token. Primary token: ${waterfallMetadata.token.address}, given token: ${token}`,
+      )
+
+    const foundRecipient = waterfallMetadata.tranches.reduce((acc, tranche) => {
+      if (acc) return acc
+
+      return tranche.recipientAddress.toLowerCase() === recipient.toLowerCase()
+    }, false)
+    if (!foundRecipient)
+      throw new InvalidArgumentError(
+        `You must pass in a valid recipient address for the given waterfall. Address ${recipient} not found in any tranche for waterfall ${waterfallModuleId}.`,
+      )
+  }
+
   private _getWaterfallContract(waterfallModule: string) {
     if (!this._signer) throw new Error()
 
