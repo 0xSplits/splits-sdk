@@ -1,6 +1,6 @@
 import { BigNumber } from '@ethersproject/bignumber'
 import {
-  getBigNumberValue,
+  getBigNumberFromPercent,
   getRecipientSortedAddressesAndAllocations,
 } from './index'
 
@@ -72,7 +72,7 @@ describe('Test sorting recipients', () => {
     const value = 10
     const expectedBigNumber = BigNumber.from(10 * 1e4)
 
-    const result = getBigNumberValue(value)
+    const result = getBigNumberFromPercent(value)
     expect(result).toEqual(expectedBigNumber)
   })
 })

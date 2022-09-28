@@ -64,7 +64,7 @@ const getSortedRecipientsMock = jest
     return [SORTED_ADDRESSES, SORTED_ALLOCATIONS]
   })
 const getBigNumberMock = jest
-  .spyOn(utils, 'getBigNumberValue')
+  .spyOn(utils, 'getBigNumberFromPercent')
   .mockImplementation(() => {
     return DISTRIBUTOR_FEE
   })

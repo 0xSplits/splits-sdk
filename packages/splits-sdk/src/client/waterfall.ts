@@ -86,6 +86,7 @@ export default class WaterfallClient extends BaseClient {
     if (!this._waterfallModuleFactory) throw new Error()
 
     const [recipients, trancheSizes] = await getTrancheRecipientsAndSizes(
+      this._chainId,
       token,
       tranches,
       this._waterfallModuleFactory.provider,
@@ -101,7 +102,7 @@ export default class WaterfallClient extends BaseClient {
     )
     if (event && event.args)
       return {
-        waterfallModule: event.args.waterfallModuleId,
+        waterfallModule: event.args.waterfallModule,
         event,
       }
 
@@ -205,6 +206,7 @@ export default class WaterfallClient extends BaseClient {
     if (!this._waterfallModuleFactory) throw new Error()
 
     const tokenData = await getTokenData(
+      this._chainId,
       gqlWaterfallModule.token.id,
       this._waterfallModuleFactory.provider,
     )
