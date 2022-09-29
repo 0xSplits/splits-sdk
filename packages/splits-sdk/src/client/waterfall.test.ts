@@ -225,6 +225,7 @@ describe('Waterfall writes', () => {
 
     beforeEach(() => {
       moduleWriteActions.waterfallFunds.mockClear()
+      moduleWriteActions.waterfallFundsPull.mockClear()
     })
 
     test('Waterfall funds fails with no provider', async () => {
@@ -262,8 +263,25 @@ describe('Waterfall writes', () => {
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(waterfallModuleId)
       expect(moduleWriteActions.waterfallFunds).toBeCalled()
+      expect(moduleWriteActions.waterfallFundsPull).not.toBeCalled()
       expect(getTransactionEventSpy).toBeCalledWith(
         'waterfall_funds_tx',
+        'format_WaterfallFunds',
+      )
+    })
+
+    test('Waterfall funds pull passes', async () => {
+      const { event } = await waterfallClient.waterfallFunds({
+        waterfallModuleId,
+        usePull: true,
+      })
+
+      expect(event.blockNumber).toEqual(12345)
+      expect(validateAddress).toBeCalledWith(waterfallModuleId)
+      expect(moduleWriteActions.waterfallFunds).not.toBeCalled()
+      expect(moduleWriteActions.waterfallFundsPull).toBeCalled()
+      expect(getTransactionEventSpy).toBeCalledWith(
+        'waterfall_funds_pull_tx',
         'format_WaterfallFunds',
       )
     })
