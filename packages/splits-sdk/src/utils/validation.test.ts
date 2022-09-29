@@ -3,11 +3,12 @@ import {
   InvalidDistributorFeePercentError,
   InvalidArgumentError,
 } from '../errors'
-import { SplitRecipient } from '../types'
+import { SplitRecipient, WaterfallTrancheInput } from '../types'
 import {
   validateRecipients,
   validateDistributorFeePercent,
   validateAddress,
+  validateTranches,
 } from './validation'
 
 describe('Address validation', () => {
@@ -86,5 +87,43 @@ describe('Recipients validation', () => {
   })
   test('Valid recipients pass', () => {
     expect(() => validateRecipients(recipients)).not.toThrow()
+  })
+})
+
+describe('Tranches validation', () => {
+  let tranches: WaterfallTrancheInput[]
+  beforeEach(() => {
+    tranches = [
+      {
+        recipient: '0x25ED37D355DF14013d24d75508CB7344aBB59814',
+        size: 10,
+      },
+      {
+        recipient: '0xF8843981e7846945960f53243cA2Fd42a579f719',
+        size: 5,
+      },
+      {
+        recipient: '0xd8da6bf26964af9d7eed9e03e53415d37aa96045',
+      },
+    ]
+  })
+
+  test('Bad address fails', () => {
+    tranches[0].recipient = '0xbadAddress'
+    expect(() => validateTranches(tranches)).toThrow(InvalidArgumentError)
+  })
+
+  test('Extra size fails', () => {
+    tranches[2].size = 1
+    expect(() => validateTranches(tranches)).toThrow(InvalidArgumentError)
+  })
+
+  test('Missing size fails', () => {
+    tranches[1].size = undefined
+    expect(() => validateTranches(tranches)).toThrow(InvalidArgumentError)
+  })
+
+  test('Valid tranches pass', () => {
+    expect(() => validateTranches(tranches)).not.toThrow()
   })
 })

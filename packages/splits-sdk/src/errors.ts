@@ -1,7 +1,4 @@
-import {
-  SPLITS_SUBGRAPH_CHAIN_IDS,
-  SPLITS_SUPPORTED_CHAIN_IDS,
-} from './constants'
+import { SPLITS_SUBGRAPH_CHAIN_IDS } from './constants'
 
 // Manually setting the prototype in the constructor with setPrototypeOf fixes a typescript issue so that the
 // unit tests can detect the error class
