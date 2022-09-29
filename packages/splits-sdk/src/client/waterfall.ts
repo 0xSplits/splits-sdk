@@ -1,5 +1,6 @@
 import BaseClient from './base'
 import { Interface } from '@ethersproject/abi'
+import { BigNumber } from '@ethersproject/bignumber'
 import { AddressZero } from '@ethersproject/constants'
 import { Contract, Event } from '@ethersproject/contracts'
 
@@ -186,6 +187,121 @@ export default class WaterfallClient extends BaseClient {
     throw new TransactionFailedError()
   }
 
+  // Read actions
+  async getDistributedFunds({
+    waterfallModuleId,
+  }: {
+    waterfallModuleId: string
+  }): Promise<{
+    distributedFunds: BigNumber
+  }> {
+    validateAddress(waterfallModuleId)
+    this._requireProvider()
+
+    const waterfallContract = this._getWaterfallContract(waterfallModuleId)
+    const distributedFunds = await waterfallContract.distributedFunds()
+
+    return {
+      distributedFunds,
+    }
+  }
+
+  async getFundsPendingWithdrawal({
+    waterfallModuleId,
+  }: {
+    waterfallModuleId: string
+  }): Promise<{
+    fundsPendingWithdrawal: BigNumber
+  }> {
+    validateAddress(waterfallModuleId)
+    this._requireProvider()
+
+    const waterfallContract = this._getWaterfallContract(waterfallModuleId)
+    const fundsPendingWithdrawal =
+      await waterfallContract.fundsPendingWithdrawal()
+
+    return {
+      fundsPendingWithdrawal,
+    }
+  }
+
+  async getTranches({
+    waterfallModuleId,
+  }: {
+    waterfallModuleId: string
+  }): Promise<{
+    recipients: string[]
+    thresholds: BigNumber[]
+  }> {
+    validateAddress(waterfallModuleId)
+    this._requireProvider()
+
+    const waterfallContract = this._getWaterfallContract(waterfallModuleId)
+    const [recipients, thresholds] = await waterfallContract.getTranches()
+
+    return {
+      recipients,
+      thresholds,
+    }
+  }
+
+  async getNonWaterfallRecipient({
+    waterfallModuleId,
+  }: {
+    waterfallModuleId: string
+  }): Promise<{
+    nonWaterfallRecipient: string
+  }> {
+    validateAddress(waterfallModuleId)
+    this._requireProvider()
+
+    const waterfallContract = this._getWaterfallContract(waterfallModuleId)
+    const nonWaterfallRecipient =
+      await waterfallContract.nonWaterfallRecipient()
+
+    return {
+      nonWaterfallRecipient,
+    }
+  }
+
+  async getToken({
+    waterfallModuleId,
+  }: {
+    waterfallModuleId: string
+  }): Promise<{
+    token: string
+  }> {
+    validateAddress(waterfallModuleId)
+    this._requireProvider()
+
+    const waterfallContract = this._getWaterfallContract(waterfallModuleId)
+    const token = await waterfallContract.token()
+
+    return {
+      token,
+    }
+  }
+
+  async getPullBalance({
+    waterfallModuleId,
+    address,
+  }: {
+    waterfallModuleId: string
+    address: string
+  }): Promise<{
+    pullBalance: BigNumber
+  }> {
+    validateAddress(waterfallModuleId)
+    this._requireProvider()
+
+    const waterfallContract = this._getWaterfallContract(waterfallModuleId)
+    const pullBalance = await waterfallContract.getPullBalance(address)
+
+    return {
+      pullBalance,
+    }
+  }
+
   // Graphql read actions
   async getWaterfallMetadata({
     waterfallModuleId,
@@ -257,12 +373,13 @@ export default class WaterfallClient extends BaseClient {
   }
 
   private _getWaterfallContract(waterfallModule: string) {
-    if (!this._signer) throw new Error()
+    if (!this._waterfallModuleFactory.provider && !this._signer)
+      throw new Error()
 
     return new Contract(
       waterfallModule,
       waterfallModuleInterface,
-      this._signer,
+      this._signer || this._waterfallModuleFactory.provider,
     ) as WaterfallModuleType
   }
 
