@@ -6,11 +6,7 @@ import {
   InvalidDistributorFeePercentError,
   InvalidArgumentError,
 } from '../errors'
-import type {
-  SplitRecipient,
-  WaterfallTranche,
-  WaterfallTrancheInput,
-} from '../types'
+import type { SplitRecipient, WaterfallTrancheInput } from '../types'
 
 const getNumDigitsAfterDecimal = (value: number): number => {
   if (Number.isInteger(value)) return 0
