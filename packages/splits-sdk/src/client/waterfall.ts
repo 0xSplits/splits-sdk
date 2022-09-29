@@ -188,7 +188,7 @@ export default class WaterfallClient extends BaseClient {
     const response = await this._makeGqlRequest<{
       waterfallModule: GqlWaterfallModule
     }>(WATERFALL_MODULE_QUERY, {
-      waterfallModule: waterfallModuleId.toLowerCase(),
+      waterfallModuleId: waterfallModuleId.toLowerCase(),
     })
 
     if (!response.waterfallModule)
@@ -200,7 +200,7 @@ export default class WaterfallClient extends BaseClient {
   }
 
   // Helper functions
-  async _validateRecoverTokensWaterfallData({
+  private async _validateRecoverTokensWaterfallData({
     waterfallModuleId,
     token,
     recipient,

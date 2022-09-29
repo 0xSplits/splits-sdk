@@ -228,8 +228,8 @@ export const SPLIT_QUERY = gql`
 `
 
 export const WATERFALL_MODULE_QUERY = gql`
-  query waterfallModule($waterfallModule: ID!) {
-    waterfallModule(id: $waterfallModule) {
+  query waterfallModule($waterfallModuleId: ID!) {
+    waterfallModule(id: $waterfallModuleId) {
       ...FullWaterfallModuleFieldsFragment
     }
   }
