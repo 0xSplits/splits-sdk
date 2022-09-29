@@ -271,21 +271,24 @@ describe('Waterfall writes', () => {
     const waterfallModuleId = '0xwaterfall'
     const token = '0xtoken'
     const recipient = '0xrecipient1'
+    const nonWaterfallRecipient = '0xnonWaterfallRecipient'
+
+    const mockGetWaterfallData = jest
+      .spyOn(waterfallClient, 'getWaterfallMetadata')
+      .mockImplementation(async () => {
+        return {
+          token: {
+            address: '0xwaterfalltoken',
+          },
+          tranches: [
+            { recipientAddress: '0xrecipient1' },
+            { recipientAddress: '0xrecipient2' },
+          ],
+        } as WaterfallModule
+      })
 
     beforeEach(() => {
-      jest
-        .spyOn(waterfallClient, 'getWaterfallMetadata')
-        .mockImplementationOnce(async () => {
-          return {
-            token: {
-              address: '0xwaterfalltoken',
-            },
-            tranches: [
-              { recipientAddress: '0xrecipient1' },
-              { recipientAddress: '0xrecipient2' },
-            ],
-          } as WaterfallModule
-        })
+      mockGetWaterfallData.mockClear()
       moduleWriteActions.recoverNonWaterfallFunds.mockClear()
     })
 
@@ -342,6 +345,30 @@ describe('Waterfall writes', () => {
       ).rejects.toThrow(InvalidArgumentError)
     })
 
+    test('Recover non waterfall funds fails with invalid recipient for non waterfall recipient', async () => {
+      mockGetWaterfallData.mockImplementationOnce(async () => {
+        return {
+          token: {
+            address: '0xwaterfalltoken',
+          },
+          tranches: [
+            { recipientAddress: '0xrecipient1' },
+            { recipientAddress: '0xrecipient2' },
+          ],
+          nonWaterfallRecipient,
+        } as WaterfallModule
+      })
+
+      await expect(
+        async () =>
+          await waterfallClient.recoverNonWaterfallFunds({
+            waterfallModuleId,
+            token,
+            recipient,
+          }),
+      ).rejects.toThrow(InvalidArgumentError)
+    })
+
     test('Recover non waterfall funds passes', async () => {
       const { event } = await waterfallClient.recoverNonWaterfallFunds({
         waterfallModuleId,
@@ -356,6 +383,40 @@ describe('Waterfall writes', () => {
       expect(moduleWriteActions.recoverNonWaterfallFunds).toBeCalledWith(
         token,
         recipient,
+      )
+      expect(getTransactionEventSpy).toBeCalledWith(
+        'recover_non_waterfall_funds_tx',
+        'format_RecoverNonWaterfallFunds',
+      )
+    })
+
+    test('Recover non waterfall funds passes with non waterfall recipient', async () => {
+      mockGetWaterfallData.mockImplementationOnce(async () => {
+        return {
+          token: {
+            address: '0xwaterfalltoken',
+          },
+          tranches: [
+            { recipientAddress: '0xrecipient1' },
+            { recipientAddress: '0xrecipient2' },
+          ],
+          nonWaterfallRecipient,
+        } as WaterfallModule
+      })
+
+      const { event } = await waterfallClient.recoverNonWaterfallFunds({
+        waterfallModuleId,
+        token,
+        recipient: nonWaterfallRecipient,
+      })
+
+      expect(event.blockNumber).toEqual(12345)
+      expect(validateAddress).toBeCalledWith(waterfallModuleId)
+      expect(validateAddress).toBeCalledWith(token)
+      expect(validateAddress).toBeCalledWith(nonWaterfallRecipient)
+      expect(moduleWriteActions.recoverNonWaterfallFunds).toBeCalledWith(
+        token,
+        nonWaterfallRecipient,
       )
       expect(getTransactionEventSpy).toBeCalledWith(
         'recover_non_waterfall_funds_tx',
