@@ -1,5 +1,6 @@
 import { Provider } from '@ethersproject/abstract-provider'
 import { Signer } from '@ethersproject/abstract-signer'
+import { BigNumber } from '@ethersproject/bignumber'
 import { AddressZero } from '@ethersproject/constants'
 import type { Event } from '@ethersproject/contracts'
 
@@ -28,6 +29,7 @@ import {
 import {
   MockWaterfallModule,
   writeActions as moduleWriteActions,
+  readActions,
 } from '../testing/mocks/waterfallModule'
 import type { WaterfallModule } from '../types'
 
@@ -422,6 +424,224 @@ describe('Waterfall writes', () => {
         'recover_non_waterfall_funds_tx',
         'format_RecoverNonWaterfallFunds',
       )
+    })
+  })
+})
+
+describe('Waterfall reads', () => {
+  const provider = new mockProvider()
+  const waterfallClient = new WaterfallClient({
+    chainId: 1,
+    provider,
+  })
+
+  beforeEach(() => {
+    ;(validateAddress as jest.Mock).mockClear()
+  })
+
+  describe('Get distributed funds test', () => {
+    const waterfallModuleId = '0xgetDistributedFunds'
+
+    beforeEach(() => {
+      readActions.distributedFunds.mockClear()
+    })
+
+    test('Get distributed funds fails with no provider', async () => {
+      const badClient = new WaterfallClient({
+        chainId: 1,
+      })
+
+      await expect(
+        async () =>
+          await badClient.getDistributedFunds({
+            waterfallModuleId,
+          }),
+      ).rejects.toThrow(MissingProviderError)
+    })
+
+    test('Returns distributed funds', async () => {
+      readActions.distributedFunds.mockReturnValueOnce(BigNumber.from(12))
+      const { distributedFunds } = await waterfallClient.getDistributedFunds({
+        waterfallModuleId,
+      })
+
+      expect(distributedFunds).toEqual(BigNumber.from(12))
+      expect(validateAddress).toBeCalledWith(waterfallModuleId)
+      expect(readActions.distributedFunds).toBeCalled()
+    })
+  })
+
+  describe('Get funds pending withdrawal test', () => {
+    const waterfallModuleId = '0xgetFundsPendingWithdrawal'
+
+    beforeEach(() => {
+      readActions.fundsPendingWithdrawal.mockClear()
+    })
+
+    test('Get funds pending withdrawal fails with no provider', async () => {
+      const badClient = new WaterfallClient({
+        chainId: 1,
+      })
+
+      await expect(
+        async () =>
+          await badClient.getFundsPendingWithdrawal({
+            waterfallModuleId,
+          }),
+      ).rejects.toThrow(MissingProviderError)
+    })
+
+    test('Returns funds pending withdrawal', async () => {
+      readActions.fundsPendingWithdrawal.mockReturnValueOnce(BigNumber.from(7))
+      const { fundsPendingWithdrawal } =
+        await waterfallClient.getFundsPendingWithdrawal({
+          waterfallModuleId,
+        })
+
+      expect(fundsPendingWithdrawal).toEqual(BigNumber.from(7))
+      expect(validateAddress).toBeCalledWith(waterfallModuleId)
+      expect(readActions.fundsPendingWithdrawal).toBeCalled()
+    })
+  })
+
+  describe('Get tranches test', () => {
+    const waterfallModuleId = '0xgetTranches'
+
+    beforeEach(() => {
+      readActions.getTranches.mockClear()
+    })
+
+    test('Get tranches fails with no provider', async () => {
+      const badClient = new WaterfallClient({
+        chainId: 1,
+      })
+
+      await expect(
+        async () =>
+          await badClient.getTranches({
+            waterfallModuleId,
+          }),
+      ).rejects.toThrow(MissingProviderError)
+    })
+
+    test('Returns tranches', async () => {
+      const mockRecipients = ['0xrecipient1', '0xrecipient2']
+      const mockThresholds = [BigNumber.from(5)]
+
+      readActions.getTranches.mockReturnValueOnce([
+        ['0xrecipient1', '0xrecipient2'],
+        [BigNumber.from(5)],
+      ])
+      const { recipients, thresholds } = await waterfallClient.getTranches({
+        waterfallModuleId,
+      })
+
+      expect(recipients).toEqual(mockRecipients)
+      expect(thresholds).toEqual(mockThresholds)
+      expect(validateAddress).toBeCalledWith(waterfallModuleId)
+      expect(readActions.getTranches).toBeCalled()
+    })
+  })
+
+  describe('Get non waterfall recipient test', () => {
+    const waterfallModuleId = '0xgetNonWaterfallRecipient'
+
+    beforeEach(() => {
+      readActions.nonWaterfallRecipient.mockClear()
+    })
+
+    test('Get non waterfall recipient fails with no provider', async () => {
+      const badClient = new WaterfallClient({
+        chainId: 1,
+      })
+
+      await expect(
+        async () =>
+          await badClient.getNonWaterfallRecipient({
+            waterfallModuleId,
+          }),
+      ).rejects.toThrow(MissingProviderError)
+    })
+
+    test('Returns non waterfall recipient', async () => {
+      readActions.nonWaterfallRecipient.mockReturnValueOnce(
+        '0xnonWaterfallRecipient',
+      )
+      const { nonWaterfallRecipient } =
+        await waterfallClient.getNonWaterfallRecipient({
+          waterfallModuleId,
+        })
+
+      expect(nonWaterfallRecipient).toEqual('0xnonWaterfallRecipient')
+      expect(validateAddress).toBeCalledWith(waterfallModuleId)
+      expect(readActions.nonWaterfallRecipient).toBeCalled()
+    })
+  })
+
+  describe('Get token test', () => {
+    const waterfallModuleId = '0xgetToken'
+
+    beforeEach(() => {
+      readActions.token.mockClear()
+    })
+
+    test('Get token with no provider', async () => {
+      const badClient = new WaterfallClient({
+        chainId: 1,
+      })
+
+      await expect(
+        async () =>
+          await badClient.getToken({
+            waterfallModuleId,
+          }),
+      ).rejects.toThrow(MissingProviderError)
+    })
+
+    test('Returns token', async () => {
+      readActions.token.mockReturnValueOnce('0xtoken')
+      const { token } = await waterfallClient.getToken({
+        waterfallModuleId,
+      })
+
+      expect(token).toEqual('0xtoken')
+      expect(validateAddress).toBeCalledWith(waterfallModuleId)
+      expect(readActions.token).toBeCalled()
+    })
+  })
+
+  describe('Get pull balance test', () => {
+    const waterfallModuleId = '0xgetPullBalance'
+    const address = '0xpullAddress'
+
+    beforeEach(() => {
+      readActions.getPullBalance.mockClear()
+    })
+
+    test('Get pull balance fails with no provider', async () => {
+      const badClient = new WaterfallClient({
+        chainId: 1,
+      })
+
+      await expect(
+        async () =>
+          await badClient.getPullBalance({
+            waterfallModuleId,
+            address,
+          }),
+      ).rejects.toThrow(MissingProviderError)
+    })
+
+    test('Returns pull balance', async () => {
+      readActions.getPullBalance.mockReturnValueOnce(BigNumber.from(19))
+      const { pullBalance } = await waterfallClient.getPullBalance({
+        waterfallModuleId,
+        address,
+      })
+
+      expect(pullBalance).toEqual(BigNumber.from(19))
+      expect(validateAddress).toBeCalledWith(waterfallModuleId)
+      expect(readActions.getPullBalance).toBeCalledWith(address)
     })
   })
 })

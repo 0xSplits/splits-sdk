@@ -7,8 +7,14 @@ export const writeActions = {
     .mockReturnValue('recover_non_waterfall_funds_tx'),
 }
 
-// TODO
-export const readActions = {}
+export const readActions = {
+  distributedFunds: jest.fn(),
+  fundsPendingWithdrawal: jest.fn(),
+  getTranches: jest.fn(),
+  nonWaterfallRecipient: jest.fn(),
+  token: jest.fn(),
+  getPullBalance: jest.fn(),
+}
 
 export class MockWaterfallModule {
   provider: Provider
@@ -19,6 +25,12 @@ export class MockWaterfallModule {
   }
   waterfallFunds: jest.Mock
   recoverNonWaterfallFunds: jest.Mock
+  distributedFunds: jest.Mock
+  fundsPendingWithdrawal: jest.Mock
+  getTranches: jest.Mock
+  nonWaterfallRecipient: jest.Mock
+  token: jest.Mock
+  getPullBalance: jest.Mock
 
   constructor(provider: Provider) {
     this.provider = provider
@@ -34,6 +46,12 @@ export class MockWaterfallModule {
 
     this.waterfallFunds = writeActions.waterfallFunds
     this.recoverNonWaterfallFunds = writeActions.recoverNonWaterfallFunds
+    this.distributedFunds = readActions.distributedFunds
+    this.fundsPendingWithdrawal = readActions.fundsPendingWithdrawal
+    this.getTranches = readActions.getTranches
+    this.nonWaterfallRecipient = readActions.nonWaterfallRecipient
+    this.token = readActions.token
+    this.getPullBalance = readActions.getPullBalance
   }
 
   connect() {
