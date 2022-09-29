@@ -14,13 +14,13 @@ import type { SplitsClientConfig } from '../types'
 const MISSING_SIGNER = ''
 
 export default class BaseClient {
-  readonly _chainId: number
-  readonly _ensProvider: Provider | undefined
+  protected readonly _chainId: number
+  protected readonly _ensProvider: Provider | undefined
   // TODO: something better we can do here to handle typescript check for missing signer?
-  readonly _signer: Signer | typeof MISSING_SIGNER
+  protected readonly _signer: Signer | typeof MISSING_SIGNER
   private readonly _provider: Provider | undefined
   private readonly _graphqlClient: GraphQLClient | undefined
-  readonly _includeEnsNames: boolean
+  protected readonly _includeEnsNames: boolean
 
   constructor({
     chainId,
@@ -42,7 +42,7 @@ export default class BaseClient {
     this._includeEnsNames = includeEnsNames
   }
 
-  async _makeGqlRequest<ResponseType>(
+  protected async _makeGqlRequest<ResponseType>(
     query: string,
     variables?: Variables,
   ): Promise<ResponseType> {
@@ -55,14 +55,14 @@ export default class BaseClient {
     return result
   }
 
-  _requireProvider() {
+  protected _requireProvider() {
     if (!this._provider)
       throw new MissingProviderError(
         'Provider required to perform this action, please update your call to the constructor',
       )
   }
 
-  _requireSigner() {
+  protected _requireSigner() {
     this._requireProvider()
     if (!this._signer)
       throw new MissingSignerError(
