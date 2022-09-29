@@ -123,8 +123,10 @@ export default class WaterfallClient extends BaseClient {
 
   async waterfallFunds({
     waterfallModuleId,
+    usePull = false,
   }: {
     waterfallModuleId: string
+    usePull?: boolean
   }): Promise<{
     event: Event
   }> {
@@ -134,7 +136,9 @@ export default class WaterfallClient extends BaseClient {
     if (!this._signer) throw new Error()
 
     const waterfallContract = this._getWaterfallContract(waterfallModuleId)
-    const waterfallFundsTx = await waterfallContract.waterfallFunds()
+    const waterfallFundsTx = usePull
+      ? await waterfallContract.waterfallFundsPull()
+      : await waterfallContract.waterfallFunds()
     const event = await getTransactionEvent(
       waterfallFundsTx,
       waterfallContract.interface.getEvent('WaterfallFunds').format(),

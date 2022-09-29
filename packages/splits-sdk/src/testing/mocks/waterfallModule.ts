@@ -2,6 +2,7 @@ import { Provider } from '@ethersproject/abstract-provider'
 
 export const writeActions = {
   waterfallFunds: jest.fn().mockReturnValue('waterfall_funds_tx'),
+  waterfallFundsPull: jest.fn().mockReturnValue('waterfall_funds_pull_tx'),
   recoverNonWaterfallFunds: jest
     .fn()
     .mockReturnValue('recover_non_waterfall_funds_tx'),
@@ -24,6 +25,7 @@ export class MockWaterfallModule {
     }
   }
   waterfallFunds: jest.Mock
+  waterfallFundsPull: jest.Mock
   recoverNonWaterfallFunds: jest.Mock
   distributedFunds: jest.Mock
   fundsPendingWithdrawal: jest.Mock
@@ -45,6 +47,7 @@ export class MockWaterfallModule {
     }
 
     this.waterfallFunds = writeActions.waterfallFunds
+    this.waterfallFundsPull = writeActions.waterfallFundsPull
     this.recoverNonWaterfallFunds = writeActions.recoverNonWaterfallFunds
     this.distributedFunds = readActions.distributedFunds
     this.fundsPendingWithdrawal = readActions.fundsPendingWithdrawal
