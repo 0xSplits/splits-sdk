@@ -444,6 +444,60 @@ describe('Waterfall writes', () => {
       )
     })
   })
+
+  describe('Withdraw pull funds tests', () => {
+    const waterfallModuleId = '0xwaterfall'
+    const address = '0xrecipient1'
+
+    beforeEach(() => {
+      moduleWriteActions.withdraw.mockClear()
+    })
+
+    test('Withdraw pull funds fails with no provider', async () => {
+      const badClient = new WaterfallClient({
+        chainId: 1,
+      })
+
+      await expect(
+        async () =>
+          await badClient.withdrawPullFunds({
+            waterfallModuleId,
+            address,
+          }),
+      ).rejects.toThrow(MissingProviderError)
+    })
+
+    test('Withdraw pull funds fails with no signer', async () => {
+      const badClient = new WaterfallClient({
+        chainId: 1,
+        provider,
+      })
+
+      await expect(
+        async () =>
+          await badClient.withdrawPullFunds({
+            waterfallModuleId,
+            address,
+          }),
+      ).rejects.toThrow(MissingSignerError)
+    })
+
+    test('Withdraw pull funds passes', async () => {
+      const { event } = await waterfallClient.withdrawPullFunds({
+        waterfallModuleId,
+        address,
+      })
+
+      expect(event.blockNumber).toEqual(12345)
+      expect(validateAddress).toBeCalledWith(waterfallModuleId)
+      expect(validateAddress).toBeCalledWith(address)
+      expect(moduleWriteActions.withdraw).toBeCalledWith(address)
+      expect(getTransactionEventSpy).toBeCalledWith(
+        'withdraw_tx',
+        'format_Withdrawal',
+      )
+    })
+  })
 })
 
 describe('Waterfall reads', () => {

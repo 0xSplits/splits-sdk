@@ -133,8 +133,6 @@ export default class WaterfallClient extends BaseClient {
     validateAddress(waterfallModuleId)
     this._requireSigner()
 
-    if (!this._signer) throw new Error()
-
     const waterfallContract = this._getWaterfallContract(waterfallModuleId)
     const waterfallFundsTx = usePull
       ? await waterfallContract.waterfallFundsPull()
@@ -172,8 +170,6 @@ export default class WaterfallClient extends BaseClient {
       recipient,
     })
 
-    if (!this._signer) throw new Error()
-
     const waterfallContract = this._getWaterfallContract(waterfallModuleId)
     const recoverFundsTx = await waterfallContract.recoverNonWaterfallFunds(
       token,
@@ -182,6 +178,33 @@ export default class WaterfallClient extends BaseClient {
     const event = await getTransactionEvent(
       recoverFundsTx,
       waterfallContract.interface.getEvent('RecoverNonWaterfallFunds').format(),
+    )
+    if (event)
+      return {
+        event,
+      }
+
+    throw new TransactionFailedError()
+  }
+
+  async withdrawPullFunds({
+    waterfallModuleId,
+    address,
+  }: {
+    waterfallModuleId: string
+    address: string
+  }): Promise<{
+    event: Event
+  }> {
+    validateAddress(waterfallModuleId)
+    validateAddress(address)
+    this._requireSigner()
+
+    const waterfallContract = this._getWaterfallContract(waterfallModuleId)
+    const withdrawTx = await waterfallContract.withdraw(address)
+    const event = await getTransactionEvent(
+      withdrawTx,
+      waterfallContract.interface.getEvent('Withdrawal').format(),
     )
     if (event)
       return {
