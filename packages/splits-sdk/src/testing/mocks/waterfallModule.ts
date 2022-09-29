@@ -6,6 +6,7 @@ export const writeActions = {
   recoverNonWaterfallFunds: jest
     .fn()
     .mockReturnValue('recover_non_waterfall_funds_tx'),
+  withdraw: jest.fn().mockReturnValue('withdraw_tx'),
 }
 
 export const readActions = {
@@ -27,6 +28,7 @@ export class MockWaterfallModule {
   waterfallFunds: jest.Mock
   waterfallFundsPull: jest.Mock
   recoverNonWaterfallFunds: jest.Mock
+  withdraw: jest.Mock
   distributedFunds: jest.Mock
   fundsPendingWithdrawal: jest.Mock
   getTranches: jest.Mock
@@ -49,6 +51,7 @@ export class MockWaterfallModule {
     this.waterfallFunds = writeActions.waterfallFunds
     this.waterfallFundsPull = writeActions.waterfallFundsPull
     this.recoverNonWaterfallFunds = writeActions.recoverNonWaterfallFunds
+    this.withdraw = writeActions.withdraw
     this.distributedFunds = readActions.distributedFunds
     this.fundsPendingWithdrawal = readActions.fundsPendingWithdrawal
     this.getTranches = readActions.getTranches
