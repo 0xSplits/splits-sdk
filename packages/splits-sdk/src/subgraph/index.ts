@@ -87,6 +87,7 @@ const WATERFALL_MODULE_FIELDS_FRAGMENT = gql`
     token {
       id
     }
+    nonWaterfallRecipient
     latestBlock
     tranches(first: 1000) {
       ...WaterfallTrancheFieldsFragment
@@ -186,6 +187,10 @@ export const protectedFormatWaterfallModule = (
       symbol: tokenSymbol,
       decimals: tokenDecimals,
     },
+    nonWaterfallRecipient:
+      gqlWaterfallModule.nonWaterfallRecipient !== AddressZero
+        ? getAddress(gqlWaterfallModule.nonWaterfallRecipient)
+        : null,
     tranches: gqlWaterfallModule.tranches.map((tranche) =>
       formatWaterfallModuleTranche(tranche, tokenDecimals),
     ),

@@ -1,5 +1,6 @@
 import BaseClient from './base'
 import { Interface } from '@ethersproject/abi'
+import { AddressZero } from '@ethersproject/constants'
 import { Contract, Event } from '@ethersproject/contracts'
 
 import WATERFALL_MODULE_FACTORY_ARTIFACT from '../artifacts/contracts/WaterfallModuleFactory/WaterfallModuleFactory.json'
@@ -75,14 +76,17 @@ export default class WaterfallClient extends BaseClient {
   async createWaterfallModule({
     token,
     tranches,
+    nonWaterfallRecipient = AddressZero,
   }: {
     token: string
     tranches: WaterfallTrancheInput[]
+    nonWaterfallRecipient?: string
   }): Promise<{
     waterfallModuleId: string
     event: Event
   }> {
     validateAddress(token)
+    validateAddress(nonWaterfallRecipient)
     validateTranches(tranches)
     this._requireSigner()
     if (!this._waterfallModuleFactory) throw new Error()
@@ -95,7 +99,12 @@ export default class WaterfallClient extends BaseClient {
     )
     const createWaterfallTx = await this._waterfallModuleFactory
       .connect(this._signer)
-      .createWaterfallModule(token, recipients, trancheSizes)
+      .createWaterfallModule(
+        token,
+        nonWaterfallRecipient,
+        recipients,
+        trancheSizes,
+      )
     const event = await getTransactionEvent(
       createWaterfallTx,
       this._waterfallModuleFactory.interface
@@ -140,11 +149,11 @@ export default class WaterfallClient extends BaseClient {
   async recoverNonWaterfallFunds({
     waterfallModuleId,
     token,
-    recipient,
+    recipient = AddressZero,
   }: {
     waterfallModuleId: string
     token: string
-    recipient: string
+    recipient?: string
   }): Promise<{
     event: Event
   }> {
@@ -218,15 +227,33 @@ export default class WaterfallClient extends BaseClient {
         `You must call recover tokens with a token other than the given waterfall's primary token. Primary token: ${waterfallMetadata.token.address}, given token: ${token}`,
       )
 
-    const foundRecipient = waterfallMetadata.tranches.reduce((acc, tranche) => {
-      if (acc) return acc
-
-      return tranche.recipientAddress.toLowerCase() === recipient.toLowerCase()
-    }, false)
-    if (!foundRecipient)
-      throw new InvalidArgumentError(
-        `You must pass in a valid recipient address for the given waterfall. Address ${recipient} not found in any tranche for waterfall ${waterfallModuleId}.`,
+    if (
+      waterfallMetadata.nonWaterfallRecipient &&
+      waterfallMetadata.nonWaterfallRecipient !== AddressZero
+    ) {
+      if (
+        recipient.toLowerCase() !==
+        waterfallMetadata.nonWaterfallRecipient.toLowerCase()
       )
+        throw new InvalidArgumentError(
+          `The passed in recipient (${recipient}) must match the non waterfall recipient for this module: ${waterfallMetadata.nonWaterfallRecipient}`,
+        )
+    } else {
+      const foundRecipient = waterfallMetadata.tranches.reduce(
+        (acc, tranche) => {
+          if (acc) return acc
+
+          return (
+            tranche.recipientAddress.toLowerCase() === recipient.toLowerCase()
+          )
+        },
+        false,
+      )
+      if (!foundRecipient)
+        throw new InvalidArgumentError(
+          `You must pass in a valid recipient address for the given waterfall. Address ${recipient} not found in any tranche for waterfall ${waterfallModuleId}.`,
+        )
+    }
   }
 
   private _getWaterfallContract(waterfallModule: string) {

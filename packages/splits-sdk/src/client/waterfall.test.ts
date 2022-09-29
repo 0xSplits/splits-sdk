@@ -1,5 +1,6 @@
 import { Provider } from '@ethersproject/abstract-provider'
 import { Signer } from '@ethersproject/abstract-signer'
+import { AddressZero } from '@ethersproject/constants'
 import type { Event } from '@ethersproject/contracts'
 
 import WaterfallClient from './waterfall'
@@ -176,6 +177,37 @@ describe('Waterfall writes', () => {
       )
       expect(factoryWriteActions.createWaterfallModule).toBeCalledWith(
         token,
+        AddressZero,
+        TRANCHE_RECIPIENTS,
+        TRANCHE_SIZES,
+      )
+      expect(getTransactionEventSpy).toBeCalledWith(
+        'create_waterfall_module_tx',
+        'format_CreateWaterfallModule',
+      )
+    })
+
+    test('Create waterfall passes with non waterfall recipient', async () => {
+      const { event, waterfallModuleId } =
+        await waterfallClient.createWaterfallModule({
+          token,
+          tranches,
+          nonWaterfallRecipient: '0xnonWaterfallRecipient',
+        })
+
+      expect(event.blockNumber).toEqual(12345)
+      expect(waterfallModuleId).toEqual('0xwaterfall')
+      expect(validateAddress).toBeCalledWith(token)
+      expect(validateTranches).toBeCalledWith(tranches)
+      expect(getTrancheRecipientsAndSizesMock).toBeCalledWith(
+        1,
+        token,
+        tranches,
+        provider,
+      )
+      expect(factoryWriteActions.createWaterfallModule).toBeCalledWith(
+        token,
+        '0xnonWaterfallRecipient',
         TRANCHE_RECIPIENTS,
         TRANCHE_SIZES,
       )
