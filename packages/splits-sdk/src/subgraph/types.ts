@@ -51,6 +51,7 @@ export type GqlWaterfallModule = {
   __typename: 'WaterfallModule'
   id: Scalars['ID']
   token: GqlToken
+  nonWaterfallRecipient: Scalars['String']
   tranches: GqlWaterfallTranche[]
   latestBlock: Scalars['Int']
 }

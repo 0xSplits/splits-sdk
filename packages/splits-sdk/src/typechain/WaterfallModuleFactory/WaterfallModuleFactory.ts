@@ -29,7 +29,7 @@ import type {
 
 export interface WaterfallModuleFactoryInterface extends utils.Interface {
   functions: {
-    "createWaterfallModule(address,address[],uint256[])": FunctionFragment;
+    "createWaterfallModule(address,address,address[],uint256[])": FunctionFragment;
     "wmImpl()": FunctionFragment;
   };
 
@@ -40,6 +40,7 @@ export interface WaterfallModuleFactoryInterface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "createWaterfallModule",
     values: [
+      PromiseOrValue<string>,
       PromiseOrValue<string>,
       PromiseOrValue<string>[],
       PromiseOrValue<BigNumberish>[]
@@ -54,7 +55,7 @@ export interface WaterfallModuleFactoryInterface extends utils.Interface {
   decodeFunctionResult(functionFragment: "wmImpl", data: BytesLike): Result;
 
   events: {
-    "CreateWaterfallModule(address,address,address[],uint256[])": EventFragment;
+    "CreateWaterfallModule(address,address,address,address[],uint256[])": EventFragment;
   };
 
   getEvent(nameOrSignatureOrTopic: "CreateWaterfallModule"): EventFragment;
@@ -63,11 +64,12 @@ export interface WaterfallModuleFactoryInterface extends utils.Interface {
 export interface CreateWaterfallModuleEventObject {
   waterfallModule: string;
   token: string;
+  nonWaterfallRecipient: string;
   recipients: string[];
   thresholds: BigNumber[];
 }
 export type CreateWaterfallModuleEvent = TypedEvent<
-  [string, string, string[], BigNumber[]],
+  [string, string, string, string[], BigNumber[]],
   CreateWaterfallModuleEventObject
 >;
 
@@ -103,6 +105,7 @@ export interface WaterfallModuleFactory extends BaseContract {
   functions: {
     createWaterfallModule(
       token: PromiseOrValue<string>,
+      nonWaterfallRecipient: PromiseOrValue<string>,
       recipients: PromiseOrValue<string>[],
       thresholds: PromiseOrValue<BigNumberish>[],
       overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -113,6 +116,7 @@ export interface WaterfallModuleFactory extends BaseContract {
 
   createWaterfallModule(
     token: PromiseOrValue<string>,
+    nonWaterfallRecipient: PromiseOrValue<string>,
     recipients: PromiseOrValue<string>[],
     thresholds: PromiseOrValue<BigNumberish>[],
     overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -123,6 +127,7 @@ export interface WaterfallModuleFactory extends BaseContract {
   callStatic: {
     createWaterfallModule(
       token: PromiseOrValue<string>,
+      nonWaterfallRecipient: PromiseOrValue<string>,
       recipients: PromiseOrValue<string>[],
       thresholds: PromiseOrValue<BigNumberish>[],
       overrides?: CallOverrides
@@ -132,15 +137,17 @@ export interface WaterfallModuleFactory extends BaseContract {
   };
 
   filters: {
-    "CreateWaterfallModule(address,address,address[],uint256[])"(
+    "CreateWaterfallModule(address,address,address,address[],uint256[])"(
       waterfallModule?: PromiseOrValue<string> | null,
       token?: null,
+      nonWaterfallRecipient?: null,
       recipients?: null,
       thresholds?: null
     ): CreateWaterfallModuleEventFilter;
     CreateWaterfallModule(
       waterfallModule?: PromiseOrValue<string> | null,
       token?: null,
+      nonWaterfallRecipient?: null,
       recipients?: null,
       thresholds?: null
     ): CreateWaterfallModuleEventFilter;
@@ -149,6 +156,7 @@ export interface WaterfallModuleFactory extends BaseContract {
   estimateGas: {
     createWaterfallModule(
       token: PromiseOrValue<string>,
+      nonWaterfallRecipient: PromiseOrValue<string>,
       recipients: PromiseOrValue<string>[],
       thresholds: PromiseOrValue<BigNumberish>[],
       overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -160,6 +168,7 @@ export interface WaterfallModuleFactory extends BaseContract {
   populateTransaction: {
     createWaterfallModule(
       token: PromiseOrValue<string>,
+      nonWaterfallRecipient: PromiseOrValue<string>,
       recipients: PromiseOrValue<string>[],
       thresholds: PromiseOrValue<BigNumberish>[],
       overrides?: Overrides & { from?: PromiseOrValue<string> }

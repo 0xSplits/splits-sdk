@@ -7,6 +7,7 @@ import type {
   BytesLike,
   CallOverrides,
   ContractTransaction,
+  Overrides,
   PayableOverrides,
   PopulatedTransaction,
   Signer,
@@ -29,19 +30,29 @@ import type {
 export interface WaterfallModuleInterface extends utils.Interface {
   functions: {
     "distributedFunds()": FunctionFragment;
+    "fundsPendingWithdrawal()": FunctionFragment;
+    "getPullBalance(address)": FunctionFragment;
     "getTranches()": FunctionFragment;
+    "nonWaterfallRecipient()": FunctionFragment;
     "recoverNonWaterfallFunds(address,address)": FunctionFragment;
     "token()": FunctionFragment;
     "waterfallFunds()": FunctionFragment;
+    "waterfallFundsPull()": FunctionFragment;
+    "withdraw(address)": FunctionFragment;
   };
 
   getFunction(
     nameOrSignatureOrTopic:
       | "distributedFunds"
+      | "fundsPendingWithdrawal"
+      | "getPullBalance"
       | "getTranches"
+      | "nonWaterfallRecipient"
       | "recoverNonWaterfallFunds"
       | "token"
       | "waterfallFunds"
+      | "waterfallFundsPull"
+      | "withdraw"
   ): FunctionFragment;
 
   encodeFunctionData(
@@ -49,7 +60,19 @@ export interface WaterfallModuleInterface extends utils.Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
+    functionFragment: "fundsPendingWithdrawal",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getPullBalance",
+    values: [PromiseOrValue<string>]
+  ): string;
+  encodeFunctionData(
     functionFragment: "getTranches",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "nonWaterfallRecipient",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -61,13 +84,33 @@ export interface WaterfallModuleInterface extends utils.Interface {
     functionFragment: "waterfallFunds",
     values?: undefined
   ): string;
+  encodeFunctionData(
+    functionFragment: "waterfallFundsPull",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "withdraw",
+    values: [PromiseOrValue<string>]
+  ): string;
 
   decodeFunctionResult(
     functionFragment: "distributedFunds",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "fundsPendingWithdrawal",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getPullBalance",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "getTranches",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "nonWaterfallRecipient",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -79,16 +122,23 @@ export interface WaterfallModuleInterface extends utils.Interface {
     functionFragment: "waterfallFunds",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "waterfallFundsPull",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
 
   events: {
     "ReceiveETH(uint256)": EventFragment;
     "RecoverNonWaterfallFunds(address,address,uint256)": EventFragment;
-    "WaterfallFunds(address[],uint256[])": EventFragment;
+    "WaterfallFunds(address[],uint256[],uint256)": EventFragment;
+    "Withdrawal(address,uint256)": EventFragment;
   };
 
   getEvent(nameOrSignatureOrTopic: "ReceiveETH"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "RecoverNonWaterfallFunds"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "WaterfallFunds"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "Withdrawal"): EventFragment;
 }
 
 export interface ReceiveETHEventObject {
@@ -114,13 +164,25 @@ export type RecoverNonWaterfallFundsEventFilter =
 export interface WaterfallFundsEventObject {
   recipients: string[];
   payouts: BigNumber[];
+  pullFlowFlag: BigNumber;
 }
 export type WaterfallFundsEvent = TypedEvent<
-  [string[], BigNumber[]],
+  [string[], BigNumber[], BigNumber],
   WaterfallFundsEventObject
 >;
 
 export type WaterfallFundsEventFilter = TypedEventFilter<WaterfallFundsEvent>;
+
+export interface WithdrawalEventObject {
+  account: string;
+  amount: BigNumber;
+}
+export type WithdrawalEvent = TypedEvent<
+  [string, BigNumber],
+  WithdrawalEventObject
+>;
+
+export type WithdrawalEventFilter = TypedEventFilter<WithdrawalEvent>;
 
 export interface WaterfallModule extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
@@ -151,6 +213,13 @@ export interface WaterfallModule extends BaseContract {
   functions: {
     distributedFunds(overrides?: CallOverrides): Promise<[BigNumber]>;
 
+    fundsPendingWithdrawal(overrides?: CallOverrides): Promise<[BigNumber]>;
+
+    getPullBalance(
+      account: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
+
     getTranches(
       overrides?: CallOverrides
     ): Promise<
@@ -159,6 +228,8 @@ export interface WaterfallModule extends BaseContract {
         thresholds: BigNumber[];
       }
     >;
+
+    nonWaterfallRecipient(overrides?: CallOverrides): Promise<[string]>;
 
     recoverNonWaterfallFunds(
       nonWaterfallToken: PromiseOrValue<string>,
@@ -171,15 +242,33 @@ export interface WaterfallModule extends BaseContract {
     waterfallFunds(
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
+
+    waterfallFundsPull(
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
+    withdraw(
+      account: PromiseOrValue<string>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
   };
 
   distributedFunds(overrides?: CallOverrides): Promise<BigNumber>;
+
+  fundsPendingWithdrawal(overrides?: CallOverrides): Promise<BigNumber>;
+
+  getPullBalance(
+    account: PromiseOrValue<string>,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
 
   getTranches(
     overrides?: CallOverrides
   ): Promise<
     [string[], BigNumber[]] & { recipients: string[]; thresholds: BigNumber[] }
   >;
+
+  nonWaterfallRecipient(overrides?: CallOverrides): Promise<string>;
 
   recoverNonWaterfallFunds(
     nonWaterfallToken: PromiseOrValue<string>,
@@ -193,8 +282,24 @@ export interface WaterfallModule extends BaseContract {
     overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
+  waterfallFundsPull(
+    overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  withdraw(
+    account: PromiseOrValue<string>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
   callStatic: {
     distributedFunds(overrides?: CallOverrides): Promise<BigNumber>;
+
+    fundsPendingWithdrawal(overrides?: CallOverrides): Promise<BigNumber>;
+
+    getPullBalance(
+      account: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
     getTranches(
       overrides?: CallOverrides
@@ -205,6 +310,8 @@ export interface WaterfallModule extends BaseContract {
       }
     >;
 
+    nonWaterfallRecipient(overrides?: CallOverrides): Promise<string>;
+
     recoverNonWaterfallFunds(
       nonWaterfallToken: PromiseOrValue<string>,
       recipient: PromiseOrValue<string>,
@@ -214,6 +321,13 @@ export interface WaterfallModule extends BaseContract {
     token(overrides?: CallOverrides): Promise<string>;
 
     waterfallFunds(overrides?: CallOverrides): Promise<void>;
+
+    waterfallFundsPull(overrides?: CallOverrides): Promise<void>;
+
+    withdraw(
+      account: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<void>;
   };
 
   filters: {
@@ -231,20 +345,37 @@ export interface WaterfallModule extends BaseContract {
       amount?: null
     ): RecoverNonWaterfallFundsEventFilter;
 
-    "WaterfallFunds(address[],uint256[])"(
+    "WaterfallFunds(address[],uint256[],uint256)"(
       recipients?: null,
-      payouts?: null
+      payouts?: null,
+      pullFlowFlag?: null
     ): WaterfallFundsEventFilter;
     WaterfallFunds(
       recipients?: null,
-      payouts?: null
+      payouts?: null,
+      pullFlowFlag?: null
     ): WaterfallFundsEventFilter;
+
+    "Withdrawal(address,uint256)"(
+      account?: null,
+      amount?: null
+    ): WithdrawalEventFilter;
+    Withdrawal(account?: null, amount?: null): WithdrawalEventFilter;
   };
 
   estimateGas: {
     distributedFunds(overrides?: CallOverrides): Promise<BigNumber>;
 
+    fundsPendingWithdrawal(overrides?: CallOverrides): Promise<BigNumber>;
+
+    getPullBalance(
+      account: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     getTranches(overrides?: CallOverrides): Promise<BigNumber>;
+
+    nonWaterfallRecipient(overrides?: CallOverrides): Promise<BigNumber>;
 
     recoverNonWaterfallFunds(
       nonWaterfallToken: PromiseOrValue<string>,
@@ -257,12 +388,34 @@ export interface WaterfallModule extends BaseContract {
     waterfallFunds(
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
+
+    waterfallFundsPull(
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    withdraw(
+      account: PromiseOrValue<string>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
   };
 
   populateTransaction: {
     distributedFunds(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
+    fundsPendingWithdrawal(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    getPullBalance(
+      account: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     getTranches(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    nonWaterfallRecipient(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
 
     recoverNonWaterfallFunds(
       nonWaterfallToken: PromiseOrValue<string>,
@@ -274,6 +427,15 @@ export interface WaterfallModule extends BaseContract {
 
     waterfallFunds(
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    waterfallFundsPull(
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    withdraw(
+      account: PromiseOrValue<string>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
   };
 }

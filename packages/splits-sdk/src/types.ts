@@ -111,6 +111,7 @@ export type WaterfallModule = {
     symbol: string
     decimals: number
   }
+  nonWaterfallRecipient: string | null
   tranches: WaterfallTranche[]
 }
 
