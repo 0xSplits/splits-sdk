@@ -93,13 +93,14 @@ export const fetchERC20TransferredTokens = async (
   return Array.from(tokens)
 }
 
-export const addEnsNames = async (
+export const fetchEnsNames = async (
   provider: Provider,
-  recipients: SplitRecipient[],
-): Promise<void> => {
+  addresses: string[],
+): Promise<string[]> => {
   // Do nothing if not on mainnet
   const providerNetwork = await provider.getNetwork()
-  if (providerNetwork.chainId !== 1) return
+  if (providerNetwork.chainId !== 1)
+    return Array(addresses.length).fill(undefined)
 
   const reverseRecords = new Contract(
     REVERSE_RECORDS_ADDRESS,
@@ -107,8 +108,17 @@ export const addEnsNames = async (
     provider,
   )
 
-  const addresses = recipients.map((recipient) => recipient.address)
   const allNames: string[] = await reverseRecords.getNames(addresses)
+  return allNames
+}
+
+export const addEnsNames = async (
+  provider: Provider,
+  recipients: SplitRecipient[],
+): Promise<void> => {
+  const addresses = recipients.map((recipient) => recipient.address)
+  const allNames = await fetchEnsNames(provider, addresses)
+
   allNames.map((ens, index) => {
     if (ens) {
       try {
@@ -128,14 +138,9 @@ export const addWaterfallEnsNames = async (
   provider: Provider,
   tranches: WaterfallTranche[],
 ): Promise<void> => {
-  const reverseRecords = new Contract(
-    REVERSE_RECORDS_ADDRESS,
-    reverseRecordsInterface,
-    provider,
-  )
-
   const addresses = tranches.map((tranche) => tranche.recipientAddress)
-  const allNames: string[] = await reverseRecords.getNames(addresses)
+  const allNames = await fetchEnsNames(provider, addresses)
+
   allNames.map((ens, index) => {
     if (ens) {
       try {
