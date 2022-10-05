@@ -83,6 +83,10 @@ export const addEnsNames = async (
   provider: Provider,
   recipients: SplitRecipient[],
 ): Promise<void> => {
+  // Do nothing if not on mainnet
+  const providerNetwork = await provider.getNetwork()
+  if (providerNetwork.chainId !== 1) return
+
   const reverseRecords = new Contract(
     REVERSE_RECORDS_ADDRESS,
     reverseRecordsInterface,
