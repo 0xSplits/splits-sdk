@@ -83,7 +83,6 @@ export class SplitsClient extends BaseClient {
   constructor({
     chainId,
     provider,
-    ensProvider,
     signer,
     includeEnsNames = false,
     ensProvider,
