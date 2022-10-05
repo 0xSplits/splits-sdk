@@ -93,10 +93,34 @@ const mockSignerNewController = jest.fn<Signer, unknown[]>(() => {
 })
 
 describe('Client config validation', () => {
+  const provider = new mockProvider()
+
   test('Including ens names with no provider fails', () => {
     expect(
       () => new SplitsClient({ chainId: 1, includeEnsNames: true }),
     ).toThrow(InvalidConfigError)
+  })
+
+  test('Including ens names with only ens provider passes', () => {
+    expect(
+      () =>
+        new SplitsClient({
+          chainId: 1,
+          includeEnsNames: true,
+          ensProvider: provider,
+        }),
+    ).not.toThrow()
+  })
+
+  test('Including ens names with only regular provider passes', () => {
+    expect(
+      () =>
+        new SplitsClient({
+          chainId: 1,
+          includeEnsNames: true,
+          provider,
+        }),
+    ).not.toThrow()
   })
 
   test('Invalid chain id fails', () => {

@@ -1,4 +1,6 @@
 import { Interface } from '@ethersproject/abi'
+import { Provider } from '@ethersproject/abstract-provider'
+import { Signer } from '@ethersproject/abstract-signer'
 import { getAddress } from '@ethersproject/address'
 import { BigNumber } from '@ethersproject/bignumber'
 import { AddressZero, One } from '@ethersproject/constants'
@@ -63,7 +65,6 @@ import {
 } from './utils/validation'
 import type { SplitMain as SplitMainEthereumType } from './typechain/SplitMain/ethereum'
 import type { SplitMain as SplitMainPolygonType } from './typechain/SplitMain/polygon'
-import { Signer } from '@ethersproject/abstract-signer'
 
 const MISSING_SIGNER = ''
 
@@ -79,14 +80,16 @@ export class SplitsClient {
   private readonly _splitMain: SplitMainType
   private readonly _graphqlClient: GraphQLClient | undefined
   private readonly _includeEnsNames: boolean
+  private readonly _ensProvider: Provider | undefined
 
   constructor({
     chainId,
     provider,
     signer,
     includeEnsNames = false,
+    ensProvider,
   }: SplitsClientConfig) {
-    if (includeEnsNames && !provider)
+    if (includeEnsNames && !ensProvider && !provider)
       throw new InvalidConfigError(
         'Must include a provider if includeEnsNames is set to true',
       )
@@ -115,6 +118,7 @@ export class SplitsClient {
     this._signer = signer ?? MISSING_SIGNER
     this._graphqlClient = getGraphqlClient(chainId)
     this._includeEnsNames = includeEnsNames
+    this._ensProvider = ensProvider ?? provider
   }
 
   // Write actions
@@ -675,8 +679,8 @@ export class SplitsClient {
 
   private async _formatSplit(gqlSplit: GqlSplit): Promise<Split> {
     const split = protectedFormatSplit(gqlSplit)
-    if (this._includeEnsNames) {
-      await addEnsNames(this._splitMain.provider, split.recipients)
+    if (this._includeEnsNames && this._ensProvider) {
+      await addEnsNames(this._ensProvider, split.recipients)
     }
 
     return split

@@ -12,6 +12,9 @@ export type SplitsClientConfig = {
   provider?: Provider
   signer?: Signer
   includeEnsNames?: boolean
+  // ensProvider can be used to fetch ens names when provider is not on mainnet (reverseRecords
+  // only works on mainnet).
+  ensProvider?: Provider
 }
 
 export type SplitRecipient = {
