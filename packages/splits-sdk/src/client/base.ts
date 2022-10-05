@@ -31,7 +31,7 @@ export default class BaseClient {
   }: SplitsClientConfig) {
     if (includeEnsNames && !provider && !ensProvider)
       throw new InvalidConfigError(
-        'Must include a provider if includeEnsNames is set to true',
+        'Must include a mainnet provider if includeEnsNames is set to true',
       )
 
     this._ensProvider = ensProvider ?? provider

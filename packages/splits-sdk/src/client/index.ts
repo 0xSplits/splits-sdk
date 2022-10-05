@@ -94,10 +94,6 @@ export class SplitsClient extends BaseClient {
       signer,
       includeEnsNames,
     })
-    if (includeEnsNames && !provider && !ensProvider)
-      throw new InvalidConfigError(
-        'Must include a provider if includeEnsNames is set to true',
-      )
 
     const polygonInterfaceChainIds = [
       ...POLYGON_CHAIN_IDS,
