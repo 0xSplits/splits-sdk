@@ -117,6 +117,16 @@ describe('Client config validation', () => {
     expect(() => new SplitsClient({ chainId: 137 })).not.toThrow()
     expect(() => new SplitsClient({ chainId: 80001 })).not.toThrow()
   })
+
+  test('Optimism chain ids pass', () => {
+    expect(() => new SplitsClient({ chainId: 10 })).not.toThrow()
+    expect(() => new SplitsClient({ chainId: 420 })).not.toThrow()
+  })
+
+  test('Arbitrum chain ids pass', () => {
+    expect(() => new SplitsClient({ chainId: 42161 })).not.toThrow()
+    expect(() => new SplitsClient({ chainId: 421613 })).not.toThrow()
+  })
 })
 
 describe('SplitMain writes', () => {

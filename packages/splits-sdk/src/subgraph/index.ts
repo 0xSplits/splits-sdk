@@ -14,6 +14,12 @@ const GQL_ENDPOINTS: { [chainId: number]: string } = {
   137: 'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-polygon',
   80001:
     'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-mumbai',
+  10: 'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-optimism',
+  420: 'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-opt-goerli',
+  42161:
+    'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-arbitrum',
+  421613:
+    'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-arb-goerli',
 }
 
 const TOKEN_BALANCE_FIELDS_FRAGMENT = gql`

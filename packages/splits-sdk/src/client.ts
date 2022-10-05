@@ -8,7 +8,9 @@ import { GraphQLClient, Variables } from 'graphql-request'
 import SPLIT_MAIN_ARTIFACT_ETHEREUM from './artifacts/contracts/SplitMain/ethereum/SplitMain.json'
 import SPLIT_MAIN_ARTIFACT_POLYGON from './artifacts/contracts/SplitMain/polygon/SplitMain.json'
 import {
+  ARBITRUM_CHAIN_IDS,
   ETHEREUM_CHAIN_IDS,
+  OPTIMISM_CHAIN_IDS,
   POLYGON_CHAIN_IDS,
   SPLIT_MAIN_ADDRESS,
 } from './constants'
@@ -89,13 +91,19 @@ export class SplitsClient {
         'Must include a provider if includeEnsNames is set to true',
       )
 
+    const polygonInterfaceChainIds = [
+      ...POLYGON_CHAIN_IDS,
+      ...OPTIMISM_CHAIN_IDS,
+      ...ARBITRUM_CHAIN_IDS,
+    ]
+
     if (ETHEREUM_CHAIN_IDS.includes(chainId))
       this._splitMain = new Contract(
         SPLIT_MAIN_ADDRESS,
         splitMainInterfaceEthereum,
         provider,
       ) as SplitMainEthereumType
-    else if (POLYGON_CHAIN_IDS.includes(chainId))
+    else if (polygonInterfaceChainIds.includes(chainId))
       this._splitMain = new Contract(
         SPLIT_MAIN_ADDRESS,
         splitMainInterfacePolygon,
