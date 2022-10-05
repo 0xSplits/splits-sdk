@@ -10,7 +10,6 @@ export type SplitMainType = SplitMainEthereumType | SplitMainPolygonType
 export type SplitsClientConfig = {
   chainId: number
   provider?: Provider
-  ensProvider?: Provider
   signer?: Signer
   includeEnsNames?: boolean
   // ensProvider can be used to fetch ens names when provider is not on mainnet (reverseRecords
