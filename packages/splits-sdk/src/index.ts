@@ -7,6 +7,7 @@ export * from './errors'
 export {
   SPLITS_SUPPORTED_CHAIN_IDS,
   SPLITS_SUBGRAPH_CHAIN_IDS,
+  WATERFALL_CHAIN_IDS,
   SPLITS_MAX_PRECISION_DECIMALS,
 } from './constants'
 export type {
@@ -18,4 +19,5 @@ export type {
   WaterfallTranche,
   WaterfallModule,
   WaterfallTrancheInput,
+  Account,
 } from './types'
