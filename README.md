@@ -19,14 +19,14 @@ From the root directory:
 
 ```bash
 yarn install
-lerna run build
+yarn lerna-build
 ```
 
 ### Update versions and prepare for npm publish
 From the root directory:
 
 ```bash
-lerna version --no-private
+yarn lerna-version
 ```
 
 ### Publish to npm
