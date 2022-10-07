@@ -13,7 +13,6 @@ import {
 import {
   AccountNotFoundError,
   InvalidArgumentError,
-  InvalidConfigError,
   TransactionFailedError,
   UnsupportedChainIdError,
 } from '../errors'

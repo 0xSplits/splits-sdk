@@ -20,7 +20,6 @@ import {
 import {
   AccountNotFoundError,
   InvalidAuthError,
-  InvalidConfigError,
   MissingProviderError,
   TransactionFailedError,
   UnsupportedChainIdError,
