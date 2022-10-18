@@ -96,6 +96,16 @@ describe('Client config validation', () => {
     expect(() => new WaterfallClient({ chainId: 137 })).not.toThrow()
     expect(() => new WaterfallClient({ chainId: 80001 })).not.toThrow()
   })
+
+  test('Optimism chain ids pass', () => {
+    expect(() => new WaterfallClient({ chainId: 10 })).not.toThrow()
+    expect(() => new WaterfallClient({ chainId: 420 })).not.toThrow()
+  })
+
+  test('Arbitrum chain ids pass', () => {
+    expect(() => new WaterfallClient({ chainId: 42161 })).not.toThrow()
+    expect(() => new WaterfallClient({ chainId: 421613 })).not.toThrow()
+  })
 })
 
 describe('Waterfall writes', () => {
@@ -112,7 +122,6 @@ describe('Waterfall writes', () => {
     ;(validateAddress as jest.Mock).mockClear()
     getTransactionEventSpy.mockClear()
     getTrancheRecipientsAndSizesMock.mockClear()
-    // getBigNumberMock.mockClear()
   })
 
   describe('Create waterfall tests', () => {
