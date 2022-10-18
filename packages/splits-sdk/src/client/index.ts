@@ -13,6 +13,7 @@ import {
   ETHEREUM_CHAIN_IDS,
   OPTIMISM_CHAIN_IDS,
   POLYGON_CHAIN_IDS,
+  SPLITS_MAX_PRECISION_DECIMALS,
   SPLITS_SUPPORTED_CHAIN_IDS,
   SPLIT_MAIN_ADDRESS,
   WATERFALL_CHAIN_IDS,
@@ -139,7 +140,7 @@ export class SplitsClient extends BaseClient {
     splitId: string
     event: Event
   }> {
-    validateRecipients(recipients)
+    validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
     validateDistributorFeePercent(distributorFeePercent)
     this._requireSigner()
 
@@ -171,7 +172,7 @@ export class SplitsClient extends BaseClient {
     event: Event
   }> {
     validateAddress(splitId)
-    validateRecipients(recipients)
+    validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
     validateDistributorFeePercent(distributorFeePercent)
     this._requireSigner()
     await this._requireController(splitId)
@@ -259,7 +260,7 @@ export class SplitsClient extends BaseClient {
   }> {
     validateAddress(splitId)
     validateAddress(token)
-    validateRecipients(recipients)
+    validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
     validateDistributorFeePercent(distributorFeePercent)
     this._requireSigner()
     await this._requireController(splitId)
@@ -439,7 +440,7 @@ export class SplitsClient extends BaseClient {
   }): Promise<{
     splitId: string
   }> {
-    validateRecipients(recipients)
+    validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
     validateDistributorFeePercent(distributorFeePercent)
     this._requireProvider()
 

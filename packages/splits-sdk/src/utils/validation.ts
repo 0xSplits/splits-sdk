@@ -15,7 +15,10 @@ const getNumDigitsAfterDecimal = (value: number): number => {
   return decimalStr.length
 }
 
-export const validateRecipients = (recipients: SplitRecipient[]): void => {
+export const validateRecipients = (
+  recipients: SplitRecipient[],
+  maxPrecisionDecimals: number,
+): void => {
   const seenAddresses = new Set<string>([])
   let totalPercentAllocation = 0
   if (recipients.length < 2)
@@ -35,10 +38,10 @@ export const validateRecipients = (recipients: SplitRecipient[]): void => {
       )
     if (
       getNumDigitsAfterDecimal(recipient.percentAllocation) >
-      SPLITS_MAX_PRECISION_DECIMALS
+      maxPrecisionDecimals
     )
       throw new InvalidRecipientsError(
-        `Invalid precision on percent allocation: ${recipient.percentAllocation}. Maxiumum allowed precision is ${SPLITS_MAX_PRECISION_DECIMALS} decimals`,
+        `Invalid precision on percent allocation: ${recipient.percentAllocation}. Maxiumum allowed precision is ${maxPrecisionDecimals} decimals`,
       )
 
     seenAddresses.add(recipient.address.toLowerCase())
@@ -47,7 +50,7 @@ export const validateRecipients = (recipients: SplitRecipient[]): void => {
 
   // Cutoff any decimals beyond the max precision, they may get introduced due
   // to javascript floating point precision
-  const factorOfTen = Math.pow(10, SPLITS_MAX_PRECISION_DECIMALS)
+  const factorOfTen = Math.pow(10, maxPrecisionDecimals)
   totalPercentAllocation =
     Math.round(totalPercentAllocation * factorOfTen) / factorOfTen
   if (totalPercentAllocation !== 100)

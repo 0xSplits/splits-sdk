@@ -5,6 +5,7 @@ import { AddressZero } from '@ethersproject/constants'
 import type { Event } from '@ethersproject/contracts'
 
 import { SplitsClient } from './index'
+import { SPLITS_MAX_PRECISION_DECIMALS } from '../constants'
 import {
   InvalidAuthError,
   InvalidConfigError,
@@ -216,7 +217,10 @@ describe('SplitMain writes', () => {
 
       expect(event.blockNumber).toEqual(12345)
       expect(splitId).toEqual('0xsplit')
-      expect(validateRecipients).toBeCalledWith(recipients)
+      expect(validateRecipients).toBeCalledWith(
+        recipients,
+        SPLITS_MAX_PRECISION_DECIMALS,
+      )
       expect(validateDistributorFeePercent).toBeCalledWith(
         distributorFeePercent,
       )
@@ -244,7 +248,10 @@ describe('SplitMain writes', () => {
 
       expect(event.blockNumber).toEqual(12345)
       expect(splitId).toEqual('0xsplit')
-      expect(validateRecipients).toBeCalledWith(recipients)
+      expect(validateRecipients).toBeCalledWith(
+        recipients,
+        SPLITS_MAX_PRECISION_DECIMALS,
+      )
       expect(validateDistributorFeePercent).toBeCalledWith(
         distributorFeePercent,
       )
@@ -330,7 +337,10 @@ describe('SplitMain writes', () => {
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitId)
-      expect(validateRecipients).toBeCalledWith(recipients)
+      expect(validateRecipients).toBeCalledWith(
+        recipients,
+        SPLITS_MAX_PRECISION_DECIMALS,
+      )
       expect(validateDistributorFeePercent).toBeCalledWith(
         distributorFeePercent,
       )
@@ -579,7 +589,10 @@ describe('SplitMain writes', () => {
       expect(validateAddress).toBeCalledWith(splitId)
       expect(validateAddress).toBeCalledWith(AddressZero)
       expect(validateAddress).toBeCalledWith(CONTROLLER_ADDRESS)
-      expect(validateRecipients).toBeCalledWith(recipients)
+      expect(validateRecipients).toBeCalledWith(
+        recipients,
+        SPLITS_MAX_PRECISION_DECIMALS,
+      )
       expect(validateDistributorFeePercent).toBeCalledWith(
         distributorFeePercent,
       )
@@ -611,7 +624,10 @@ describe('SplitMain writes', () => {
       expect(validateAddress).toBeCalledWith(splitId)
       expect(validateAddress).toBeCalledWith(token)
       expect(validateAddress).toBeCalledWith(CONTROLLER_ADDRESS)
-      expect(validateRecipients).toBeCalledWith(recipients)
+      expect(validateRecipients).toBeCalledWith(
+        recipients,
+        SPLITS_MAX_PRECISION_DECIMALS,
+      )
       expect(validateDistributorFeePercent).toBeCalledWith(
         distributorFeePercent,
       )
@@ -645,7 +661,10 @@ describe('SplitMain writes', () => {
       expect(validateAddress).toBeCalledWith(splitId)
       expect(validateAddress).toBeCalledWith(AddressZero)
       expect(validateAddress).toBeCalledWith(distributorAddress)
-      expect(validateRecipients).toBeCalledWith(recipients)
+      expect(validateRecipients).toBeCalledWith(
+        recipients,
+        SPLITS_MAX_PRECISION_DECIMALS,
+      )
       expect(validateDistributorFeePercent).toBeCalledWith(
         distributorFeePercent,
       )
@@ -679,7 +698,10 @@ describe('SplitMain writes', () => {
       expect(validateAddress).toBeCalledWith(splitId)
       expect(validateAddress).toBeCalledWith(token)
       expect(validateAddress).toBeCalledWith(distributorAddress)
-      expect(validateRecipients).toBeCalledWith(recipients)
+      expect(validateRecipients).toBeCalledWith(
+        recipients,
+        SPLITS_MAX_PRECISION_DECIMALS,
+      )
       expect(validateDistributorFeePercent).toBeCalledWith(
         distributorFeePercent,
       )
@@ -1128,7 +1150,10 @@ describe('SplitMain reads', () => {
       })
 
       expect(splitId).toEqual('0xpredict')
-      expect(validateRecipients).toBeCalledWith(recipients)
+      expect(validateRecipients).toBeCalledWith(
+        recipients,
+        SPLITS_MAX_PRECISION_DECIMALS,
+      )
       expect(validateDistributorFeePercent).toBeCalledWith(
         distributorFeePercent,
       )
