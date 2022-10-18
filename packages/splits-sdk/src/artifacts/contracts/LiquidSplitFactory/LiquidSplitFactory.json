@@ -12,6 +12,17 @@
       "type": "constructor"
     },
     {
+      "inputs": [
+        {
+          "internalType": "uint32",
+          "name": "distributorFee",
+          "type": "uint32"
+        }
+      ],
+      "name": "InvalidLiquidSplit__InvalidDistributorFee",
+      "type": "error"
+    },
+    {
       "anonymous": false,
       "inputs": [
         {
@@ -38,6 +49,19 @@
       "type": "event"
     },
     {
+      "inputs": [],
+      "name": "MAX_DISTRIBUTOR_FEE",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "inputs": [
         {
           "internalType": "address[]",
@@ -53,6 +77,11 @@
           "internalType": "uint32",
           "name": "_distributorFee",
           "type": "uint32"
+        },
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
         }
       ],
       "name": "createLiquidSplit",
@@ -82,6 +111,11 @@
           "internalType": "uint32",
           "name": "_distributorFee",
           "type": "uint32"
+        },
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
         }
       ],
       "name": "createLiquidSplitClone",
