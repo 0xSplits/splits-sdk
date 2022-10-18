@@ -423,7 +423,6 @@ export default class WaterfallClient extends BaseClient {
       tokenData.decimals,
     )
     if (this._includeEnsNames) {
-      if (!this._waterfallModuleFactory) throw new Error()
       await addWaterfallEnsNames(
         this._ensProvider ?? this._waterfallModuleFactory.provider,
         waterfallModule.tranches,

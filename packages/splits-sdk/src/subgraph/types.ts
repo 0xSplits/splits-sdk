@@ -65,4 +65,25 @@ export type GqlWaterfallTranche = {
   recipient: GqlAccount
 }
 
-export type GqlAccount = GqlUser | GqlSplit | GqlWaterfallModule
+export type GqlLiquidSplit = {
+  __typename: 'LiquidSplit'
+  id: Scalars['ID']
+  distributorFee: Scalars['Int']
+  holders: GqlHolder[]
+  latestBlock: Scalars['Int']
+  split: GqlSplit
+  isFactoryGenerated: Scalars['Boolean']
+}
+
+type GqlHolder = {
+  id: Scalars['ID']
+  liquidSplit: GqlLiquidSplit
+  account: GqlAccount
+  ownership: Scalars['Int']
+}
+
+export type GqlAccount =
+  | GqlUser
+  | GqlSplit
+  | GqlWaterfallModule
+  | GqlLiquidSplit

@@ -114,4 +114,13 @@ export type WaterfallModule = {
   tranches: WaterfallTranche[]
 }
 
+export type LiquidSplit = {
+  type: 'LiquidSplit'
+  id: string
+  distributorFeePercent: number
+  holders: SplitRecipient[]
+  split: string
+  isFactoryGenerated: boolean
+}
+
 export type Account = Split | WaterfallModule

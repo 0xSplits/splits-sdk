@@ -5,6 +5,7 @@ import { GraphQLClient, gql } from 'graphql-request'
 
 import { SPLITS_SUBGRAPH_CHAIN_IDS } from '../constants'
 import type {
+  LiquidSplit,
   Split,
   SplitRecipient,
   TokenBalances,
@@ -13,7 +14,7 @@ import type {
 } from '../types'
 import { fromBigNumberToPercent } from '../utils'
 import {
-  GqlRecipient,
+  GqlLiquidSplit,
   GqlSplit,
   GqlTokenBalance,
   GqlWaterfallModule,
@@ -56,6 +57,32 @@ const RECIPIENT_FIELDS_FRAGMENT = gql`
   }
 `
 
+const ACCOUNT_BALANCES_FRAGMENT = gql`
+  fragment AccountBalancesFragment on Account {
+    internalBalances(first: 1000, orderBy: amount, orderDirection: desc) {
+      ...TokenBalanceFieldsFragment
+    }
+    withdrawals(first: 1000, orderBy: amount, orderDirection: desc) {
+      ...TokenBalanceFieldsFragment
+    }
+  }
+
+  ${TOKEN_BALANCE_FIELDS_FRAGMENT}
+`
+
+const ACCOUNT_FIELDS_FRAGMENT = gql`
+  fragment AccountFieldsFragment on Account {
+    id
+    upstream(first: 1000) {
+      ...RecipientFieldsFragment
+    }
+    ...AccountBalancesFragment
+  }
+
+  ${RECIPIENT_FIELDS_FRAGMENT}
+  ${ACCOUNT_BALANCES_FRAGMENT}
+`
+
 const SPLIT_FIELDS_FRAGMENT = gql`
   fragment SplitFieldsFragment on Split {
     controller
@@ -69,6 +96,16 @@ const SPLIT_FIELDS_FRAGMENT = gql`
   }
 
   ${RECIPIENT_FIELDS_FRAGMENT}
+`
+
+const FULL_SPLIT_FIELDS_FRAGMENT = gql`
+  fragment FullSplitFieldsFragment on Split {
+    ...AccountFieldsFragment
+    ...SplitFieldsFragment
+  }
+
+  ${ACCOUNT_FIELDS_FRAGMENT}
+  ${SPLIT_FIELDS_FRAGMENT}
 `
 
 const WATERFALL_TRANCHE_FIELDS_FRAGMENT = gql`
@@ -97,42 +134,6 @@ const WATERFALL_MODULE_FIELDS_FRAGMENT = gql`
   ${WATERFALL_TRANCHE_FIELDS_FRAGMENT}
 `
 
-const ACCOUNT_BALANCES_FRAGMENT = gql`
-  fragment AccountBalancesFragment on Account {
-    internalBalances(first: 1000, orderBy: amount, orderDirection: desc) {
-      ...TokenBalanceFieldsFragment
-    }
-    withdrawals(first: 1000, orderBy: amount, orderDirection: desc) {
-      ...TokenBalanceFieldsFragment
-    }
-  }
-
-  ${TOKEN_BALANCE_FIELDS_FRAGMENT}
-`
-
-const ACCOUNT_FIELDS_FRAGMENT = gql`
-  fragment AccountFieldsFragment on Account {
-    id
-    upstream(first: 1000) {
-      ...RecipientFieldsFragment
-    }
-    ...AccountBalancesFragment
-  }
-
-  ${RECIPIENT_FIELDS_FRAGMENT}
-  ${ACCOUNT_BALANCES_FRAGMENT}
-`
-
-const FULL_SPLIT_FIELDS_FRAGMENT = gql`
-  fragment FullSplitFieldsFragment on Split {
-    ...AccountFieldsFragment
-    ...SplitFieldsFragment
-  }
-
-  ${ACCOUNT_FIELDS_FRAGMENT}
-  ${SPLIT_FIELDS_FRAGMENT}
-`
-
 const FULL_WATERFALL_MODULE_FIELDS_FRAGMENT = gql`
   fragment FullWaterfallModuleFieldsFragment on WaterfallModule {
     ...AccountFieldsFragment
@@ -143,14 +144,52 @@ const FULL_WATERFALL_MODULE_FIELDS_FRAGMENT = gql`
   ${WATERFALL_MODULE_FIELDS_FRAGMENT}
 `
 
-const formatRecipient = (gqlRecipient: GqlRecipient): SplitRecipient => {
+const LIQUID_SPLIT_HOLDERS_FRAGMENT = gql`
+  fragment LiquidSplitHoldersFragment on Holder {
+    account {
+      id
+    }
+    ownership
+  }
+`
+
+const LIQUID_SPLIT_FIELDS_FRAGMENT = gql`
+  fragment LiquidSplitFieldsFragment on LiquidSplit {
+    latestBlock
+    holders(first: 1000) {
+      ...LiquidSplitHoldersFragment
+    }
+    distributorFee
+    split {
+      ...FullSplitFieldsFragment
+    }
+  }
+
+  ${LIQUID_SPLIT_HOLDERS_FRAGMENT}
+  ${FULL_SPLIT_FIELDS_FRAGMENT}
+`
+
+const FULL_LIQUID_SPLIT_FIELDS_FRAGMENT = gql`
+  fragment FullLiquidSplitFieldsFragment on LiquidSplit {
+    ...AccountFieldsFragment
+    ...LiquidSplitFieldsFragment
+  }
+
+  ${ACCOUNT_FIELDS_FRAGMENT}
+  ${LIQUID_SPLIT_FIELDS_FRAGMENT}
+`
+
+const formatRecipient = (gqlRecipient: {
+  account: { id: string }
+  ownership: number
+}): SplitRecipient => {
   return {
     address: getAddress(gqlRecipient.account.id),
     percentAllocation: fromBigNumberToPercent(gqlRecipient.ownership),
   }
 }
 
-// Should only be called by _formatSplit on SplitsClient
+// Should only be called by formatSplit on SplitsClient
 export const protectedFormatSplit = (gqlSplit: GqlSplit): Split => {
   return {
     type: 'Split',
@@ -173,7 +212,7 @@ export const protectedFormatSplit = (gqlSplit: GqlSplit): Split => {
   }
 }
 
-// Should only be called by _formatWaterfallModule on WaterfallClient
+// Should only be called by formatWaterfallModule on WaterfallClient
 export const protectedFormatWaterfallModule = (
   gqlWaterfallModule: GqlWaterfallModule,
   tokenSymbol: string,
@@ -210,6 +249,26 @@ const formatWaterfallModuleTranche = (
   }
 }
 
+// Should only be called by formatLiquidSplit on LiquidSplitClient
+export const protectedFormatLiquidSplit = (
+  gqlLiquidSplit: GqlLiquidSplit,
+): LiquidSplit => {
+  return {
+    type: 'LiquidSplit',
+    id: getAddress(gqlLiquidSplit.id),
+    distributorFeePercent: fromBigNumberToPercent(
+      gqlLiquidSplit.distributorFee,
+    ),
+    split: getAddress(gqlLiquidSplit.split.id),
+    isFactoryGenerated: gqlLiquidSplit.isFactoryGenerated,
+    holders: gqlLiquidSplit.holders
+      .map((gqlHolder) => formatRecipient(gqlHolder))
+      .sort((a, b) => {
+        return b.percentAllocation - a.percentAllocation
+      }),
+  }
+}
+
 export const formatAccountBalances = (
   gqlTokenBalances: GqlTokenBalance[],
 ): TokenBalances => {
@@ -240,6 +299,16 @@ export const WATERFALL_MODULE_QUERY = gql`
   }
 
   ${FULL_WATERFALL_MODULE_FIELDS_FRAGMENT}
+`
+
+export const LIQUID_SPLIT_QUERY = gql`
+  query liquidSplit($liquidSplitId: ID!) {
+    liquidSplit(id: $liquidSplitId) {
+      ...FullLiquidSplitFieldsFragment
+    }
+  }
+
+  ${FULL_LIQUID_SPLIT_FIELDS_FRAGMENT}
 `
 
 export const ACCOUNT_QUERY = gql`

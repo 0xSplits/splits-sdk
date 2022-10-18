@@ -8,6 +8,7 @@ import { parseUnits } from '@ethersproject/units'
 
 import {
   CHAIN_INFO,
+  LIQUID_SPLIT_NFT_COUNT,
   PERCENTAGE_SCALE,
   POLYGON_CHAIN_IDS,
   REVERSE_RECORDS_ADDRESS,
@@ -37,6 +38,17 @@ export const getRecipientSortedAddressesAndAllocations = (
     })
 
   return [accounts, percentAllocations]
+}
+
+export const getNftCountsFromPercents = (
+  percentAllocations: BigNumber[],
+): number[] => {
+  return percentAllocations.map((p) =>
+    p
+      .mul(BigNumber.from(LIQUID_SPLIT_NFT_COUNT))
+      .div(PERCENTAGE_SCALE)
+      .toNumber(),
+  )
 }
 
 export const getBigNumberFromPercent = (value: number): BigNumber => {
