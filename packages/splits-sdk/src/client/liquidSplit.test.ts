@@ -218,9 +218,44 @@ describe('Liquid split writes', () => {
         DISTRIBUTOR_FEE,
         CONTROLLER_ADDRESS,
       )
+      expect(factoryWriteActions.createLiquidSplitClone).not.toBeCalled()
       expect(getTransactionEventSpy).toBeCalledWith(
         'create_liquid_split_tx',
         'format_CreateLS1155',
+      )
+    })
+
+    test('Create liquid split clone passes', async () => {
+      const { event, liquidSplitId } =
+        await liquidSplitClient.createLiquidSplit({
+          recipients,
+          distributorFeePercent,
+          createClone: true,
+        })
+
+      expect(event.blockNumber).toEqual(12345)
+      expect(liquidSplitId).toEqual('0xliquidSplit')
+      expect(validateAddress).toBeCalledWith(CONTROLLER_ADDRESS)
+      expect(validateRecipients).toBeCalledWith(
+        recipients,
+        LIQUID_SPLITS_MAX_PRECISION_DECIMALS,
+      )
+      expect(validateDistributorFeePercent).toBeCalledWith(
+        distributorFeePercent,
+      )
+      expect(getSortedRecipientsMock).toBeCalledWith(recipients)
+      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
+      expect(getNftCountsMock).toBeCalledWith(SORTED_ALLOCATIONS)
+      expect(factoryWriteActions.createLiquidSplitClone).toBeCalledWith(
+        SORTED_ADDRESSES,
+        NFT_COUNTS,
+        DISTRIBUTOR_FEE,
+        CONTROLLER_ADDRESS,
+      )
+      expect(factoryWriteActions.createLiquidSplit).not.toBeCalled()
+      expect(getTransactionEventSpy).toBeCalledWith(
+        'create_liquid_split_clone_tx',
+        'format_CreateLS1155Clone',
       )
     })
 
