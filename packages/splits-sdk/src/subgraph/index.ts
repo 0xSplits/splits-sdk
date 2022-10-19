@@ -318,12 +318,14 @@ export const ACCOUNT_QUERY = gql`
       ...AccountFieldsFragment
       ...SplitFieldsFragment
       ...WaterfallModuleFieldsFragment
+      ...LiquidSplitFieldsFragment
     }
   }
 
   ${ACCOUNT_FIELDS_FRAGMENT}
   ${SPLIT_FIELDS_FRAGMENT}
   ${WATERFALL_MODULE_FIELDS_FRAGMENT}
+  ${LIQUID_SPLIT_FIELDS_FRAGMENT}
 `
 
 export const RELATED_SPLITS_QUERY = gql`
