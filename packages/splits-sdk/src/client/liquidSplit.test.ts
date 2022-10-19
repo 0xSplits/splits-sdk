@@ -442,3 +442,249 @@ describe('Liquid split writes', () => {
     })
   })
 })
+
+describe('Liquid split reads', () => {
+  const provider = new mockProvider()
+  const liquidSplitClient = new LiquidSplitClient({
+    chainId: 1,
+    provider,
+  })
+
+  beforeEach(() => {
+    ;(validateAddress as jest.Mock).mockClear()
+  })
+
+  describe('Get distributor fee test', () => {
+    const liquidSplitId = '0xgetDistributorFee'
+
+    beforeEach(() => {
+      readActions.distributorFee.mockClear()
+    })
+
+    test('Get distributor fee fails with no provider', async () => {
+      const badClient = new LiquidSplitClient({
+        chainId: 1,
+      })
+
+      await expect(
+        async () =>
+          await badClient.getDistributorFee({
+            liquidSplitId,
+          }),
+      ).rejects.toThrow(MissingProviderError)
+    })
+
+    test('Returns distributor fee', async () => {
+      readActions.distributorFee.mockReturnValueOnce(10)
+      const { distributorFee } = await liquidSplitClient.getDistributorFee({
+        liquidSplitId,
+      })
+
+      expect(distributorFee).toEqual(10)
+      expect(validateAddress).toBeCalledWith(liquidSplitId)
+      expect(readActions.distributorFee).toBeCalled()
+    })
+  })
+
+  describe('Get payout split test', () => {
+    const liquidSplitId = '0xgetPayoutSplit'
+
+    beforeEach(() => {
+      readActions.payoutSplit.mockClear()
+    })
+
+    test('Get payout split fails with no provider', async () => {
+      const badClient = new LiquidSplitClient({
+        chainId: 1,
+      })
+
+      await expect(
+        async () =>
+          await badClient.getPayoutSplit({
+            liquidSplitId,
+          }),
+      ).rejects.toThrow(MissingProviderError)
+    })
+
+    test('Returns payout split', async () => {
+      readActions.payoutSplit.mockReturnValueOnce('0xsplit')
+      const { splitId } = await liquidSplitClient.getPayoutSplit({
+        liquidSplitId,
+      })
+
+      expect(splitId).toEqual('0xsplit')
+      expect(validateAddress).toBeCalledWith(liquidSplitId)
+      expect(readActions.payoutSplit).toBeCalled()
+    })
+  })
+
+  describe('Get owner test', () => {
+    const liquidSplitId = '0xgetOwner'
+
+    beforeEach(() => {
+      readActions.owner.mockClear()
+    })
+
+    test('Get owner fails with no provider', async () => {
+      const badClient = new LiquidSplitClient({
+        chainId: 1,
+      })
+
+      await expect(
+        async () =>
+          await badClient.getOwner({
+            liquidSplitId,
+          }),
+      ).rejects.toThrow(MissingProviderError)
+    })
+
+    test('Returns owner', async () => {
+      readActions.owner.mockReturnValueOnce('0xowner')
+      const { owner } = await liquidSplitClient.getOwner({
+        liquidSplitId,
+      })
+
+      expect(owner).toEqual('0xowner')
+      expect(validateAddress).toBeCalledWith(liquidSplitId)
+      expect(readActions.owner).toBeCalled()
+    })
+  })
+
+  describe('Get scaled percent balance test', () => {
+    const liquidSplitId = '0xgetScaledPercentBalance'
+    const address = '0xaddress'
+
+    beforeEach(() => {
+      readActions.scaledPercentBalanceOf.mockClear()
+    })
+
+    test('Get scaled percent balance fails with no provider', async () => {
+      const badClient = new LiquidSplitClient({
+        chainId: 1,
+      })
+
+      await expect(
+        async () =>
+          await badClient.getScaledPercentBalanceOf({
+            liquidSplitId,
+            address,
+          }),
+      ).rejects.toThrow(MissingProviderError)
+    })
+
+    test('Returns scaled percent balance', async () => {
+      readActions.scaledPercentBalanceOf.mockReturnValueOnce(15)
+      const { scaledPercentBalance } =
+        await liquidSplitClient.getScaledPercentBalanceOf({
+          liquidSplitId,
+          address,
+        })
+
+      expect(scaledPercentBalance).toEqual(15)
+      expect(validateAddress).toBeCalledWith(liquidSplitId)
+      expect(validateAddress).toBeCalledWith(address)
+      expect(readActions.scaledPercentBalanceOf).toBeCalledWith(address)
+    })
+  })
+})
+
+const mockGqlClient = new MockGraphqlClient()
+jest.mock('graphql-request', () => {
+  return {
+    GraphQLClient: jest.fn().mockImplementation(() => {
+      return mockGqlClient
+    }),
+    gql: jest.fn(),
+  }
+})
+
+describe('Graphql reads', () => {
+  const mockFormatLiquidSplit = jest
+    .spyOn(subgraph, 'protectedFormatLiquidSplit')
+    .mockReturnValue('formatted_liquid_split' as unknown as LiquidSplit)
+  const mockAddEnsNames = jest.spyOn(utils, 'addEnsNames').mockImplementation()
+  const mockGqlLiquidSplit = {
+    token: {
+      id: '0xliquidSplitToken',
+    },
+  }
+
+  const liquidSplitId = '0xliquidSplit'
+  const provider = new mockProvider()
+  const liquidSplitClient = new LiquidSplitClient({
+    chainId: 1,
+    provider,
+  })
+
+  beforeEach(() => {
+    ;(validateAddress as jest.Mock).mockClear()
+    mockGqlClient.request.mockClear()
+    mockFormatLiquidSplit.mockClear()
+    mockAddEnsNames.mockClear()
+  })
+
+  describe('Get liquid split metadata tests', () => {
+    beforeEach(() => {
+      mockGqlClient.request.mockReturnValue({
+        liquidSplit: {
+          token: {
+            id: '0xliquidSplitToken',
+          },
+        },
+      })
+    })
+
+    test('Get liquid split metadata fails with no provider', async () => {
+      const badClient = new LiquidSplitClient({
+        chainId: 1,
+      })
+      await expect(
+        async () =>
+          await badClient.getLiquidSplitMetadata({
+            liquidSplitId,
+          }),
+      ).rejects.toThrow(MissingProviderError)
+    })
+
+    test('Get liquid split metadata passes', async () => {
+      const liquidSplit = await liquidSplitClient.getLiquidSplitMetadata({
+        liquidSplitId,
+      })
+
+      expect(validateAddress).toBeCalledWith(liquidSplitId)
+      expect(mockGqlClient.request).toBeCalledWith(
+        subgraph.LIQUID_SPLIT_QUERY,
+        {
+          liquidSplitId: liquidSplitId.toLowerCase(),
+        },
+      )
+      expect(mockFormatLiquidSplit).toBeCalledWith(mockGqlLiquidSplit)
+      expect(liquidSplit).toEqual('formatted_liquid_split')
+      expect(mockAddEnsNames).not.toBeCalled()
+    })
+
+    test('Adds ens names', async () => {
+      const provider = new mockProvider()
+      const ensLiquidSplitClient = new LiquidSplitClient({
+        chainId: 1,
+        provider,
+        includeEnsNames: true,
+      })
+
+      const liquidSplit = await ensLiquidSplitClient.getLiquidSplitMetadata({
+        liquidSplitId,
+      })
+
+      expect(validateAddress).toBeCalledWith(liquidSplitId)
+      expect(mockGqlClient.request).toBeCalledWith(
+        subgraph.LIQUID_SPLIT_QUERY,
+        {
+          liquidSplitId: liquidSplitId.toLowerCase(),
+        },
+      )
+      expect(mockFormatLiquidSplit).toBeCalledWith(mockGqlLiquidSplit)
+      expect(liquidSplit).toEqual('formatted_liquid_split')
+      expect(mockAddEnsNames).toBeCalled()
+    })
+  })
+})
