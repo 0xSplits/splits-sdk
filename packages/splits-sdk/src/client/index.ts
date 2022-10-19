@@ -6,11 +6,13 @@ import { Contract, Event } from '@ethersproject/contracts'
 
 import SPLIT_MAIN_ARTIFACT_ETHEREUM from '../artifacts/contracts/SplitMain/ethereum/SplitMain.json'
 import SPLIT_MAIN_ARTIFACT_POLYGON from '../artifacts/contracts/SplitMain/polygon/SplitMain.json'
-import BaseClient from '../client/base'
-import WaterfallClient from '../client/waterfall'
+import BaseClient from './base'
+import WaterfallClient from './waterfall'
+import LiquidSplitClient from './liquidSplit'
 import {
   ARBITRUM_CHAIN_IDS,
   ETHEREUM_CHAIN_IDS,
+  LIQUID_SPLIT_CHAIN_IDS,
   OPTIMISM_CHAIN_IDS,
   POLYGON_CHAIN_IDS,
   SPLITS_MAX_PRECISION_DECIMALS,
@@ -79,6 +81,7 @@ const splitMainInterfacePolygon = new Interface(SPLIT_MAIN_ARTIFACT_POLYGON.abi)
 export class SplitsClient extends BaseClient {
   private readonly _splitMain: SplitMainType
   readonly waterfall: WaterfallClient | undefined
+  readonly liquidSplits: LiquidSplitClient | undefined
 
   constructor({
     chainId,
@@ -117,6 +120,15 @@ export class SplitsClient extends BaseClient {
 
     if (WATERFALL_CHAIN_IDS.includes(chainId)) {
       this.waterfall = new WaterfallClient({
+        chainId,
+        provider,
+        ensProvider,
+        signer,
+        includeEnsNames,
+      })
+    }
+    if (LIQUID_SPLIT_CHAIN_IDS.includes(chainId)) {
+      this.liquidSplits = new LiquidSplitClient({
         chainId,
         provider,
         ensProvider,
@@ -711,6 +723,8 @@ export class SplitsClient extends BaseClient {
       return await this._formatSplit(gqlAccount)
     else if (gqlAccount.__typename === 'WaterfallModule' && this.waterfall)
       return await this.waterfall.formatWaterfallModule(gqlAccount)
+    else if (gqlAccount.__typename === 'LiquidSplit' && this.liquidSplits)
+      return await this.liquidSplits.formatLiquidSplit(gqlAccount)
   }
 
   private async _formatSplit(gqlSplit: GqlSplit): Promise<Split> {

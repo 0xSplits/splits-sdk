@@ -123,4 +123,4 @@ export type LiquidSplit = {
   isFactoryGenerated: boolean
 }
 
-export type Account = Split | WaterfallModule
+export type Account = Split | WaterfallModule | LiquidSplit
