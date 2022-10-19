@@ -10,7 +10,7 @@ export const readActions = {
   distributorFee: jest.fn(),
   payoutSplit: jest.fn(),
   owner: jest.fn().mockReturnValue(CONTROLLER_ADDRESS),
-  // uri: jest.fn(),
+  uri: jest.fn(),
   scaledPercentBalanceOf: jest.fn(),
 }
 
@@ -27,7 +27,7 @@ export class MockLiquidSplit {
   distributorFee: jest.Mock
   payoutSplit: jest.Mock
   owner: jest.Mock
-  // uri: jest.Mock
+  uri: jest.Mock
   scaledPercentBalanceOf: jest.Mock
 
   constructor(provider: Provider) {
@@ -48,7 +48,7 @@ export class MockLiquidSplit {
     this.distributorFee = readActions.distributorFee
     this.payoutSplit = readActions.payoutSplit
     this.owner = readActions.owner
-    // this.uri = readActions.uri
+    this.uri = readActions.uri
     this.scaledPercentBalanceOf = readActions.scaledPercentBalanceOf
   }
 

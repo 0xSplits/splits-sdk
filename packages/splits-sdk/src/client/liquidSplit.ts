@@ -254,7 +254,7 @@ export default class LiquidSplitClient extends BaseClient {
     this._requireProvider()
 
     const liquidSplitContract = this._getLiquidSplitContract(liquidSplitId)
-    const uri = await liquidSplitContract.uri()
+    const uri = await liquidSplitContract.uri(0) // Expects an argument, but it's not actually used
 
     return {
       uri,

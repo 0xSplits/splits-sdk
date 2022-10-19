@@ -550,6 +550,38 @@ describe('Liquid split reads', () => {
     })
   })
 
+  describe('Get uri test', () => {
+    const liquidSplitId = '0xgetUri'
+
+    beforeEach(() => {
+      readActions.uri.mockClear()
+    })
+
+    test('Get uri fails with no provider', async () => {
+      const badClient = new LiquidSplitClient({
+        chainId: 1,
+      })
+
+      await expect(
+        async () =>
+          await badClient.getUri({
+            liquidSplitId,
+          }),
+      ).rejects.toThrow(MissingProviderError)
+    })
+
+    test('Returns uri', async () => {
+      readActions.uri.mockReturnValueOnce('uri')
+      const { uri } = await liquidSplitClient.getUri({
+        liquidSplitId,
+      })
+
+      expect(uri).toEqual('uri')
+      expect(validateAddress).toBeCalledWith(liquidSplitId)
+      expect(readActions.uri).toBeCalled()
+    })
+  })
+
   describe('Get scaled percent balance test', () => {
     const liquidSplitId = '0xgetScaledPercentBalance'
     const address = '0xaddress'
