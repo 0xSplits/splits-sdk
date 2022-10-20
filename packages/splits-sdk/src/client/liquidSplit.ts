@@ -220,16 +220,16 @@ export default class LiquidSplitClient extends BaseClient {
   }
 
   async getPayoutSplit({ liquidSplitId }: { liquidSplitId: string }): Promise<{
-    splitId: string
+    payoutSplitId: string
   }> {
     validateAddress(liquidSplitId)
     this._requireProvider()
 
     const liquidSplitContract = this._getLiquidSplitContract(liquidSplitId)
-    const splitId = await liquidSplitContract.payoutSplit()
+    const payoutSplitId = await liquidSplitContract.payoutSplit()
 
     return {
-      splitId,
+      payoutSplitId,
     }
   }
 

@@ -259,7 +259,7 @@ export const protectedFormatLiquidSplit = (
     distributorFeePercent: fromBigNumberToPercent(
       gqlLiquidSplit.distributorFee,
     ),
-    splitId: getAddress(gqlLiquidSplit.split.id),
+    payoutSplitId: getAddress(gqlLiquidSplit.split.id),
     isFactoryGenerated: gqlLiquidSplit.isFactoryGenerated,
     holders: gqlLiquidSplit.holders
       .map((gqlHolder) => formatRecipient(gqlHolder))

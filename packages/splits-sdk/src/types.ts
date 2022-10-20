@@ -119,7 +119,7 @@ export type LiquidSplit = {
   id: string
   distributorFeePercent: number
   holders: SplitRecipient[]
-  splitId: string
+  payoutSplitId: string
   isFactoryGenerated: boolean
 }
 

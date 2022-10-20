@@ -543,11 +543,11 @@ describe('Liquid split reads', () => {
 
     test('Returns payout split', async () => {
       readActions.payoutSplit.mockReturnValueOnce('0xsplit')
-      const { splitId } = await liquidSplitClient.getPayoutSplit({
+      const { payoutSplitId } = await liquidSplitClient.getPayoutSplit({
         liquidSplitId,
       })
 
-      expect(splitId).toEqual('0xsplit')
+      expect(payoutSplitId).toEqual('0xsplit')
       expect(validateAddress).toBeCalledWith(liquidSplitId)
       expect(readActions.payoutSplit).toBeCalled()
     })
