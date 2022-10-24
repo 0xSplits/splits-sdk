@@ -85,7 +85,14 @@
     },
     {
       "anonymous": false,
-      "inputs": [],
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "payoutSplit",
+          "type": "address"
+        }
+      ],
       "name": "CreateLiquidSplit",
       "type": "event"
     },
