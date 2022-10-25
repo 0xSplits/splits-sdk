@@ -163,6 +163,7 @@ const LIQUID_SPLIT_FIELDS_FRAGMENT = gql`
     split {
       ...FullSplitFieldsFragment
     }
+    isFactoryGenerated
   }
 
   ${LIQUID_SPLIT_HOLDERS_FRAGMENT}
