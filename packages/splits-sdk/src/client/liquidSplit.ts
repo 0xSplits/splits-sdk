@@ -1,16 +1,18 @@
-import BaseClient from './base'
 import { Interface } from '@ethersproject/abi'
 import { AddressZero } from '@ethersproject/constants'
 import { Contract, Event } from '@ethersproject/contracts'
+import { decode } from 'base-64'
 
 import LIQUID_SPLIT_FACTORY_ARTIFACT from '../artifacts/contracts/LiquidSplitFactory/LiquidSplitFactory.json'
 import LIQUID_SPLIT_ARTIFACT from '../artifacts/contracts/LS1155/LS1155.json'
 import SPLIT_MAIN_ARTIFACT_POLYGON from '../artifacts/contracts/SplitMain/polygon/SplitMain.json'
 
+import BaseClient from './base'
 import {
   LIQUID_SPLITS_MAX_PRECISION_DECIMALS,
   LIQUID_SPLIT_CHAIN_IDS,
   LIQUID_SPLIT_FACTORY_ADDRESS,
+  LIQUID_SPLIT_URI_BASE_64_HEADER,
 } from '../constants'
 import {
   AccountNotFoundError,
@@ -280,6 +282,21 @@ export default class LiquidSplitClient extends BaseClient {
 
     return {
       scaledPercentBalance,
+    }
+  }
+
+  async getNftImage({ liquidSplitId }: { liquidSplitId: string }): Promise<{
+    image: string
+  }> {
+    validateAddress(liquidSplitId)
+    this._requireProvider()
+
+    const { uri } = await this.getUri({ liquidSplitId })
+    const decodedUri = decode(uri.slice(LIQUID_SPLIT_URI_BASE_64_HEADER.length))
+    const uriJson = JSON.parse(decodedUri)
+
+    return {
+      image: uriJson.image ?? '',
     }
   }
 

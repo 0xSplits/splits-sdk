@@ -2,11 +2,13 @@ import { Provider } from '@ethersproject/abstract-provider'
 import { Signer } from '@ethersproject/abstract-signer'
 import { AddressZero } from '@ethersproject/constants'
 import type { Event } from '@ethersproject/contracts'
+import { encode } from 'base-64'
 
 import LiquidSplitClient from './liquidSplit'
 import {
   LIQUID_SPLITS_MAX_PRECISION_DECIMALS,
   LIQUID_SPLIT_FACTORY_ADDRESS,
+  LIQUID_SPLIT_URI_BASE_64_HEADER,
 } from '../constants'
 import {
   InvalidAuthError,
@@ -651,6 +653,40 @@ describe('Liquid split reads', () => {
       expect(validateAddress).toBeCalledWith(liquidSplitId)
       expect(validateAddress).toBeCalledWith(address)
       expect(readActions.scaledPercentBalanceOf).toBeCalledWith(address)
+    })
+  })
+
+  describe('Get nft image test', () => {
+    const liquidSplitId = '0xgetImage'
+
+    beforeEach(() => {
+      readActions.uri.mockClear()
+    })
+
+    test('Get image fails with no provider', async () => {
+      const badClient = new LiquidSplitClient({
+        chainId: 1,
+      })
+
+      await expect(
+        async () =>
+          await badClient.getNftImage({
+            liquidSplitId,
+          }),
+      ).rejects.toThrow(MissingProviderError)
+    })
+
+    test('Returns image', async () => {
+      readActions.uri.mockReturnValueOnce(
+        `${LIQUID_SPLIT_URI_BASE_64_HEADER}${encode('{"image": "testImage"}')}`,
+      )
+      const { image } = await liquidSplitClient.getNftImage({
+        liquidSplitId,
+      })
+
+      expect(image).toEqual('testImage')
+      expect(validateAddress).toBeCalledWith(liquidSplitId)
+      expect(readActions.uri).toBeCalled()
     })
   })
 })
