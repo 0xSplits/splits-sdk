@@ -1,7 +1,8 @@
+import LiquidSplitClient from './client/liquidSplit'
 import WaterfallClient from './client/waterfall'
 import { SplitsClient } from './client'
 
-export { SplitsClient, WaterfallClient }
+export { SplitsClient, WaterfallClient, LiquidSplitClient }
 export * from './errors'
 
 export {
