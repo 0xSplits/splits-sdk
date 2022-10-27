@@ -69,12 +69,20 @@ export const getBigNumberTokenValue = (
 
 export const getTransactionEvent = async (
   transaction: ContractTransaction,
-  eventSignature: string,
+  eventSignature?: string,
+  eventTopic?: string,
 ): Promise<Event | undefined> => {
+  const invalid =
+    (!eventSignature && !eventTopic) || (eventSignature && eventTopic)
+  if (invalid)
+    throw new Error('Only one of event signature or event topic required')
+
   const receipt = await transaction.wait()
   if (receipt.status === 1) {
-    const event = receipt.events?.filter(
-      (e) => e.eventSignature === eventSignature,
+    const event = receipt.events?.filter((e) =>
+      eventSignature
+        ? e.eventSignature === eventSignature
+        : e.topics[0] === eventTopic,
     )[0]
 
     return event

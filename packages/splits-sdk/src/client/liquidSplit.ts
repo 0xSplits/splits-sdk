@@ -163,11 +163,15 @@ export default class LiquidSplitClient extends BaseClient {
       distributorPayoutAddress,
     )
 
-    const eventSignature =
+    const eventTopic =
       token === AddressZero
-        ? splitMainInterface.getEvent('DistributeETH').format()
-        : splitMainInterface.getEvent('DistributeERC20').format()
-    const event = await getTransactionEvent(distributeTokenTx, eventSignature)
+        ? splitMainInterface.getEventTopic('DistributeETH')
+        : splitMainInterface.getEventTopic('DistributeERC20')
+    const event = await getTransactionEvent(
+      distributeTokenTx,
+      undefined,
+      eventTopic,
+    )
     if (event) return { event }
 
     throw new TransactionFailedError()
