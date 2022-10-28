@@ -23,4 +23,5 @@ export type {
   WaterfallModule,
   WaterfallTrancheInput,
   Account,
+  LiquidSplit,
 } from './types'
