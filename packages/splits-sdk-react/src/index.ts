@@ -1,2 +1,7 @@
 export { SplitsProvider } from './context'
-export { useSplitsClient, useSplitMetadata } from './hooks'
+export {
+  useSplitsClient,
+  useSplitMetadata,
+  useWaterfallMetadata,
+  useLiquidSplitMetadata,
+} from './hooks'
