@@ -29,7 +29,7 @@
   },
   "homepage": "https://docs.0xsplits.xyz/sdk-info/overview",
   "dependencies": {
-    "@0xsplits/splits-sdk": "^2.2.2"
+    "@0xsplits/splits-sdk": "^2.2.3"
   },
   "peerDependencies": {
     "react": "17.x.x"
