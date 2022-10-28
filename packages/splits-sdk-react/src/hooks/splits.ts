@@ -1,42 +1,7 @@
-import { createContext, useState, useEffect, useContext, useMemo } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { SplitsClient, SplitsClientConfig, Split } from '@0xsplits/splits-sdk'
 
-type SplitsReactSdkContext = {
-  splitsClient: SplitsClient
-  initClient: (config: SplitsClientConfig) => void
-}
-
-const SplitsContext = createContext<SplitsReactSdkContext | undefined>(
-  undefined,
-)
-
-interface Props {
-  config?: SplitsClientConfig
-  children: React.ReactNode
-}
-
-export const SplitsProvider: React.FC<Props> = ({
-  config = { chainId: 1 },
-  children,
-}) => {
-  const [splitsClient, setSplitsClient] = useState(
-    () => new SplitsClient(config),
-  )
-  const initClient = (config: SplitsClientConfig) => {
-    setSplitsClient(new SplitsClient(config))
-  }
-
-  const contextValue = useMemo(
-    () => ({ splitsClient, initClient }),
-    [splitsClient],
-  )
-
-  return (
-    <SplitsContext.Provider value={contextValue}>
-      {children}
-    </SplitsContext.Provider>
-  )
-}
+import { SplitsContext } from '../context'
 
 export const useSplitsClient = (config: SplitsClientConfig): SplitsClient => {
   const context = useContext(SplitsContext)
@@ -88,5 +53,3 @@ export const useSplitMetadata = (
     splitMetadata,
   }
 }
-
-export default SplitsProvider
