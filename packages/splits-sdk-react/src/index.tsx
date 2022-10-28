@@ -38,11 +38,15 @@ export const SplitsProvider: React.FC<Props> = ({
   )
 }
 
-export const useSplitsClient = (): SplitsClient => {
+export const useSplitsClient = (config: SplitsClientConfig): SplitsClient => {
   const context = useContext(SplitsContext)
   if (context === undefined) {
     throw new Error('Make sure to include <SplitsProvider>')
   }
+
+  useEffect(() => {
+    context.initClient(config)
+  }, [config])
 
   return context.splitsClient
 }
