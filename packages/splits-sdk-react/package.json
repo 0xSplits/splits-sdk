@@ -1,6 +1,6 @@
 {
   "name": "@0xsplits/splits-sdk-react",
-  "version": "2.2.2",
+  "version": "0.1.0",
   "description": "React wrapper for the 0xSplits SDK",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -28,6 +28,13 @@
     "url": "https://github.com/0xSplits/splits-sdk/issues"
   },
   "homepage": "https://docs.0xsplits.xyz/sdk-info/overview",
-  "dependencies": {},
-  "devDependencies": {}
+  "dependencies": {
+    "@0xsplits/splits-sdk": "^2.2.2"
+  },
+  "peerDependencies": {
+    "react": "17.x.x"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.24"
+  }
 }
