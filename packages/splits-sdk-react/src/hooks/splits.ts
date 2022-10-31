@@ -9,9 +9,20 @@ export const useSplitsClient = (config: SplitsClientConfig): SplitsClient => {
     throw new Error('Make sure to include <SplitsProvider>')
   }
 
+  const chainId = config.chainId
+  const provider = config.provider
+  const signer = config.signer
+  const includeEnsNames = config.includeEnsNames
+  const ensProvider = config.ensProvider
   useEffect(() => {
-    context.initClient(config)
-  }, [config])
+    context.initClient({
+      chainId,
+      provider,
+      signer,
+      includeEnsNames,
+      ensProvider,
+    })
+  }, [chainId, provider, signer, includeEnsNames, ensProvider])
 
   return context.splitsClient
 }
