@@ -18,7 +18,7 @@ export const useWaterfallMetadata = (
   const [waterfallMetadata, setWaterfallMetadata] = useState<
     WaterfallModule | undefined
   >()
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(!!waterfallModuleId)
 
   useEffect(() => {
     let isActive = true
@@ -35,8 +35,12 @@ export const useWaterfallMetadata = (
       }
     }
 
-    setIsLoading(true)
-    fetchMetadata()
+    if (waterfallModuleId) {
+      setIsLoading(true)
+      fetchMetadata()
+    } else {
+      setWaterfallMetadata(undefined)
+    }
 
     return () => {
       isActive = false

@@ -36,7 +36,7 @@ export const useSplitMetadata = (
   }
 
   const [splitMetadata, setSplitMetadata] = useState<Split | undefined>()
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(!!splitId)
 
   useEffect(() => {
     let isActive = true
@@ -51,8 +51,12 @@ export const useSplitMetadata = (
       }
     }
 
-    setIsLoading(true)
-    fetchMetadata()
+    if (splitId) {
+      setIsLoading(true)
+      fetchMetadata()
+    } else {
+      setSplitMetadata(undefined)
+    }
 
     return () => {
       isActive = false

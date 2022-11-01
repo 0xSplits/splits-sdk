@@ -18,7 +18,7 @@ export const useLiquidSplitMetadata = (
   const [liquidSplitMetadata, setliquidSplitMetadata] = useState<
     LiquidSplit | undefined
   >()
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(!!liquidSplitId)
 
   useEffect(() => {
     let isActive = true
@@ -35,8 +35,12 @@ export const useLiquidSplitMetadata = (
       }
     }
 
-    setIsLoading(true)
-    fetchMetadata()
+    if (liquidSplitId) {
+      setIsLoading(true)
+      fetchMetadata()
+    } else {
+      setliquidSplitMetadata(undefined)
+    }
 
     return () => {
       isActive = false
