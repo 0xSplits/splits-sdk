@@ -1,3 +1,4 @@
+import { Interface } from '@ethersproject/abi'
 import { Provider } from '@ethersproject/abstract-provider'
 import { Signer } from '@ethersproject/abstract-signer'
 import { AddressZero } from '@ethersproject/constants'
@@ -5,6 +6,7 @@ import type { Event } from '@ethersproject/contracts'
 import { encode } from 'base-64'
 
 import LiquidSplitClient from './liquidSplit'
+import SPLIT_MAIN_ARTIFACT_POLYGON from '../artifacts/contracts/SplitMain/polygon/SplitMain.json'
 import {
   LIQUID_SPLITS_MAX_PRECISION_DECIMALS,
   LIQUID_SPLIT_FACTORY_ADDRESS,
@@ -42,6 +44,8 @@ import {
   readActions,
 } from '../testing/mocks/liquidSplit'
 import type { LiquidSplit } from '../types'
+
+const splitMainInterface = new Interface(SPLIT_MAIN_ARTIFACT_POLYGON.abi)
 
 jest.mock('@ethersproject/contracts', () => {
   return {
@@ -360,7 +364,8 @@ describe('Liquid split writes', () => {
       )
       expect(getTransactionEventSpy).toBeCalledWith(
         'distribute_funds_tx',
-        'DistributeERC20(address,address,uint256,address)', // Using split main event, not mocked right now
+        undefined,
+        splitMainInterface.getEventTopic('DistributeERC20'), // Using split main event, not mocked right now
       )
     })
 
@@ -381,7 +386,8 @@ describe('Liquid split writes', () => {
       )
       expect(getTransactionEventSpy).toBeCalledWith(
         'distribute_funds_tx',
-        'DistributeETH(address,uint256,address)', // Using split main event, not mocked right now
+        undefined,
+        splitMainInterface.getEventTopic('DistributeETH'), // Using split main event, not mocked right now
       )
     })
 
@@ -403,7 +409,8 @@ describe('Liquid split writes', () => {
       )
       expect(getTransactionEventSpy).toBeCalledWith(
         'distribute_funds_tx',
-        'DistributeERC20(address,address,uint256,address)', // Using split main event, not mocked right now
+        undefined,
+        splitMainInterface.getEventTopic('DistributeERC20'), // Using split main event, not mocked right now
       )
     })
   })
