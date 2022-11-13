@@ -154,7 +154,12 @@ export default class LiquidSplitClient extends BaseClient {
     const { holders } = await this.getLiquidSplitMetadata({
       liquidSplitId,
     })
-    const accounts = holders.map((h) => h.address)
+    const accounts = holders
+      .map((h) => h.address)
+      .sort((a, b) => {
+        if (a.toLowerCase() > b.toLowerCase()) return 1
+        return -1
+      })
 
     const liquidSplitContract = this._getLiquidSplitContract(liquidSplitId)
     const distributeTokenTx = await liquidSplitContract.distributeFunds(
