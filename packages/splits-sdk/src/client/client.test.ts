@@ -48,8 +48,8 @@ jest.mock('@ethersproject/contracts', () => {
 
 jest.mock('../utils/validation')
 
-const getTransactionEventSpy = jest
-  .spyOn(utils, 'getTransactionEvent')
+const getTransactionEventsSpy = jest
+  .spyOn(utils, 'getTransactionEvents')
   .mockImplementation(async () => {
     const event = {
       blockNumber: 12345,
@@ -57,7 +57,7 @@ const getTransactionEventSpy = jest
         split: '0xsplit',
       },
     } as unknown as Event
-    return event
+    return [event]
   })
 const getSortedRecipientsMock = jest
   .spyOn(utils, 'getRecipientSortedAddressesAndAllocations')
@@ -167,7 +167,7 @@ describe('SplitMain writes', () => {
     ;(validateRecipients as jest.Mock).mockClear()
     ;(validateDistributorFeePercent as jest.Mock).mockClear()
     ;(validateAddress as jest.Mock).mockClear()
-    getTransactionEventSpy.mockClear()
+    getTransactionEventsSpy.mockClear()
     getSortedRecipientsMock.mockClear()
     getBigNumberMock.mockClear()
   })
@@ -232,10 +232,9 @@ describe('SplitMain writes', () => {
         DISTRIBUTOR_FEE,
         AddressZero,
       )
-      expect(getTransactionEventSpy).toBeCalledWith(
-        'create_split_tx',
-        'format_CreateSplit',
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith('create_split_tx', [
+        splitsClient.eventTopics.createSplit[0],
+      ])
     })
 
     test('Create mutable split passes', async () => {
@@ -263,10 +262,9 @@ describe('SplitMain writes', () => {
         DISTRIBUTOR_FEE,
         controller,
       )
-      expect(getTransactionEventSpy).toBeCalledWith(
-        'create_split_tx',
-        'format_CreateSplit',
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith('create_split_tx', [
+        splitsClient.eventTopics.createSplit[0],
+      ])
     })
   })
 
@@ -352,10 +350,9 @@ describe('SplitMain writes', () => {
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
       )
-      expect(getTransactionEventSpy).toBeCalledWith(
-        'update_split_tx',
-        'format_UpdateSplit',
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith('update_split_tx', [
+        splitsClient.eventTopics.updateSplit[0],
+      ])
     })
   })
 
@@ -425,10 +422,9 @@ describe('SplitMain writes', () => {
         DISTRIBUTOR_FEE,
         CONTROLLER_ADDRESS,
       )
-      expect(getTransactionEventSpy).toBeCalledWith(
-        'distribute_eth_tx',
-        'format_DistributeETH',
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith('distribute_eth_tx', [
+        splitsClient.eventTopics.distributeToken[0],
+      ])
     })
 
     test('Distribute erc20 passes', async () => {
@@ -452,10 +448,9 @@ describe('SplitMain writes', () => {
         DISTRIBUTOR_FEE,
         CONTROLLER_ADDRESS,
       )
-      expect(getTransactionEventSpy).toBeCalledWith(
-        'distribute_erc20_tx',
-        'format_DistributeERC20',
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith('distribute_erc20_tx', [
+        splitsClient.eventTopics.distributeToken[1],
+      ])
     })
 
     test('Distribute eth to payout address passes', async () => {
@@ -479,10 +474,9 @@ describe('SplitMain writes', () => {
         DISTRIBUTOR_FEE,
         distributorAddress,
       )
-      expect(getTransactionEventSpy).toBeCalledWith(
-        'distribute_eth_tx',
-        'format_DistributeETH',
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith('distribute_eth_tx', [
+        splitsClient.eventTopics.distributeToken[0],
+      ])
     })
 
     test('Distribute erc20 to payout address passes', async () => {
@@ -508,10 +502,9 @@ describe('SplitMain writes', () => {
         DISTRIBUTOR_FEE,
         distributorAddress,
       )
-      expect(getTransactionEventSpy).toBeCalledWith(
-        'distribute_erc20_tx',
-        'format_DistributeERC20',
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith('distribute_erc20_tx', [
+        splitsClient.eventTopics.distributeToken[1],
+      ])
     })
   })
 
@@ -605,9 +598,9 @@ describe('SplitMain writes', () => {
         DISTRIBUTOR_FEE,
         CONTROLLER_ADDRESS,
       )
-      expect(getTransactionEventSpy).toBeCalledWith(
+      expect(getTransactionEventsSpy).toBeCalledWith(
         'update_and_distribute_eth_tx',
-        'format_DistributeETH',
+        [splitsClient.eventTopics.updateSplitAndDistributeToken[1]],
       )
     })
 
@@ -641,9 +634,9 @@ describe('SplitMain writes', () => {
         DISTRIBUTOR_FEE,
         CONTROLLER_ADDRESS,
       )
-      expect(getTransactionEventSpy).toBeCalledWith(
+      expect(getTransactionEventsSpy).toBeCalledWith(
         'update_and_distribute_erc20_tx',
-        'format_DistributeERC20',
+        [splitsClient.eventTopics.updateSplitAndDistributeToken[2]],
       )
     })
 
@@ -677,9 +670,9 @@ describe('SplitMain writes', () => {
         DISTRIBUTOR_FEE,
         distributorAddress,
       )
-      expect(getTransactionEventSpy).toBeCalledWith(
+      expect(getTransactionEventsSpy).toBeCalledWith(
         'update_and_distribute_eth_tx',
-        'format_DistributeETH',
+        [splitsClient.eventTopics.updateSplitAndDistributeToken[1]],
       )
     })
 
@@ -715,9 +708,9 @@ describe('SplitMain writes', () => {
         DISTRIBUTOR_FEE,
         distributorAddress,
       )
-      expect(getTransactionEventSpy).toBeCalledWith(
+      expect(getTransactionEventsSpy).toBeCalledWith(
         'update_and_distribute_erc20_tx',
-        'format_DistributeERC20',
+        [splitsClient.eventTopics.updateSplitAndDistributeToken[2]],
       )
     })
   })
@@ -769,10 +762,9 @@ describe('SplitMain writes', () => {
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(address)
       expect(writeActions.withdraw).toBeCalledWith(address, 1, ['0xerc20'])
-      expect(getTransactionEventSpy).toBeCalledWith(
-        'withdraw_tx',
-        'format_Withdrawal',
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith('withdraw_tx', [
+        splitsClient.eventTopics.withdrawFunds[0],
+      ])
     })
 
     test('Withdraw passes with only erc20', async () => {
@@ -789,10 +781,9 @@ describe('SplitMain writes', () => {
         '0xerc20',
         '0xerc202',
       ])
-      expect(getTransactionEventSpy).toBeCalledWith(
-        'withdraw_tx',
-        'format_Withdrawal',
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith('withdraw_tx', [
+        splitsClient.eventTopics.withdrawFunds[0],
+      ])
     })
   })
 
@@ -862,10 +853,9 @@ describe('SplitMain writes', () => {
         splitId,
         newController,
       )
-      expect(getTransactionEventSpy).toBeCalledWith(
-        'transfer_control_tx',
-        'format_InitiateControlTransfer',
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith('transfer_control_tx', [
+        splitsClient.eventTopics.initiateControlTransfer[0],
+      ])
     })
   })
 
@@ -927,9 +917,9 @@ describe('SplitMain writes', () => {
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitId)
       expect(writeActions.cancelControlTransfer).toBeCalledWith(splitId)
-      expect(getTransactionEventSpy).toBeCalledWith(
+      expect(getTransactionEventsSpy).toBeCalledWith(
         'cancel_control_transfer_tx',
-        'format_CancelControlTransfer',
+        [splitsClient.eventTopics.cancelControlTransfer[0]],
       )
     })
   })
@@ -992,10 +982,9 @@ describe('SplitMain writes', () => {
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitId)
       expect(writeActions.acceptControl).toBeCalledWith(splitId)
-      expect(getTransactionEventSpy).toBeCalledWith(
-        'accept_control_tx',
-        'format_ControlTransfer',
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith('accept_control_tx', [
+        splitsClient.eventTopics.acceptControlTransfer[0],
+      ])
     })
   })
 
@@ -1057,9 +1046,9 @@ describe('SplitMain writes', () => {
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitId)
       expect(writeActions.makeSplitImmutable).toBeCalledWith(splitId)
-      expect(getTransactionEventSpy).toBeCalledWith(
+      expect(getTransactionEventsSpy).toBeCalledWith(
         'make_split_immutable_tx',
-        'format_ControlTransfer',
+        [splitsClient.eventTopics.makeSplitImmutable[0]],
       )
     })
   })

@@ -2,7 +2,7 @@ import BaseClient from './base'
 import { Interface } from '@ethersproject/abi'
 import { BigNumber } from '@ethersproject/bignumber'
 import { AddressZero } from '@ethersproject/constants'
-import { Contract, Event } from '@ethersproject/contracts'
+import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
 
 import WATERFALL_MODULE_FACTORY_ARTIFACT from '../artifacts/contracts/WaterfallModuleFactory/WaterfallModuleFactory.json'
 import WATERFALL_MODULE_ARTIFACT from '../artifacts/contracts/WaterfallModule/WaterfallModule.json'
@@ -27,7 +27,7 @@ import type {
   WaterfallTrancheInput,
 } from '../types'
 import {
-  getTransactionEvent,
+  getTransactionEvents,
   getTrancheRecipientsAndSizes,
   addWaterfallEnsNames,
   getTokenData,
@@ -43,6 +43,7 @@ const waterfallModuleInterface = new Interface(WATERFALL_MODULE_ARTIFACT.abi)
 
 export default class WaterfallClient extends BaseClient {
   private readonly _waterfallModuleFactory: WaterfallModuleFactoryType
+  readonly eventTopics: { [key: string]: string[] }
 
   constructor({
     chainId,
@@ -66,20 +67,32 @@ export default class WaterfallClient extends BaseClient {
         provider,
       ) as WaterfallModuleFactoryType
     } else throw new UnsupportedChainIdError(chainId, WATERFALL_CHAIN_IDS)
+
+    this.eventTopics = {
+      createWaterfallModule: [
+        waterfallModuleFactoryInterface.getEventTopic('CreateWaterfallModule'),
+      ],
+      waterfallFunds: [
+        waterfallModuleInterface.getEventTopic('WaterfallFunds'),
+      ],
+      recoverNonWaterfallFunds: [
+        waterfallModuleInterface.getEventTopic('RecoverNonWaterfallFunds'),
+      ],
+      withdrawPullFunds: [waterfallModuleInterface.getEventTopic('Withdrawal')],
+    }
   }
 
   // Write actions
-  async createWaterfallModule({
+  async submitCreateWaterfallModuleTransaction({
     token,
     tranches,
-    nonWaterfallRecipient = AddressZero,
+    nonWaterfallRecipient,
   }: {
     token: string
     tranches: WaterfallTrancheInput[]
-    nonWaterfallRecipient?: string
+    nonWaterfallRecipient: string
   }): Promise<{
-    waterfallModuleId: string
-    event: Event
+    tx: ContractTransaction
   }> {
     validateAddress(token)
     validateAddress(nonWaterfallRecipient)
@@ -101,12 +114,33 @@ export default class WaterfallClient extends BaseClient {
         recipients,
         trancheSizes,
       )
-    const event = await getTransactionEvent(
+
+    return { tx: createWaterfallTx }
+  }
+
+  async createWaterfallModule({
+    token,
+    tranches,
+    nonWaterfallRecipient = AddressZero,
+  }: {
+    token: string
+    tranches: WaterfallTrancheInput[]
+    nonWaterfallRecipient?: string
+  }): Promise<{
+    waterfallModuleId: string
+    event: Event
+  }> {
+    const { tx: createWaterfallTx } =
+      await this.submitCreateWaterfallModuleTransaction({
+        token,
+        tranches,
+        nonWaterfallRecipient,
+      })
+    const events = await getTransactionEvents(
       createWaterfallTx,
-      this._waterfallModuleFactory.interface
-        .getEvent('CreateWaterfallModule')
-        .format(),
+      this.eventTopics.createWaterfallModule,
     )
+    const event = events.length > 0 ? events[0] : undefined
     if (event && event.args)
       return {
         waterfallModuleId: event.args.waterfallModule,
@@ -114,6 +148,26 @@ export default class WaterfallClient extends BaseClient {
       }
 
     throw new TransactionFailedError()
+  }
+
+  async submitWaterfallFundsTransaction({
+    waterfallModuleId,
+    usePull,
+  }: {
+    waterfallModuleId: string
+    usePull: boolean
+  }): Promise<{
+    tx: ContractTransaction
+  }> {
+    validateAddress(waterfallModuleId)
+    this._requireSigner()
+
+    const waterfallContract = this._getWaterfallContract(waterfallModuleId)
+    const waterfallFundsTx = usePull
+      ? await waterfallContract.waterfallFundsPull()
+      : await waterfallContract.waterfallFunds()
+
+    return { tx: waterfallFundsTx }
   }
 
   async waterfallFunds({
@@ -125,17 +179,14 @@ export default class WaterfallClient extends BaseClient {
   }): Promise<{
     event: Event
   }> {
-    validateAddress(waterfallModuleId)
-    this._requireSigner()
-
-    const waterfallContract = this._getWaterfallContract(waterfallModuleId)
-    const waterfallFundsTx = usePull
-      ? await waterfallContract.waterfallFundsPull()
-      : await waterfallContract.waterfallFunds()
-    const event = await getTransactionEvent(
-      waterfallFundsTx,
-      waterfallContract.interface.getEvent('WaterfallFunds').format(),
+    const { tx: waterfallFundsTx } = await this.submitWaterfallFundsTransaction(
+      { waterfallModuleId, usePull },
     )
+    const events = await getTransactionEvents(
+      waterfallFundsTx,
+      this.eventTopics.waterfallFunds,
+    )
+    const event = events.length > 0 ? events[0] : undefined
     if (event)
       return {
         event,
@@ -144,16 +195,16 @@ export default class WaterfallClient extends BaseClient {
     throw new TransactionFailedError()
   }
 
-  async recoverNonWaterfallFunds({
+  async submitRecoverNonWaterfallFundsTransaction({
     waterfallModuleId,
     token,
-    recipient = AddressZero,
+    recipient,
   }: {
     waterfallModuleId: string
     token: string
-    recipient?: string
+    recipient: string
   }): Promise<{
-    event: Event
+    tx: ContractTransaction
   }> {
     validateAddress(waterfallModuleId)
     validateAddress(token)
@@ -170,16 +221,57 @@ export default class WaterfallClient extends BaseClient {
       token,
       recipient,
     )
-    const event = await getTransactionEvent(
+
+    return { tx: recoverFundsTx }
+  }
+
+  async recoverNonWaterfallFunds({
+    waterfallModuleId,
+    token,
+    recipient = AddressZero,
+  }: {
+    waterfallModuleId: string
+    token: string
+    recipient?: string
+  }): Promise<{
+    event: Event
+  }> {
+    const { tx: recoverFundsTx } =
+      await this.submitRecoverNonWaterfallFundsTransaction({
+        waterfallModuleId,
+        token,
+        recipient,
+      })
+    const events = await getTransactionEvents(
       recoverFundsTx,
-      waterfallContract.interface.getEvent('RecoverNonWaterfallFunds').format(),
+      this.eventTopics.recoverNonWaterfallFunds,
     )
+    const event = events.length > 0 ? events[0] : undefined
     if (event)
       return {
         event,
       }
 
     throw new TransactionFailedError()
+  }
+
+  async submitWithdrawPullFundsTransaction({
+    waterfallModuleId,
+    address,
+  }: {
+    waterfallModuleId: string
+    address: string
+  }): Promise<{
+    tx: ContractTransaction
+  }> {
+    validateAddress(waterfallModuleId)
+    validateAddress(address)
+    this._requireSigner()
+
+    const waterfallContract = this._getWaterfallContract(waterfallModuleId)
+    const withdrawTx = await waterfallContract.withdraw(address)
+
+    return { tx: withdrawTx }
   }
 
   async withdrawPullFunds({
@@ -191,16 +283,15 @@ export default class WaterfallClient extends BaseClient {
   }): Promise<{
     event: Event
   }> {
-    validateAddress(waterfallModuleId)
-    validateAddress(address)
-    this._requireSigner()
-
-    const waterfallContract = this._getWaterfallContract(waterfallModuleId)
-    const withdrawTx = await waterfallContract.withdraw(address)
-    const event = await getTransactionEvent(
+    const { tx: withdrawTx } = await this.submitWithdrawPullFundsTransaction({
+      waterfallModuleId,
+      address,
+    })
+    const events = await getTransactionEvents(
       withdrawTx,
-      waterfallContract.interface.getEvent('Withdrawal').format(),
+      this.eventTopics.withdrawPullFunds,
     )
+    const event = events.length > 0 ? events[0] : undefined
     if (event)
       return {
         event,

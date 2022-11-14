@@ -1,6 +1,6 @@
 import { Interface } from '@ethersproject/abi'
 import { AddressZero } from '@ethersproject/constants'
-import { Contract, Event } from '@ethersproject/contracts'
+import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
 import { decode } from 'base-64'
 
 import LIQUID_SPLIT_FACTORY_ARTIFACT from '../artifacts/contracts/LiquidSplitFactory/LiquidSplitFactory.json'
@@ -26,7 +26,7 @@ import type { LiquidSplit, SplitsClientConfig, SplitRecipient } from '../types'
 import {
   getBigNumberFromPercent,
   getRecipientSortedAddressesAndAllocations,
-  getTransactionEvent,
+  getTransactionEvents,
   getNftCountsFromPercents,
   addEnsNames,
 } from '../utils'
@@ -46,6 +46,7 @@ const splitMainInterface = new Interface(SPLIT_MAIN_ARTIFACT_POLYGON.abi)
 
 export default class LiquidSplitClient extends BaseClient {
   private readonly _liquidSplitFactory: LiquidSplitFactoryType
+  readonly eventTopics: { [key: string]: string[] }
 
   constructor({
     chainId,
@@ -69,10 +70,25 @@ export default class LiquidSplitClient extends BaseClient {
         provider,
       ) as LiquidSplitFactoryType
     } else throw new UnsupportedChainIdError(chainId, LIQUID_SPLIT_CHAIN_IDS)
+
+    this.eventTopics = {
+      createLiquidSplit: [
+        liquidSplitFactoryInterface.getEventTopic('CreateLS1155Clone'),
+        liquidSplitFactoryInterface.getEventTopic('CreateLS1155'),
+      ],
+      distributeToken: [
+        splitMainInterface.getEventTopic('UpdateSplit'),
+        splitMainInterface.getEventTopic('DistributeETH'),
+        splitMainInterface.getEventTopic('DistributeERC20'),
+      ],
+      transferOwnership: [
+        liquidSplitInterface.getEventTopic('OwnershipTransferred'),
+      ],
+    }
   }
 
   // Write actions
-  async createLiquidSplit({
+  async submitCreateLiquidSplitTransaction({
     recipients,
     distributorFeePercent,
     owner,
@@ -81,10 +97,9 @@ export default class LiquidSplitClient extends BaseClient {
     recipients: SplitRecipient[]
     distributorFeePercent: number
     owner?: string
-    createClone?: boolean
+    createClone: boolean
   }): Promise<{
-    liquidSplitId: string
-    event: Event
+    tx: ContractTransaction
   }> {
     validateRecipients(recipients, LIQUID_SPLITS_MAX_PRECISION_DECIMALS)
     validateDistributorFeePercent(distributorFeePercent)
@@ -113,12 +128,37 @@ export default class LiquidSplitClient extends BaseClient {
           .connect(this._signer)
           .createLiquidSplit(accounts, nftAmounts, distributorFee, ownerAddress)
 
-    const eventSignature = createClone
-      ? this._liquidSplitFactory.interface
-          .getEvent('CreateLS1155Clone')
-          .format()
-      : this._liquidSplitFactory.interface.getEvent('CreateLS1155').format()
-    const event = await getTransactionEvent(createSplitTx, eventSignature)
+    return { tx: createSplitTx }
+  }
+
+  async createLiquidSplit({
+    recipients,
+    distributorFeePercent,
+    owner = undefined,
+    createClone = false,
+  }: {
+    recipients: SplitRecipient[]
+    distributorFeePercent: number
+    owner?: string
+    createClone?: boolean
+  }): Promise<{
+    liquidSplitId: string
+    event: Event
+  }> {
+    const { tx: createSplitTx } = await this.submitCreateLiquidSplitTransaction(
+      {
+        recipients,
+        distributorFeePercent,
+        owner,
+        createClone,
+      },
+    )
+
+    const eventTopic = createClone
+      ? this.eventTopics.createLiquidSplit[0]
+      : this.eventTopics.createLiquidSplit[1]
+    const events = await getTransactionEvents(createSplitTx, [eventTopic])
+    const event = events.length > 0 ? events[0] : undefined
     if (event && event.args)
       return {
         liquidSplitId: event.args.ls,
@@ -128,7 +168,7 @@ export default class LiquidSplitClient extends BaseClient {
     throw new TransactionFailedError()
   }
 
-  async distributeToken({
+  async submitDistributeTokenTransaction({
     liquidSplitId,
     token,
     distributorAddress,
@@ -137,7 +177,7 @@ export default class LiquidSplitClient extends BaseClient {
     token: string
     distributorAddress?: string
   }): Promise<{
-    event: Event
+    tx: ContractTransaction
   }> {
     validateAddress(liquidSplitId)
     validateAddress(token)
@@ -168,28 +208,46 @@ export default class LiquidSplitClient extends BaseClient {
       distributorPayoutAddress,
     )
 
+    return { tx: distributeTokenTx }
+  }
+
+  async distributeToken({
+    liquidSplitId,
+    token,
+    distributorAddress,
+  }: {
+    liquidSplitId: string
+    token: string
+    distributorAddress?: string
+  }): Promise<{
+    event: Event
+  }> {
+    const { tx: distributeTokenTx } =
+      await this.submitDistributeTokenTransaction({
+        liquidSplitId,
+        token,
+        distributorAddress,
+      })
+
     const eventTopic =
       token === AddressZero
-        ? splitMainInterface.getEventTopic('DistributeETH')
-        : splitMainInterface.getEventTopic('DistributeERC20')
-    const event = await getTransactionEvent(
-      distributeTokenTx,
-      undefined,
-      eventTopic,
-    )
+        ? this.eventTopics.distributeToken[1]
+        : this.eventTopics.distributeToken[2]
+    const events = await getTransactionEvents(distributeTokenTx, [eventTopic])
+    const event = events.length > 0 ? events[0] : undefined
     if (event) return { event }
 
     throw new TransactionFailedError()
   }
 
-  async transferOwnership({
+  async submitTransferOwnershipTransaction({
     liquidSplitId,
     newOwner,
   }: {
     liquidSplitId: string
     newOwner: string
   }): Promise<{
-    event: Event
+    tx: ContractTransaction
   }> {
     validateAddress(liquidSplitId)
     validateAddress(newOwner)
@@ -202,10 +260,29 @@ export default class LiquidSplitClient extends BaseClient {
     const transferOwnershipTx = await liquidSplitContract.transferOwnership(
       newOwner,
     )
-    const eventSignature = liquidSplitContract.interface
-      .getEvent('OwnershipTransferred')
-      .format()
-    const event = await getTransactionEvent(transferOwnershipTx, eventSignature)
+
+    return { tx: transferOwnershipTx }
+  }
+
+  async transferOwnership({
+    liquidSplitId,
+    newOwner,
+  }: {
+    liquidSplitId: string
+    newOwner: string
+  }): Promise<{
+    event: Event
+  }> {
+    const { tx: transferOwnershipTx } =
+      await this.submitTransferOwnershipTransaction({
+        liquidSplitId,
+        newOwner,
+      })
+    const events = await getTransactionEvents(
+      transferOwnershipTx,
+      this.eventTopics.transferOwnership,
+    )
+    const event = events.length > 0 ? events[0] : undefined
     if (event) return { event }
 
     throw new TransactionFailedError()

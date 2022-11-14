@@ -67,26 +67,20 @@ export const getBigNumberTokenValue = (
   return parseUnits(value.toString(), decimals)
 }
 
-export const getTransactionEvent = async (
+export const getTransactionEvents = async (
   transaction: ContractTransaction,
-  eventSignature?: string,
-  eventTopic?: string,
-): Promise<Event | undefined> => {
-  const invalid =
-    (!eventSignature && !eventTopic) || (eventSignature && eventTopic)
-  if (invalid)
-    throw new Error('Only one of event signature or event topic required')
-
+  eventTopics: string[],
+): Promise<Event[]> => {
   const receipt = await transaction.wait()
   if (receipt.status === 1) {
-    const event = receipt.events?.filter((e) =>
-      eventSignature
-        ? e.eventSignature === eventSignature
-        : e.topics[0] === eventTopic,
-    )[0]
+    const events = receipt.events?.filter((e) =>
+      eventTopics.includes(e.topics[0]),
+    )
 
-    return event
+    return events ?? []
   }
+
+  return []
 }
 
 export const fetchERC20TransferredTokens = async (

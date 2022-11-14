@@ -1,4 +1,3 @@
-import { Interface } from '@ethersproject/abi'
 import { Provider } from '@ethersproject/abstract-provider'
 import { Signer } from '@ethersproject/abstract-signer'
 import { AddressZero } from '@ethersproject/constants'
@@ -6,7 +5,6 @@ import type { Event } from '@ethersproject/contracts'
 import { encode } from 'base-64'
 
 import LiquidSplitClient from './liquidSplit'
-import SPLIT_MAIN_ARTIFACT_POLYGON from '../artifacts/contracts/SplitMain/polygon/SplitMain.json'
 import {
   LIQUID_SPLITS_MAX_PRECISION_DECIMALS,
   LIQUID_SPLIT_FACTORY_ADDRESS,
@@ -45,8 +43,6 @@ import {
 } from '../testing/mocks/liquidSplit'
 import type { LiquidSplit } from '../types'
 
-const splitMainInterface = new Interface(SPLIT_MAIN_ARTIFACT_POLYGON.abi)
-
 jest.mock('@ethersproject/contracts', () => {
   return {
     Contract: jest
@@ -62,8 +58,8 @@ jest.mock('@ethersproject/contracts', () => {
 
 jest.mock('../utils/validation')
 
-const getTransactionEventSpy = jest
-  .spyOn(utils, 'getTransactionEvent')
+const getTransactionEventsSpy = jest
+  .spyOn(utils, 'getTransactionEvents')
   .mockImplementation(async () => {
     const event = {
       blockNumber: 12345,
@@ -71,7 +67,7 @@ const getTransactionEventSpy = jest
         ls: '0xliquidSplit',
       },
     } as unknown as Event
-    return event
+    return [event]
   })
 const getSortedRecipientsMock = jest
   .spyOn(utils, 'getRecipientSortedAddressesAndAllocations')
@@ -152,7 +148,7 @@ describe('Liquid split writes', () => {
     ;(validateRecipients as jest.Mock).mockClear()
     ;(validateDistributorFeePercent as jest.Mock).mockClear()
     ;(validateAddress as jest.Mock).mockClear()
-    getTransactionEventSpy.mockClear()
+    getTransactionEventsSpy.mockClear()
     getSortedRecipientsMock.mockClear()
     getNftCountsMock.mockClear()
     getBigNumberMock.mockClear()
@@ -225,10 +221,9 @@ describe('Liquid split writes', () => {
         CONTROLLER_ADDRESS,
       )
       expect(factoryWriteActions.createLiquidSplitClone).not.toBeCalled()
-      expect(getTransactionEventSpy).toBeCalledWith(
-        'create_liquid_split_tx',
-        'format_CreateLS1155',
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith('create_liquid_split_tx', [
+        liquidSplitClient.eventTopics.createLiquidSplit[1],
+      ])
     })
 
     test('Create liquid split clone passes', async () => {
@@ -259,9 +254,9 @@ describe('Liquid split writes', () => {
         CONTROLLER_ADDRESS,
       )
       expect(factoryWriteActions.createLiquidSplit).not.toBeCalled()
-      expect(getTransactionEventSpy).toBeCalledWith(
+      expect(getTransactionEventsSpy).toBeCalledWith(
         'create_liquid_split_clone_tx',
-        'format_CreateLS1155Clone',
+        [liquidSplitClient.eventTopics.createLiquidSplit[0]],
       )
     })
 
@@ -292,10 +287,9 @@ describe('Liquid split writes', () => {
         DISTRIBUTOR_FEE,
         '0xowner',
       )
-      expect(getTransactionEventSpy).toBeCalledWith(
-        'create_liquid_split_tx',
-        'format_CreateLS1155',
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith('create_liquid_split_tx', [
+        liquidSplitClient.eventTopics.createLiquidSplit[1],
+      ])
     })
   })
 
@@ -362,10 +356,9 @@ describe('Liquid split writes', () => {
         holders.map((h) => h.address),
         CONTROLLER_ADDRESS,
       )
-      expect(getTransactionEventSpy).toBeCalledWith(
+      expect(getTransactionEventsSpy).toBeCalledWith(
         'distribute_funds_tx',
-        undefined,
-        splitMainInterface.getEventTopic('DistributeERC20'), // Using split main event, not mocked right now
+        [liquidSplitClient.eventTopics.distributeToken[2]], // Using split main event, not mocked right now
       )
     })
 
@@ -384,10 +377,9 @@ describe('Liquid split writes', () => {
         holders.map((h) => h.address),
         CONTROLLER_ADDRESS,
       )
-      expect(getTransactionEventSpy).toBeCalledWith(
+      expect(getTransactionEventsSpy).toBeCalledWith(
         'distribute_funds_tx',
-        undefined,
-        splitMainInterface.getEventTopic('DistributeETH'), // Using split main event, not mocked right now
+        [liquidSplitClient.eventTopics.distributeToken[1]], // Using split main event, not mocked right now
       )
     })
 
@@ -407,10 +399,9 @@ describe('Liquid split writes', () => {
         holders.map((h) => h.address),
         '0xdistributor',
       )
-      expect(getTransactionEventSpy).toBeCalledWith(
+      expect(getTransactionEventsSpy).toBeCalledWith(
         'distribute_funds_tx',
-        undefined,
-        splitMainInterface.getEventTopic('DistributeERC20'), // Using split main event, not mocked right now
+        [liquidSplitClient.eventTopics.distributeToken[2]], // Using split main event, not mocked right now
       )
     })
   })
@@ -479,10 +470,9 @@ describe('Liquid split writes', () => {
       expect(validateAddress).toBeCalledWith(liquidSplitId)
       expect(validateAddress).toBeCalledWith(newOwner)
       expect(moduleWriteActions.transferOwnership).toBeCalledWith(newOwner)
-      expect(getTransactionEventSpy).toBeCalledWith(
-        'transfer_ownership_tx',
-        'format_OwnershipTransferred',
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith('transfer_ownership_tx', [
+        liquidSplitClient.eventTopics.transferOwnership[0],
+      ])
     })
   })
 })

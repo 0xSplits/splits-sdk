@@ -48,8 +48,8 @@ jest.mock('@ethersproject/contracts', () => {
 
 jest.mock('../utils/validation')
 
-const getTransactionEventSpy = jest
-  .spyOn(utils, 'getTransactionEvent')
+const getTransactionEventsSpy = jest
+  .spyOn(utils, 'getTransactionEvents')
   .mockImplementation(async () => {
     const event = {
       blockNumber: 12345,
@@ -57,7 +57,7 @@ const getTransactionEventSpy = jest
         waterfallModule: '0xwaterfall',
       },
     } as unknown as Event
-    return event
+    return [event]
   })
 const getTrancheRecipientsAndSizesMock = jest
   .spyOn(utils, 'getTrancheRecipientsAndSizes')
@@ -120,7 +120,7 @@ describe('Waterfall writes', () => {
   beforeEach(() => {
     ;(validateTranches as jest.Mock).mockClear()
     ;(validateAddress as jest.Mock).mockClear()
-    getTransactionEventSpy.mockClear()
+    getTransactionEventsSpy.mockClear()
     getTrancheRecipientsAndSizesMock.mockClear()
   })
 
@@ -192,9 +192,9 @@ describe('Waterfall writes', () => {
         TRANCHE_RECIPIENTS,
         TRANCHE_SIZES,
       )
-      expect(getTransactionEventSpy).toBeCalledWith(
+      expect(getTransactionEventsSpy).toBeCalledWith(
         'create_waterfall_module_tx',
-        'format_CreateWaterfallModule',
+        [waterfallClient.eventTopics.createWaterfallModule[0]],
       )
     })
 
@@ -222,9 +222,9 @@ describe('Waterfall writes', () => {
         TRANCHE_RECIPIENTS,
         TRANCHE_SIZES,
       )
-      expect(getTransactionEventSpy).toBeCalledWith(
+      expect(getTransactionEventsSpy).toBeCalledWith(
         'create_waterfall_module_tx',
-        'format_CreateWaterfallModule',
+        [waterfallClient.eventTopics.createWaterfallModule[0]],
       )
     })
   })
@@ -273,10 +273,9 @@ describe('Waterfall writes', () => {
       expect(validateAddress).toBeCalledWith(waterfallModuleId)
       expect(moduleWriteActions.waterfallFunds).toBeCalled()
       expect(moduleWriteActions.waterfallFundsPull).not.toBeCalled()
-      expect(getTransactionEventSpy).toBeCalledWith(
-        'waterfall_funds_tx',
-        'format_WaterfallFunds',
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith('waterfall_funds_tx', [
+        waterfallClient.eventTopics.waterfallFunds[0],
+      ])
     })
 
     test('Waterfall funds pull passes', async () => {
@@ -289,9 +288,9 @@ describe('Waterfall writes', () => {
       expect(validateAddress).toBeCalledWith(waterfallModuleId)
       expect(moduleWriteActions.waterfallFunds).not.toBeCalled()
       expect(moduleWriteActions.waterfallFundsPull).toBeCalled()
-      expect(getTransactionEventSpy).toBeCalledWith(
+      expect(getTransactionEventsSpy).toBeCalledWith(
         'waterfall_funds_pull_tx',
-        'format_WaterfallFunds',
+        [waterfallClient.eventTopics.waterfallFunds[0]],
       )
     })
   })
@@ -413,9 +412,9 @@ describe('Waterfall writes', () => {
         token,
         recipient,
       )
-      expect(getTransactionEventSpy).toBeCalledWith(
+      expect(getTransactionEventsSpy).toBeCalledWith(
         'recover_non_waterfall_funds_tx',
-        'format_RecoverNonWaterfallFunds',
+        [waterfallClient.eventTopics.recoverNonWaterfallFunds[0]],
       )
     })
 
@@ -447,9 +446,9 @@ describe('Waterfall writes', () => {
         token,
         nonWaterfallRecipient,
       )
-      expect(getTransactionEventSpy).toBeCalledWith(
+      expect(getTransactionEventsSpy).toBeCalledWith(
         'recover_non_waterfall_funds_tx',
-        'format_RecoverNonWaterfallFunds',
+        [waterfallClient.eventTopics.recoverNonWaterfallFunds[0]],
       )
     })
   })
@@ -501,10 +500,9 @@ describe('Waterfall writes', () => {
       expect(validateAddress).toBeCalledWith(waterfallModuleId)
       expect(validateAddress).toBeCalledWith(address)
       expect(moduleWriteActions.withdraw).toBeCalledWith(address)
-      expect(getTransactionEventSpy).toBeCalledWith(
-        'withdraw_tx',
-        'format_Withdrawal',
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith('withdraw_tx', [
+        waterfallClient.eventTopics.withdrawPullFunds[0],
+      ])
     })
   })
 })

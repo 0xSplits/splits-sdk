@@ -2,7 +2,7 @@ import { Interface } from '@ethersproject/abi'
 import { getAddress } from '@ethersproject/address'
 import { BigNumber } from '@ethersproject/bignumber'
 import { AddressZero, One } from '@ethersproject/constants'
-import { Contract, Event } from '@ethersproject/contracts'
+import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
 
 import SPLIT_MAIN_ARTIFACT_ETHEREUM from '../artifacts/contracts/SplitMain/ethereum/SplitMain.json'
 import SPLIT_MAIN_ARTIFACT_POLYGON from '../artifacts/contracts/SplitMain/polygon/SplitMain.json'
@@ -60,7 +60,7 @@ import type {
 } from '../types'
 import {
   getRecipientSortedAddressesAndAllocations,
-  getTransactionEvent,
+  getTransactionEvents,
   fetchERC20TransferredTokens,
   addEnsNames,
   getBigNumberFromPercent,
@@ -70,8 +70,6 @@ import {
   validateDistributorFeePercent,
   validateAddress,
 } from '../utils/validation'
-import type { SplitMain as SplitMainEthereumType } from '../typechain/SplitMain/ethereum'
-import type { SplitMain as SplitMainPolygonType } from '../typechain/SplitMain/polygon'
 
 const splitMainInterfaceEthereum = new Interface(
   SPLIT_MAIN_ARTIFACT_ETHEREUM.abi,
@@ -80,6 +78,7 @@ const splitMainInterfacePolygon = new Interface(SPLIT_MAIN_ARTIFACT_POLYGON.abi)
 
 export class SplitsClient extends BaseClient {
   private readonly _splitMain: SplitMainType
+  readonly eventTopics: { [key: string]: string[] }
   readonly waterfall: WaterfallClient | undefined
   readonly liquidSplits: LiquidSplitClient | undefined
 
@@ -104,19 +103,18 @@ export class SplitsClient extends BaseClient {
       ...ARBITRUM_CHAIN_IDS,
     ]
 
+    let splitMainInterface: Interface
     if (ETHEREUM_CHAIN_IDS.includes(chainId))
-      this._splitMain = new Contract(
-        SPLIT_MAIN_ADDRESS,
-        splitMainInterfaceEthereum,
-        provider,
-      ) as SplitMainEthereumType
+      splitMainInterface = splitMainInterfaceEthereum
     else if (polygonInterfaceChainIds.includes(chainId))
-      this._splitMain = new Contract(
-        SPLIT_MAIN_ADDRESS,
-        splitMainInterfacePolygon,
-        provider,
-      ) as SplitMainPolygonType
+      splitMainInterface = splitMainInterfacePolygon
     else throw new UnsupportedChainIdError(chainId, SPLITS_SUPPORTED_CHAIN_IDS)
+
+    this._splitMain = new Contract(
+      SPLIT_MAIN_ADDRESS,
+      splitMainInterface,
+      provider,
+    ) as SplitMainType
 
     if (WATERFALL_CHAIN_IDS.includes(chainId)) {
       this.waterfall = new WaterfallClient({
@@ -136,6 +134,31 @@ export class SplitsClient extends BaseClient {
         includeEnsNames,
       })
     }
+
+    this.eventTopics = {
+      createSplit: [splitMainInterface.getEventTopic('CreateSplit')],
+      updateSplit: [splitMainInterface.getEventTopic('UpdateSplit')],
+      distributeToken: [
+        splitMainInterface.getEventTopic('DistributeETH'),
+        splitMainInterface.getEventTopic('DistributeERC20'),
+      ],
+      updateSplitAndDistributeToken: [
+        splitMainInterface.getEventTopic('UpdateSplit'),
+        splitMainInterface.getEventTopic('DistributeETH'),
+        splitMainInterface.getEventTopic('DistributeERC20'),
+      ],
+      withdrawFunds: [splitMainInterface.getEventTopic('Withdrawal')],
+      initiateControlTransfer: [
+        splitMainInterface.getEventTopic('InitiateControlTransfer'),
+      ],
+      cancelControlTransfer: [
+        splitMainInterface.getEventTopic('CancelControlTransfer'),
+      ],
+      acceptControlTransfer: [
+        splitMainInterface.getEventTopic('ControlTransfer'),
+      ],
+      makeSplitImmutable: [splitMainInterface.getEventTopic('ControlTransfer')],
+    }
   }
 
   /*
@@ -144,13 +167,16 @@ export class SplitsClient extends BaseClient {
   /
   */
   // Write actions
-  async createSplit({
+  async submitCreateSplitTransaction({
     recipients,
     distributorFeePercent,
-    controller = AddressZero,
-  }: CreateSplitConfig): Promise<{
-    splitId: string
-    event: Event
+    controller,
+  }: {
+    recipients: SplitRecipient[]
+    distributorFeePercent: number
+    controller: string
+  }): Promise<{
+    tx: ContractTransaction
   }> {
     validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
     validateDistributorFeePercent(distributorFeePercent)
@@ -163,10 +189,30 @@ export class SplitsClient extends BaseClient {
     const createSplitTx = await this._splitMain
       .connect(this._signer)
       .createSplit(accounts, percentAllocations, distributorFee, controller)
-    const event = await getTransactionEvent(
+
+    return {
+      tx: createSplitTx,
+    }
+  }
+
+  async createSplit({
+    recipients,
+    distributorFeePercent,
+    controller = AddressZero,
+  }: CreateSplitConfig): Promise<{
+    splitId: string
+    event: Event
+  }> {
+    const { tx: createSplitTx } = await this.submitCreateSplitTransaction({
+      recipients,
+      distributorFeePercent,
+      controller,
+    })
+    const events = await getTransactionEvents(
       createSplitTx,
-      this._splitMain.interface.getEvent('CreateSplit').format(),
+      this.eventTopics.createSplit,
     )
+    const event = events.length > 0 ? events[0] : undefined
     if (event && event.args)
       return {
         splitId: event.args.split,
@@ -176,12 +222,12 @@ export class SplitsClient extends BaseClient {
     throw new TransactionFailedError()
   }
 
-  async updateSplit({
+  async submitUpdateSplitTransaction({
     splitId,
     recipients,
     distributorFeePercent,
   }: UpdateSplitConfig): Promise<{
-    event: Event
+    tx: ContractTransaction
   }> {
     validateAddress(splitId)
     validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
@@ -196,21 +242,38 @@ export class SplitsClient extends BaseClient {
     const updateSplitTx = await this._splitMain
       .connect(this._signer)
       .updateSplit(splitId, accounts, percentAllocations, distributorFee)
-    const event = await getTransactionEvent(
+
+    return { tx: updateSplitTx }
+  }
+
+  async updateSplit({
+    splitId,
+    recipients,
+    distributorFeePercent,
+  }: UpdateSplitConfig): Promise<{
+    event: Event
+  }> {
+    const { tx: updateSplitTx } = await this.submitUpdateSplitTransaction({
+      splitId,
+      recipients,
+      distributorFeePercent,
+    })
+    const events = await getTransactionEvents(
       updateSplitTx,
-      this._splitMain.interface.getEvent('UpdateSplit').format(),
+      this.eventTopics.updateSplit,
     )
+    const event = events.length > 0 ? events[0] : undefined
     if (event) return { event }
 
     throw new TransactionFailedError()
   }
 
-  async distributeToken({
+  async submitDistributeTokenTransaction({
     splitId,
     token,
     distributorAddress,
   }: DistributeTokenConfig): Promise<{
-    event: Event
+    tx: ContractTransaction
   }> {
     validateAddress(splitId)
     validateAddress(token)
@@ -251,24 +314,41 @@ export class SplitsClient extends BaseClient {
             distributorFee,
             distributorPayoutAddress,
           ))
-    const eventSignature =
+    return { tx: distributeTokenTx }
+  }
+
+  async distributeToken({
+    splitId,
+    token,
+    distributorAddress,
+  }: DistributeTokenConfig): Promise<{
+    event: Event
+  }> {
+    const { tx: distributeTokenTx } =
+      await this.submitDistributeTokenTransaction({
+        splitId,
+        token,
+        distributorAddress,
+      })
+    const eventTopic =
       token === AddressZero
-        ? this._splitMain.interface.getEvent('DistributeETH').format()
-        : this._splitMain.interface.getEvent('DistributeERC20').format()
-    const event = await getTransactionEvent(distributeTokenTx, eventSignature)
+        ? this.eventTopics.distributeToken[0]
+        : this.eventTopics.distributeToken[1]
+    const events = await getTransactionEvents(distributeTokenTx, [eventTopic])
+    const event = events.length > 0 ? events[0] : undefined
     if (event) return { event }
 
     throw new TransactionFailedError()
   }
 
-  async updateSplitAndDistributeToken({
+  async submitUpdateSplitAndDistributeTokenTransaction({
     splitId,
     token,
     recipients,
     distributorFeePercent,
     distributorAddress,
   }: UpdateSplitAndDistributeTokenConfig): Promise<{
-    event: Event
+    tx: ContractTransaction
   }> {
     validateAddress(splitId)
     validateAddress(token)
@@ -308,21 +388,45 @@ export class SplitsClient extends BaseClient {
             distributorFee,
             distributorPayoutAddress,
           ))
-    const eventSignature =
+
+    return { tx: updateAndDistributeTx }
+  }
+
+  async updateSplitAndDistributeToken({
+    splitId,
+    token,
+    recipients,
+    distributorFeePercent,
+    distributorAddress,
+  }: UpdateSplitAndDistributeTokenConfig): Promise<{
+    event: Event
+  }> {
+    const { tx: updateAndDistributeTx } =
+      await this.submitUpdateSplitAndDistributeTokenTransaction({
+        splitId,
+        token,
+        recipients,
+        distributorFeePercent,
+        distributorAddress,
+      })
+    const eventTopic =
       token === AddressZero
-        ? this._splitMain.interface.getEvent('DistributeETH').format()
-        : this._splitMain.interface.getEvent('DistributeERC20').format()
-    const event = await getTransactionEvent(
-      updateAndDistributeTx,
-      eventSignature,
-    )
+        ? this.eventTopics.updateSplitAndDistributeToken[1]
+        : this.eventTopics.updateSplitAndDistributeToken[2]
+    const events = await getTransactionEvents(updateAndDistributeTx, [
+      eventTopic,
+    ])
+    const event = events.length > 0 ? events[0] : undefined
     if (event) return { event }
 
     throw new TransactionFailedError()
   }
 
-  async withdrawFunds({ address, tokens }: WithdrawFundsConfig): Promise<{
-    event: Event
+  async submitWithdrawFundsTransaction({
+    address,
+    tokens,
+  }: WithdrawFundsConfig): Promise<{
+    tx: ContractTransaction
   }> {
     validateAddress(address)
     this._requireSigner()
@@ -333,20 +437,32 @@ export class SplitsClient extends BaseClient {
     const withdrawTx = await this._splitMain
       .connect(this._signer)
       .withdraw(address, withdrawEth, erc20s)
-    const event = await getTransactionEvent(
+
+    return { tx: withdrawTx }
+  }
+
+  async withdrawFunds({ address, tokens }: WithdrawFundsConfig): Promise<{
+    event: Event
+  }> {
+    const { tx: withdrawTx } = await this.submitWithdrawFundsTransaction({
+      address,
+      tokens,
+    })
+    const events = await getTransactionEvents(
       withdrawTx,
-      this._splitMain.interface.getEvent('Withdrawal').format(),
+      this.eventTopics.withdrawFunds,
     )
+    const event = events.length > 0 ? events[0] : undefined
     if (event) return { event }
 
     throw new TransactionFailedError()
   }
 
-  async initiateControlTransfer({
+  async submitInitiateControlTransferTransaction({
     splitId,
     newController,
   }: InititateControlTransferConfig): Promise<{
-    event: Event
+    tx: ContractTransaction
   }> {
     validateAddress(splitId)
     this._requireSigner()
@@ -355,19 +471,35 @@ export class SplitsClient extends BaseClient {
     const transferSplitTx = await this._splitMain
       .connect(this._signer)
       .transferControl(splitId, newController)
-    const event = await getTransactionEvent(
+
+    return { tx: transferSplitTx }
+  }
+
+  async initiateControlTransfer({
+    splitId,
+    newController,
+  }: InititateControlTransferConfig): Promise<{
+    event: Event
+  }> {
+    const { tx: transferSplitTx } =
+      await this.submitInitiateControlTransferTransaction({
+        splitId,
+        newController,
+      })
+    const events = await getTransactionEvents(
       transferSplitTx,
-      this._splitMain.interface.getEvent('InitiateControlTransfer').format(),
+      this.eventTopics.initiateControlTransfer,
     )
+    const event = events.length > 0 ? events[0] : undefined
     if (event) return { event }
 
     throw new TransactionFailedError()
   }
 
-  async cancelControlTransfer({
+  async submitCancelControlTransferTransaction({
     splitId,
   }: CancelControlTransferConfig): Promise<{
-    event: Event
+    tx: ContractTransaction
   }> {
     validateAddress(splitId)
     this._requireSigner()
@@ -376,19 +508,30 @@ export class SplitsClient extends BaseClient {
     const cancelTransferSplitTx = await this._splitMain
       .connect(this._signer)
       .cancelControlTransfer(splitId)
-    const event = await getTransactionEvent(
+    return { tx: cancelTransferSplitTx }
+  }
+
+  async cancelControlTransfer({
+    splitId,
+  }: CancelControlTransferConfig): Promise<{
+    event: Event
+  }> {
+    const { tx: cancelTransferSplitTx } =
+      await this.submitCancelControlTransferTransaction({ splitId })
+    const events = await getTransactionEvents(
       cancelTransferSplitTx,
-      this._splitMain.interface.getEvent('CancelControlTransfer').format(),
+      this.eventTopics.cancelControlTransfer,
     )
+    const event = events.length > 0 ? events[0] : undefined
     if (event) return { event }
 
     throw new TransactionFailedError()
   }
 
-  async acceptControlTransfer({
+  async submitAcceptControlTransferTransaction({
     splitId,
   }: AcceptControlTransferConfig): Promise<{
-    event: Event
+    tx: ContractTransaction
   }> {
     validateAddress(splitId)
     this._requireSigner()
@@ -397,17 +540,30 @@ export class SplitsClient extends BaseClient {
     const acceptTransferSplitTx = await this._splitMain
       .connect(this._signer)
       .acceptControl(splitId)
-    const event = await getTransactionEvent(
+    return { tx: acceptTransferSplitTx }
+  }
+
+  async acceptControlTransfer({
+    splitId,
+  }: AcceptControlTransferConfig): Promise<{
+    event: Event
+  }> {
+    const { tx: acceptTransferSplitTx } =
+      await this.submitAcceptControlTransferTransaction({ splitId })
+    const events = await getTransactionEvents(
       acceptTransferSplitTx,
-      this._splitMain.interface.getEvent('ControlTransfer').format(),
+      this.eventTopics.acceptControlTransfer,
     )
+    const event = events.length > 0 ? events[0] : undefined
     if (event) return { event }
 
     throw new TransactionFailedError()
   }
 
-  async makeSplitImmutable({ splitId }: MakeSplitImmutableConfig): Promise<{
-    event: Event
+  async submitMakeSplitImmutableTransaction({
+    splitId,
+  }: MakeSplitImmutableConfig): Promise<{
+    tx: ContractTransaction
   }> {
     validateAddress(splitId)
     this._requireSigner()
@@ -416,10 +572,19 @@ export class SplitsClient extends BaseClient {
     const makeSplitImmutableTx = await this._splitMain
       .connect(this._signer)
       .makeSplitImmutable(splitId)
-    const event = await getTransactionEvent(
+    return { tx: makeSplitImmutableTx }
+  }
+
+  async makeSplitImmutable({ splitId }: MakeSplitImmutableConfig): Promise<{
+    event: Event
+  }> {
+    const { tx: makeSplitImmutableTx } =
+      await this.submitMakeSplitImmutableTransaction({ splitId })
+    const events = await getTransactionEvents(
       makeSplitImmutableTx,
-      this._splitMain.interface.getEvent('ControlTransfer').format(),
+      this.eventTopics.makeSplitImmutable,
     )
+    const event = events.length > 0 ? events[0] : undefined
     if (event) return { event }
 
     throw new TransactionFailedError()
