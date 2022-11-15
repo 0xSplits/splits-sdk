@@ -136,6 +136,24 @@ export type WaterfallModule = {
   tranches: WaterfallTranche[]
 }
 
+export type CreateLiquidSplitConfig = {
+  recipients: SplitRecipient[]
+  distributorFeePercent: number
+  owner?: string
+  createClone?: boolean
+}
+
+export type DistributeLiquidSplitTokenConfig = {
+  liquidSplitId: string
+  token: string
+  distributorAddress?: string
+}
+
+export type TransferLiquidSplitOwnershipConfig = {
+  liquidSplitId: string
+  newOwner: string
+}
+
 export type LiquidSplit = {
   type: 'LiquidSplit'
   id: string

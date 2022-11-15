@@ -22,7 +22,13 @@ import {
 } from '../errors'
 import { protectedFormatLiquidSplit, LIQUID_SPLIT_QUERY } from '../subgraph'
 import type { GqlLiquidSplit } from '../subgraph/types'
-import type { LiquidSplit, SplitsClientConfig, SplitRecipient } from '../types'
+import type {
+  LiquidSplit,
+  SplitsClientConfig,
+  CreateLiquidSplitConfig,
+  DistributeLiquidSplitTokenConfig,
+  TransferLiquidSplitOwnershipConfig,
+} from '../types'
 import {
   getBigNumberFromPercent,
   getRecipientSortedAddressesAndAllocations,
@@ -91,14 +97,9 @@ export default class LiquidSplitClient extends BaseClient {
   async submitCreateLiquidSplitTransaction({
     recipients,
     distributorFeePercent,
-    owner,
-    createClone,
-  }: {
-    recipients: SplitRecipient[]
-    distributorFeePercent: number
-    owner?: string
-    createClone: boolean
-  }): Promise<{
+    owner = undefined,
+    createClone = false,
+  }: CreateLiquidSplitConfig): Promise<{
     tx: ContractTransaction
   }> {
     validateRecipients(recipients, LIQUID_SPLITS_MAX_PRECISION_DECIMALS)
@@ -134,14 +135,9 @@ export default class LiquidSplitClient extends BaseClient {
   async createLiquidSplit({
     recipients,
     distributorFeePercent,
-    owner = undefined,
+    owner,
     createClone = false,
-  }: {
-    recipients: SplitRecipient[]
-    distributorFeePercent: number
-    owner?: string
-    createClone?: boolean
-  }): Promise<{
+  }: CreateLiquidSplitConfig): Promise<{
     liquidSplitId: string
     event: Event
   }> {
@@ -172,11 +168,7 @@ export default class LiquidSplitClient extends BaseClient {
     liquidSplitId,
     token,
     distributorAddress,
-  }: {
-    liquidSplitId: string
-    token: string
-    distributorAddress?: string
-  }): Promise<{
+  }: DistributeLiquidSplitTokenConfig): Promise<{
     tx: ContractTransaction
   }> {
     validateAddress(liquidSplitId)
@@ -215,11 +207,7 @@ export default class LiquidSplitClient extends BaseClient {
     liquidSplitId,
     token,
     distributorAddress,
-  }: {
-    liquidSplitId: string
-    token: string
-    distributorAddress?: string
-  }): Promise<{
+  }: DistributeLiquidSplitTokenConfig): Promise<{
     event: Event
   }> {
     const { tx: distributeTokenTx } =
@@ -243,10 +231,7 @@ export default class LiquidSplitClient extends BaseClient {
   async submitTransferOwnershipTransaction({
     liquidSplitId,
     newOwner,
-  }: {
-    liquidSplitId: string
-    newOwner: string
-  }): Promise<{
+  }: TransferLiquidSplitOwnershipConfig): Promise<{
     tx: ContractTransaction
   }> {
     validateAddress(liquidSplitId)
@@ -267,10 +252,7 @@ export default class LiquidSplitClient extends BaseClient {
   async transferOwnership({
     liquidSplitId,
     newOwner,
-  }: {
-    liquidSplitId: string
-    newOwner: string
-  }): Promise<{
+  }: TransferLiquidSplitOwnershipConfig): Promise<{
     event: Event
   }> {
     const { tx: transferOwnershipTx } =
