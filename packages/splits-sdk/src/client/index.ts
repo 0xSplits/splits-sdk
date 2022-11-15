@@ -170,12 +170,8 @@ export class SplitsClient extends BaseClient {
   async submitCreateSplitTransaction({
     recipients,
     distributorFeePercent,
-    controller,
-  }: {
-    recipients: SplitRecipient[]
-    distributorFeePercent: number
-    controller: string
-  }): Promise<{
+    controller = AddressZero,
+  }: CreateSplitConfig): Promise<{
     tx: ContractTransaction
   }> {
     validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
@@ -198,7 +194,7 @@ export class SplitsClient extends BaseClient {
   async createSplit({
     recipients,
     distributorFeePercent,
-    controller = AddressZero,
+    controller,
   }: CreateSplitConfig): Promise<{
     splitId: string
     event: Event

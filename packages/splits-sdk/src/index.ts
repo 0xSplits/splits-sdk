@@ -15,6 +15,15 @@ export {
 } from './constants'
 export { getTransactionEvents } from './utils'
 export type {
+  CreateSplitConfig,
+  UpdateSplitConfig,
+  DistributeTokenConfig,
+  UpdateSplitAndDistributeTokenConfig,
+  WithdrawFundsConfig,
+  InititateControlTransferConfig,
+  CancelControlTransferConfig,
+  AcceptControlTransferConfig,
+  MakeSplitImmutableConfig,
   SplitMainType,
   SplitsClientConfig,
   SplitRecipient,
