@@ -90,6 +90,28 @@ export type Split = {
   createdBlock: number
 }
 
+export type CreateWaterfallConfig = {
+  token: string
+  tranches: WaterfallTrancheInput[]
+  nonWaterfallRecipient?: string
+}
+
+export type WaterfallFundsConfig = {
+  waterfallModuleId: string
+  usePull?: boolean
+}
+
+export type RecoverNonWaterfallFundsConfig = {
+  waterfallModuleId: string
+  token: string
+  recipient?: string
+}
+
+export type WithdrawWaterfallPullFundsConfig = {
+  waterfallModuleId: string
+  address: string
+}
+
 export type WaterfallTrancheInput = {
   recipient: string
   size?: number

@@ -22,9 +22,12 @@ import {
 } from '../subgraph'
 import type { GqlWaterfallModule } from '../subgraph/types'
 import type {
+  CreateWaterfallConfig,
+  RecoverNonWaterfallFundsConfig,
   SplitsClientConfig,
+  WaterfallFundsConfig,
   WaterfallModule,
-  WaterfallTrancheInput,
+  WithdrawWaterfallPullFundsConfig,
 } from '../types'
 import {
   getTransactionEvents,
@@ -86,12 +89,8 @@ export default class WaterfallClient extends BaseClient {
   async submitCreateWaterfallModuleTransaction({
     token,
     tranches,
-    nonWaterfallRecipient,
-  }: {
-    token: string
-    tranches: WaterfallTrancheInput[]
-    nonWaterfallRecipient: string
-  }): Promise<{
+    nonWaterfallRecipient = AddressZero,
+  }: CreateWaterfallConfig): Promise<{
     tx: ContractTransaction
   }> {
     validateAddress(token)
@@ -121,12 +120,8 @@ export default class WaterfallClient extends BaseClient {
   async createWaterfallModule({
     token,
     tranches,
-    nonWaterfallRecipient = AddressZero,
-  }: {
-    token: string
-    tranches: WaterfallTrancheInput[]
-    nonWaterfallRecipient?: string
-  }): Promise<{
+    nonWaterfallRecipient,
+  }: CreateWaterfallConfig): Promise<{
     waterfallModuleId: string
     event: Event
   }> {
@@ -152,11 +147,8 @@ export default class WaterfallClient extends BaseClient {
 
   async submitWaterfallFundsTransaction({
     waterfallModuleId,
-    usePull,
-  }: {
-    waterfallModuleId: string
-    usePull: boolean
-  }): Promise<{
+    usePull = false,
+  }: WaterfallFundsConfig): Promise<{
     tx: ContractTransaction
   }> {
     validateAddress(waterfallModuleId)
@@ -172,11 +164,8 @@ export default class WaterfallClient extends BaseClient {
 
   async waterfallFunds({
     waterfallModuleId,
-    usePull = false,
-  }: {
-    waterfallModuleId: string
-    usePull?: boolean
-  }): Promise<{
+    usePull,
+  }: WaterfallFundsConfig): Promise<{
     event: Event
   }> {
     const { tx: waterfallFundsTx } = await this.submitWaterfallFundsTransaction(
@@ -198,12 +187,8 @@ export default class WaterfallClient extends BaseClient {
   async submitRecoverNonWaterfallFundsTransaction({
     waterfallModuleId,
     token,
-    recipient,
-  }: {
-    waterfallModuleId: string
-    token: string
-    recipient: string
-  }): Promise<{
+    recipient = AddressZero,
+  }: RecoverNonWaterfallFundsConfig): Promise<{
     tx: ContractTransaction
   }> {
     validateAddress(waterfallModuleId)
@@ -228,12 +213,8 @@ export default class WaterfallClient extends BaseClient {
   async recoverNonWaterfallFunds({
     waterfallModuleId,
     token,
-    recipient = AddressZero,
-  }: {
-    waterfallModuleId: string
-    token: string
-    recipient?: string
-  }): Promise<{
+    recipient,
+  }: RecoverNonWaterfallFundsConfig): Promise<{
     event: Event
   }> {
     const { tx: recoverFundsTx } =
@@ -258,10 +239,7 @@ export default class WaterfallClient extends BaseClient {
   async submitWithdrawPullFundsTransaction({
     waterfallModuleId,
     address,
-  }: {
-    waterfallModuleId: string
-    address: string
-  }): Promise<{
+  }: WithdrawWaterfallPullFundsConfig): Promise<{
     tx: ContractTransaction
   }> {
     validateAddress(waterfallModuleId)
@@ -277,10 +255,7 @@ export default class WaterfallClient extends BaseClient {
   async withdrawPullFunds({
     waterfallModuleId,
     address,
-  }: {
-    waterfallModuleId: string
-    address: string
-  }): Promise<{
+  }: WithdrawWaterfallPullFundsConfig): Promise<{
     event: Event
   }> {
     const { tx: withdrawTx } = await this.submitWithdrawPullFundsTransaction({
