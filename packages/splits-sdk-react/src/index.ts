@@ -12,6 +12,15 @@ export type {
 } from '@0xsplits/splits-sdk'
 export { SplitsProvider } from './context'
 export {
+  useCreateSplit,
+  useUpdateSplit,
+  useDistributeToken,
+  useUpdateSplitAndDistributeToken,
+  useWithdrawFunds,
+  useAcceptControlTransfer,
+  useCancelControlTransfer,
+  useInitiateControlTransfer,
+  useMakeSplitImmutable,
   useSplitsClient,
   useSplitMetadata,
   useWaterfallMetadata,
