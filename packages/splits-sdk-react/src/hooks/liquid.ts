@@ -35,6 +35,8 @@ export const useCreateLiquidSplit = (): {
 
       try {
         setStatus('pendingApproval')
+        setError(undefined)
+        setTxHash(undefined)
 
         const { tx } =
           await context.splitsClient.liquidSplits.submitCreateLiquidSplitTransaction(
@@ -87,6 +89,8 @@ export const useDistributeLiquidSplitToken = (): {
 
       try {
         setStatus('pendingApproval')
+        setError(undefined)
+        setTxHash(undefined)
 
         const { tx } =
           await context.splitsClient.liquidSplits.submitDistributeTokenTransaction(
@@ -139,6 +143,8 @@ export const useTransferLiquidSplitOwnership = (): {
 
       try {
         setStatus('pendingApproval')
+        setError(undefined)
+        setTxHash(undefined)
 
         const { tx } =
           await context.splitsClient.liquidSplits.submitTransferOwnershipTransaction(

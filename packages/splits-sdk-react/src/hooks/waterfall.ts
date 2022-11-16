@@ -36,6 +36,8 @@ export const useCreateWaterfallModule = (): {
 
       try {
         setStatus('pendingApproval')
+        setError(undefined)
+        setTxHash(undefined)
 
         const { tx } =
           await context.splitsClient.waterfall.submitCreateWaterfallModuleTransaction(
@@ -86,6 +88,8 @@ export const useWaterfallFunds = (): {
 
       try {
         setStatus('pendingApproval')
+        setError(undefined)
+        setTxHash(undefined)
 
         const { tx } =
           await context.splitsClient.waterfall.submitWaterfallFundsTransaction(
@@ -138,6 +142,8 @@ export const useRecoverNonWaterfallFunds = (): {
 
       try {
         setStatus('pendingApproval')
+        setError(undefined)
+        setTxHash(undefined)
 
         const { tx } =
           await context.splitsClient.waterfall.submitRecoverNonWaterfallFundsTransaction(
@@ -190,6 +196,8 @@ export const useWithdrawWaterfallPullFunds = (): {
 
       try {
         setStatus('pendingApproval')
+        setError(undefined)
+        setTxHash(undefined)
 
         const { tx } =
           await context.splitsClient.waterfall.submitWithdrawPullFundsTransaction(

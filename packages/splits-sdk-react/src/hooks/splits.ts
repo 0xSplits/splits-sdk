@@ -62,6 +62,8 @@ export const useCreateSplit = (): {
     async (argsDict: CreateSplitConfig) => {
       try {
         setStatus('pendingApproval')
+        setError(undefined)
+        setTxHash(undefined)
 
         const { tx } = await context.splitsClient.submitCreateSplitTransaction(
           argsDict,
@@ -108,6 +110,8 @@ export const useUpdateSplit = (): {
     async (argsDict: UpdateSplitConfig) => {
       try {
         setStatus('pendingApproval')
+        setError(undefined)
+        setTxHash(undefined)
 
         const { tx } = await context.splitsClient.submitUpdateSplitTransaction(
           argsDict,
@@ -154,6 +158,8 @@ export const useDistributeToken = (): {
     async (argsDict: DistributeTokenConfig) => {
       try {
         setStatus('pendingApproval')
+        setError(undefined)
+        setTxHash(undefined)
 
         const { tx } =
           await context.splitsClient.submitDistributeTokenTransaction(argsDict)
@@ -201,6 +207,8 @@ export const useUpdateSplitAndDistributeToken = (): {
     async (argsDict: UpdateSplitAndDistributeTokenConfig) => {
       try {
         setStatus('pendingApproval')
+        setError(undefined)
+        setTxHash(undefined)
 
         const { tx } =
           await context.splitsClient.submitUpdateSplitAndDistributeTokenTransaction(
@@ -248,6 +256,8 @@ export const useWithdrawFunds = (): {
     async (argsDict: WithdrawFundsConfig) => {
       try {
         setStatus('pendingApproval')
+        setError(undefined)
+        setTxHash(undefined)
 
         const { tx } =
           await context.splitsClient.submitWithdrawFundsTransaction(argsDict)
@@ -295,6 +305,8 @@ export const useInitiateControlTransfer = (): {
     async (argsDict: InititateControlTransferConfig) => {
       try {
         setStatus('pendingApproval')
+        setError(undefined)
+        setTxHash(undefined)
 
         const { tx } =
           await context.splitsClient.submitInitiateControlTransferTransaction(
@@ -344,6 +356,8 @@ export const useCancelControlTransfer = (): {
     async (argsDict: CancelControlTransferConfig) => {
       try {
         setStatus('pendingApproval')
+        setError(undefined)
+        setTxHash(undefined)
 
         const { tx } =
           await context.splitsClient.submitCancelControlTransferTransaction(
@@ -393,6 +407,8 @@ export const useAcceptControlTransfer = (): {
     async (argsDict: AcceptControlTransferConfig) => {
       try {
         setStatus('pendingApproval')
+        setError(undefined)
+        setTxHash(undefined)
 
         const { tx } =
           await context.splitsClient.submitAcceptControlTransferTransaction(
@@ -442,6 +458,8 @@ export const useMakeSplitImmutable = (): {
     async (argsDict: MakeSplitImmutableConfig) => {
       try {
         setStatus('pendingApproval')
+        setError(undefined)
+        setTxHash(undefined)
 
         const { tx } =
           await context.splitsClient.submitMakeSplitImmutableTransaction(
