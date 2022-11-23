@@ -156,7 +156,7 @@ const LIQUID_SPLIT_HOLDERS_FRAGMENT = gql`
 const LIQUID_SPLIT_FIELDS_FRAGMENT = gql`
   fragment LiquidSplitFieldsFragment on LiquidSplit {
     latestBlock
-    holders(first: 1000) {
+    holders(first: 1000, where: { ownership_gt: "0" }) {
       ...LiquidSplitHoldersFragment
     }
     distributorFee
