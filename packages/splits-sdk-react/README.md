@@ -17,8 +17,4 @@ npm install @0xsplits/splits-sdk-react
 
 ## Documentation
 
-Documentation for the React SDK is coming soon! The four hooks you can use for now are:
-- useSplitsClient
-- useSplitMetadata
-- useWaterfallMetadata
-- useLiquidSplitMetadata
+Detailed documentation for the SDK can be found [here](https://docs.0xsplits.xyz/sdk-info/react)

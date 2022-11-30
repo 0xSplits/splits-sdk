@@ -215,7 +215,7 @@ export const useLiquidSplitMetadata = (
     return () => {
       isActive = false
     }
-  }, [liquidSplitId])
+  }, [liquidSplitClient, liquidSplitId])
 
   return {
     isLoading,

@@ -522,7 +522,7 @@ export const useSplitMetadata = (
     return () => {
       isActive = false
     }
-  }, [splitId])
+  }, [context.splitsClient, splitId])
 
   return {
     isLoading,

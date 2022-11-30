@@ -268,7 +268,7 @@ export const useWaterfallMetadata = (
     return () => {
       isActive = false
     }
-  }, [waterfallModuleId])
+  }, [waterfallClient, waterfallModuleId])
 
   return {
     isLoading,
