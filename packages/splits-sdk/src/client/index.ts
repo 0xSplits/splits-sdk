@@ -65,6 +65,7 @@ import {
   addEnsNames,
   getBigNumberFromPercent,
 } from '../utils'
+import { CallData, ContractCallData } from '../utils/multicall'
 import {
   validateRecipients,
   validateDistributorFeePercent,
@@ -81,6 +82,7 @@ export class SplitsClient extends BaseClient {
   readonly eventTopics: { [key: string]: string[] }
   readonly waterfall: WaterfallClient | undefined
   readonly liquidSplits: LiquidSplitClient | undefined
+  readonly callData: SplitsCallData
 
   constructor({
     chainId,
@@ -159,6 +161,8 @@ export class SplitsClient extends BaseClient {
       ],
       makeSplitImmutable: [splitMainInterface.getEventTopic('ControlTransfer')],
     }
+
+    this.callData = new SplitsCallData(this)
   }
 
   /*
@@ -897,5 +901,217 @@ export class SplitsClient extends BaseClient {
     }
 
     return split
+  }
+}
+
+class SplitsCallData {
+  private readonly _splitsClient: SplitsClient
+  private readonly _splitMainContractCallData: ContractCallData
+
+  constructor(splitsClient: SplitsClient) {
+    this._splitsClient = splitsClient
+    if (ETHEREUM_CHAIN_IDS.includes(splitsClient._chainId)) {
+      this._splitMainContractCallData = new ContractCallData(
+        SPLIT_MAIN_ADDRESS,
+        SPLIT_MAIN_ARTIFACT_ETHEREUM.abi,
+      )
+    } else {
+      this._splitMainContractCallData = new ContractCallData(
+        SPLIT_MAIN_ADDRESS,
+        SPLIT_MAIN_ARTIFACT_POLYGON.abi,
+      )
+    }
+  }
+
+  async createSplit({
+    recipients,
+    distributorFeePercent,
+    controller = AddressZero,
+  }: CreateSplitConfig): Promise<CallData> {
+    validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
+    validateDistributorFeePercent(distributorFeePercent)
+
+    const [accounts, percentAllocations] =
+      getRecipientSortedAddressesAndAllocations(recipients)
+    const distributorFee = getBigNumberFromPercent(distributorFeePercent)
+
+    const callData = this._splitMainContractCallData.createSplit(
+      accounts,
+      percentAllocations,
+      distributorFee,
+      controller,
+    )
+    return callData
+  }
+
+  async updateSplit({
+    splitId,
+    recipients,
+    distributorFeePercent,
+  }: UpdateSplitConfig): Promise<CallData> {
+    validateAddress(splitId)
+    validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
+    validateDistributorFeePercent(distributorFeePercent)
+
+    const [accounts, percentAllocations] =
+      getRecipientSortedAddressesAndAllocations(recipients)
+    const distributorFee = getBigNumberFromPercent(distributorFeePercent)
+
+    const callData = this._splitMainContractCallData.updateSplit(
+      splitId,
+      accounts,
+      percentAllocations,
+      distributorFee,
+    )
+    return callData
+  }
+
+  async distributeToken({
+    splitId,
+    token,
+    distributorAddress,
+  }: DistributeTokenConfig): Promise<CallData> {
+    validateAddress(splitId)
+    validateAddress(token)
+
+    let distributorPayoutAddress = distributorAddress
+    if (!distributorPayoutAddress) {
+      if (!this._splitsClient._signer)
+        throw new Error(
+          'Must pass in a distributor address or include a signer in the client',
+        )
+      distributorPayoutAddress = await this._splitsClient._signer.getAddress()
+    }
+    validateAddress(distributorPayoutAddress)
+
+    const { recipients, distributorFeePercent } =
+      await this._splitsClient.getSplitMetadata({
+        splitId,
+      })
+    const [accounts, percentAllocations] =
+      getRecipientSortedAddressesAndAllocations(recipients)
+    const distributorFee = getBigNumberFromPercent(distributorFeePercent)
+
+    const callData =
+      token === AddressZero
+        ? this._splitMainContractCallData.distributeETH(
+            splitId,
+            accounts,
+            percentAllocations,
+            distributorFee,
+            distributorPayoutAddress,
+          )
+        : this._splitMainContractCallData.distributeERC20(
+            splitId,
+            token,
+            accounts,
+            percentAllocations,
+            distributorFee,
+            distributorPayoutAddress,
+          )
+    return callData
+  }
+
+  async updateSplitAndDistributeToken({
+    splitId,
+    token,
+    recipients,
+    distributorFeePercent,
+    distributorAddress,
+  }: UpdateSplitAndDistributeTokenConfig): Promise<CallData> {
+    validateAddress(splitId)
+    validateAddress(token)
+    validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
+    validateDistributorFeePercent(distributorFeePercent)
+
+    let distributorPayoutAddress = distributorAddress
+    if (!distributorPayoutAddress) {
+      if (!this._splitsClient._signer)
+        throw new Error(
+          'Must pass in a distributor address or include a signer in the client',
+        )
+      distributorPayoutAddress = await this._splitsClient._signer.getAddress()
+    }
+    validateAddress(distributorPayoutAddress)
+
+    const [accounts, percentAllocations] =
+      getRecipientSortedAddressesAndAllocations(recipients)
+    const distributorFee = getBigNumberFromPercent(distributorFeePercent)
+
+    const callData = await (token === AddressZero
+      ? this._splitMainContractCallData.updateAndDistributeETH(
+          splitId,
+          accounts,
+          percentAllocations,
+          distributorFee,
+          distributorPayoutAddress,
+        )
+      : this._splitMainContractCallData.updateAndDistributeERC20(
+          splitId,
+          token,
+          accounts,
+          percentAllocations,
+          distributorFee,
+          distributorPayoutAddress,
+        ))
+    return callData
+  }
+
+  async withdrawFunds({
+    address,
+    tokens,
+  }: WithdrawFundsConfig): Promise<CallData> {
+    validateAddress(address)
+
+    const withdrawEth = tokens.includes(AddressZero) ? 1 : 0
+    const erc20s = tokens.filter((token) => token !== AddressZero)
+
+    const callData = this._splitMainContractCallData.withdraw(
+      address,
+      withdrawEth,
+      erc20s,
+    )
+    return callData
+  }
+
+  async initiateControlTransfer({
+    splitId,
+    newController,
+  }: InititateControlTransferConfig): Promise<CallData> {
+    validateAddress(splitId)
+
+    const callData = this._splitMainContractCallData.transferControl(
+      splitId,
+      newController,
+    )
+    return callData
+  }
+
+  async cancelControlTransfer({
+    splitId,
+  }: CancelControlTransferConfig): Promise<CallData> {
+    validateAddress(splitId)
+
+    const callData =
+      this._splitMainContractCallData.cancelControlTransfer(splitId)
+    return callData
+  }
+
+  async acceptControlTransfer({
+    splitId,
+  }: AcceptControlTransferConfig): Promise<CallData> {
+    validateAddress(splitId)
+
+    const callData = this._splitMainContractCallData.acceptControl(splitId)
+    return callData
+  }
+
+  async makeSplitImmutable({
+    splitId,
+  }: MakeSplitImmutableConfig): Promise<CallData> {
+    validateAddress(splitId)
+
+    const callData = this._splitMainContractCallData.makeSplitImmutable(splitId)
+    return callData
   }
 }

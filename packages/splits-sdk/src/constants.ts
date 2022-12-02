@@ -2,6 +2,9 @@ import { BigNumber } from '@ethersproject/bignumber'
 
 export const PERCENTAGE_SCALE = BigNumber.from(1e6)
 
+// https://github.com/mds1/multicall
+export const MULTICALL_3_ADDRESS = '0xca11bde05977b3631167028862be2a173976ca11'
+
 export const SPLIT_MAIN_ADDRESS = '0x2ed6c4B5dA6378c7897AC67Ba9e43102Feb694EE'
 export const WATERFALL_MODULE_FACTORY_ADDRESS =
   '0x4Df01754eBd055498C8087b1e9a5c7a9ad19b0F6'

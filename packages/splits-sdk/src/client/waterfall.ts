@@ -38,6 +38,7 @@ import {
 import { validateAddress, validateTranches } from '../utils/validation'
 import type { WaterfallModuleFactory as WaterfallModuleFactoryType } from '../typechain/WaterfallModuleFactory'
 import type { WaterfallModule as WaterfallModuleType } from '../typechain/WaterfallModule'
+import { CallData, ContractCallData } from '../utils/multicall'
 
 const waterfallModuleFactoryInterface = new Interface(
   WATERFALL_MODULE_FACTORY_ARTIFACT.abi,
@@ -47,6 +48,7 @@ const waterfallModuleInterface = new Interface(WATERFALL_MODULE_ARTIFACT.abi)
 export default class WaterfallClient extends BaseClient {
   private readonly _waterfallModuleFactory: WaterfallModuleFactoryType
   readonly eventTopics: { [key: string]: string[] }
+  readonly callData: WaterfallCallData
 
   constructor({
     chainId,
@@ -83,6 +85,8 @@ export default class WaterfallClient extends BaseClient {
       ],
       withdrawPullFunds: [waterfallModuleInterface.getEventTopic('Withdrawal')],
     }
+
+    this.callData = new WaterfallCallData(this)
   }
 
   // Write actions
@@ -496,5 +500,98 @@ export default class WaterfallClient extends BaseClient {
     }
 
     return waterfallModule
+  }
+}
+
+class WaterfallCallData {
+  private readonly _waterfallClient: WaterfallClient
+  private readonly _waterfallFactoryContractCallData: ContractCallData
+
+  constructor(waterfallClient: WaterfallClient) {
+    this._waterfallClient = waterfallClient
+    this._waterfallFactoryContractCallData = new ContractCallData(
+      WATERFALL_MODULE_FACTORY_ADDRESS,
+      WATERFALL_MODULE_FACTORY_ARTIFACT.abi,
+    )
+  }
+
+  async createWaterfallModule({
+    token,
+    tranches,
+    nonWaterfallRecipient = AddressZero,
+  }: CreateWaterfallConfig): Promise<CallData> {
+    validateAddress(token)
+    validateAddress(nonWaterfallRecipient)
+    validateTranches(tranches)
+    if (!this._waterfallClient._provider) throw new Error('Provider required')
+
+    const [recipients, trancheSizes] = await getTrancheRecipientsAndSizes(
+      this._waterfallClient._chainId,
+      token,
+      tranches,
+      this._waterfallClient._provider,
+    )
+
+    const callData =
+      this._waterfallFactoryContractCallData.createWaterfallModule(
+        token,
+        nonWaterfallRecipient,
+        recipients,
+        trancheSizes,
+      )
+    return callData
+  }
+
+  async waterfallFunds({
+    waterfallModuleId,
+    usePull = false,
+  }: WaterfallFundsConfig): Promise<CallData> {
+    validateAddress(waterfallModuleId)
+
+    const waterfallContractCallData =
+      this._getWaterfallContractCallData(waterfallModuleId)
+    const callData = usePull
+      ? waterfallContractCallData.waterfallFundsPull()
+      : waterfallContractCallData.waterfallFunds()
+    return callData
+  }
+
+  async recoverNonWaterfallFunds({
+    waterfallModuleId,
+    token,
+    recipient = AddressZero,
+  }: RecoverNonWaterfallFundsConfig): Promise<{
+    tx: ContractTransaction
+  }> {
+    validateAddress(waterfallModuleId)
+    validateAddress(token)
+    validateAddress(recipient)
+
+    const waterfallContractCallData =
+      this._getWaterfallContractCallData(waterfallModuleId)
+    const callData = waterfallContractCallData.recoverNonWaterfallFunds(
+      token,
+      recipient,
+    )
+    return callData
+  }
+
+  async withdrawPullFunds({
+    waterfallModuleId,
+    address,
+  }: WithdrawWaterfallPullFundsConfig): Promise<{
+    tx: ContractTransaction
+  }> {
+    validateAddress(waterfallModuleId)
+    validateAddress(address)
+
+    const waterfallContractCallData =
+      this._getWaterfallContractCallData(waterfallModuleId)
+    const callData = waterfallContractCallData.withdraw(address)
+    return callData
+  }
+
+  private _getWaterfallContractCallData(waterfallModule: string) {
+    return new ContractCallData(waterfallModule, WATERFALL_MODULE_ARTIFACT.abi)
   }
 }

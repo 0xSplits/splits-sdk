@@ -70,12 +70,13 @@ export const getBigNumberTokenValue = (
 export const getTransactionEvents = async (
   transaction: ContractTransaction,
   eventTopics: string[],
+  includeAll?: boolean,
 ): Promise<Event[]> => {
   const receipt = await transaction.wait()
   if (receipt.status === 1) {
-    const events = receipt.events?.filter((e) =>
-      eventTopics.includes(e.topics[0]),
-    )
+    const events = receipt.events?.filter((e) => {
+      return includeAll || eventTopics.includes(e.topics[0])
+    })
 
     return events ?? []
   }

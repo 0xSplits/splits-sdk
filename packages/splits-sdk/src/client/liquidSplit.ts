@@ -43,6 +43,7 @@ import {
 } from '../utils/validation'
 import type { LiquidSplitFactory as LiquidSplitFactoryType } from '../typechain/LiquidSplitFactory'
 import type { LS1155 as LS1155Type } from '../typechain/LS1155'
+import { CallData, ContractCallData } from '../utils/multicall'
 
 const liquidSplitFactoryInterface = new Interface(
   LIQUID_SPLIT_FACTORY_ARTIFACT.abi,
@@ -53,6 +54,7 @@ const splitMainInterface = new Interface(SPLIT_MAIN_ARTIFACT_POLYGON.abi)
 export default class LiquidSplitClient extends BaseClient {
   private readonly _liquidSplitFactory: LiquidSplitFactoryType
   readonly eventTopics: { [key: string]: string[] }
+  readonly callData: LiquidSplitCallData
 
   constructor({
     chainId,
@@ -91,6 +93,8 @@ export default class LiquidSplitClient extends BaseClient {
         liquidSplitInterface.getEventTopic('OwnershipTransferred'),
       ],
     }
+
+    this.callData = new LiquidSplitCallData(this)
   }
 
   // Write actions
@@ -429,5 +433,117 @@ export default class LiquidSplitClient extends BaseClient {
     }
 
     return liquidSplit
+  }
+}
+
+class LiquidSplitCallData {
+  private readonly _liquidSplitClient: LiquidSplitClient
+  private readonly _liquidSplitFactoryContractCallData: ContractCallData
+
+  constructor(liquidSplitClient: LiquidSplitClient) {
+    this._liquidSplitClient = liquidSplitClient
+    this._liquidSplitFactoryContractCallData = new ContractCallData(
+      LIQUID_SPLIT_FACTORY_ADDRESS,
+      LIQUID_SPLIT_FACTORY_ARTIFACT.abi,
+    )
+  }
+
+  async createLiquidSplit({
+    recipients,
+    distributorFeePercent,
+    owner = undefined,
+    createClone = false,
+  }: CreateLiquidSplitConfig): Promise<CallData> {
+    validateRecipients(recipients, LIQUID_SPLITS_MAX_PRECISION_DECIMALS)
+    validateDistributorFeePercent(distributorFeePercent)
+
+    let ownerAddress = owner
+    if (!ownerAddress) {
+      if (!this._liquidSplitClient._signer)
+        throw new Error(
+          'Must pass in an owner or have include a signer in the client',
+        )
+      ownerAddress = await this._liquidSplitClient._signer.getAddress()
+    }
+    validateAddress(ownerAddress)
+
+    const [accounts, percentAllocations] =
+      getRecipientSortedAddressesAndAllocations(recipients)
+    const nftAmounts = getNftCountsFromPercents(percentAllocations)
+    const distributorFee = getBigNumberFromPercent(distributorFeePercent)
+
+    const callData = createClone
+      ? this._liquidSplitFactoryContractCallData.createLiquidSplitClone(
+          accounts,
+          nftAmounts,
+          distributorFee,
+          ownerAddress,
+        )
+      : this._liquidSplitFactoryContractCallData.createLiquidSplit(
+          accounts,
+          nftAmounts,
+          distributorFee,
+          ownerAddress,
+        )
+    return callData
+  }
+
+  async distributeToken({
+    liquidSplitId,
+    token,
+    distributorAddress,
+  }: DistributeLiquidSplitTokenConfig): Promise<CallData> {
+    validateAddress(liquidSplitId)
+    validateAddress(token)
+
+    let distributorPayoutAddress = distributorAddress
+    if (!distributorPayoutAddress) {
+      if (!this._liquidSplitClient._signer)
+        throw new Error(
+          'Must pass in a distributor address or include a signer in the client',
+        )
+      distributorPayoutAddress =
+        await this._liquidSplitClient._signer.getAddress()
+    }
+    validateAddress(distributorPayoutAddress)
+
+    // TO DO: handle bad split id/no metadata found
+    const { holders } = await this._liquidSplitClient.getLiquidSplitMetadata({
+      liquidSplitId,
+    })
+    const accounts = holders
+      .map((h) => h.address)
+      .sort((a, b) => {
+        if (a.toLowerCase() > b.toLowerCase()) return 1
+        return -1
+      })
+
+    const liquidSplitContractCallData =
+      this._getLiquidSplitContractCallData(liquidSplitId)
+    const callData = liquidSplitContractCallData.distributeFunds(
+      token,
+      accounts,
+      distributorAddress,
+    )
+    return callData
+  }
+
+  async transferOwnership({
+    liquidSplitId,
+    newOwner,
+  }: TransferLiquidSplitOwnershipConfig): Promise<{
+    tx: ContractTransaction
+  }> {
+    validateAddress(liquidSplitId)
+    validateAddress(newOwner)
+
+    const liquidSplitContractCallData =
+      this._getLiquidSplitContractCallData(liquidSplitId)
+    const callData = liquidSplitContractCallData.transferOwnership(newOwner)
+    return callData
+  }
+
+  private _getLiquidSplitContractCallData(liquidSplitId: string) {
+    return new ContractCallData(liquidSplitId, LIQUID_SPLIT_ARTIFACT.abi)
   }
 }

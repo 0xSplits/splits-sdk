@@ -1,7 +1,9 @@
 import { Provider } from '@ethersproject/abstract-provider'
 import { Signer } from '@ethersproject/abstract-signer'
+import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
 import { GraphQLClient, Variables } from 'graphql-request'
 
+import { MULTICALL_3_ADDRESS } from '../constants'
 import {
   InvalidConfigError,
   MissingProviderError,
@@ -10,17 +12,20 @@ import {
 } from '../errors'
 import { getGraphqlClient } from '../subgraph'
 import type { SplitsClientConfig } from '../types'
+import { getTransactionEvents } from '../utils'
+import { abiEncode, CallData, multicallInterface } from '../utils/multicall'
 
 const MISSING_SIGNER = ''
 
 export default class BaseClient {
-  protected readonly _chainId: number
+  readonly _chainId: number
   protected readonly _ensProvider: Provider | undefined
   // TODO: something better we can do here to handle typescript check for missing signer?
-  protected readonly _signer: Signer | typeof MISSING_SIGNER
-  private readonly _provider: Provider | undefined
+  readonly _signer: Signer | typeof MISSING_SIGNER
+  readonly _provider: Provider | undefined
   private readonly _graphqlClient: GraphQLClient | undefined
   protected readonly _includeEnsNames: boolean
+  private readonly _multicallContract: Contract
 
   constructor({
     chainId,
@@ -40,6 +45,12 @@ export default class BaseClient {
     this._signer = signer ?? MISSING_SIGNER
     this._graphqlClient = getGraphqlClient(chainId)
     this._includeEnsNames = includeEnsNames
+
+    this._multicallContract = new Contract(
+      MULTICALL_3_ADDRESS,
+      multicallInterface,
+      signer,
+    )
   }
 
   protected async _makeGqlRequest<ResponseType>(
@@ -68,5 +79,35 @@ export default class BaseClient {
       throw new MissingSignerError(
         'Signer required to perform this action, please update your call to the constructor',
       )
+  }
+
+  async submitMulticallTransaction({ calls }: { calls: CallData[] }): Promise<{
+    tx: ContractTransaction
+  }> {
+    const callRequests = calls.map((call) => {
+      const callData = abiEncode(call.name, call.inputs, call.params)
+      return {
+        target: call.contract.address,
+        callData,
+      }
+    })
+    const multicallContract = new Contract(
+      MULTICALL_3_ADDRESS,
+      multicallInterface,
+      this._signer || undefined,
+    )
+    const multicallTx = await multicallContract.aggregate(callRequests)
+
+    return { tx: multicallTx }
+  }
+
+  async multicall({ calls }: { calls: CallData[] }): Promise<{
+    events: Event[]
+  }> {
+    const { tx: multicallTx } = await this.submitMulticallTransaction({
+      calls,
+    })
+    const events = await getTransactionEvents(multicallTx, [], true)
+    return { events }
   }
 }
