@@ -57,6 +57,7 @@ import type {
   Split,
   TokenBalances,
   Account,
+  CallData,
 } from '../types'
 import {
   getRecipientSortedAddressesAndAllocations,
@@ -65,7 +66,7 @@ import {
   addEnsNames,
   getBigNumberFromPercent,
 } from '../utils'
-import { CallData, ContractCallData } from '../utils/multicall'
+import { ContractCallData } from '../utils/multicall'
 import {
   validateRecipients,
   validateDistributorFeePercent,

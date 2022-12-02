@@ -22,6 +22,7 @@ import {
 } from '../subgraph'
 import type { GqlWaterfallModule } from '../subgraph/types'
 import type {
+  CallData,
   CreateWaterfallConfig,
   RecoverNonWaterfallFundsConfig,
   SplitsClientConfig,
@@ -38,7 +39,7 @@ import {
 import { validateAddress, validateTranches } from '../utils/validation'
 import type { WaterfallModuleFactory as WaterfallModuleFactoryType } from '../typechain/WaterfallModuleFactory'
 import type { WaterfallModule as WaterfallModuleType } from '../typechain/WaterfallModule'
-import { CallData, ContractCallData } from '../utils/multicall'
+import { ContractCallData } from '../utils/multicall'
 
 const waterfallModuleFactoryInterface = new Interface(
   WATERFALL_MODULE_FACTORY_ARTIFACT.abi,

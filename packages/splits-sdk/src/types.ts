@@ -1,3 +1,4 @@
+import { JsonFragmentType } from '@ethersproject/abi'
 import type { Provider } from '@ethersproject/abstract-provider'
 import type { Signer } from '@ethersproject/abstract-signer'
 import { BigNumber } from '@ethersproject/bignumber'
@@ -164,3 +165,14 @@ export type LiquidSplit = {
 }
 
 export type Account = Split | WaterfallModule | LiquidSplit
+
+export type CallData = {
+  contract: {
+    address: string
+  }
+  name: string
+  inputs: readonly JsonFragmentType[]
+  outputs: readonly JsonFragmentType[]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  params: any[]
+}

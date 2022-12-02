@@ -41,4 +41,5 @@ export type {
   WaterfallTrancheInput,
   Account,
   LiquidSplit,
+  CallData,
 } from './types'

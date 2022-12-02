@@ -28,6 +28,7 @@ import type {
   CreateLiquidSplitConfig,
   DistributeLiquidSplitTokenConfig,
   TransferLiquidSplitOwnershipConfig,
+  CallData,
 } from '../types'
 import {
   getBigNumberFromPercent,
@@ -43,7 +44,7 @@ import {
 } from '../utils/validation'
 import type { LiquidSplitFactory as LiquidSplitFactoryType } from '../typechain/LiquidSplitFactory'
 import type { LS1155 as LS1155Type } from '../typechain/LS1155'
-import { CallData, ContractCallData } from '../utils/multicall'
+import { ContractCallData } from '../utils/multicall'
 
 const liquidSplitFactoryInterface = new Interface(
   LIQUID_SPLIT_FACTORY_ARTIFACT.abi,

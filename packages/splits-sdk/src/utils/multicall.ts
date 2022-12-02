@@ -1,5 +1,6 @@
 import { Interface, JsonFragment, JsonFragmentType } from '@ethersproject/abi'
 import { Coder } from 'abi-coder'
+import { CallData } from '../types'
 
 const MULTICALL_ABI = [
   // https://github.com/mds1/multicall
@@ -24,17 +25,6 @@ const MULTICALL_ABI = [
 export const multicallInterface = new Interface(MULTICALL_ABI)
 
 // Most of this came from https://github.com/Destiner/ethcall
-export type CallData = {
-  contract: {
-    address: string
-  }
-  name: string
-  inputs: readonly JsonFragmentType[]
-  outputs: readonly JsonFragmentType[]
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  params: any[]
-}
-
 export class ContractCallData {
   address: string
   abi: JsonFragment[]

@@ -11,9 +11,9 @@ import {
   UnsupportedSubgraphChainIdError,
 } from '../errors'
 import { getGraphqlClient } from '../subgraph'
-import type { SplitsClientConfig } from '../types'
+import type { CallData, SplitsClientConfig } from '../types'
 import { getTransactionEvents } from '../utils'
-import { abiEncode, CallData, multicallInterface } from '../utils/multicall'
+import { abiEncode, multicallInterface } from '../utils/multicall'
 
 const MISSING_SIGNER = ''
 
