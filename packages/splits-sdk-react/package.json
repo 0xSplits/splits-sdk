@@ -32,7 +32,7 @@
     "@0xsplits/splits-sdk": "^2.3.1"
   },
   "peerDependencies": {
-    "react": "17.x.x"
+    "react": "17.x.x || 18.x.x"
   },
   "devDependencies": {
     "@types/react": "^18.0.24"
