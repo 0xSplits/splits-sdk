@@ -84,6 +84,9 @@ export default class BaseClient {
   async submitMulticallTransaction({ calls }: { calls: CallData[] }): Promise<{
     tx: ContractTransaction
   }> {
+    this._requireSigner()
+    if (!this._signer) throw new Error()
+
     const callRequests = calls.map((call) => {
       const callData = abiEncode(call.name, call.inputs, call.params)
       return {
@@ -94,7 +97,7 @@ export default class BaseClient {
     const multicallContract = new Contract(
       MULTICALL_3_ADDRESS,
       multicallInterface,
-      this._signer || undefined,
+      this._signer,
     )
     const multicallTx = await multicallContract.aggregate(callRequests)
 

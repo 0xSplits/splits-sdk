@@ -590,6 +590,53 @@ export class SplitsClient extends BaseClient {
     throw new TransactionFailedError()
   }
 
+  async batchDistributeAndWithdraw({
+    splitId,
+    tokens,
+    recipientAddresses,
+    distributorAddress,
+  }: {
+    splitId: string
+    tokens: string[]
+    recipientAddresses: string[]
+    distributorAddress?: string
+  }): Promise<{
+    events: Event[]
+  }> {
+    validateAddress(splitId)
+    tokens.map((token) => validateAddress(token))
+    recipientAddresses.map((address) => validateAddress(address))
+
+    this._requireSigner()
+    // TODO: how to remove this, needed for typescript check right now
+    if (!this._signer) throw new Error()
+
+    const distributorPayoutAddress = distributorAddress
+      ? distributorAddress
+      : await this._signer.getAddress()
+    validateAddress(distributorPayoutAddress)
+
+    const distributeCalls = await Promise.all(
+      tokens.map(async (token) => {
+        return await this.callData.distributeToken({
+          splitId,
+          token,
+          distributorAddress: distributorPayoutAddress,
+        })
+      }),
+    )
+    const withdrawCalls = await Promise.all(
+      recipientAddresses.map(async (address) => {
+        return await this.callData.withdrawFunds({ address, tokens })
+      }),
+    )
+
+    const multicallData = [...distributeCalls, ...withdrawCalls]
+    const { events } = await this.multicall({ calls: multicallData })
+
+    return { events }
+  }
+
   // Read actions
   async getSplitBalance({
     splitId,
