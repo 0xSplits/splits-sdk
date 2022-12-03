@@ -1,13 +1,6 @@
-import { useCallback, useContext, useEffect, useState } from 'react'
+import { useCallback, useContext, useState } from 'react'
 import type { Event } from '@ethersproject/contracts'
-import {
-  getTransactionEvents,
-  CallData,
-  CreateLiquidSplitConfig,
-  LiquidSplit,
-  DistributeLiquidSplitTokenConfig,
-  TransferLiquidSplitOwnershipConfig,
-} from '@0xsplits/splits-sdk'
+import { getTransactionEvents, CallData } from '@0xsplits/splits-sdk'
 
 import { SplitsContext } from '../context'
 import { ContractExecutionStatus, RequestError } from '../types'
@@ -34,16 +27,14 @@ export const useMulticall = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } = await context.splitsClient.submitMulticallTransaction(argsDict)
+        const { tx } = await context.splitsClient.submitMulticallTransaction(
+          argsDict,
+        )
 
         setStatus('txInProgress')
         setTxHash(tx.hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          [],
-          true,
-        )
+        const events = await getTransactionEvents(tx, [], true)
 
         setStatus('complete')
 
