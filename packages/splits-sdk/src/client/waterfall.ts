@@ -87,7 +87,13 @@ export default class WaterfallClient extends BaseClient {
       withdrawPullFunds: [waterfallModuleInterface.getEventTopic('Withdrawal')],
     }
 
-    this.callData = new WaterfallCallData(this)
+    this.callData = new WaterfallCallData({
+      chainId,
+      provider,
+      ensProvider,
+      signer,
+      includeEnsNames,
+    })
   }
 
   // Write actions
@@ -504,12 +510,24 @@ export default class WaterfallClient extends BaseClient {
   }
 }
 
-class WaterfallCallData {
-  private readonly _waterfallClient: WaterfallClient
+class WaterfallCallData extends BaseClient {
   private readonly _waterfallFactoryContractCallData: ContractCallData
 
-  constructor(waterfallClient: WaterfallClient) {
-    this._waterfallClient = waterfallClient
+  constructor({
+    chainId,
+    provider,
+    ensProvider,
+    signer,
+    includeEnsNames = false,
+  }: SplitsClientConfig) {
+    super({
+      chainId,
+      provider,
+      ensProvider,
+      signer,
+      includeEnsNames,
+    })
+
     this._waterfallFactoryContractCallData = new ContractCallData(
       WATERFALL_MODULE_FACTORY_ADDRESS,
       WATERFALL_MODULE_FACTORY_ARTIFACT.abi,
@@ -524,13 +542,13 @@ class WaterfallCallData {
     validateAddress(token)
     validateAddress(nonWaterfallRecipient)
     validateTranches(tranches)
-    if (!this._waterfallClient._provider) throw new Error('Provider required')
+    if (!this._provider) throw new Error('Provider required')
 
     const [recipients, trancheSizes] = await getTrancheRecipientsAndSizes(
-      this._waterfallClient._chainId,
+      this._chainId,
       token,
       tranches,
-      this._waterfallClient._provider,
+      this._provider,
     )
 
     const callData =

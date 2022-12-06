@@ -58,6 +58,7 @@ import type {
   TokenBalances,
   Account,
   CallData,
+  MakeGqlRequest,
 } from '../types'
 import {
   getRecipientSortedAddressesAndAllocations,
@@ -163,7 +164,13 @@ export class SplitsClient extends BaseClient {
       makeSplitImmutable: [splitMainInterface.getEventTopic('ControlTransfer')],
     }
 
-    this.callData = new SplitsCallData(this)
+    this.callData = new SplitsCallData({
+      chainId,
+      provider,
+      ensProvider,
+      signer,
+      includeEnsNames,
+    })
   }
 
   /*
@@ -717,21 +724,12 @@ export class SplitsClient extends BaseClient {
 
   // Graphql read actions
   async getSplitMetadata({ splitId }: { splitId: string }): Promise<Split> {
-    validateAddress(splitId)
+    const gqlSplit = await getSplitMetadata({
+      splitId,
+      makeGqlRequest: this._makeGqlRequest,
+    })
 
-    const response = await this._makeGqlRequest<{ split: GqlSplit }>(
-      SPLIT_QUERY,
-      {
-        splitId: splitId.toLowerCase(),
-      },
-    )
-
-    if (!response.split)
-      throw new AccountNotFoundError(
-        `No split found at address ${splitId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
-      )
-
-    return await this._formatSplit(response.split)
+    return await this._formatSplit(gqlSplit)
   }
 
   async getRelatedSplits({ address }: { address: string }): Promise<{
@@ -952,13 +950,24 @@ export class SplitsClient extends BaseClient {
   }
 }
 
-class SplitsCallData {
-  private readonly _splitsClient: SplitsClient
+class SplitsCallData extends BaseClient {
   private readonly _splitMainContractCallData: ContractCallData
 
-  constructor(splitsClient: SplitsClient) {
-    this._splitsClient = splitsClient
-    if (ETHEREUM_CHAIN_IDS.includes(splitsClient._chainId)) {
+  constructor({
+    chainId,
+    provider,
+    signer,
+    includeEnsNames = false,
+    ensProvider,
+  }: SplitsClientConfig) {
+    super({
+      chainId,
+      provider,
+      signer,
+      includeEnsNames,
+      ensProvider,
+    })
+    if (ETHEREUM_CHAIN_IDS.includes(chainId)) {
       this._splitMainContractCallData = new ContractCallData(
         SPLIT_MAIN_ADDRESS,
         SPLIT_MAIN_ARTIFACT_ETHEREUM.abi,
@@ -1024,18 +1033,20 @@ class SplitsCallData {
 
     let distributorPayoutAddress = distributorAddress
     if (!distributorPayoutAddress) {
-      if (!this._splitsClient._signer)
+      if (!this._signer)
         throw new Error(
           'Must pass in a distributor address or include a signer in the client',
         )
-      distributorPayoutAddress = await this._splitsClient._signer.getAddress()
+      distributorPayoutAddress = await this._signer.getAddress()
     }
     validateAddress(distributorPayoutAddress)
 
-    const { recipients, distributorFeePercent } =
-      await this._splitsClient.getSplitMetadata({
-        splitId,
-      })
+    const gqlSplit = await getSplitMetadata({
+      splitId,
+      makeGqlRequest: this._makeGqlRequest,
+    })
+    const split = protectedFormatSplit(gqlSplit)
+    const { recipients, distributorFeePercent } = split
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
     const distributorFee = getBigNumberFromPercent(distributorFeePercent)
@@ -1074,11 +1085,11 @@ class SplitsCallData {
 
     let distributorPayoutAddress = distributorAddress
     if (!distributorPayoutAddress) {
-      if (!this._splitsClient._signer)
+      if (!this._signer)
         throw new Error(
           'Must pass in a distributor address or include a signer in the client',
         )
-      distributorPayoutAddress = await this._splitsClient._signer.getAddress()
+      distributorPayoutAddress = await this._signer.getAddress()
     }
     validateAddress(distributorPayoutAddress)
 
@@ -1162,4 +1173,25 @@ class SplitsCallData {
     const callData = this._splitMainContractCallData.makeSplitImmutable(splitId)
     return callData
   }
+}
+
+const getSplitMetadata = async ({
+  splitId,
+  makeGqlRequest,
+}: {
+  splitId: string
+  makeGqlRequest: MakeGqlRequest
+}): Promise<GqlSplit> => {
+  validateAddress(splitId)
+
+  const response = await makeGqlRequest<{ split: GqlSplit }>(SPLIT_QUERY, {
+    splitId: splitId.toLowerCase(),
+  })
+
+  if (!response.split)
+    throw new AccountNotFoundError(
+      `No split found at address ${splitId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
+    )
+
+  return response.split
 }

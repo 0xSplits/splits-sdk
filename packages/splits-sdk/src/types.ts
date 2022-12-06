@@ -2,6 +2,7 @@ import { JsonFragmentType } from '@ethersproject/abi'
 import type { Provider } from '@ethersproject/abstract-provider'
 import type { Signer } from '@ethersproject/abstract-signer'
 import { BigNumber } from '@ethersproject/bignumber'
+import { Variables } from 'graphql-request'
 
 import type { SplitMain as SplitMainEthereumType } from './typechain/SplitMain/ethereum'
 import type { SplitMain as SplitMainPolygonType } from './typechain/SplitMain/polygon'
@@ -176,3 +177,8 @@ export type CallData = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   params: any[]
 }
+
+export type MakeGqlRequest = <ResponseType>(
+  query: string,
+  variables?: Variables,
+) => Promise<ResponseType>
