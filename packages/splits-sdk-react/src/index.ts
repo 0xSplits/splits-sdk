@@ -1,6 +1,6 @@
+export { SplitsClient } from '@0xsplits/splits-sdk'
 export type {
   SplitsClientConfig,
-  SplitsClient,
   SplitRecipient,
   Split,
   TokenBalances,
