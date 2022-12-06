@@ -28,6 +28,7 @@ export {
   useCreateLiquidSplit,
   useDistributeLiquidSplitToken,
   useTransferLiquidSplitOwnership,
+  useMulticall,
   useSplitsClient,
   useSplitMetadata,
   useWaterfallMetadata,
