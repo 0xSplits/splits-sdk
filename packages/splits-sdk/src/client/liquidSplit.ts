@@ -532,9 +532,7 @@ class LiquidSplitCallData {
   async transferOwnership({
     liquidSplitId,
     newOwner,
-  }: TransferLiquidSplitOwnershipConfig): Promise<{
-    tx: ContractTransaction
-  }> {
+  }: TransferLiquidSplitOwnershipConfig): Promise<CallData> {
     validateAddress(liquidSplitId)
     validateAddress(newOwner)
 

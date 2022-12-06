@@ -561,9 +561,7 @@ class WaterfallCallData {
     waterfallModuleId,
     token,
     recipient = AddressZero,
-  }: RecoverNonWaterfallFundsConfig): Promise<{
-    tx: ContractTransaction
-  }> {
+  }: RecoverNonWaterfallFundsConfig): Promise<CallData> {
     validateAddress(waterfallModuleId)
     validateAddress(token)
     validateAddress(recipient)
@@ -580,9 +578,7 @@ class WaterfallCallData {
   async withdrawPullFunds({
     waterfallModuleId,
     address,
-  }: WithdrawWaterfallPullFundsConfig): Promise<{
-    tx: ContractTransaction
-  }> {
+  }: WithdrawWaterfallPullFundsConfig): Promise<CallData> {
     validateAddress(waterfallModuleId)
     validateAddress(address)
 
