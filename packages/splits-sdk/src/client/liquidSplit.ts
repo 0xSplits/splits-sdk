@@ -29,7 +29,6 @@ import type {
   DistributeLiquidSplitTokenConfig,
   TransferLiquidSplitOwnershipConfig,
   CallData,
-  MakeGqlRequest,
 } from '../types'
 import {
   getBigNumberFromPercent,
@@ -386,12 +385,20 @@ export default class LiquidSplitClient extends BaseClient {
   }: {
     liquidSplitId: string
   }): Promise<LiquidSplit> {
-    const gqlLiquidSplit = await getLiquidSplitMetadata({
-      liquidSplitId,
-      makeGqlRequest: this._makeGqlRequest,
+    validateAddress(liquidSplitId)
+
+    const response = await this._makeGqlRequest<{
+      liquidSplit: GqlLiquidSplit
+    }>(LIQUID_SPLIT_QUERY, {
+      liquidSplitId: liquidSplitId.toLowerCase(),
     })
 
-    return await this.formatLiquidSplit(gqlLiquidSplit)
+    if (!response.liquidSplit)
+      throw new AccountNotFoundError(
+        `No liquid split found at address ${liquidSplitId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
+      )
+
+    return await this.formatLiquidSplit(response.liquidSplit)
   }
 
   // Helper functions
@@ -518,11 +525,9 @@ class LiquidSplitCallData extends BaseClient {
     validateAddress(distributorPayoutAddress)
 
     // TO DO: handle bad split id/no metadata found
-    const gqlLiquidSplit = await getLiquidSplitMetadata({
+    const liquidSplit = await this._getLiquidSplitMetadata({
       liquidSplitId,
-      makeGqlRequest: this._makeGqlRequest,
     })
-    const liquidSplit = protectedFormatLiquidSplit(gqlLiquidSplit)
     const { holders } = liquidSplit
 
     const accounts = holders
@@ -558,27 +563,25 @@ class LiquidSplitCallData extends BaseClient {
   private _getLiquidSplitContractCallData(liquidSplitId: string) {
     return new ContractCallData(liquidSplitId, LIQUID_SPLIT_ARTIFACT.abi)
   }
-}
 
-const getLiquidSplitMetadata = async ({
-  liquidSplitId,
-  makeGqlRequest,
-}: {
-  liquidSplitId: string
-  makeGqlRequest: MakeGqlRequest
-}): Promise<GqlLiquidSplit> => {
-  validateAddress(liquidSplitId)
+  private async _getLiquidSplitMetadata({
+    liquidSplitId,
+  }: {
+    liquidSplitId: string
+  }): Promise<LiquidSplit> {
+    validateAddress(liquidSplitId)
 
-  const response = await makeGqlRequest<{
-    liquidSplit: GqlLiquidSplit
-  }>(LIQUID_SPLIT_QUERY, {
-    liquidSplitId: liquidSplitId.toLowerCase(),
-  })
+    const response = await this._makeGqlRequest<{
+      liquidSplit: GqlLiquidSplit
+    }>(LIQUID_SPLIT_QUERY, {
+      liquidSplitId: liquidSplitId.toLowerCase(),
+    })
 
-  if (!response.liquidSplit)
-    throw new AccountNotFoundError(
-      `No liquid split found at address ${liquidSplitId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
-    )
+    if (!response.liquidSplit)
+      throw new AccountNotFoundError(
+        `No liquid split found at address ${liquidSplitId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
+      )
 
-  return response.liquidSplit
+    return protectedFormatLiquidSplit(response.liquidSplit)
+  }
 }

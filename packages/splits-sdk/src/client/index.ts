@@ -58,7 +58,6 @@ import type {
   TokenBalances,
   Account,
   CallData,
-  MakeGqlRequest,
 } from '../types'
 import {
   getRecipientSortedAddressesAndAllocations,
@@ -724,12 +723,21 @@ export class SplitsClient extends BaseClient {
 
   // Graphql read actions
   async getSplitMetadata({ splitId }: { splitId: string }): Promise<Split> {
-    const gqlSplit = await getSplitMetadata({
-      splitId,
-      makeGqlRequest: this._makeGqlRequest,
-    })
+    validateAddress(splitId)
 
-    return await this._formatSplit(gqlSplit)
+    const response = await this._makeGqlRequest<{ split: GqlSplit }>(
+      SPLIT_QUERY,
+      {
+        splitId: splitId.toLowerCase(),
+      },
+    )
+
+    if (!response.split)
+      throw new AccountNotFoundError(
+        `No split found at address ${splitId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
+      )
+
+    return await this._formatSplit(response.split)
   }
 
   async getRelatedSplits({ address }: { address: string }): Promise<{
@@ -1041,11 +1049,9 @@ class SplitsCallData extends BaseClient {
     }
     validateAddress(distributorPayoutAddress)
 
-    const gqlSplit = await getSplitMetadata({
+    const split = await this._getSplitMetadata({
       splitId,
-      makeGqlRequest: this._makeGqlRequest,
     })
-    const split = protectedFormatSplit(gqlSplit)
     const { recipients, distributorFeePercent } = split
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
@@ -1173,25 +1179,26 @@ class SplitsCallData extends BaseClient {
     const callData = this._splitMainContractCallData.makeSplitImmutable(splitId)
     return callData
   }
-}
 
-const getSplitMetadata = async ({
-  splitId,
-  makeGqlRequest,
-}: {
-  splitId: string
-  makeGqlRequest: MakeGqlRequest
-}): Promise<GqlSplit> => {
-  validateAddress(splitId)
+  private async _getSplitMetadata({
+    splitId,
+  }: {
+    splitId: string
+  }): Promise<Split> {
+    validateAddress(splitId)
 
-  const response = await makeGqlRequest<{ split: GqlSplit }>(SPLIT_QUERY, {
-    splitId: splitId.toLowerCase(),
-  })
-
-  if (!response.split)
-    throw new AccountNotFoundError(
-      `No split found at address ${splitId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
+    const response = await this._makeGqlRequest<{ split: GqlSplit }>(
+      SPLIT_QUERY,
+      {
+        splitId: splitId.toLowerCase(),
+      },
     )
 
-  return response.split
+    if (!response.split)
+      throw new AccountNotFoundError(
+        `No split found at address ${splitId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
+      )
+
+    return protectedFormatSplit(response.split)
+  }
 }
