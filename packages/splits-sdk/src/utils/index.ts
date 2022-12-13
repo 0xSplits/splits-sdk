@@ -108,7 +108,7 @@ export const fetchERC20TransferredTokens = async (
   return Array.from(tokens)
 }
 
-export const fetchEnsNames = async (
+const fetchEnsNames = async (
   provider: Provider,
   addresses: string[],
 ): Promise<string[]> => {
@@ -129,7 +129,7 @@ export const fetchEnsNames = async (
 
 export const addEnsNames = async (
   provider: Provider,
-  recipients: SplitRecipient[],
+  recipients: { address: string; ensName?: string }[],
 ): Promise<void> => {
   const addresses = recipients.map((recipient) => recipient.address)
   const allNames = await fetchEnsNames(provider, addresses)

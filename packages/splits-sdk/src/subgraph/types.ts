@@ -65,6 +65,24 @@ export type GqlWaterfallTranche = {
   recipient: GqlAccount
 }
 
+export type GqlVestingModule = {
+  __typename: 'VestingModule'
+  id: Scalars['ID']
+  vestingPeriod: Scalars['String']
+  beneficiary: GqlAccount
+  streams?: GqlVestingStream[]
+}
+
+export type GqlVestingStream = {
+  id: Scalars['ID']
+  streamId: Scalars['String']
+  token: GqlToken
+  startTime: Scalars['String']
+  totalAmount: Scalars['Int']
+  claimedAmount: Scalars['Int']
+  account: GqlVestingModule
+}
+
 export type GqlLiquidSplit = {
   __typename: 'LiquidSplit'
   id: Scalars['ID']

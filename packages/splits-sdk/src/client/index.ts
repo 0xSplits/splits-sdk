@@ -18,6 +18,7 @@ import {
   SPLITS_MAX_PRECISION_DECIMALS,
   SPLITS_SUPPORTED_CHAIN_IDS,
   SPLIT_MAIN_ADDRESS,
+  VESTING_CHAIN_IDS,
   WATERFALL_CHAIN_IDS,
 } from '../constants'
 import {
@@ -72,6 +73,7 @@ import {
   validateDistributorFeePercent,
   validateAddress,
 } from '../utils/validation'
+import VestingClient from './vesting'
 
 const splitMainInterfaceEthereum = new Interface(
   SPLIT_MAIN_ARTIFACT_ETHEREUM.abi,
@@ -83,6 +85,7 @@ export class SplitsClient extends BaseClient {
   readonly eventTopics: { [key: string]: string[] }
   readonly waterfall: WaterfallClient | undefined
   readonly liquidSplits: LiquidSplitClient | undefined
+  readonly vesting: VestingClient | undefined
   readonly callData: SplitsCallData
 
   constructor({
@@ -130,6 +133,15 @@ export class SplitsClient extends BaseClient {
     }
     if (LIQUID_SPLIT_CHAIN_IDS.includes(chainId)) {
       this.liquidSplits = new LiquidSplitClient({
+        chainId,
+        provider,
+        ensProvider,
+        signer,
+        includeEnsNames,
+      })
+    }
+    if (VESTING_CHAIN_IDS.includes(chainId)) {
+      this.vesting = new VestingClient({
         chainId,
         provider,
         ensProvider,

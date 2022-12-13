@@ -9,6 +9,8 @@ import type {
   Split,
   SplitRecipient,
   TokenBalances,
+  VestingModule,
+  VestingStream,
   WaterfallModule,
   WaterfallTranche,
 } from '../types'
@@ -17,6 +19,8 @@ import {
   GqlLiquidSplit,
   GqlSplit,
   GqlTokenBalance,
+  GqlVestingModule,
+  GqlVestingStream,
   GqlWaterfallModule,
   GqlWaterfallTranche,
 } from './types'
@@ -144,6 +148,42 @@ const FULL_WATERFALL_MODULE_FIELDS_FRAGMENT = gql`
   ${WATERFALL_MODULE_FIELDS_FRAGMENT}
 `
 
+const VESTING_STREAM_FIELDS_FRAGMENT = gql`
+  fragment VestingStreamFieldsFragment on VestingStream {
+    token {
+      id
+    }
+    streamId
+    startTime
+    totalAmount
+    claimedAmount
+  }
+`
+
+const VESTING_MODULE_FIELDS_FRAGMENT = gql`
+  fragment VestingModuleFieldsFragment on VestingModule {
+    beneficiary {
+      id
+    }
+    vestingPeriod
+    streams(first: 1000) {
+      ...VestingStreamFieldsFragment
+    }
+  }
+
+  ${VESTING_STREAM_FIELDS_FRAGMENT}
+`
+
+const FULL_VESTING_MODULE_FIELDS_FRAGMENT = gql`
+  fragment FullVestingModuleFieldsFragment on VestingModule {
+    ...AccountFieldsFragment
+    ...VestingModuleFieldsFragment
+  }
+
+  ${ACCOUNT_FIELDS_FRAGMENT}
+  ${VESTING_MODULE_FIELDS_FRAGMENT}
+`
+
 const LIQUID_SPLIT_HOLDERS_FRAGMENT = gql`
   fragment LiquidSplitHoldersFragment on Holder {
     account {
@@ -250,6 +290,45 @@ const formatWaterfallModuleTranche = (
   }
 }
 
+// Should only be called by formatVestingModule on VestingClient
+export const protectedFormatVestingModule = (
+  gqlVestingModule: GqlVestingModule,
+  tokenData: { [token: string]: { symbol: string; decimals: number } },
+): VestingModule => {
+  return {
+    type: 'VestingModule',
+    id: getAddress(gqlVestingModule.id),
+    beneficiary: {
+      address: getAddress(gqlVestingModule.beneficiary.id),
+    },
+    vestingPeriod: parseInt(gqlVestingModule.vestingPeriod),
+    ...(gqlVestingModule.streams && {
+      streams: gqlVestingModule.streams.map((gqlVestingStream) =>
+        formatVestingModuleStream(gqlVestingStream, tokenData),
+      ),
+    }),
+  }
+}
+
+const formatVestingModuleStream = (
+  gqlVestingStream: GqlVestingStream,
+  tokenData: { [token: string]: { symbol: string; decimals: number } },
+): VestingStream => {
+  const tokenDecimals = tokenData[gqlVestingStream.token.id].decimals
+
+  return {
+    streamId: parseInt(gqlVestingStream.streamId),
+    startTime: parseInt(gqlVestingStream.startTime),
+    totalAmount: gqlVestingStream.totalAmount / Math.pow(10, tokenDecimals),
+    claimedAmount: gqlVestingStream.claimedAmount / Math.pow(10, tokenDecimals),
+    token: {
+      address: getAddress(gqlVestingStream.token.id),
+      symbol: tokenData[gqlVestingStream.token.id].symbol,
+      decimals: tokenData[gqlVestingStream.token.id].decimals,
+    },
+  }
+}
+
 // Should only be called by formatLiquidSplit on LiquidSplitClient
 export const protectedFormatLiquidSplit = (
   gqlLiquidSplit: GqlLiquidSplit,
@@ -300,6 +379,16 @@ export const WATERFALL_MODULE_QUERY = gql`
   }
 
   ${FULL_WATERFALL_MODULE_FIELDS_FRAGMENT}
+`
+
+export const VESTING_MODULE_QUERY = gql`
+  query vestingModule($vestingModuleId: ID!) {
+    vestingModule(id: $vestingModuleId) {
+      ...FullVestingModuleFieldsFragment
+    }
+  }
+
+  ${FULL_VESTING_MODULE_FIELDS_FRAGMENT}
 `
 
 export const LIQUID_SPLIT_QUERY = gql`

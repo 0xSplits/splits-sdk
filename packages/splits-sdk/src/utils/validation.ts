@@ -101,3 +101,10 @@ export const validateTranches = (tranches: WaterfallTrancheInput[]): void => {
     }
   })
 }
+
+export const validateVestingPeriod = (vestingPeriod: number): void => {
+  if (vestingPeriod <= 0)
+    throw new InvalidArgumentError(
+      'Invalid vesting period, must be greater than 0',
+    )
+}

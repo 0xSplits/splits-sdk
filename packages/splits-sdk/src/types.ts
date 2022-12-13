@@ -137,6 +137,44 @@ export type WaterfallModule = {
   tranches: WaterfallTranche[]
 }
 
+export type CreateVestingConfig = {
+  beneficiary: string
+  vestingPeriodSeconds: number
+}
+
+export type StartVestConfig = {
+  vestingModuleId: string
+  tokens: string[]
+}
+
+export type ReleaseVestedFundsConfig = {
+  vestingModuleId: string
+  streamIds: string[]
+}
+
+export type VestingStream = {
+  streamId: number
+  startTime: number
+  totalAmount: number
+  claimedAmount: number
+  token: {
+    address: string
+    symbol: string
+    decimals: number
+  }
+}
+
+export type VestingModule = {
+  type: 'VestingModule'
+  id: string
+  beneficiary: {
+    address: string
+    ensName?: string
+  }
+  vestingPeriod: number
+  streams?: VestingStream[]
+}
+
 export type CreateLiquidSplitConfig = {
   recipients: SplitRecipient[]
   distributorFeePercent: number
