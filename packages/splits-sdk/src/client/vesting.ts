@@ -132,6 +132,7 @@ export default class VestingClient extends BaseClient {
   }> {
     validateAddress(vestingModuleId)
     tokens.map((token) => validateAddress(token))
+    this._requireSigner()
 
     const vestingContract = this._getVestingContract(vestingModuleId)
     const startVestTx = await vestingContract.createVestingStreams(tokens)
@@ -157,6 +158,7 @@ export default class VestingClient extends BaseClient {
     tx: ContractTransaction
   }> {
     validateAddress(vestingModuleId)
+    this._requireSigner()
 
     const vestingContract = this._getVestingContract(vestingModuleId)
     const releaseFundsTx = await vestingContract.releaseFromVesting(streamIds)
