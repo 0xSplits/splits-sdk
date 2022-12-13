@@ -10,6 +10,7 @@ import {
   validateDistributorFeePercent,
   validateAddress,
   validateTranches,
+  validateVestingPeriod,
 } from './validation'
 
 describe('Address validation', () => {
@@ -138,5 +139,19 @@ describe('Tranches validation', () => {
 
   test('Valid tranches pass', () => {
     expect(() => validateTranches(tranches)).not.toThrow()
+  })
+})
+
+describe('Vesting period validation', () => {
+  test('Negative period fails', () => {
+    expect(() => validateVestingPeriod(-1)).toThrow(InvalidArgumentError)
+  })
+
+  test('Zero fails', () => {
+    expect(() => validateVestingPeriod(0)).toThrow(InvalidArgumentError)
+  })
+
+  test('Valid period pass', () => {
+    expect(() => validateVestingPeriod(1)).not.toThrow()
   })
 })
