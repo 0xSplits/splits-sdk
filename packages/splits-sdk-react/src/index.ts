@@ -9,6 +9,8 @@ export type {
   WaterfallTrancheInput,
   Account,
   LiquidSplit,
+  VestingStream,
+  VestingModule,
 } from '@0xsplits/splits-sdk'
 export { SplitsProvider } from './context'
 export {
@@ -28,9 +30,13 @@ export {
   useCreateLiquidSplit,
   useDistributeLiquidSplitToken,
   useTransferLiquidSplitOwnership,
+  useCreateVestingModule,
+  useStartVest,
+  useReleaseVestedFunds,
   useMulticall,
   useSplitsClient,
   useSplitMetadata,
   useWaterfallMetadata,
   useLiquidSplitMetadata,
+  useVestingMetadata,
 } from './hooks'

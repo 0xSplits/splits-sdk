@@ -31,6 +31,9 @@ export type {
   CreateLiquidSplitConfig,
   DistributeLiquidSplitTokenConfig,
   TransferLiquidSplitOwnershipConfig,
+  CreateVestingConfig,
+  StartVestConfig,
+  ReleaseVestedFundsConfig,
   SplitMainType,
   SplitsClientConfig,
   SplitRecipient,
@@ -41,5 +44,7 @@ export type {
   WaterfallTrancheInput,
   Account,
   LiquidSplit,
+  VestingStream,
+  VestingModule,
   CallData,
 } from './types'
