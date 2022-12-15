@@ -156,12 +156,14 @@ export type VestingStream = {
   streamId: number
   startTime: number
   totalAmount: number
-  claimedAmount: number
+  releasedAmount: number
   token: {
     address: string
     symbol: string
     decimals: number
   }
+  // Deprecated
+  claimedAmount: number
 }
 
 export type VestingModule = {

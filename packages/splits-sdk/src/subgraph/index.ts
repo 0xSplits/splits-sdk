@@ -320,12 +320,15 @@ const formatVestingModuleStream = (
     streamId: parseInt(gqlVestingStream.streamId),
     startTime: parseInt(gqlVestingStream.startTime),
     totalAmount: gqlVestingStream.totalAmount / Math.pow(10, tokenDecimals),
-    claimedAmount: gqlVestingStream.claimedAmount / Math.pow(10, tokenDecimals),
+    releasedAmount:
+      gqlVestingStream.claimedAmount / Math.pow(10, tokenDecimals),
     token: {
       address: getAddress(gqlVestingStream.token.id),
       symbol: tokenData[gqlVestingStream.token.id].symbol,
       decimals: tokenData[gqlVestingStream.token.id].decimals,
     },
+    // Deprecated
+    claimedAmount: gqlVestingStream.claimedAmount / Math.pow(10, tokenDecimals),
   }
 }
 
