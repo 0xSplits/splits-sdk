@@ -1,8 +1,9 @@
 import LiquidSplitClient from './client/liquidSplit'
 import WaterfallClient from './client/waterfall'
+import VestingClient from './client/vesting'
 import { SplitsClient } from './client'
 
-export { SplitsClient, WaterfallClient, LiquidSplitClient }
+export { SplitsClient, WaterfallClient, LiquidSplitClient, VestingClient }
 export * from './errors'
 
 export {
@@ -10,6 +11,7 @@ export {
   SPLITS_SUBGRAPH_CHAIN_IDS,
   WATERFALL_CHAIN_IDS,
   LIQUID_SPLIT_CHAIN_IDS,
+  VESTING_CHAIN_IDS,
   SPLITS_MAX_PRECISION_DECIMALS,
   LIQUID_SPLITS_MAX_PRECISION_DECIMALS,
 } from './constants'
