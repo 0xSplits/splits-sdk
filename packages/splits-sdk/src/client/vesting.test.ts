@@ -106,18 +106,6 @@ describe('Vesting writes', () => {
     provider,
     signer,
   })
-  const createVestingResult = {
-    value: 'create_vesting_module_tx',
-    wait: 'wait',
-  }
-  const startVestResult = {
-    value: 'start_vest_tx',
-    wait: 'wait',
-  }
-  const releaseVestedFundsResult = {
-    value: 'release_vested_funds_tx',
-    wait: 'wait',
-  }
 
   beforeEach(() => {
     ;(validateVestingPeriod as jest.Mock).mockClear()
@@ -128,6 +116,10 @@ describe('Vesting writes', () => {
   describe('Create vesting tests', () => {
     const beneficiary = '0xuser1'
     const vestingPeriodSeconds = 60 * 60 * 24 * 365
+    const createVestingResult = {
+      value: 'create_vesting_module_tx',
+      wait: 'wait',
+    }
 
     beforeEach(() => {
       factoryWriteActions.createVestingModule.mockClear()
@@ -189,6 +181,10 @@ describe('Vesting writes', () => {
   describe('Create vesting streams tests', () => {
     const vestingModuleId = '0xvesting'
     const tokens = ['0xtoken1', '0xtoken2']
+    const startVestResult = {
+      value: 'start_vest_tx',
+      wait: 'wait',
+    }
 
     beforeEach(() => {
       moduleWriteActions.createVestingStreams.mockClear()
@@ -246,6 +242,10 @@ describe('Vesting writes', () => {
   describe('Release vested funds tests', () => {
     const vestingModuleId = '0xvesting'
     const streamIds = ['1', '2']
+    const releaseVestedFundsResult = {
+      value: 'release_vested_funds_tx',
+      wait: 'wait',
+    }
 
     beforeEach(() => {
       moduleWriteActions.releaseFromVesting.mockClear()

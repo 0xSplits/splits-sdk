@@ -116,26 +116,6 @@ describe('Waterfall writes', () => {
     provider,
     signer,
   })
-  const createWaterfallResult = {
-    value: 'create_waterfall_module_tx',
-    wait: 'wait',
-  }
-  const waterfallFundsResult = {
-    value: 'waterfall_funds_tx',
-    wait: 'wait',
-  }
-  const waterfallFundsPullResult = {
-    value: 'waterfall_funds_pull_tx',
-    wait: 'wait',
-  }
-  const recoverNonWaterfallFundsResult = {
-    value: 'recover_non_waterfall_funds_tx',
-    wait: 'wait',
-  }
-  const withdrawResult = {
-    value: 'withdraw_tx',
-    wait: 'wait',
-  }
 
   beforeEach(() => {
     ;(validateTranches as jest.Mock).mockClear()
@@ -155,6 +135,10 @@ describe('Waterfall writes', () => {
         recipient: '0xuser2',
       },
     ]
+    const createWaterfallResult = {
+      value: 'create_waterfall_module_tx',
+      wait: 'wait',
+    }
 
     beforeEach(() => {
       factoryWriteActions.createWaterfallModule.mockClear()
@@ -252,6 +236,14 @@ describe('Waterfall writes', () => {
 
   describe('Waterfall funds tests', () => {
     const waterfallModuleId = '0xwaterfall'
+    const waterfallFundsResult = {
+      value: 'waterfall_funds_tx',
+      wait: 'wait',
+    }
+    const waterfallFundsPullResult = {
+      value: 'waterfall_funds_pull_tx',
+      wait: 'wait',
+    }
 
     beforeEach(() => {
       moduleWriteActions.waterfallFunds.mockClear()
@@ -326,6 +318,10 @@ describe('Waterfall writes', () => {
     const token = '0xtoken'
     const recipient = '0xrecipient1'
     const nonWaterfallRecipient = '0xnonWaterfallRecipient'
+    const recoverNonWaterfallFundsResult = {
+      value: 'recover_non_waterfall_funds_tx',
+      wait: 'wait',
+    }
 
     const mockGetWaterfallData = jest
       .spyOn(waterfallClient, 'getWaterfallMetadata')
@@ -485,6 +481,10 @@ describe('Waterfall writes', () => {
   describe('Withdraw pull funds tests', () => {
     const waterfallModuleId = '0xwaterfall'
     const address = '0xrecipient1'
+    const withdrawResult = {
+      value: 'withdraw_tx',
+      wait: 'wait',
+    }
 
     beforeEach(() => {
       moduleWriteActions.withdraw.mockClear()
