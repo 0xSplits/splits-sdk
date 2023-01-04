@@ -1,9 +1,7 @@
 import { Provider } from '@ethersproject/abstract-provider'
 
 export const writeActions = {
-  createWaterfallModule: jest
-    .fn()
-    .mockReturnValue('create_waterfall_module_tx'),
+  createWaterfallModule: jest.fn(),
 }
 
 export class MockWaterfallFactory {
@@ -13,6 +11,8 @@ export class MockWaterfallFactory {
       format: () => string
     }
   }
+
+  createWaterfallModule: jest.Mock
 
   constructor(provider: Provider) {
     this.provider = provider
@@ -25,9 +25,7 @@ export class MockWaterfallFactory {
         }
       },
     }
-  }
 
-  connect() {
-    return writeActions
+    this.createWaterfallModule = writeActions.createWaterfallModule
   }
 }
