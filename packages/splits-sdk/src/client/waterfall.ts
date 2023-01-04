@@ -636,14 +636,6 @@ export default class WaterfallClient extends WaterfallTransactions {
       pullBalance,
     }
   }
-
-  private _isContractTransaction(
-    tx: ContractTransaction | BigNumber | CallData,
-  ): tx is ContractTransaction {
-    if (tx instanceof BigNumber) return false
-    if ('wait' in tx) return true
-    return false
-  }
 }
 
 class WaterfallGasEstimates extends WaterfallTransactions {
@@ -719,12 +711,6 @@ class WaterfallGasEstimates extends WaterfallTransactions {
 
     return gasEstimate
   }
-
-  private _isBigNumber(
-    gasEstimate: ContractTransaction | BigNumber | CallData,
-  ): gasEstimate is BigNumber {
-    return gasEstimate instanceof BigNumber
-  }
 }
 
 class WaterfallCallData extends WaterfallTransactions {
@@ -799,13 +785,5 @@ class WaterfallCallData extends WaterfallTransactions {
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData
-  }
-
-  private _isCallData(
-    callData: ContractTransaction | BigNumber | CallData,
-  ): callData is CallData {
-    if (callData instanceof BigNumber) return false
-    if ('wait' in callData) return false
-    return true
   }
 }
