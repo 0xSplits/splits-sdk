@@ -1,8 +1,8 @@
 import { Provider } from '@ethersproject/abstract-provider'
 
 export const writeActions = {
-  createVestingStreams: jest.fn().mockReturnValue('create_vesting_streams_tx'),
-  releaseFromVesting: jest.fn().mockReturnValue('release_from_vesting_tx'),
+  createVestingStreams: jest.fn(),
+  releaseFromVesting: jest.fn(),
 }
 
 export const readActions = {

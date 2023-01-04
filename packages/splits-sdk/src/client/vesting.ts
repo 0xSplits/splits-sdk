@@ -32,10 +32,125 @@ const vestingModuleFactoryInterface = new Interface(
 )
 const vestingModuleInterface = new Interface(VESTING_MODULE_ARTIFACT.abi)
 
-export default class VestingClient extends BaseClient {
-  private readonly _vestingModuleFactory: VestingModuleFactoryType
+class VestingTransactions extends BaseClient {
+  private readonly _transactionType: 'callData' | 'gasEstimate' | 'transaction'
+  private readonly _shouldRequireSigner: boolean
+  protected readonly _vestingModuleFactoryContract:
+    | ContractCallData
+    | VestingModuleFactoryType
+    | VestingModuleFactoryType['estimateGas']
+
+  constructor({
+    transactionType,
+    chainId,
+    provider,
+    ensProvider,
+    signer,
+    includeEnsNames = false,
+  }: SplitsClientConfig & {
+    transactionType: 'callData' | 'gasEstimate' | 'transaction'
+  }) {
+    super({
+      chainId,
+      provider,
+      ensProvider,
+      signer,
+      includeEnsNames,
+    })
+
+    this._transactionType = transactionType
+    this._shouldRequireSigner = transactionType === 'transaction'
+    this._vestingModuleFactoryContract = this._getVestingFactoryContract()
+  }
+
+  protected async _createVestingModuleTransaction({
+    beneficiary,
+    vestingPeriodSeconds,
+  }: CreateVestingConfig): Promise<ContractTransaction | BigNumber | CallData> {
+    validateAddress(beneficiary)
+    validateVestingPeriod(vestingPeriodSeconds)
+
+    if (this._shouldRequireSigner) this._requireSigner()
+
+    const createVestingResult =
+      await this._vestingModuleFactoryContract.createVestingModule(
+        beneficiary,
+        vestingPeriodSeconds,
+      )
+
+    return createVestingResult
+  }
+
+  protected async _startVestTransaction({
+    vestingModuleId,
+    tokens,
+  }: StartVestConfig): Promise<ContractTransaction | BigNumber | CallData> {
+    validateAddress(vestingModuleId)
+    tokens.map((token) => validateAddress(token))
+    if (this._shouldRequireSigner) this._requireSigner()
+
+    const vestingContract = this._getVestingContract(vestingModuleId)
+    const startVestResult = await vestingContract.createVestingStreams(tokens)
+
+    return startVestResult
+  }
+
+  protected async _releaseVestedFundsTransaction({
+    vestingModuleId,
+    streamIds,
+  }: ReleaseVestedFundsConfig): Promise<
+    ContractTransaction | BigNumber | CallData
+  > {
+    validateAddress(vestingModuleId)
+    if (this._shouldRequireSigner) this._requireSigner()
+
+    const vestingContract = this._getVestingContract(vestingModuleId)
+    const releaseFundsResult = await vestingContract.releaseFromVesting(
+      streamIds,
+    )
+
+    return releaseFundsResult
+  }
+
+  protected _getVestingContract(vestingModule: string) {
+    if (this._transactionType === 'callData')
+      return new ContractCallData(vestingModule, VESTING_MODULE_ARTIFACT.abi)
+
+    const vestingContract = new Contract(
+      vestingModule,
+      vestingModuleInterface,
+      this._signer || this._provider,
+    ) as VestingModuleType
+
+    if (this._transactionType === 'gasEstimate')
+      return vestingContract.estimateGas
+
+    return vestingContract
+  }
+
+  private _getVestingFactoryContract() {
+    if (this._transactionType === 'callData')
+      return new ContractCallData(
+        VESTING_MODULE_FACTORY_ADDRESS,
+        VESTING_MODULE_FACTORY_ARTIFACT.abi,
+      )
+
+    const vestingFactoryContract = new Contract(
+      VESTING_MODULE_FACTORY_ADDRESS,
+      vestingModuleFactoryInterface,
+      this._signer || this._provider,
+    ) as VestingModuleFactoryType
+    if (this._transactionType === 'gasEstimate')
+      return vestingFactoryContract.estimateGas
+
+    return vestingFactoryContract
+  }
+}
+
+export default class VestingClient extends VestingTransactions {
   readonly eventTopics: { [key: string]: string[] }
   readonly callData: VestingCallData
+  readonly estimateGas: VestingGasEstimates
 
   constructor({
     chainId,
@@ -45,6 +160,7 @@ export default class VestingClient extends BaseClient {
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
+      transactionType: 'transaction',
       chainId,
       provider,
       ensProvider,
@@ -52,13 +168,8 @@ export default class VestingClient extends BaseClient {
       includeEnsNames,
     })
 
-    if (VESTING_CHAIN_IDS.includes(chainId)) {
-      this._vestingModuleFactory = new Contract(
-        VESTING_MODULE_FACTORY_ADDRESS,
-        vestingModuleFactoryInterface,
-        provider,
-      ) as VestingModuleFactoryType
-    } else throw new UnsupportedChainIdError(chainId, VESTING_CHAIN_IDS)
+    if (!VESTING_CHAIN_IDS.includes(chainId))
+      throw new UnsupportedChainIdError(chainId, VESTING_CHAIN_IDS)
 
     this.eventTopics = {
       createVestingModule: [
@@ -77,6 +188,13 @@ export default class VestingClient extends BaseClient {
       signer,
       includeEnsNames,
     })
+    this.estimateGas = new VestingGasEstimates({
+      chainId,
+      provider,
+      ensProvider,
+      signer,
+      includeEnsNames,
+    })
   }
 
   // Write actions
@@ -86,15 +204,12 @@ export default class VestingClient extends BaseClient {
   }: CreateVestingConfig): Promise<{
     tx: ContractTransaction
   }> {
-    validateAddress(beneficiary)
-    validateVestingPeriod(vestingPeriodSeconds)
-
-    this._requireSigner()
-    if (!this._vestingModuleFactory) throw new Error()
-
-    const createVestingTx = await this._vestingModuleFactory
-      .connect(this._signer)
-      .createVestingModule(beneficiary, vestingPeriodSeconds)
+    const createVestingTx = await this._createVestingModuleTransaction({
+      beneficiary,
+      vestingPeriodSeconds,
+    })
+    if (!this._isContractTransaction(createVestingTx))
+      throw new Error('Invalid response')
 
     return { tx: createVestingTx }
   }
@@ -130,12 +245,12 @@ export default class VestingClient extends BaseClient {
   }: StartVestConfig): Promise<{
     tx: ContractTransaction
   }> {
-    validateAddress(vestingModuleId)
-    tokens.map((token) => validateAddress(token))
-    this._requireSigner()
-
-    const vestingContract = this._getVestingContract(vestingModuleId)
-    const startVestTx = await vestingContract.createVestingStreams(tokens)
+    const startVestTx = await this._startVestTransaction({
+      vestingModuleId,
+      tokens,
+    })
+    if (!this._isContractTransaction(startVestTx))
+      throw new Error('Invalid response')
 
     return { tx: startVestTx }
   }
@@ -157,11 +272,12 @@ export default class VestingClient extends BaseClient {
   }: ReleaseVestedFundsConfig): Promise<{
     tx: ContractTransaction
   }> {
-    validateAddress(vestingModuleId)
-    this._requireSigner()
-
-    const vestingContract = this._getVestingContract(vestingModuleId)
-    const releaseFundsTx = await vestingContract.releaseFromVesting(streamIds)
+    const releaseFundsTx = await this._releaseVestedFundsTransaction({
+      vestingModuleId,
+      streamIds,
+    })
+    if (!this._isContractTransaction(releaseFundsTx))
+      throw new Error('Invalid response')
 
     return { tx: releaseFundsTx }
   }
@@ -196,7 +312,7 @@ export default class VestingClient extends BaseClient {
     this._requireProvider()
 
     const [address, exists] =
-      await this._vestingModuleFactory.predictVestingModuleAddress(
+      await this._vestingModuleFactoryContract.predictVestingModuleAddress(
         beneficiary,
         vestingPeriodSeconds,
       )
@@ -296,22 +412,12 @@ export default class VestingClient extends BaseClient {
     return await this.formatVestingModule(response.vestingModule)
   }
 
-  // Helper functions
-  private _getVestingContract(vestingModule: string) {
-    if (!this._vestingModuleFactory.provider && !this._signer) throw new Error()
-
-    return new Contract(
-      vestingModule,
-      vestingModuleInterface,
-      this._signer || this._vestingModuleFactory.provider,
-    ) as VestingModuleType
-  }
-
   async formatVestingModule(
     gqlVestingModule: GqlVestingModule,
   ): Promise<VestingModule> {
     this._requireProvider()
-    if (!this._vestingModuleFactory) throw new Error()
+    const provider = this._provider
+    if (!provider) throw new Error()
 
     const tokenIds = Array.from(
       new Set(gqlVestingModule.streams?.map((stream) => stream.token.id) ?? []),
@@ -321,11 +427,7 @@ export default class VestingClient extends BaseClient {
       {}
     await Promise.all(
       tokenIds.map(async (token) => {
-        const result = await getTokenData(
-          this._chainId,
-          token,
-          this._vestingModuleFactory.provider,
-        )
+        const result = await getTokenData(this._chainId, token, provider)
 
         tokenData[token] = result
       }),
@@ -336,19 +438,16 @@ export default class VestingClient extends BaseClient {
       tokenData,
     )
     if (this._includeEnsNames) {
-      await addEnsNames(
-        this._ensProvider ?? this._vestingModuleFactory.provider,
-        [vestingModule.beneficiary],
-      )
+      await addEnsNames(this._ensProvider ?? provider, [
+        vestingModule.beneficiary,
+      ])
     }
 
     return vestingModule
   }
 }
 
-class VestingCallData extends BaseClient {
-  private readonly _vestingFactoryContractCallData: ContractCallData
-
+class VestingGasEstimates extends VestingTransactions {
   constructor({
     chainId,
     provider,
@@ -357,30 +456,83 @@ class VestingCallData extends BaseClient {
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
+      transactionType: 'gasEstimate',
       chainId,
       provider,
       ensProvider,
       signer,
       includeEnsNames,
     })
+  }
 
-    this._vestingFactoryContractCallData = new ContractCallData(
-      VESTING_MODULE_FACTORY_ADDRESS,
-      VESTING_MODULE_FACTORY_ARTIFACT.abi,
-    )
+  async createVestingModule({
+    beneficiary,
+    vestingPeriodSeconds,
+  }: CreateVestingConfig): Promise<BigNumber> {
+    const gasEstimate = await this._createVestingModuleTransaction({
+      beneficiary,
+      vestingPeriodSeconds,
+    })
+    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+
+  async startVest({
+    vestingModuleId,
+    tokens,
+  }: StartVestConfig): Promise<BigNumber> {
+    const gasEstimate = await this._startVestTransaction({
+      vestingModuleId,
+      tokens,
+    })
+    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+
+  async releaseVestedFunds({
+    vestingModuleId,
+    streamIds,
+  }: ReleaseVestedFundsConfig): Promise<BigNumber> {
+    const gasEstimate = await this._releaseVestedFundsTransaction({
+      vestingModuleId,
+      streamIds,
+    })
+    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+}
+
+class VestingCallData extends VestingTransactions {
+  constructor({
+    chainId,
+    provider,
+    ensProvider,
+    signer,
+    includeEnsNames = false,
+  }: SplitsClientConfig) {
+    super({
+      transactionType: 'callData',
+      chainId,
+      provider,
+      ensProvider,
+      signer,
+      includeEnsNames,
+    })
   }
 
   async createVestingModule({
     beneficiary,
     vestingPeriodSeconds,
   }: CreateVestingConfig): Promise<CallData> {
-    validateAddress(beneficiary)
-    validateVestingPeriod(vestingPeriodSeconds)
-
-    const callData = this._vestingFactoryContractCallData.createVestingModule(
+    const callData = await this._createVestingModuleTransaction({
       beneficiary,
       vestingPeriodSeconds,
-    )
+    })
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
+
     return callData
   }
 
@@ -388,11 +540,12 @@ class VestingCallData extends BaseClient {
     vestingModuleId,
     tokens,
   }: StartVestConfig): Promise<CallData> {
-    validateAddress(vestingModuleId)
+    const callData = await this._startVestTransaction({
+      vestingModuleId,
+      tokens,
+    })
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
 
-    const vestingContractCallData =
-      this._getVestingContractCallData(vestingModuleId)
-    const callData = vestingContractCallData.createVestingStreams(tokens)
     return callData
   }
 
@@ -400,15 +553,12 @@ class VestingCallData extends BaseClient {
     vestingModuleId,
     streamIds,
   }: ReleaseVestedFundsConfig): Promise<CallData> {
-    validateAddress(vestingModuleId)
+    const callData = await this._releaseVestedFundsTransaction({
+      vestingModuleId,
+      streamIds,
+    })
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
 
-    const vestingContractCallData =
-      this._getVestingContractCallData(vestingModuleId)
-    const callData = vestingContractCallData.releaseFromVesting(streamIds)
     return callData
-  }
-
-  private _getVestingContractCallData(vestingModule: string) {
-    return new ContractCallData(vestingModule, VESTING_MODULE_ARTIFACT.abi)
   }
 }
