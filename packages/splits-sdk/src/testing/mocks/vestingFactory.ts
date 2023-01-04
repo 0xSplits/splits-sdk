@@ -1,7 +1,7 @@
 import { Provider } from '@ethersproject/abstract-provider'
 
 export const writeActions = {
-  createVestingModule: jest.fn().mockReturnValue('create_vesting_module_tx'),
+  createVestingModule: jest.fn(),
 }
 
 export const readActions = {
@@ -16,6 +16,7 @@ export class MockVestingFactory {
     }
   }
 
+  createVestingModule: jest.Mock
   predictVestingModuleAddress: jest.Mock
 
   constructor(provider: Provider) {
@@ -30,10 +31,7 @@ export class MockVestingFactory {
       },
     }
 
+    this.createVestingModule = writeActions.createVestingModule
     this.predictVestingModuleAddress = readActions.predictVestingModuleAddress
-  }
-
-  connect() {
-    return writeActions
   }
 }

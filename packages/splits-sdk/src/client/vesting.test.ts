@@ -106,6 +106,18 @@ describe('Vesting writes', () => {
     provider,
     signer,
   })
+  const createVestingResult = {
+    value: 'create_vesting_module_tx',
+    wait: 'wait',
+  }
+  const startVestResult = {
+    value: 'start_vest_tx',
+    wait: 'wait',
+  }
+  const releaseVestedFundsResult = {
+    value: 'release_vested_funds_tx',
+    wait: 'wait',
+  }
 
   beforeEach(() => {
     ;(validateVestingPeriod as jest.Mock).mockClear()
@@ -119,6 +131,9 @@ describe('Vesting writes', () => {
 
     beforeEach(() => {
       factoryWriteActions.createVestingModule.mockClear()
+      factoryWriteActions.createVestingModule.mockReturnValueOnce(
+        createVestingResult,
+      )
     })
 
     test('Create veingst fails with no provider', async () => {
@@ -165,10 +180,9 @@ describe('Vesting writes', () => {
         beneficiary,
         vestingPeriodSeconds,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(
-        'create_vesting_module_tx',
-        [vestingClient.eventTopics.createVestingModule[0]],
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith(createVestingResult, [
+        vestingClient.eventTopics.createVestingModule[0],
+      ])
     })
   })
 
@@ -178,6 +192,9 @@ describe('Vesting writes', () => {
 
     beforeEach(() => {
       moduleWriteActions.createVestingStreams.mockClear()
+      moduleWriteActions.createVestingStreams.mockReturnValueOnce(
+        startVestResult,
+      )
     })
 
     test('Start vest fails with no provider', async () => {
@@ -220,10 +237,9 @@ describe('Vesting writes', () => {
       expect(validateAddress).toBeCalledWith('0xtoken1')
       expect(validateAddress).toBeCalledWith('0xtoken2')
       expect(moduleWriteActions.createVestingStreams).toBeCalledWith(tokens)
-      expect(getTransactionEventsSpy).toBeCalledWith(
-        'create_vesting_streams_tx',
-        [vestingClient.eventTopics.startVest[0]],
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith(startVestResult, [
+        vestingClient.eventTopics.startVest[0],
+      ])
     })
   })
 
@@ -233,6 +249,9 @@ describe('Vesting writes', () => {
 
     beforeEach(() => {
       moduleWriteActions.releaseFromVesting.mockClear()
+      moduleWriteActions.releaseFromVesting.mockReturnValueOnce(
+        releaseVestedFundsResult,
+      )
     })
 
     test('Release vested funds fails with no provider', async () => {
@@ -273,10 +292,9 @@ describe('Vesting writes', () => {
       expect(events[0].blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(vestingModuleId)
       expect(moduleWriteActions.releaseFromVesting).toBeCalledWith(streamIds)
-      expect(getTransactionEventsSpy).toBeCalledWith(
-        'release_from_vesting_tx',
-        [vestingClient.eventTopics.releaseVestedFunds[0]],
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith(releaseVestedFundsResult, [
+        vestingClient.eventTopics.releaseVestedFunds[0],
+      ])
     })
   })
 })
