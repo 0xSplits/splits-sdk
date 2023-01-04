@@ -1,4 +1,3 @@
-import BaseClient from './base'
 import { Interface } from '@ethersproject/abi'
 import { BigNumber } from '@ethersproject/bignumber'
 import { AddressZero } from '@ethersproject/constants'
@@ -6,7 +5,10 @@ import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
 
 import WATERFALL_MODULE_FACTORY_ARTIFACT from '../artifacts/contracts/WaterfallModuleFactory/WaterfallModuleFactory.json'
 import WATERFALL_MODULE_ARTIFACT from '../artifacts/contracts/WaterfallModule/WaterfallModule.json'
+
+import { BaseTransactions } from './base'
 import {
+  TransactionType,
   WATERFALL_CHAIN_IDS,
   WATERFALL_MODULE_FACTORY_ADDRESS,
 } from '../constants'
@@ -26,6 +28,7 @@ import type {
   CreateWaterfallConfig,
   RecoverNonWaterfallFundsConfig,
   SplitsClientConfig,
+  TransactionConfig,
   WaterfallFundsConfig,
   WaterfallModule,
   WithdrawWaterfallPullFundsConfig,
@@ -46,9 +49,7 @@ const waterfallModuleFactoryInterface = new Interface(
 )
 const waterfallModuleInterface = new Interface(WATERFALL_MODULE_ARTIFACT.abi)
 
-class WaterfallTransactions extends BaseClient {
-  private readonly _transactionType: 'callData' | 'gasEstimate' | 'transaction'
-  private readonly _shouldRequireSigner: boolean
+class WaterfallTransactions extends BaseTransactions {
   private readonly _waterfallModuleFactoryContract:
     | ContractCallData
     | WaterfallModuleFactoryType
@@ -61,10 +62,9 @@ class WaterfallTransactions extends BaseClient {
     ensProvider,
     signer,
     includeEnsNames = false,
-  }: SplitsClientConfig & {
-    transactionType: 'callData' | 'gasEstimate' | 'transaction'
-  }) {
+  }: SplitsClientConfig & TransactionConfig) {
     super({
+      transactionType,
       chainId,
       provider,
       ensProvider,
@@ -72,8 +72,6 @@ class WaterfallTransactions extends BaseClient {
       includeEnsNames,
     })
 
-    this._transactionType = transactionType
-    this._shouldRequireSigner = transactionType === 'transaction'
     this._waterfallModuleFactoryContract = this._getWaterfallFactoryContract()
   }
 
@@ -264,7 +262,7 @@ class WaterfallTransactions extends BaseClient {
   }
 
   protected _getWaterfallContract(waterfallModule: string) {
-    if (this._transactionType === 'callData')
+    if (this._transactionType === TransactionType.CallData)
       return new ContractCallData(
         waterfallModule,
         WATERFALL_MODULE_ARTIFACT.abi,
@@ -276,14 +274,14 @@ class WaterfallTransactions extends BaseClient {
       this._signer || this._provider,
     ) as WaterfallModuleType
 
-    if (this._transactionType === 'gasEstimate')
+    if (this._transactionType === TransactionType.GasEstimate)
       return waterfallContract.estimateGas
 
     return waterfallContract
   }
 
   private _getWaterfallFactoryContract() {
-    if (this._transactionType === 'callData')
+    if (this._transactionType === TransactionType.CallData)
       return new ContractCallData(
         WATERFALL_MODULE_FACTORY_ADDRESS,
         WATERFALL_MODULE_FACTORY_ARTIFACT.abi,
@@ -294,7 +292,7 @@ class WaterfallTransactions extends BaseClient {
       waterfallModuleFactoryInterface,
       this._signer || this._provider,
     ) as WaterfallModuleFactoryType
-    if (this._transactionType === 'gasEstimate')
+    if (this._transactionType === TransactionType.GasEstimate)
       return waterfallFactoryContract.estimateGas
 
     return waterfallFactoryContract
@@ -314,7 +312,7 @@ export default class WaterfallClient extends WaterfallTransactions {
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
-      transactionType: 'transaction',
+      transactionType: TransactionType.Transaction,
       chainId,
       provider,
       ensProvider,
@@ -647,7 +645,7 @@ class WaterfallGasEstimates extends WaterfallTransactions {
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
-      transactionType: 'gasEstimate',
+      transactionType: TransactionType.GasEstimate,
       chainId,
       provider,
       ensProvider,
@@ -722,7 +720,7 @@ class WaterfallCallData extends WaterfallTransactions {
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
-      transactionType: 'callData',
+      transactionType: TransactionType.CallData,
       chainId,
       provider,
       ensProvider,

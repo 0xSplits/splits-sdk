@@ -2,7 +2,9 @@ import { JsonFragmentType } from '@ethersproject/abi'
 import type { Provider } from '@ethersproject/abstract-provider'
 import type { Signer } from '@ethersproject/abstract-signer'
 import { BigNumber } from '@ethersproject/bignumber'
+import { ContractTransaction } from '@ethersproject/contracts'
 
+import { TransactionType } from './constants'
 import type { SplitMain as SplitMainEthereumType } from './typechain/SplitMain/ethereum'
 import type { SplitMain as SplitMainPolygonType } from './typechain/SplitMain/polygon'
 
@@ -16,6 +18,10 @@ export type SplitsClientConfig = {
   // ensProvider can be used to fetch ens names when provider is not on mainnet (reverseRecords
   // only works on mainnet).
   ensProvider?: Provider
+}
+
+export type TransactionConfig = {
+  transactionType: TransactionType
 }
 
 export type SplitRecipient = {
@@ -216,3 +222,5 @@ export type CallData = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   params: any[]
 }
+
+export type TransactionFormat = ContractTransaction | BigNumber | CallData

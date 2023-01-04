@@ -6,9 +6,10 @@ import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
 
 import SPLIT_MAIN_ARTIFACT_ETHEREUM from '../artifacts/contracts/SplitMain/ethereum/SplitMain.json'
 import SPLIT_MAIN_ARTIFACT_POLYGON from '../artifacts/contracts/SplitMain/polygon/SplitMain.json'
-import BaseClient from './base'
+import { BaseTransactions } from './base'
 import WaterfallClient from './waterfall'
 import LiquidSplitClient from './liquidSplit'
+import VestingClient from './vesting'
 import {
   ARBITRUM_CHAIN_IDS,
   ETHEREUM_CHAIN_IDS,
@@ -18,6 +19,7 @@ import {
   SPLITS_MAX_PRECISION_DECIMALS,
   SPLITS_SUPPORTED_CHAIN_IDS,
   SPLIT_MAIN_ADDRESS,
+  TransactionType,
   VESTING_CHAIN_IDS,
   WATERFALL_CHAIN_IDS,
 } from '../constants'
@@ -59,6 +61,7 @@ import type {
   TokenBalances,
   Account,
   CallData,
+  TransactionConfig,
 } from '../types'
 import {
   getRecipientSortedAddressesAndAllocations,
@@ -73,7 +76,6 @@ import {
   validateDistributorFeePercent,
   validateAddress,
 } from '../utils/validation'
-import VestingClient from './vesting'
 
 const splitMainInterfaceEthereum = new Interface(
   SPLIT_MAIN_ARTIFACT_ETHEREUM.abi,
@@ -86,9 +88,7 @@ const polygonInterfaceChainIds = [
   ...ARBITRUM_CHAIN_IDS,
 ]
 
-class SplitsTransactions extends BaseClient {
-  private readonly _transactionType: 'callData' | 'gasEstimate' | 'transaction'
-  private readonly _shouldRequireSigner: boolean
+class SplitsTransactions extends BaseTransactions {
   protected readonly _splitMainInterface: Interface
   protected readonly _splitMain:
     | ContractCallData
@@ -102,10 +102,9 @@ class SplitsTransactions extends BaseClient {
     ensProvider,
     signer,
     includeEnsNames = false,
-  }: SplitsClientConfig & {
-    transactionType: 'callData' | 'gasEstimate' | 'transaction'
-  }) {
+  }: SplitsClientConfig & TransactionConfig) {
     super({
+      transactionType,
       chainId,
       provider,
       ensProvider,
@@ -113,10 +112,6 @@ class SplitsTransactions extends BaseClient {
       includeEnsNames,
     })
 
-    this._transactionType = transactionType
-    this._shouldRequireSigner = ['transaction', 'callData'].includes(
-      transactionType,
-    )
     if (ETHEREUM_CHAIN_IDS.includes(chainId))
       this._splitMainInterface = splitMainInterfaceEthereum
     else if (polygonInterfaceChainIds.includes(chainId))
@@ -421,7 +416,7 @@ class SplitsTransactions extends BaseClient {
   }
 
   private _getSplitMainContract() {
-    if (this._transactionType === 'callData')
+    if (this._transactionType === TransactionType.CallData)
       if (ETHEREUM_CHAIN_IDS.includes(this._chainId)) {
         return new ContractCallData(
           SPLIT_MAIN_ADDRESS,
@@ -439,7 +434,7 @@ class SplitsTransactions extends BaseClient {
       this._splitMainInterface,
       this._signer || this._provider,
     ) as SplitMainType
-    if (this._transactionType === 'gasEstimate')
+    if (this._transactionType === TransactionType.GasEstimate)
       return splitMainContract.estimateGas
 
     return splitMainContract
@@ -462,7 +457,7 @@ export class SplitsClient extends SplitsTransactions {
     ensProvider,
   }: SplitsClientConfig) {
     super({
-      transactionType: 'transaction',
+      transactionType: TransactionType.Transaction,
       chainId,
       provider,
       ensProvider,
@@ -1202,7 +1197,7 @@ class SplitsGasEstimates extends SplitsTransactions {
     ensProvider,
   }: SplitsClientConfig) {
     super({
-      transactionType: 'gasEstimate',
+      transactionType: TransactionType.GasEstimate,
       chainId,
       provider,
       signer,
@@ -1344,7 +1339,7 @@ class SplitsCallData extends SplitsTransactions {
     ensProvider,
   }: SplitsClientConfig) {
     super({
-      transactionType: 'callData',
+      transactionType: TransactionType.CallData,
       chainId,
       provider,
       signer,

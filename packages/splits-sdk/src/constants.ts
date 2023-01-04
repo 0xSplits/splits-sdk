@@ -96,3 +96,9 @@ export const CHAIN_INFO: { [chainId: number]: { startBlock: number } } = {
     startBlock: 383218,
   },
 }
+
+export enum TransactionType {
+  Transaction = 'Transaction',
+  CallData = 'CallData',
+  GasEstimate = 'GasEstimate',
+}
