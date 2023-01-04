@@ -143,22 +143,6 @@ describe('Liquid split writes', () => {
     provider,
     signer,
   })
-  const createLiquidSplitResult = {
-    value: 'create_liquid_split_tx',
-    wait: 'wait',
-  }
-  const createLiquidSplitCloneResult = {
-    value: 'create_liquid_split_clone_tx',
-    wait: 'wait',
-  }
-  const distributeFundsResult = {
-    value: 'distribute_funds_tx',
-    wait: 'wait',
-  }
-  const transferOwnershipResult = {
-    value: 'transfer_ownership_tx',
-    wait: 'wait',
-  }
 
   beforeEach(() => {
     ;(validateRecipients as jest.Mock).mockClear()
@@ -176,6 +160,14 @@ describe('Liquid split writes', () => {
       { address: '0xuser2', percentAllocation: 60 },
     ]
     const distributorFeePercent = 7.35
+    const createLiquidSplitResult = {
+      value: 'create_liquid_split_tx',
+      wait: 'wait',
+    }
+    const createLiquidSplitCloneResult = {
+      value: 'create_liquid_split_clone_tx',
+      wait: 'wait',
+    }
 
     beforeEach(() => {
       factoryWriteActions.createLiquidSplit.mockClear()
@@ -323,6 +315,10 @@ describe('Liquid split writes', () => {
       { address: '0xd', percentAllocation: 25 },
       { address: '0xe', percentAllocation: 75 },
     ]
+    const distributeFundsResult = {
+      value: 'distribute_funds_tx',
+      wait: 'wait',
+    }
 
     beforeEach(() => {
       jest
@@ -435,6 +431,10 @@ describe('Liquid split writes', () => {
   describe('Transfer ownership tests', () => {
     const liquidSplitId = '0xliquidSplit'
     const newOwner = '0xnewOwner'
+    const transferOwnershipResult = {
+      value: 'transfer_ownership_tx',
+      wait: 'wait',
+    }
 
     beforeEach(() => {
       moduleWriteActions.transferOwnership.mockClear()
