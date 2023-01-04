@@ -1,4 +1,5 @@
 import { Interface } from '@ethersproject/abi'
+import { BigNumber } from '@ethersproject/bignumber'
 import { AddressZero } from '@ethersproject/constants'
 import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
 import { decode } from 'base-64'
@@ -52,10 +53,235 @@ const liquidSplitFactoryInterface = new Interface(
 const liquidSplitInterface = new Interface(LIQUID_SPLIT_ARTIFACT.abi)
 const splitMainInterface = new Interface(SPLIT_MAIN_ARTIFACT_POLYGON.abi)
 
-export default class LiquidSplitClient extends BaseClient {
-  private readonly _liquidSplitFactory: LiquidSplitFactoryType
+class LiquidSplitTransactions extends BaseClient {
+  private readonly _transactionType: 'callData' | 'gasEstimate' | 'transaction'
+  private readonly _shouldRequireSigner: boolean
+  private readonly _liquidSplitFactoryContract:
+    | ContractCallData
+    | LiquidSplitFactoryType
+    | LiquidSplitFactoryType['estimateGas']
+
+  constructor({
+    transactionType,
+    chainId,
+    provider,
+    ensProvider,
+    signer,
+    includeEnsNames = false,
+  }: SplitsClientConfig & {
+    transactionType: 'callData' | 'gasEstimate' | 'transaction'
+  }) {
+    super({
+      chainId,
+      provider,
+      ensProvider,
+      signer,
+      includeEnsNames,
+    })
+
+    this._transactionType = transactionType
+    this._shouldRequireSigner = ['transaction', 'callData'].includes(
+      transactionType,
+    )
+    this._liquidSplitFactoryContract = this._getLiquidSplitFactoryContract()
+  }
+
+  protected async _createLiquidSplitTransaction({
+    recipients,
+    distributorFeePercent,
+    owner = undefined,
+    createClone = false,
+  }: CreateLiquidSplitConfig): Promise<
+    ContractTransaction | BigNumber | CallData
+  > {
+    validateRecipients(recipients, LIQUID_SPLITS_MAX_PRECISION_DECIMALS)
+    validateDistributorFeePercent(distributorFeePercent)
+
+    if (this._shouldRequireSigner) this._requireSigner()
+    const ownerAddress = owner
+      ? owner
+      : this._signer
+      ? await this._signer.getAddress()
+      : AddressZero
+    validateAddress(ownerAddress)
+
+    const [accounts, percentAllocations] =
+      getRecipientSortedAddressesAndAllocations(recipients)
+    const nftAmounts = getNftCountsFromPercents(percentAllocations)
+    const distributorFee = getBigNumberFromPercent(distributorFeePercent)
+
+    const createSplitResult = createClone
+      ? await this._liquidSplitFactoryContract.createLiquidSplitClone(
+          accounts,
+          nftAmounts,
+          distributorFee,
+          ownerAddress,
+        )
+      : await this._liquidSplitFactoryContract.createLiquidSplit(
+          accounts,
+          nftAmounts,
+          distributorFee,
+          ownerAddress,
+        )
+
+    return createSplitResult
+  }
+
+  protected async _distributeTokenTransaction({
+    liquidSplitId,
+    token,
+    distributorAddress,
+  }: DistributeLiquidSplitTokenConfig): Promise<
+    ContractTransaction | BigNumber | CallData
+  > {
+    validateAddress(liquidSplitId)
+    validateAddress(token)
+    if (this._shouldRequireSigner) this._requireSigner()
+
+    const distributorPayoutAddress = distributorAddress
+      ? distributorAddress
+      : this._signer
+      ? await this._signer.getAddress()
+      : AddressZero
+    validateAddress(distributorPayoutAddress)
+
+    // TO DO: handle bad split id/no metadata found
+    const { holders } = await this.getLiquidSplitMetadata({
+      liquidSplitId,
+    })
+    const accounts = holders
+      .map((h) => h.address)
+      .sort((a, b) => {
+        if (a.toLowerCase() > b.toLowerCase()) return 1
+        return -1
+      })
+
+    const liquidSplitContract = this._getLiquidSplitContract(liquidSplitId)
+    const distributeTokenResult = await liquidSplitContract.distributeFunds(
+      token,
+      accounts,
+      distributorPayoutAddress,
+    )
+
+    return distributeTokenResult
+  }
+
+  protected async _transferOwnershipTransaction({
+    liquidSplitId,
+    newOwner,
+  }: TransferLiquidSplitOwnershipConfig): Promise<
+    ContractTransaction | BigNumber | CallData
+  > {
+    validateAddress(liquidSplitId)
+    validateAddress(newOwner)
+    if (this._shouldRequireSigner) {
+      this._requireSigner()
+      await this._requireOwner(liquidSplitId)
+    }
+
+    const liquidSplitContract = this._getLiquidSplitContract(liquidSplitId)
+    const transferOwnershipResult = await liquidSplitContract.transferOwnership(
+      newOwner,
+    )
+
+    return transferOwnershipResult
+  }
+
+  // Graphql read actions
+  async getLiquidSplitMetadata({
+    liquidSplitId,
+  }: {
+    liquidSplitId: string
+  }): Promise<LiquidSplit> {
+    validateAddress(liquidSplitId)
+
+    const response = await this._makeGqlRequest<{
+      liquidSplit: GqlLiquidSplit
+    }>(LIQUID_SPLIT_QUERY, {
+      liquidSplitId: liquidSplitId.toLowerCase(),
+    })
+
+    if (!response.liquidSplit)
+      throw new AccountNotFoundError(
+        `No liquid split found at address ${liquidSplitId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
+      )
+
+    return await this.formatLiquidSplit(response.liquidSplit)
+  }
+
+  async formatLiquidSplit(
+    gqlLiquidSplit: GqlLiquidSplit,
+  ): Promise<LiquidSplit> {
+    this._requireProvider()
+    if (!this._provider) throw new Error()
+
+    const liquidSplit = protectedFormatLiquidSplit(gqlLiquidSplit)
+    if (this._includeEnsNames) {
+      await addEnsNames(
+        this._ensProvider ?? this._provider,
+        liquidSplit.holders,
+      )
+    }
+
+    return liquidSplit
+  }
+
+  private async _requireOwner(liquidSplitId: string) {
+    this._requireSigner()
+
+    const liquidSplitContract = this._getLiquidSplitContract(liquidSplitId)
+    const owner = await liquidSplitContract.owner()
+
+    // TODO: how to get rid of this, needed for typescript check
+    if (!this._signer) throw new Error()
+
+    const signerAddress = await this._signer.getAddress()
+
+    if (owner !== signerAddress)
+      throw new InvalidAuthError(
+        `Action only available to the liquid split owner. Liquid split id: ${liquidSplitId}, owner: ${owner}, signer: ${signerAddress}`,
+      )
+  }
+
+  protected _getLiquidSplitContract(liquidSplit: string) {
+    if (this._transactionType === 'callData')
+      return new ContractCallData(liquidSplit, LIQUID_SPLIT_ARTIFACT.abi)
+
+    const liquidSplitContract = new Contract(
+      liquidSplit,
+      liquidSplitInterface,
+      this._signer || this._provider,
+    ) as LS1155Type
+
+    if (this._transactionType === 'gasEstimate')
+      return liquidSplitContract.estimateGas
+
+    return liquidSplitContract
+  }
+
+  private _getLiquidSplitFactoryContract() {
+    if (this._transactionType === 'callData')
+      return new ContractCallData(
+        LIQUID_SPLIT_FACTORY_ADDRESS,
+        LIQUID_SPLIT_FACTORY_ARTIFACT.abi,
+      )
+
+    const liquidSplitFactoryContract = new Contract(
+      LIQUID_SPLIT_FACTORY_ADDRESS,
+      liquidSplitFactoryInterface,
+      this._signer || this._provider,
+    ) as LiquidSplitFactoryType
+    if (this._transactionType === 'gasEstimate')
+      return liquidSplitFactoryContract.estimateGas
+
+    return liquidSplitFactoryContract
+  }
+}
+
+export default class LiquidSplitClient extends LiquidSplitTransactions {
   readonly eventTopics: { [key: string]: string[] }
   readonly callData: LiquidSplitCallData
+  readonly estimateGas: LiquidSplitGasEstimates
 
   constructor({
     chainId,
@@ -65,6 +291,7 @@ export default class LiquidSplitClient extends BaseClient {
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
+      transactionType: 'transaction',
       chainId,
       provider,
       ensProvider,
@@ -72,13 +299,8 @@ export default class LiquidSplitClient extends BaseClient {
       includeEnsNames,
     })
 
-    if (LIQUID_SPLIT_CHAIN_IDS.includes(chainId)) {
-      this._liquidSplitFactory = new Contract(
-        LIQUID_SPLIT_FACTORY_ADDRESS,
-        liquidSplitFactoryInterface,
-        provider,
-      ) as LiquidSplitFactoryType
-    } else throw new UnsupportedChainIdError(chainId, LIQUID_SPLIT_CHAIN_IDS)
+    if (!LIQUID_SPLIT_CHAIN_IDS.includes(chainId))
+      throw new UnsupportedChainIdError(chainId, LIQUID_SPLIT_CHAIN_IDS)
 
     this.eventTopics = {
       createLiquidSplit: [
@@ -102,6 +324,13 @@ export default class LiquidSplitClient extends BaseClient {
       signer,
       includeEnsNames,
     })
+    this.estimateGas = new LiquidSplitGasEstimates({
+      chainId,
+      provider,
+      ensProvider,
+      signer,
+      includeEnsNames,
+    })
   }
 
   // Write actions
@@ -113,32 +342,14 @@ export default class LiquidSplitClient extends BaseClient {
   }: CreateLiquidSplitConfig): Promise<{
     tx: ContractTransaction
   }> {
-    validateRecipients(recipients, LIQUID_SPLITS_MAX_PRECISION_DECIMALS)
-    validateDistributorFeePercent(distributorFeePercent)
-    this._requireSigner()
-    // TODO: how to remove this, needed for typescript check right now
-    if (!this._signer) throw new Error()
-
-    const ownerAddress = owner ? owner : await this._signer.getAddress()
-    validateAddress(ownerAddress)
-
-    const [accounts, percentAllocations] =
-      getRecipientSortedAddressesAndAllocations(recipients)
-    const nftAmounts = getNftCountsFromPercents(percentAllocations)
-    const distributorFee = getBigNumberFromPercent(distributorFeePercent)
-
-    const createSplitTx = createClone
-      ? await this._liquidSplitFactory
-          .connect(this._signer)
-          .createLiquidSplitClone(
-            accounts,
-            nftAmounts,
-            distributorFee,
-            ownerAddress,
-          )
-      : await this._liquidSplitFactory
-          .connect(this._signer)
-          .createLiquidSplit(accounts, nftAmounts, distributorFee, ownerAddress)
+    const createSplitTx = await this._createLiquidSplitTransaction({
+      recipients,
+      distributorFeePercent,
+      owner,
+      createClone,
+    })
+    if (!this._isContractTransaction(createSplitTx))
+      throw new Error('Invalid response')
 
     return { tx: createSplitTx }
   }
@@ -182,34 +393,13 @@ export default class LiquidSplitClient extends BaseClient {
   }: DistributeLiquidSplitTokenConfig): Promise<{
     tx: ContractTransaction
   }> {
-    validateAddress(liquidSplitId)
-    validateAddress(token)
-    this._requireSigner()
-    // TODO: how to remove this, needed for typescript check right now
-    if (!this._signer) throw new Error()
-
-    const distributorPayoutAddress = distributorAddress
-      ? distributorAddress
-      : await this._signer.getAddress()
-    validateAddress(distributorPayoutAddress)
-
-    // TO DO: handle bad split id/no metadata found
-    const { holders } = await this.getLiquidSplitMetadata({
+    const distributeTokenTx = await this._distributeTokenTransaction({
       liquidSplitId,
-    })
-    const accounts = holders
-      .map((h) => h.address)
-      .sort((a, b) => {
-        if (a.toLowerCase() > b.toLowerCase()) return 1
-        return -1
-      })
-
-    const liquidSplitContract = this._getLiquidSplitContract(liquidSplitId)
-    const distributeTokenTx = await liquidSplitContract.distributeFunds(
       token,
-      accounts,
-      distributorPayoutAddress,
-    )
+      distributorAddress,
+    })
+    if (!this._isContractTransaction(distributeTokenTx))
+      throw new Error('Invalid response')
 
     return { tx: distributeTokenTx }
   }
@@ -245,17 +435,12 @@ export default class LiquidSplitClient extends BaseClient {
   }: TransferLiquidSplitOwnershipConfig): Promise<{
     tx: ContractTransaction
   }> {
-    validateAddress(liquidSplitId)
-    validateAddress(newOwner)
-    this._requireSigner()
-    await this._requireOwner(liquidSplitId)
-    // TODO: how to remove this, needed for typescript check right now
-    if (!this._signer) throw new Error()
-
-    const liquidSplitContract = this._getLiquidSplitContract(liquidSplitId)
-    const transferOwnershipTx = await liquidSplitContract.transferOwnership(
+    const transferOwnershipTx = await this._transferOwnershipTransaction({
+      liquidSplitId,
       newOwner,
-    )
+    })
+    if (!this._isContractTransaction(transferOwnershipTx))
+      throw new Error('Invalid response')
 
     return { tx: transferOwnershipTx }
   }
@@ -378,74 +563,9 @@ export default class LiquidSplitClient extends BaseClient {
       image: uriJson.image ?? '',
     }
   }
-
-  // Graphql read actions
-  async getLiquidSplitMetadata({
-    liquidSplitId,
-  }: {
-    liquidSplitId: string
-  }): Promise<LiquidSplit> {
-    validateAddress(liquidSplitId)
-
-    const response = await this._makeGqlRequest<{
-      liquidSplit: GqlLiquidSplit
-    }>(LIQUID_SPLIT_QUERY, {
-      liquidSplitId: liquidSplitId.toLowerCase(),
-    })
-
-    if (!response.liquidSplit)
-      throw new AccountNotFoundError(
-        `No liquid split found at address ${liquidSplitId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
-      )
-
-    return await this.formatLiquidSplit(response.liquidSplit)
-  }
-
-  // Helper functions
-  private async _requireOwner(liquidSplitId: string) {
-    const { owner } = await this.getOwner({ liquidSplitId })
-    // TODO: how to get rid of this, needed for typescript check
-    if (!this._signer) throw new Error()
-
-    const signerAddress = await this._signer.getAddress()
-
-    if (owner !== signerAddress)
-      throw new InvalidAuthError(
-        `Action only available to the liquid split owner. Liquid split id: ${liquidSplitId}, owner: ${owner}, signer: ${signerAddress}`,
-      )
-  }
-
-  private _getLiquidSplitContract(liquidSplitId: string) {
-    if (!this._liquidSplitFactory.provider && !this._signer) throw new Error()
-
-    return new Contract(
-      liquidSplitId,
-      liquidSplitInterface,
-      this._signer || this._liquidSplitFactory.provider,
-    ) as LS1155Type
-  }
-
-  async formatLiquidSplit(
-    gqlLiquidSplit: GqlLiquidSplit,
-  ): Promise<LiquidSplit> {
-    this._requireProvider()
-    if (!this._liquidSplitFactory) throw new Error()
-
-    const liquidSplit = protectedFormatLiquidSplit(gqlLiquidSplit)
-    if (this._includeEnsNames) {
-      await addEnsNames(
-        this._ensProvider ?? this._liquidSplitFactory.provider,
-        liquidSplit.holders,
-      )
-    }
-
-    return liquidSplit
-  }
 }
 
-class LiquidSplitCallData extends BaseClient {
-  private readonly _liquidSplitFactoryContractCallData: ContractCallData
-
+class LiquidSplitGasEstimates extends LiquidSplitTransactions {
   constructor({
     chainId,
     provider,
@@ -454,16 +574,77 @@ class LiquidSplitCallData extends BaseClient {
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
+      transactionType: 'gasEstimate',
       chainId,
       provider,
       ensProvider,
       signer,
       includeEnsNames,
     })
-    this._liquidSplitFactoryContractCallData = new ContractCallData(
-      LIQUID_SPLIT_FACTORY_ADDRESS,
-      LIQUID_SPLIT_FACTORY_ARTIFACT.abi,
-    )
+  }
+
+  async createLiquidSplit({
+    recipients,
+    distributorFeePercent,
+    owner = undefined,
+    createClone = false,
+  }: CreateLiquidSplitConfig): Promise<BigNumber> {
+    const gasEstimate = await this._createLiquidSplitTransaction({
+      recipients,
+      distributorFeePercent,
+      owner,
+      createClone,
+    })
+    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+
+  async distributeToken({
+    liquidSplitId,
+    token,
+    distributorAddress,
+  }: DistributeLiquidSplitTokenConfig): Promise<BigNumber> {
+    const gasEstimate = await this._distributeTokenTransaction({
+      liquidSplitId,
+      token,
+      distributorAddress,
+    })
+    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+
+  async transferOwnership({
+    liquidSplitId,
+    newOwner,
+  }: TransferLiquidSplitOwnershipConfig): Promise<BigNumber> {
+    const gasEstimate = await this._transferOwnershipTransaction({
+      liquidSplitId,
+      newOwner,
+    })
+    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+}
+
+class LiquidSplitCallData extends LiquidSplitTransactions {
+  constructor({
+    chainId,
+    provider,
+    ensProvider,
+    signer,
+    includeEnsNames = false,
+  }: SplitsClientConfig) {
+    super({
+      transactionType: 'callData',
+      chainId,
+      provider,
+      ensProvider,
+      signer,
+      includeEnsNames,
+    })
   }
 
   async createLiquidSplit({
@@ -472,37 +653,14 @@ class LiquidSplitCallData extends BaseClient {
     owner = undefined,
     createClone = false,
   }: CreateLiquidSplitConfig): Promise<CallData> {
-    validateRecipients(recipients, LIQUID_SPLITS_MAX_PRECISION_DECIMALS)
-    validateDistributorFeePercent(distributorFeePercent)
+    const callData = await this._createLiquidSplitTransaction({
+      recipients,
+      distributorFeePercent,
+      owner,
+      createClone,
+    })
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
 
-    let ownerAddress = owner
-    if (!ownerAddress) {
-      if (!this._signer)
-        throw new Error(
-          'Must pass in an owner or have include a signer in the client',
-        )
-      ownerAddress = await this._signer.getAddress()
-    }
-    validateAddress(ownerAddress)
-
-    const [accounts, percentAllocations] =
-      getRecipientSortedAddressesAndAllocations(recipients)
-    const nftAmounts = getNftCountsFromPercents(percentAllocations)
-    const distributorFee = getBigNumberFromPercent(distributorFeePercent)
-
-    const callData = createClone
-      ? this._liquidSplitFactoryContractCallData.createLiquidSplitClone(
-          accounts,
-          nftAmounts,
-          distributorFee,
-          ownerAddress,
-        )
-      : this._liquidSplitFactoryContractCallData.createLiquidSplit(
-          accounts,
-          nftAmounts,
-          distributorFee,
-          ownerAddress,
-        )
     return callData
   }
 
@@ -511,39 +669,13 @@ class LiquidSplitCallData extends BaseClient {
     token,
     distributorAddress,
   }: DistributeLiquidSplitTokenConfig): Promise<CallData> {
-    validateAddress(liquidSplitId)
-    validateAddress(token)
-
-    let distributorPayoutAddress = distributorAddress
-    if (!distributorPayoutAddress) {
-      if (!this._signer)
-        throw new Error(
-          'Must pass in a distributor address or include a signer in the client',
-        )
-      distributorPayoutAddress = await this._signer.getAddress()
-    }
-    validateAddress(distributorPayoutAddress)
-
-    // TO DO: handle bad split id/no metadata found
-    const liquidSplit = await this._getLiquidSplitMetadata({
+    const callData = await this._distributeTokenTransaction({
       liquidSplitId,
-    })
-    const { holders } = liquidSplit
-
-    const accounts = holders
-      .map((h) => h.address)
-      .sort((a, b) => {
-        if (a.toLowerCase() > b.toLowerCase()) return 1
-        return -1
-      })
-
-    const liquidSplitContractCallData =
-      this._getLiquidSplitContractCallData(liquidSplitId)
-    const callData = liquidSplitContractCallData.distributeFunds(
       token,
-      accounts,
       distributorAddress,
-    )
+    })
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
+
     return callData
   }
 
@@ -551,37 +683,12 @@ class LiquidSplitCallData extends BaseClient {
     liquidSplitId,
     newOwner,
   }: TransferLiquidSplitOwnershipConfig): Promise<CallData> {
-    validateAddress(liquidSplitId)
-    validateAddress(newOwner)
-
-    const liquidSplitContractCallData =
-      this._getLiquidSplitContractCallData(liquidSplitId)
-    const callData = liquidSplitContractCallData.transferOwnership(newOwner)
-    return callData
-  }
-
-  private _getLiquidSplitContractCallData(liquidSplitId: string) {
-    return new ContractCallData(liquidSplitId, LIQUID_SPLIT_ARTIFACT.abi)
-  }
-
-  private async _getLiquidSplitMetadata({
-    liquidSplitId,
-  }: {
-    liquidSplitId: string
-  }): Promise<LiquidSplit> {
-    validateAddress(liquidSplitId)
-
-    const response = await this._makeGqlRequest<{
-      liquidSplit: GqlLiquidSplit
-    }>(LIQUID_SPLIT_QUERY, {
-      liquidSplitId: liquidSplitId.toLowerCase(),
+    const callData = await this._transferOwnershipTransaction({
+      liquidSplitId,
+      newOwner,
     })
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
 
-    if (!response.liquidSplit)
-      throw new AccountNotFoundError(
-        `No liquid split found at address ${liquidSplitId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
-      )
-
-    return protectedFormatLiquidSplit(response.liquidSplit)
+    return callData
   }
 }
