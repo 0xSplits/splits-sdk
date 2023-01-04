@@ -1,12 +1,10 @@
 import { Provider } from '@ethersproject/abstract-provider'
 
 export const writeActions = {
-  waterfallFunds: jest.fn().mockReturnValue('waterfall_funds_tx'),
-  waterfallFundsPull: jest.fn().mockReturnValue('waterfall_funds_pull_tx'),
-  recoverNonWaterfallFunds: jest
-    .fn()
-    .mockReturnValue('recover_non_waterfall_funds_tx'),
-  withdraw: jest.fn().mockReturnValue('withdraw_tx'),
+  waterfallFunds: jest.fn(),
+  waterfallFundsPull: jest.fn(),
+  recoverNonWaterfallFunds: jest.fn(),
+  withdraw: jest.fn(),
 }
 
 export const readActions = {

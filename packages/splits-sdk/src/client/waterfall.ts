@@ -46,10 +46,265 @@ const waterfallModuleFactoryInterface = new Interface(
 )
 const waterfallModuleInterface = new Interface(WATERFALL_MODULE_ARTIFACT.abi)
 
-export default class WaterfallClient extends BaseClient {
-  private readonly _waterfallModuleFactory: WaterfallModuleFactoryType
+class WaterfallTransactions extends BaseClient {
+  private readonly _transactionType: 'callData' | 'gasEstimate' | 'transaction'
+  private readonly _shouldRequireSigner: boolean
+  private readonly _waterfallModuleFactoryContract:
+    | ContractCallData
+    | WaterfallModuleFactoryType
+    | WaterfallModuleFactoryType['estimateGas']
+
+  constructor({
+    transactionType,
+    chainId,
+    provider,
+    ensProvider,
+    signer,
+    includeEnsNames = false,
+  }: SplitsClientConfig & {
+    transactionType: 'callData' | 'gasEstimate' | 'transaction'
+  }) {
+    super({
+      chainId,
+      provider,
+      ensProvider,
+      signer,
+      includeEnsNames,
+    })
+
+    this._transactionType = transactionType
+    this._shouldRequireSigner = transactionType === 'transaction'
+    this._waterfallModuleFactoryContract = this._getWaterfallFactoryContract()
+  }
+
+  protected async _createWaterfallModuleTransaction({
+    token,
+    tranches,
+    nonWaterfallRecipient = AddressZero,
+  }: CreateWaterfallConfig): Promise<
+    ContractTransaction | BigNumber | CallData
+  > {
+    validateAddress(token)
+    validateAddress(nonWaterfallRecipient)
+    validateTranches(tranches)
+    this._requireProvider()
+    if (!this._provider) throw new Error('Provider required')
+    if (this._shouldRequireSigner) this._requireSigner()
+
+    const [recipients, trancheSizes] = await getTrancheRecipientsAndSizes(
+      this._chainId,
+      token,
+      tranches,
+      this._provider,
+    )
+    const createWaterfallResult =
+      await this._waterfallModuleFactoryContract.createWaterfallModule(
+        token,
+        nonWaterfallRecipient,
+        recipients,
+        trancheSizes,
+      )
+
+    return createWaterfallResult
+  }
+
+  protected async _waterfallFundsTransaction({
+    waterfallModuleId,
+    usePull = false,
+  }: WaterfallFundsConfig): Promise<
+    ContractTransaction | BigNumber | CallData
+  > {
+    validateAddress(waterfallModuleId)
+    if (this._shouldRequireSigner) this._requireSigner()
+
+    const waterfallContract = this._getWaterfallContract(waterfallModuleId)
+    const waterfallFundsResult = usePull
+      ? await waterfallContract.waterfallFundsPull()
+      : await waterfallContract.waterfallFunds()
+
+    return waterfallFundsResult
+  }
+
+  protected async _recoverNonWaterfallFundsTransaction({
+    waterfallModuleId,
+    token,
+    recipient = AddressZero,
+  }: RecoverNonWaterfallFundsConfig): Promise<
+    ContractTransaction | BigNumber | CallData
+  > {
+    validateAddress(waterfallModuleId)
+    validateAddress(token)
+    validateAddress(recipient)
+    this._requireSigner()
+    await this._validateRecoverTokensWaterfallData({
+      waterfallModuleId,
+      token,
+      recipient,
+    })
+
+    const waterfallContract = this._getWaterfallContract(waterfallModuleId)
+    const recoverFundsResult = await waterfallContract.recoverNonWaterfallFunds(
+      token,
+      recipient,
+    )
+
+    return recoverFundsResult
+  }
+
+  protected async _withdrawPullFundsTransaction({
+    waterfallModuleId,
+    address,
+  }: WithdrawWaterfallPullFundsConfig): Promise<
+    ContractTransaction | BigNumber | CallData
+  > {
+    validateAddress(waterfallModuleId)
+    validateAddress(address)
+    this._requireSigner()
+
+    const waterfallContract = this._getWaterfallContract(waterfallModuleId)
+    const withdrawResult = await waterfallContract.withdraw(address)
+
+    return withdrawResult
+  }
+
+  // Graphql read actions
+  async getWaterfallMetadata({
+    waterfallModuleId,
+  }: {
+    waterfallModuleId: string
+  }): Promise<WaterfallModule> {
+    validateAddress(waterfallModuleId)
+
+    const response = await this._makeGqlRequest<{
+      waterfallModule: GqlWaterfallModule
+    }>(WATERFALL_MODULE_QUERY, {
+      waterfallModuleId: waterfallModuleId.toLowerCase(),
+    })
+
+    if (!response.waterfallModule)
+      throw new AccountNotFoundError(
+        `No waterfall module found at address ${waterfallModuleId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
+      )
+
+    return await this.formatWaterfallModule(response.waterfallModule)
+  }
+
+  async formatWaterfallModule(
+    gqlWaterfallModule: GqlWaterfallModule,
+  ): Promise<WaterfallModule> {
+    this._requireProvider()
+    if (!this._provider) throw new Error()
+
+    const tokenData = await getTokenData(
+      this._chainId,
+      gqlWaterfallModule.token.id,
+      this._provider,
+    )
+
+    const waterfallModule = protectedFormatWaterfallModule(
+      gqlWaterfallModule,
+      tokenData.symbol,
+      tokenData.decimals,
+    )
+    if (this._includeEnsNames) {
+      await addWaterfallEnsNames(
+        this._ensProvider ?? this._provider,
+        waterfallModule.tranches,
+      )
+    }
+
+    return waterfallModule
+  }
+
+  private async _validateRecoverTokensWaterfallData({
+    waterfallModuleId,
+    token,
+    recipient,
+  }: {
+    waterfallModuleId: string
+    token: string
+    recipient: string
+  }) {
+    const waterfallMetadata = await this.getWaterfallMetadata({
+      waterfallModuleId,
+    })
+
+    if (token.toLowerCase() === waterfallMetadata.token.address.toLowerCase())
+      throw new InvalidArgumentError(
+        `You must call recover tokens with a token other than the given waterfall's primary token. Primary token: ${waterfallMetadata.token.address}, given token: ${token}`,
+      )
+
+    if (
+      waterfallMetadata.nonWaterfallRecipient &&
+      waterfallMetadata.nonWaterfallRecipient !== AddressZero
+    ) {
+      if (
+        recipient.toLowerCase() !==
+        waterfallMetadata.nonWaterfallRecipient.toLowerCase()
+      )
+        throw new InvalidArgumentError(
+          `The passed in recipient (${recipient}) must match the non waterfall recipient for this module: ${waterfallMetadata.nonWaterfallRecipient}`,
+        )
+    } else {
+      const foundRecipient = waterfallMetadata.tranches.reduce(
+        (acc, tranche) => {
+          if (acc) return acc
+
+          return (
+            tranche.recipientAddress.toLowerCase() === recipient.toLowerCase()
+          )
+        },
+        false,
+      )
+      if (!foundRecipient)
+        throw new InvalidArgumentError(
+          `You must pass in a valid recipient address for the given waterfall. Address ${recipient} not found in any tranche for waterfall ${waterfallModuleId}.`,
+        )
+    }
+  }
+
+  protected _getWaterfallContract(waterfallModule: string) {
+    if (this._transactionType === 'callData')
+      return new ContractCallData(
+        waterfallModule,
+        WATERFALL_MODULE_ARTIFACT.abi,
+      )
+
+    const waterfallContract = new Contract(
+      waterfallModule,
+      waterfallModuleInterface,
+      this._signer || this._provider,
+    ) as WaterfallModuleType
+
+    if (this._transactionType === 'gasEstimate')
+      return waterfallContract.estimateGas
+
+    return waterfallContract
+  }
+
+  private _getWaterfallFactoryContract() {
+    if (this._transactionType === 'callData')
+      return new ContractCallData(
+        WATERFALL_MODULE_FACTORY_ADDRESS,
+        WATERFALL_MODULE_FACTORY_ARTIFACT.abi,
+      )
+
+    const waterfallFactoryContract = new Contract(
+      WATERFALL_MODULE_FACTORY_ADDRESS,
+      waterfallModuleFactoryInterface,
+      this._signer || this._provider,
+    ) as WaterfallModuleFactoryType
+    if (this._transactionType === 'gasEstimate')
+      return waterfallFactoryContract.estimateGas
+
+    return waterfallFactoryContract
+  }
+}
+
+export default class WaterfallClient extends WaterfallTransactions {
   readonly eventTopics: { [key: string]: string[] }
   readonly callData: WaterfallCallData
+  readonly estimateGas: WaterfallGasEstimates
 
   constructor({
     chainId,
@@ -59,6 +314,7 @@ export default class WaterfallClient extends BaseClient {
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
+      transactionType: 'transaction',
       chainId,
       provider,
       ensProvider,
@@ -66,13 +322,8 @@ export default class WaterfallClient extends BaseClient {
       includeEnsNames,
     })
 
-    if (WATERFALL_CHAIN_IDS.includes(chainId)) {
-      this._waterfallModuleFactory = new Contract(
-        WATERFALL_MODULE_FACTORY_ADDRESS,
-        waterfallModuleFactoryInterface,
-        provider,
-      ) as WaterfallModuleFactoryType
-    } else throw new UnsupportedChainIdError(chainId, WATERFALL_CHAIN_IDS)
+    if (!WATERFALL_CHAIN_IDS.includes(chainId))
+      throw new UnsupportedChainIdError(chainId, WATERFALL_CHAIN_IDS)
 
     this.eventTopics = {
       createWaterfallModule: [
@@ -94,6 +345,13 @@ export default class WaterfallClient extends BaseClient {
       signer,
       includeEnsNames,
     })
+    this.estimateGas = new WaterfallGasEstimates({
+      chainId,
+      provider,
+      ensProvider,
+      signer,
+      includeEnsNames,
+    })
   }
 
   // Write actions
@@ -104,26 +362,13 @@ export default class WaterfallClient extends BaseClient {
   }: CreateWaterfallConfig): Promise<{
     tx: ContractTransaction
   }> {
-    validateAddress(token)
-    validateAddress(nonWaterfallRecipient)
-    validateTranches(tranches)
-    this._requireSigner()
-    if (!this._waterfallModuleFactory) throw new Error()
-
-    const [recipients, trancheSizes] = await getTrancheRecipientsAndSizes(
-      this._chainId,
+    const createWaterfallTx = await this._createWaterfallModuleTransaction({
       token,
       tranches,
-      this._waterfallModuleFactory.provider,
-    )
-    const createWaterfallTx = await this._waterfallModuleFactory
-      .connect(this._signer)
-      .createWaterfallModule(
-        token,
-        nonWaterfallRecipient,
-        recipients,
-        trancheSizes,
-      )
+      nonWaterfallRecipient,
+    })
+    if (!this._isContractTransaction(createWaterfallTx))
+      throw new Error('Invalid response')
 
     return { tx: createWaterfallTx }
   }
@@ -162,13 +407,12 @@ export default class WaterfallClient extends BaseClient {
   }: WaterfallFundsConfig): Promise<{
     tx: ContractTransaction
   }> {
-    validateAddress(waterfallModuleId)
-    this._requireSigner()
-
-    const waterfallContract = this._getWaterfallContract(waterfallModuleId)
-    const waterfallFundsTx = usePull
-      ? await waterfallContract.waterfallFundsPull()
-      : await waterfallContract.waterfallFunds()
+    const waterfallFundsTx = await this._waterfallFundsTransaction({
+      waterfallModuleId,
+      usePull,
+    })
+    if (!this._isContractTransaction(waterfallFundsTx))
+      throw new Error('Invalid response')
 
     return { tx: waterfallFundsTx }
   }
@@ -202,21 +446,13 @@ export default class WaterfallClient extends BaseClient {
   }: RecoverNonWaterfallFundsConfig): Promise<{
     tx: ContractTransaction
   }> {
-    validateAddress(waterfallModuleId)
-    validateAddress(token)
-    validateAddress(recipient)
-    this._requireSigner()
-    await this._validateRecoverTokensWaterfallData({
+    const recoverFundsTx = await this._recoverNonWaterfallFundsTransaction({
       waterfallModuleId,
       token,
       recipient,
     })
-
-    const waterfallContract = this._getWaterfallContract(waterfallModuleId)
-    const recoverFundsTx = await waterfallContract.recoverNonWaterfallFunds(
-      token,
-      recipient,
-    )
+    if (!this._isContractTransaction(recoverFundsTx))
+      throw new Error('Invalid response')
 
     return { tx: recoverFundsTx }
   }
@@ -253,12 +489,12 @@ export default class WaterfallClient extends BaseClient {
   }: WithdrawWaterfallPullFundsConfig): Promise<{
     tx: ContractTransaction
   }> {
-    validateAddress(waterfallModuleId)
-    validateAddress(address)
-    this._requireSigner()
-
-    const waterfallContract = this._getWaterfallContract(waterfallModuleId)
-    const withdrawTx = await waterfallContract.withdraw(address)
+    const withdrawTx = await this._withdrawPullFundsTransaction({
+      waterfallModuleId,
+      address,
+    })
+    if (!this._isContractTransaction(withdrawTx))
+      throw new Error('Invalid response')
 
     return { tx: withdrawTx }
   }
@@ -401,118 +637,16 @@ export default class WaterfallClient extends BaseClient {
     }
   }
 
-  // Graphql read actions
-  async getWaterfallMetadata({
-    waterfallModuleId,
-  }: {
-    waterfallModuleId: string
-  }): Promise<WaterfallModule> {
-    validateAddress(waterfallModuleId)
-
-    const response = await this._makeGqlRequest<{
-      waterfallModule: GqlWaterfallModule
-    }>(WATERFALL_MODULE_QUERY, {
-      waterfallModuleId: waterfallModuleId.toLowerCase(),
-    })
-
-    if (!response.waterfallModule)
-      throw new AccountNotFoundError(
-        `No waterfall module found at address ${waterfallModuleId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
-      )
-
-    return await this.formatWaterfallModule(response.waterfallModule)
-  }
-
-  // Helper functions
-  private async _validateRecoverTokensWaterfallData({
-    waterfallModuleId,
-    token,
-    recipient,
-  }: {
-    waterfallModuleId: string
-    token: string
-    recipient: string
-  }) {
-    const waterfallMetadata = await this.getWaterfallMetadata({
-      waterfallModuleId,
-    })
-
-    if (token.toLowerCase() === waterfallMetadata.token.address.toLowerCase())
-      throw new InvalidArgumentError(
-        `You must call recover tokens with a token other than the given waterfall's primary token. Primary token: ${waterfallMetadata.token.address}, given token: ${token}`,
-      )
-
-    if (
-      waterfallMetadata.nonWaterfallRecipient &&
-      waterfallMetadata.nonWaterfallRecipient !== AddressZero
-    ) {
-      if (
-        recipient.toLowerCase() !==
-        waterfallMetadata.nonWaterfallRecipient.toLowerCase()
-      )
-        throw new InvalidArgumentError(
-          `The passed in recipient (${recipient}) must match the non waterfall recipient for this module: ${waterfallMetadata.nonWaterfallRecipient}`,
-        )
-    } else {
-      const foundRecipient = waterfallMetadata.tranches.reduce(
-        (acc, tranche) => {
-          if (acc) return acc
-
-          return (
-            tranche.recipientAddress.toLowerCase() === recipient.toLowerCase()
-          )
-        },
-        false,
-      )
-      if (!foundRecipient)
-        throw new InvalidArgumentError(
-          `You must pass in a valid recipient address for the given waterfall. Address ${recipient} not found in any tranche for waterfall ${waterfallModuleId}.`,
-        )
-    }
-  }
-
-  private _getWaterfallContract(waterfallModule: string) {
-    if (!this._waterfallModuleFactory.provider && !this._signer)
-      throw new Error()
-
-    return new Contract(
-      waterfallModule,
-      waterfallModuleInterface,
-      this._signer || this._waterfallModuleFactory.provider,
-    ) as WaterfallModuleType
-  }
-
-  async formatWaterfallModule(
-    gqlWaterfallModule: GqlWaterfallModule,
-  ): Promise<WaterfallModule> {
-    this._requireProvider()
-    if (!this._waterfallModuleFactory) throw new Error()
-
-    const tokenData = await getTokenData(
-      this._chainId,
-      gqlWaterfallModule.token.id,
-      this._waterfallModuleFactory.provider,
-    )
-
-    const waterfallModule = protectedFormatWaterfallModule(
-      gqlWaterfallModule,
-      tokenData.symbol,
-      tokenData.decimals,
-    )
-    if (this._includeEnsNames) {
-      await addWaterfallEnsNames(
-        this._ensProvider ?? this._waterfallModuleFactory.provider,
-        waterfallModule.tranches,
-      )
-    }
-
-    return waterfallModule
+  private _isContractTransaction(
+    tx: ContractTransaction | BigNumber | CallData,
+  ): tx is ContractTransaction {
+    if (tx instanceof BigNumber) return false
+    if ('wait' in tx) return true
+    return false
   }
 }
 
-class WaterfallCallData extends BaseClient {
-  private readonly _waterfallFactoryContractCallData: ContractCallData
-
+class WaterfallGasEstimates extends WaterfallTransactions {
   constructor({
     chainId,
     provider,
@@ -521,17 +655,94 @@ class WaterfallCallData extends BaseClient {
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
+      transactionType: 'gasEstimate',
       chainId,
       provider,
       ensProvider,
       signer,
       includeEnsNames,
     })
+  }
 
-    this._waterfallFactoryContractCallData = new ContractCallData(
-      WATERFALL_MODULE_FACTORY_ADDRESS,
-      WATERFALL_MODULE_FACTORY_ARTIFACT.abi,
-    )
+  async createWaterfallModule({
+    token,
+    tranches,
+    nonWaterfallRecipient = AddressZero,
+  }: CreateWaterfallConfig): Promise<BigNumber> {
+    const gasEstimate = await this._createWaterfallModuleTransaction({
+      token,
+      tranches,
+      nonWaterfallRecipient,
+    })
+    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+
+  async waterfallFunds({
+    waterfallModuleId,
+    usePull = false,
+  }: WaterfallFundsConfig): Promise<BigNumber> {
+    const gasEstimate = await this._waterfallFundsTransaction({
+      waterfallModuleId,
+      usePull,
+    })
+    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+
+  async recoverNonWaterfallFunds({
+    waterfallModuleId,
+    token,
+    recipient = AddressZero,
+  }: RecoverNonWaterfallFundsConfig): Promise<BigNumber> {
+    const gasEstimate = await this._recoverNonWaterfallFundsTransaction({
+      waterfallModuleId,
+      token,
+      recipient,
+    })
+    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+
+  async withdrawPullFunds({
+    waterfallModuleId,
+    address,
+  }: WithdrawWaterfallPullFundsConfig): Promise<BigNumber> {
+    const gasEstimate = await this._withdrawPullFundsTransaction({
+      waterfallModuleId,
+      address,
+    })
+    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+
+  private _isBigNumber(
+    gasEstimate: ContractTransaction | BigNumber | CallData,
+  ): gasEstimate is BigNumber {
+    return gasEstimate instanceof BigNumber
+  }
+}
+
+class WaterfallCallData extends WaterfallTransactions {
+  constructor({
+    chainId,
+    provider,
+    ensProvider,
+    signer,
+    includeEnsNames = false,
+  }: SplitsClientConfig) {
+    super({
+      transactionType: 'callData',
+      chainId,
+      provider,
+      ensProvider,
+      signer,
+      includeEnsNames,
+    })
   }
 
   async createWaterfallModule({
@@ -539,25 +750,13 @@ class WaterfallCallData extends BaseClient {
     tranches,
     nonWaterfallRecipient = AddressZero,
   }: CreateWaterfallConfig): Promise<CallData> {
-    validateAddress(token)
-    validateAddress(nonWaterfallRecipient)
-    validateTranches(tranches)
-    if (!this._provider) throw new Error('Provider required')
-
-    const [recipients, trancheSizes] = await getTrancheRecipientsAndSizes(
-      this._chainId,
+    const callData = await this._createWaterfallModuleTransaction({
       token,
       tranches,
-      this._provider,
-    )
+      nonWaterfallRecipient,
+    })
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
 
-    const callData =
-      this._waterfallFactoryContractCallData.createWaterfallModule(
-        token,
-        nonWaterfallRecipient,
-        recipients,
-        trancheSizes,
-      )
     return callData
   }
 
@@ -565,13 +764,12 @@ class WaterfallCallData extends BaseClient {
     waterfallModuleId,
     usePull = false,
   }: WaterfallFundsConfig): Promise<CallData> {
-    validateAddress(waterfallModuleId)
+    const callData = await this._waterfallFundsTransaction({
+      waterfallModuleId,
+      usePull,
+    })
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
 
-    const waterfallContractCallData =
-      this._getWaterfallContractCallData(waterfallModuleId)
-    const callData = usePull
-      ? waterfallContractCallData.waterfallFundsPull()
-      : waterfallContractCallData.waterfallFunds()
     return callData
   }
 
@@ -580,16 +778,13 @@ class WaterfallCallData extends BaseClient {
     token,
     recipient = AddressZero,
   }: RecoverNonWaterfallFundsConfig): Promise<CallData> {
-    validateAddress(waterfallModuleId)
-    validateAddress(token)
-    validateAddress(recipient)
-
-    const waterfallContractCallData =
-      this._getWaterfallContractCallData(waterfallModuleId)
-    const callData = waterfallContractCallData.recoverNonWaterfallFunds(
+    const callData = await this._recoverNonWaterfallFundsTransaction({
+      waterfallModuleId,
       token,
       recipient,
-    )
+    })
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
+
     return callData
   }
 
@@ -597,16 +792,20 @@ class WaterfallCallData extends BaseClient {
     waterfallModuleId,
     address,
   }: WithdrawWaterfallPullFundsConfig): Promise<CallData> {
-    validateAddress(waterfallModuleId)
-    validateAddress(address)
+    const callData = await this._withdrawPullFundsTransaction({
+      waterfallModuleId,
+      address,
+    })
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
 
-    const waterfallContractCallData =
-      this._getWaterfallContractCallData(waterfallModuleId)
-    const callData = waterfallContractCallData.withdraw(address)
     return callData
   }
 
-  private _getWaterfallContractCallData(waterfallModule: string) {
-    return new ContractCallData(waterfallModule, WATERFALL_MODULE_ARTIFACT.abi)
+  private _isCallData(
+    callData: ContractTransaction | BigNumber | CallData,
+  ): callData is CallData {
+    if (callData instanceof BigNumber) return false
+    if ('wait' in callData) return false
+    return true
   }
 }

@@ -116,6 +116,26 @@ describe('Waterfall writes', () => {
     provider,
     signer,
   })
+  const createWaterfallResult = {
+    value: 'create_waterfall_module_tx',
+    wait: 'wait',
+  }
+  const waterfallFundsResult = {
+    value: 'waterfall_funds_tx',
+    wait: 'wait',
+  }
+  const waterfallFundsPullResult = {
+    value: 'waterfall_funds_pull_tx',
+    wait: 'wait',
+  }
+  const recoverNonWaterfallFundsResult = {
+    value: 'recover_non_waterfall_funds_tx',
+    wait: 'wait',
+  }
+  const withdrawResult = {
+    value: 'withdraw_tx',
+    wait: 'wait',
+  }
 
   beforeEach(() => {
     ;(validateTranches as jest.Mock).mockClear()
@@ -138,6 +158,9 @@ describe('Waterfall writes', () => {
 
     beforeEach(() => {
       factoryWriteActions.createWaterfallModule.mockClear()
+      factoryWriteActions.createWaterfallModule.mockReturnValueOnce(
+        createWaterfallResult,
+      )
     })
 
     test('Create waterfall fails with no provider', async () => {
@@ -192,10 +215,9 @@ describe('Waterfall writes', () => {
         TRANCHE_RECIPIENTS,
         TRANCHE_SIZES,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(
-        'create_waterfall_module_tx',
-        [waterfallClient.eventTopics.createWaterfallModule[0]],
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith(createWaterfallResult, [
+        waterfallClient.eventTopics.createWaterfallModule[0],
+      ])
     })
 
     test('Create waterfall passes with non waterfall recipient', async () => {
@@ -222,10 +244,9 @@ describe('Waterfall writes', () => {
         TRANCHE_RECIPIENTS,
         TRANCHE_SIZES,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(
-        'create_waterfall_module_tx',
-        [waterfallClient.eventTopics.createWaterfallModule[0]],
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith(createWaterfallResult, [
+        waterfallClient.eventTopics.createWaterfallModule[0],
+      ])
     })
   })
 
@@ -235,6 +256,12 @@ describe('Waterfall writes', () => {
     beforeEach(() => {
       moduleWriteActions.waterfallFunds.mockClear()
       moduleWriteActions.waterfallFundsPull.mockClear()
+      moduleWriteActions.waterfallFunds.mockReturnValueOnce(
+        waterfallFundsResult,
+      )
+      moduleWriteActions.waterfallFundsPull.mockReturnValueOnce(
+        waterfallFundsPullResult,
+      )
     })
 
     test('Waterfall funds fails with no provider', async () => {
@@ -273,7 +300,7 @@ describe('Waterfall writes', () => {
       expect(validateAddress).toBeCalledWith(waterfallModuleId)
       expect(moduleWriteActions.waterfallFunds).toBeCalled()
       expect(moduleWriteActions.waterfallFundsPull).not.toBeCalled()
-      expect(getTransactionEventsSpy).toBeCalledWith('waterfall_funds_tx', [
+      expect(getTransactionEventsSpy).toBeCalledWith(waterfallFundsResult, [
         waterfallClient.eventTopics.waterfallFunds[0],
       ])
     })
@@ -288,10 +315,9 @@ describe('Waterfall writes', () => {
       expect(validateAddress).toBeCalledWith(waterfallModuleId)
       expect(moduleWriteActions.waterfallFunds).not.toBeCalled()
       expect(moduleWriteActions.waterfallFundsPull).toBeCalled()
-      expect(getTransactionEventsSpy).toBeCalledWith(
-        'waterfall_funds_pull_tx',
-        [waterfallClient.eventTopics.waterfallFunds[0]],
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith(waterfallFundsPullResult, [
+        waterfallClient.eventTopics.waterfallFunds[0],
+      ])
     })
   })
 
@@ -318,6 +344,9 @@ describe('Waterfall writes', () => {
     beforeEach(() => {
       mockGetWaterfallData.mockClear()
       moduleWriteActions.recoverNonWaterfallFunds.mockClear()
+      moduleWriteActions.recoverNonWaterfallFunds.mockReturnValueOnce(
+        recoverNonWaterfallFundsResult,
+      )
     })
 
     test('Recover non waterfall funds fails with no provider', async () => {
@@ -413,7 +442,7 @@ describe('Waterfall writes', () => {
         recipient,
       )
       expect(getTransactionEventsSpy).toBeCalledWith(
-        'recover_non_waterfall_funds_tx',
+        recoverNonWaterfallFundsResult,
         [waterfallClient.eventTopics.recoverNonWaterfallFunds[0]],
       )
     })
@@ -447,7 +476,7 @@ describe('Waterfall writes', () => {
         nonWaterfallRecipient,
       )
       expect(getTransactionEventsSpy).toBeCalledWith(
-        'recover_non_waterfall_funds_tx',
+        recoverNonWaterfallFundsResult,
         [waterfallClient.eventTopics.recoverNonWaterfallFunds[0]],
       )
     })
@@ -459,6 +488,7 @@ describe('Waterfall writes', () => {
 
     beforeEach(() => {
       moduleWriteActions.withdraw.mockClear()
+      moduleWriteActions.withdraw.mockReturnValueOnce(withdrawResult)
     })
 
     test('Withdraw pull funds fails with no provider', async () => {
@@ -500,7 +530,7 @@ describe('Waterfall writes', () => {
       expect(validateAddress).toBeCalledWith(waterfallModuleId)
       expect(validateAddress).toBeCalledWith(address)
       expect(moduleWriteActions.withdraw).toBeCalledWith(address)
-      expect(getTransactionEventsSpy).toBeCalledWith('withdraw_tx', [
+      expect(getTransactionEventsSpy).toBeCalledWith(withdrawResult, [
         waterfallClient.eventTopics.withdrawPullFunds[0],
       ])
     })
