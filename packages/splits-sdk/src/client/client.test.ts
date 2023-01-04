@@ -175,9 +175,14 @@ describe('SplitMain writes', () => {
   describe('Create split tests', () => {
     const recipients = [{ address: '0xuser', percentAllocation: 45 }]
     const distributorFeePercent = 7.35
+    const createSplitResult = {
+      value: 'create_split_tx',
+      wait: 'wait',
+    }
 
     beforeEach(() => {
       writeActions.createSplit.mockClear()
+      writeActions.createSplit.mockReturnValueOnce(createSplitResult)
     })
 
     test('Create split fails with no provider', async () => {
@@ -232,7 +237,7 @@ describe('SplitMain writes', () => {
         DISTRIBUTOR_FEE,
         AddressZero,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith('create_split_tx', [
+      expect(getTransactionEventsSpy).toBeCalledWith(createSplitResult, [
         splitsClient.eventTopics.createSplit[0],
       ])
     })
@@ -262,7 +267,7 @@ describe('SplitMain writes', () => {
         DISTRIBUTOR_FEE,
         controller,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith('create_split_tx', [
+      expect(getTransactionEventsSpy).toBeCalledWith(createSplitResult, [
         splitsClient.eventTopics.createSplit[0],
       ])
     })
@@ -272,9 +277,14 @@ describe('SplitMain writes', () => {
     const recipients = [{ address: '0xhey', percentAllocation: 12 }]
     const distributorFeePercent = 9
     const splitId = '0xupdate'
+    const updateSplitResult = {
+      value: 'update_split_tx',
+      wait: 'wait',
+    }
 
     beforeEach(() => {
       writeActions.updateSplit.mockClear()
+      writeActions.updateSplit.mockReturnValueOnce(updateSplitResult)
     })
 
     test('Update split fails with no provider', async () => {
@@ -350,7 +360,7 @@ describe('SplitMain writes', () => {
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith('update_split_tx', [
+      expect(getTransactionEventsSpy).toBeCalledWith(updateSplitResult, [
         splitsClient.eventTopics.updateSplit[0],
       ])
     })
@@ -360,6 +370,14 @@ describe('SplitMain writes', () => {
     const splitId = '0xdistribute'
     const recipients = [{ address: '0xd', percentAllocation: 78 }]
     const distributorFeePercent = 3
+    const distributeETHResult = {
+      value: 'distribute_eth_tx',
+      wait: 'wait',
+    }
+    const distributeERC20Result = {
+      value: 'distribute_erc20_tx',
+      wait: 'wait',
+    }
 
     beforeEach(() => {
       jest
@@ -372,6 +390,8 @@ describe('SplitMain writes', () => {
         })
       writeActions.distributeETH.mockClear()
       writeActions.distributeERC20.mockClear()
+      writeActions.distributeETH.mockReturnValueOnce(distributeETHResult)
+      writeActions.distributeERC20.mockReturnValueOnce(distributeERC20Result)
     })
 
     test('Distribute token fails with no provider', async () => {
@@ -422,7 +442,7 @@ describe('SplitMain writes', () => {
         DISTRIBUTOR_FEE,
         CONTROLLER_ADDRESS,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith('distribute_eth_tx', [
+      expect(getTransactionEventsSpy).toBeCalledWith(distributeETHResult, [
         splitsClient.eventTopics.distributeToken[0],
       ])
     })
@@ -448,7 +468,7 @@ describe('SplitMain writes', () => {
         DISTRIBUTOR_FEE,
         CONTROLLER_ADDRESS,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith('distribute_erc20_tx', [
+      expect(getTransactionEventsSpy).toBeCalledWith(distributeERC20Result, [
         splitsClient.eventTopics.distributeToken[1],
       ])
     })
@@ -474,7 +494,7 @@ describe('SplitMain writes', () => {
         DISTRIBUTOR_FEE,
         distributorAddress,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith('distribute_eth_tx', [
+      expect(getTransactionEventsSpy).toBeCalledWith(distributeETHResult, [
         splitsClient.eventTopics.distributeToken[0],
       ])
     })
@@ -502,7 +522,7 @@ describe('SplitMain writes', () => {
         DISTRIBUTOR_FEE,
         distributorAddress,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith('distribute_erc20_tx', [
+      expect(getTransactionEventsSpy).toBeCalledWith(distributeERC20Result, [
         splitsClient.eventTopics.distributeToken[1],
       ])
     })
@@ -512,10 +532,24 @@ describe('SplitMain writes', () => {
     const splitId = '0xupdateanddisribute'
     const recipients = [{ address: '0x829', percentAllocation: 71 }]
     const distributorFeePercent = 4
+    const updateAndDistributeETHResult = {
+      value: 'update_and_distribute_eth_tx',
+      wait: 'wait',
+    }
+    const updateAndDistributeERC20Result = {
+      value: 'update_and_distribute_erc20_tx',
+      wait: 'wait',
+    }
 
     beforeEach(() => {
       writeActions.updateAndDistributeETH.mockClear()
       writeActions.updateAndDistributeERC20.mockClear()
+      writeActions.updateAndDistributeETH.mockReturnValueOnce(
+        updateAndDistributeETHResult,
+      )
+      writeActions.updateAndDistributeERC20.mockReturnValueOnce(
+        updateAndDistributeERC20Result,
+      )
     })
 
     test('Update and distribute fails with no provider', async () => {
@@ -599,7 +633,7 @@ describe('SplitMain writes', () => {
         CONTROLLER_ADDRESS,
       )
       expect(getTransactionEventsSpy).toBeCalledWith(
-        'update_and_distribute_eth_tx',
+        updateAndDistributeETHResult,
         [splitsClient.eventTopics.updateSplitAndDistributeToken[1]],
       )
     })
@@ -635,7 +669,7 @@ describe('SplitMain writes', () => {
         CONTROLLER_ADDRESS,
       )
       expect(getTransactionEventsSpy).toBeCalledWith(
-        'update_and_distribute_erc20_tx',
+        updateAndDistributeERC20Result,
         [splitsClient.eventTopics.updateSplitAndDistributeToken[2]],
       )
     })
@@ -671,7 +705,7 @@ describe('SplitMain writes', () => {
         distributorAddress,
       )
       expect(getTransactionEventsSpy).toBeCalledWith(
-        'update_and_distribute_eth_tx',
+        updateAndDistributeETHResult,
         [splitsClient.eventTopics.updateSplitAndDistributeToken[1]],
       )
     })
@@ -709,7 +743,7 @@ describe('SplitMain writes', () => {
         distributorAddress,
       )
       expect(getTransactionEventsSpy).toBeCalledWith(
-        'update_and_distribute_erc20_tx',
+        updateAndDistributeERC20Result,
         [splitsClient.eventTopics.updateSplitAndDistributeToken[2]],
       )
     })
@@ -717,9 +751,14 @@ describe('SplitMain writes', () => {
 
   describe('Withdraw funds tests', () => {
     const address = '0xwithdraw'
+    const withdrawResult = {
+      value: 'withdraw_tx',
+      wait: 'wait',
+    }
 
     beforeEach(() => {
       writeActions.withdraw.mockClear()
+      writeActions.withdraw.mockReturnValueOnce(withdrawResult)
     })
 
     test('Withdraw fails with no provider', async () => {
@@ -762,7 +801,7 @@ describe('SplitMain writes', () => {
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(address)
       expect(writeActions.withdraw).toBeCalledWith(address, 1, ['0xerc20'])
-      expect(getTransactionEventsSpy).toBeCalledWith('withdraw_tx', [
+      expect(getTransactionEventsSpy).toBeCalledWith(withdrawResult, [
         splitsClient.eventTopics.withdrawFunds[0],
       ])
     })
@@ -781,7 +820,7 @@ describe('SplitMain writes', () => {
         '0xerc20',
         '0xerc202',
       ])
-      expect(getTransactionEventsSpy).toBeCalledWith('withdraw_tx', [
+      expect(getTransactionEventsSpy).toBeCalledWith(withdrawResult, [
         splitsClient.eventTopics.withdrawFunds[0],
       ])
     })
@@ -790,9 +829,14 @@ describe('SplitMain writes', () => {
   describe('Initiate control transfer tests', () => {
     const splitId = '0xitransfer'
     const newController = '0xnewController'
+    const initiateTransferResult = {
+      value: 'initiate_transfer_tx',
+      wait: 'wait',
+    }
 
     beforeEach(() => {
       writeActions.transferControl.mockClear()
+      writeActions.transferControl.mockReturnValueOnce(initiateTransferResult)
     })
 
     test('Initiate transfer fails with no provider', async () => {
@@ -853,7 +897,7 @@ describe('SplitMain writes', () => {
         splitId,
         newController,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith('transfer_control_tx', [
+      expect(getTransactionEventsSpy).toBeCalledWith(initiateTransferResult, [
         splitsClient.eventTopics.initiateControlTransfer[0],
       ])
     })
@@ -861,9 +905,16 @@ describe('SplitMain writes', () => {
 
   describe('Cancel control transfer tests', () => {
     const splitId = '0xcancelTransfer'
+    const cancelTransferResult = {
+      value: 'cancel_transfer_tx',
+      wait: 'wait',
+    }
 
     beforeEach(() => {
       writeActions.cancelControlTransfer.mockClear()
+      writeActions.cancelControlTransfer.mockReturnValueOnce(
+        cancelTransferResult,
+      )
     })
 
     test('Cancel transfer fails with no provider', async () => {
@@ -917,18 +968,22 @@ describe('SplitMain writes', () => {
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitId)
       expect(writeActions.cancelControlTransfer).toBeCalledWith(splitId)
-      expect(getTransactionEventsSpy).toBeCalledWith(
-        'cancel_control_transfer_tx',
-        [splitsClient.eventTopics.cancelControlTransfer[0]],
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith(cancelTransferResult, [
+        splitsClient.eventTopics.cancelControlTransfer[0],
+      ])
     })
   })
 
   describe('Accept control transfer tests', () => {
     const splitId = '0xacceptTransfer'
+    const acceptTransferResult = {
+      value: 'accept_transfer_tx',
+      wait: 'wait',
+    }
 
     beforeEach(() => {
       writeActions.acceptControl.mockClear()
+      writeActions.acceptControl.mockReturnValueOnce(acceptTransferResult)
     })
 
     test('Accept transfer fails with no provider', async () => {
@@ -982,7 +1037,7 @@ describe('SplitMain writes', () => {
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitId)
       expect(writeActions.acceptControl).toBeCalledWith(splitId)
-      expect(getTransactionEventsSpy).toBeCalledWith('accept_control_tx', [
+      expect(getTransactionEventsSpy).toBeCalledWith(acceptTransferResult, [
         splitsClient.eventTopics.acceptControlTransfer[0],
       ])
     })
@@ -990,9 +1045,16 @@ describe('SplitMain writes', () => {
 
   describe('Make split immutable tests', () => {
     const splitId = '0xmakeImmutable'
+    const makeSplitImmutableResult = {
+      value: 'make_split_immutable_tx',
+      wait: 'wait',
+    }
 
     beforeEach(() => {
       writeActions.makeSplitImmutable.mockClear()
+      writeActions.makeSplitImmutable.mockReturnValueOnce(
+        makeSplitImmutableResult,
+      )
     })
 
     test('Make immutable fails with no provider', async () => {
@@ -1046,10 +1108,9 @@ describe('SplitMain writes', () => {
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitId)
       expect(writeActions.makeSplitImmutable).toBeCalledWith(splitId)
-      expect(getTransactionEventsSpy).toBeCalledWith(
-        'make_split_immutable_tx',
-        [splitsClient.eventTopics.makeSplitImmutable[0]],
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith(makeSplitImmutableResult, [
+        splitsClient.eventTopics.makeSplitImmutable[0],
+      ])
     })
   })
 })
