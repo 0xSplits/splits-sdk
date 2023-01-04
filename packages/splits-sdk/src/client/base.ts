@@ -1,5 +1,6 @@
 import { Provider } from '@ethersproject/abstract-provider'
 import { Signer } from '@ethersproject/abstract-signer'
+import { BigNumber } from '@ethersproject/bignumber'
 import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
 import { GraphQLClient, Variables } from 'graphql-request'
 
@@ -79,6 +80,28 @@ export default class BaseClient {
       throw new MissingSignerError(
         'Signer required to perform this action, please update your call to the constructor',
       )
+  }
+
+  protected _isContractTransaction(
+    tx: ContractTransaction | BigNumber | CallData,
+  ): tx is ContractTransaction {
+    if (tx instanceof BigNumber) return false
+    if ('wait' in tx) return true
+    return false
+  }
+
+  protected _isBigNumber(
+    gasEstimate: ContractTransaction | BigNumber | CallData,
+  ): gasEstimate is BigNumber {
+    return gasEstimate instanceof BigNumber
+  }
+
+  protected _isCallData(
+    callData: ContractTransaction | BigNumber | CallData,
+  ): callData is CallData {
+    if (callData instanceof BigNumber) return false
+    if ('wait' in callData) return false
+    return true
   }
 
   async submitMulticallTransaction({ calls }: { calls: CallData[] }): Promise<{
