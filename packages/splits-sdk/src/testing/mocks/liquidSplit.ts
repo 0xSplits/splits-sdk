@@ -2,8 +2,8 @@ import { Provider } from '@ethersproject/abstract-provider'
 import { CONTROLLER_ADDRESS } from '../constants'
 
 export const writeActions = {
-  distributeFunds: jest.fn().mockReturnValue('distribute_funds_tx'),
-  transferOwnership: jest.fn().mockReturnValue('transfer_ownership_tx'),
+  distributeFunds: jest.fn(),
+  transferOwnership: jest.fn(),
 }
 
 export const readActions = {

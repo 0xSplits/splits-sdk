@@ -143,6 +143,22 @@ describe('Liquid split writes', () => {
     provider,
     signer,
   })
+  const createLiquidSplitResult = {
+    value: 'create_liquid_split_tx',
+    wait: 'wait',
+  }
+  const createLiquidSplitCloneResult = {
+    value: 'create_liquid_split_clone_tx',
+    wait: 'wait',
+  }
+  const distributeFundsResult = {
+    value: 'distribute_funds_tx',
+    wait: 'wait',
+  }
+  const transferOwnershipResult = {
+    value: 'transfer_ownership_tx',
+    wait: 'wait',
+  }
 
   beforeEach(() => {
     ;(validateRecipients as jest.Mock).mockClear()
@@ -163,6 +179,13 @@ describe('Liquid split writes', () => {
 
     beforeEach(() => {
       factoryWriteActions.createLiquidSplit.mockClear()
+      factoryWriteActions.createLiquidSplitClone.mockClear()
+      factoryWriteActions.createLiquidSplit.mockReturnValueOnce(
+        createLiquidSplitResult,
+      )
+      factoryWriteActions.createLiquidSplitClone.mockReturnValueOnce(
+        createLiquidSplitCloneResult,
+      )
     })
 
     test('Create liquid split fails with no provider', async () => {
@@ -221,7 +244,7 @@ describe('Liquid split writes', () => {
         CONTROLLER_ADDRESS,
       )
       expect(factoryWriteActions.createLiquidSplitClone).not.toBeCalled()
-      expect(getTransactionEventsSpy).toBeCalledWith('create_liquid_split_tx', [
+      expect(getTransactionEventsSpy).toBeCalledWith(createLiquidSplitResult, [
         liquidSplitClient.eventTopics.createLiquidSplit[1],
       ])
     })
@@ -255,7 +278,7 @@ describe('Liquid split writes', () => {
       )
       expect(factoryWriteActions.createLiquidSplit).not.toBeCalled()
       expect(getTransactionEventsSpy).toBeCalledWith(
-        'create_liquid_split_clone_tx',
+        createLiquidSplitCloneResult,
         [liquidSplitClient.eventTopics.createLiquidSplit[0]],
       )
     })
@@ -287,7 +310,7 @@ describe('Liquid split writes', () => {
         DISTRIBUTOR_FEE,
         '0xowner',
       )
-      expect(getTransactionEventsSpy).toBeCalledWith('create_liquid_split_tx', [
+      expect(getTransactionEventsSpy).toBeCalledWith(createLiquidSplitResult, [
         liquidSplitClient.eventTopics.createLiquidSplit[1],
       ])
     })
@@ -310,6 +333,9 @@ describe('Liquid split writes', () => {
           } as LiquidSplit
         })
       moduleWriteActions.distributeFunds.mockClear()
+      moduleWriteActions.distributeFunds.mockReturnValueOnce(
+        distributeFundsResult,
+      )
     })
 
     test('Distribute token fails with no provider', async () => {
@@ -357,7 +383,7 @@ describe('Liquid split writes', () => {
         CONTROLLER_ADDRESS,
       )
       expect(getTransactionEventsSpy).toBeCalledWith(
-        'distribute_funds_tx',
+        distributeFundsResult,
         [liquidSplitClient.eventTopics.distributeToken[2]], // Using split main event, not mocked right now
       )
     })
@@ -378,7 +404,7 @@ describe('Liquid split writes', () => {
         CONTROLLER_ADDRESS,
       )
       expect(getTransactionEventsSpy).toBeCalledWith(
-        'distribute_funds_tx',
+        distributeFundsResult,
         [liquidSplitClient.eventTopics.distributeToken[1]], // Using split main event, not mocked right now
       )
     })
@@ -400,7 +426,7 @@ describe('Liquid split writes', () => {
         '0xdistributor',
       )
       expect(getTransactionEventsSpy).toBeCalledWith(
-        'distribute_funds_tx',
+        distributeFundsResult,
         [liquidSplitClient.eventTopics.distributeToken[2]], // Using split main event, not mocked right now
       )
     })
@@ -412,6 +438,9 @@ describe('Liquid split writes', () => {
 
     beforeEach(() => {
       moduleWriteActions.transferOwnership.mockClear()
+      moduleWriteActions.transferOwnership.mockReturnValueOnce(
+        transferOwnershipResult,
+      )
     })
 
     test('Transfer ownership fails with no provider', async () => {
@@ -470,7 +499,7 @@ describe('Liquid split writes', () => {
       expect(validateAddress).toBeCalledWith(liquidSplitId)
       expect(validateAddress).toBeCalledWith(newOwner)
       expect(moduleWriteActions.transferOwnership).toBeCalledWith(newOwner)
-      expect(getTransactionEventsSpy).toBeCalledWith('transfer_ownership_tx', [
+      expect(getTransactionEventsSpy).toBeCalledWith(transferOwnershipResult, [
         liquidSplitClient.eventTopics.transferOwnership[0],
       ])
     })
