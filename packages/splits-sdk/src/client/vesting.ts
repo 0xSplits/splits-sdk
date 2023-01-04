@@ -1,11 +1,16 @@
-import BaseClient from './base'
 import { Interface } from '@ethersproject/abi'
 import { BigNumber } from '@ethersproject/bignumber'
 import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
 
 import VESTING_MODULE_FACTORY_ARTIFACT from '../artifacts/contracts/VestingModuleFactory/VestingModuleFactory.json'
 import VESTING_MODULE_ARTIFACT from '../artifacts/contracts/VestingModule/VestingModule.json'
-import { VESTING_CHAIN_IDS, VESTING_MODULE_FACTORY_ADDRESS } from '../constants'
+
+import { BaseTransactions } from './base'
+import {
+  TransactionType,
+  VESTING_CHAIN_IDS,
+  VESTING_MODULE_FACTORY_ADDRESS,
+} from '../constants'
 import {
   AccountNotFoundError,
   TransactionFailedError,
@@ -19,6 +24,7 @@ import type {
   ReleaseVestedFundsConfig,
   SplitsClientConfig,
   StartVestConfig,
+  TransactionConfig,
   VestingModule,
 } from '../types'
 import { getTransactionEvents, getTokenData, addEnsNames } from '../utils'
@@ -32,9 +38,7 @@ const vestingModuleFactoryInterface = new Interface(
 )
 const vestingModuleInterface = new Interface(VESTING_MODULE_ARTIFACT.abi)
 
-class VestingTransactions extends BaseClient {
-  private readonly _transactionType: 'callData' | 'gasEstimate' | 'transaction'
-  private readonly _shouldRequireSigner: boolean
+class VestingTransactions extends BaseTransactions {
   protected readonly _vestingModuleFactoryContract:
     | ContractCallData
     | VestingModuleFactoryType
@@ -47,10 +51,9 @@ class VestingTransactions extends BaseClient {
     ensProvider,
     signer,
     includeEnsNames = false,
-  }: SplitsClientConfig & {
-    transactionType: 'callData' | 'gasEstimate' | 'transaction'
-  }) {
+  }: SplitsClientConfig & TransactionConfig) {
     super({
+      transactionType,
       chainId,
       provider,
       ensProvider,
@@ -58,8 +61,6 @@ class VestingTransactions extends BaseClient {
       includeEnsNames,
     })
 
-    this._transactionType = transactionType
-    this._shouldRequireSigner = transactionType === 'transaction'
     this._vestingModuleFactoryContract = this._getVestingFactoryContract()
   }
 
@@ -113,7 +114,7 @@ class VestingTransactions extends BaseClient {
   }
 
   protected _getVestingContract(vestingModule: string) {
-    if (this._transactionType === 'callData')
+    if (this._transactionType === TransactionType.CallData)
       return new ContractCallData(vestingModule, VESTING_MODULE_ARTIFACT.abi)
 
     const vestingContract = new Contract(
@@ -122,14 +123,14 @@ class VestingTransactions extends BaseClient {
       this._signer || this._provider,
     ) as VestingModuleType
 
-    if (this._transactionType === 'gasEstimate')
+    if (this._transactionType === TransactionType.GasEstimate)
       return vestingContract.estimateGas
 
     return vestingContract
   }
 
   private _getVestingFactoryContract() {
-    if (this._transactionType === 'callData')
+    if (this._transactionType === TransactionType.CallData)
       return new ContractCallData(
         VESTING_MODULE_FACTORY_ADDRESS,
         VESTING_MODULE_FACTORY_ARTIFACT.abi,
@@ -140,7 +141,7 @@ class VestingTransactions extends BaseClient {
       vestingModuleFactoryInterface,
       this._signer || this._provider,
     ) as VestingModuleFactoryType
-    if (this._transactionType === 'gasEstimate')
+    if (this._transactionType === TransactionType.GasEstimate)
       return vestingFactoryContract.estimateGas
 
     return vestingFactoryContract
@@ -160,7 +161,7 @@ export default class VestingClient extends VestingTransactions {
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
-      transactionType: 'transaction',
+      transactionType: TransactionType.Transaction,
       chainId,
       provider,
       ensProvider,
@@ -456,7 +457,7 @@ class VestingGasEstimates extends VestingTransactions {
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
-      transactionType: 'gasEstimate',
+      transactionType: TransactionType.GasEstimate,
       chainId,
       provider,
       ensProvider,
@@ -514,7 +515,7 @@ class VestingCallData extends VestingTransactions {
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
-      transactionType: 'callData',
+      transactionType: TransactionType.CallData,
       chainId,
       provider,
       ensProvider,

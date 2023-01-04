@@ -4,7 +4,7 @@ import { BigNumber } from '@ethersproject/bignumber'
 import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
 import { GraphQLClient, Variables } from 'graphql-request'
 
-import { MULTICALL_3_ADDRESS } from '../constants'
+import { MULTICALL_3_ADDRESS, TransactionType } from '../constants'
 import {
   InvalidConfigError,
   MissingProviderError,
@@ -12,7 +12,12 @@ import {
   UnsupportedSubgraphChainIdError,
 } from '../errors'
 import { getGraphqlClient } from '../subgraph'
-import type { CallData, SplitsClientConfig } from '../types'
+import type {
+  CallData,
+  SplitsClientConfig,
+  TransactionConfig,
+  TransactionFormat,
+} from '../types'
 import { getTransactionEvents } from '../utils'
 import { abiEncode, multicallInterface } from '../utils/multicall'
 
@@ -82,28 +87,6 @@ export default class BaseClient {
       )
   }
 
-  protected _isContractTransaction(
-    tx: ContractTransaction | BigNumber | CallData,
-  ): tx is ContractTransaction {
-    if (tx instanceof BigNumber) return false
-    if ('wait' in tx) return true
-    return false
-  }
-
-  protected _isBigNumber(
-    gasEstimate: ContractTransaction | BigNumber | CallData,
-  ): gasEstimate is BigNumber {
-    return gasEstimate instanceof BigNumber
-  }
-
-  protected _isCallData(
-    callData: ContractTransaction | BigNumber | CallData,
-  ): callData is CallData {
-    if (callData instanceof BigNumber) return false
-    if ('wait' in callData) return false
-    return true
-  }
-
   async submitMulticallTransaction({ calls }: { calls: CallData[] }): Promise<{
     tx: ContractTransaction
   }> {
@@ -135,5 +118,53 @@ export default class BaseClient {
     })
     const events = await getTransactionEvents(multicallTx, [], true)
     return { events }
+  }
+}
+
+export class BaseTransactions extends BaseClient {
+  protected readonly _transactionType: TransactionType
+  protected readonly _shouldRequireSigner: boolean
+
+  constructor({
+    transactionType,
+    chainId,
+    provider,
+    ensProvider,
+    signer,
+    includeEnsNames = false,
+  }: SplitsClientConfig & TransactionConfig) {
+    super({
+      chainId,
+      provider,
+      ensProvider,
+      signer,
+      includeEnsNames,
+    })
+
+    this._transactionType = transactionType
+    this._shouldRequireSigner = [
+      TransactionType.Transaction,
+      TransactionType.CallData,
+    ].includes(transactionType)
+  }
+
+  protected _isContractTransaction(
+    tx: TransactionFormat,
+  ): tx is ContractTransaction {
+    if (tx instanceof BigNumber) return false
+    if ('wait' in tx) return true
+    return false
+  }
+
+  protected _isBigNumber(
+    gasEstimate: TransactionFormat,
+  ): gasEstimate is BigNumber {
+    return gasEstimate instanceof BigNumber
+  }
+
+  protected _isCallData(callData: TransactionFormat): callData is CallData {
+    if (callData instanceof BigNumber) return false
+    if ('wait' in callData) return false
+    return true
   }
 }

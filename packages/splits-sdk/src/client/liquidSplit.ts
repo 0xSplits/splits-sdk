@@ -8,12 +8,13 @@ import LIQUID_SPLIT_FACTORY_ARTIFACT from '../artifacts/contracts/LiquidSplitFac
 import LIQUID_SPLIT_ARTIFACT from '../artifacts/contracts/LS1155/LS1155.json'
 import SPLIT_MAIN_ARTIFACT_POLYGON from '../artifacts/contracts/SplitMain/polygon/SplitMain.json'
 
-import BaseClient from './base'
+import { BaseTransactions } from './base'
 import {
   LIQUID_SPLITS_MAX_PRECISION_DECIMALS,
   LIQUID_SPLIT_CHAIN_IDS,
   LIQUID_SPLIT_FACTORY_ADDRESS,
   LIQUID_SPLIT_URI_BASE_64_HEADER,
+  TransactionType,
 } from '../constants'
 import {
   AccountNotFoundError,
@@ -30,6 +31,7 @@ import type {
   DistributeLiquidSplitTokenConfig,
   TransferLiquidSplitOwnershipConfig,
   CallData,
+  TransactionConfig,
 } from '../types'
 import {
   getBigNumberFromPercent,
@@ -53,9 +55,7 @@ const liquidSplitFactoryInterface = new Interface(
 const liquidSplitInterface = new Interface(LIQUID_SPLIT_ARTIFACT.abi)
 const splitMainInterface = new Interface(SPLIT_MAIN_ARTIFACT_POLYGON.abi)
 
-class LiquidSplitTransactions extends BaseClient {
-  private readonly _transactionType: 'callData' | 'gasEstimate' | 'transaction'
-  private readonly _shouldRequireSigner: boolean
+class LiquidSplitTransactions extends BaseTransactions {
   private readonly _liquidSplitFactoryContract:
     | ContractCallData
     | LiquidSplitFactoryType
@@ -68,10 +68,9 @@ class LiquidSplitTransactions extends BaseClient {
     ensProvider,
     signer,
     includeEnsNames = false,
-  }: SplitsClientConfig & {
-    transactionType: 'callData' | 'gasEstimate' | 'transaction'
-  }) {
+  }: SplitsClientConfig & TransactionConfig) {
     super({
+      transactionType,
       chainId,
       provider,
       ensProvider,
@@ -79,10 +78,6 @@ class LiquidSplitTransactions extends BaseClient {
       includeEnsNames,
     })
 
-    this._transactionType = transactionType
-    this._shouldRequireSigner = ['transaction', 'callData'].includes(
-      transactionType,
-    )
     this._liquidSplitFactoryContract = this._getLiquidSplitFactoryContract()
   }
 
@@ -244,7 +239,7 @@ class LiquidSplitTransactions extends BaseClient {
   }
 
   protected _getLiquidSplitContract(liquidSplit: string) {
-    if (this._transactionType === 'callData')
+    if (this._transactionType === TransactionType.CallData)
       return new ContractCallData(liquidSplit, LIQUID_SPLIT_ARTIFACT.abi)
 
     const liquidSplitContract = new Contract(
@@ -253,14 +248,14 @@ class LiquidSplitTransactions extends BaseClient {
       this._signer || this._provider,
     ) as LS1155Type
 
-    if (this._transactionType === 'gasEstimate')
+    if (this._transactionType === TransactionType.GasEstimate)
       return liquidSplitContract.estimateGas
 
     return liquidSplitContract
   }
 
   private _getLiquidSplitFactoryContract() {
-    if (this._transactionType === 'callData')
+    if (this._transactionType === TransactionType.CallData)
       return new ContractCallData(
         LIQUID_SPLIT_FACTORY_ADDRESS,
         LIQUID_SPLIT_FACTORY_ARTIFACT.abi,
@@ -271,7 +266,7 @@ class LiquidSplitTransactions extends BaseClient {
       liquidSplitFactoryInterface,
       this._signer || this._provider,
     ) as LiquidSplitFactoryType
-    if (this._transactionType === 'gasEstimate')
+    if (this._transactionType === TransactionType.GasEstimate)
       return liquidSplitFactoryContract.estimateGas
 
     return liquidSplitFactoryContract
@@ -291,7 +286,7 @@ export default class LiquidSplitClient extends LiquidSplitTransactions {
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
-      transactionType: 'transaction',
+      transactionType: TransactionType.Transaction,
       chainId,
       provider,
       ensProvider,
@@ -574,7 +569,7 @@ class LiquidSplitGasEstimates extends LiquidSplitTransactions {
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
-      transactionType: 'gasEstimate',
+      transactionType: TransactionType.GasEstimate,
       chainId,
       provider,
       ensProvider,
@@ -638,7 +633,7 @@ class LiquidSplitCallData extends LiquidSplitTransactions {
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
-      transactionType: 'callData',
+      transactionType: TransactionType.CallData,
       chainId,
       provider,
       ensProvider,
