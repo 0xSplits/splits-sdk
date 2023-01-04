@@ -80,13 +80,379 @@ const splitMainInterfaceEthereum = new Interface(
 )
 const splitMainInterfacePolygon = new Interface(SPLIT_MAIN_ARTIFACT_POLYGON.abi)
 
-export class SplitsClient extends BaseClient {
-  private readonly _splitMain: SplitMainType
+const polygonInterfaceChainIds = [
+  ...POLYGON_CHAIN_IDS,
+  ...OPTIMISM_CHAIN_IDS,
+  ...ARBITRUM_CHAIN_IDS,
+]
+
+class SplitsTransactions extends BaseClient {
+  private readonly _transactionType: 'callData' | 'gasEstimate' | 'transaction'
+  private readonly _shouldRequireSigner: boolean
+  protected readonly _splitMainInterface: Interface
+  protected readonly _splitMain:
+    | ContractCallData
+    | SplitMainType
+    | SplitMainType['estimateGas']
+
+  constructor({
+    transactionType,
+    chainId,
+    provider,
+    ensProvider,
+    signer,
+    includeEnsNames = false,
+  }: SplitsClientConfig & {
+    transactionType: 'callData' | 'gasEstimate' | 'transaction'
+  }) {
+    super({
+      chainId,
+      provider,
+      ensProvider,
+      signer,
+      includeEnsNames,
+    })
+
+    this._transactionType = transactionType
+    this._shouldRequireSigner = ['transaction', 'callData'].includes(
+      transactionType,
+    )
+    if (ETHEREUM_CHAIN_IDS.includes(chainId))
+      this._splitMainInterface = splitMainInterfaceEthereum
+    else if (polygonInterfaceChainIds.includes(chainId))
+      this._splitMainInterface = splitMainInterfacePolygon
+    else throw new UnsupportedChainIdError(chainId, SPLITS_SUPPORTED_CHAIN_IDS)
+
+    this._splitMain = this._getSplitMainContract()
+  }
+
+  protected async _createSplitTransaction({
+    recipients,
+    distributorFeePercent,
+    controller = AddressZero,
+  }: CreateSplitConfig): Promise<ContractTransaction | BigNumber | CallData> {
+    validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
+    validateDistributorFeePercent(distributorFeePercent)
+    if (this._shouldRequireSigner) this._requireSigner()
+
+    const [accounts, percentAllocations] =
+      getRecipientSortedAddressesAndAllocations(recipients)
+    const distributorFee = getBigNumberFromPercent(distributorFeePercent)
+
+    const createSplitResult = await this._splitMain.createSplit(
+      accounts,
+      percentAllocations,
+      distributorFee,
+      controller,
+    )
+
+    return createSplitResult
+  }
+
+  protected async _updateSplitTransaction({
+    splitId,
+    recipients,
+    distributorFeePercent,
+  }: UpdateSplitConfig): Promise<ContractTransaction | BigNumber | CallData> {
+    validateAddress(splitId)
+    validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
+    validateDistributorFeePercent(distributorFeePercent)
+
+    if (this._shouldRequireSigner) {
+      this._requireSigner()
+      await this._requireController(splitId)
+    }
+
+    const [accounts, percentAllocations] =
+      getRecipientSortedAddressesAndAllocations(recipients)
+    const distributorFee = getBigNumberFromPercent(distributorFeePercent)
+
+    const updateSplitResult = await this._splitMain.updateSplit(
+      splitId,
+      accounts,
+      percentAllocations,
+      distributorFee,
+    )
+
+    return updateSplitResult
+  }
+
+  protected async _distributeTokenTransaction({
+    splitId,
+    token,
+    distributorAddress,
+  }: DistributeTokenConfig): Promise<
+    ContractTransaction | BigNumber | CallData
+  > {
+    validateAddress(splitId)
+    validateAddress(token)
+    if (this._shouldRequireSigner) this._requireSigner()
+
+    const distributorPayoutAddress = distributorAddress
+      ? distributorAddress
+      : this._signer
+      ? await this._signer.getAddress()
+      : AddressZero
+    validateAddress(distributorPayoutAddress)
+
+    // TO DO: handle bad split id/no metadata found
+    const { recipients, distributorFeePercent } = await this.getSplitMetadata({
+      splitId,
+    })
+    const [accounts, percentAllocations] =
+      getRecipientSortedAddressesAndAllocations(recipients)
+    const distributorFee = getBigNumberFromPercent(distributorFeePercent)
+
+    const distributeTokenResult = await (token === AddressZero
+      ? this._splitMain.distributeETH(
+          splitId,
+          accounts,
+          percentAllocations,
+          distributorFee,
+          distributorPayoutAddress,
+        )
+      : this._splitMain.distributeERC20(
+          splitId,
+          token,
+          accounts,
+          percentAllocations,
+          distributorFee,
+          distributorPayoutAddress,
+        ))
+    return distributeTokenResult
+  }
+
+  protected async _updateSplitAndDistributeTokenTransaction({
+    splitId,
+    token,
+    recipients,
+    distributorFeePercent,
+    distributorAddress,
+  }: UpdateSplitAndDistributeTokenConfig): Promise<
+    ContractTransaction | BigNumber | CallData
+  > {
+    validateAddress(splitId)
+    validateAddress(token)
+    validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
+    validateDistributorFeePercent(distributorFeePercent)
+
+    if (this._shouldRequireSigner) {
+      this._requireSigner()
+      await this._requireController(splitId)
+    }
+
+    const [accounts, percentAllocations] =
+      getRecipientSortedAddressesAndAllocations(recipients)
+    const distributorFee = getBigNumberFromPercent(distributorFeePercent)
+    const distributorPayoutAddress = distributorAddress
+      ? distributorAddress
+      : this._signer
+      ? await this._signer.getAddress()
+      : AddressZero
+    validateAddress(distributorPayoutAddress)
+
+    const updateAndDistributeResult = await (token === AddressZero
+      ? this._splitMain.updateAndDistributeETH(
+          splitId,
+          accounts,
+          percentAllocations,
+          distributorFee,
+          distributorPayoutAddress,
+        )
+      : this._splitMain.updateAndDistributeERC20(
+          splitId,
+          token,
+          accounts,
+          percentAllocations,
+          distributorFee,
+          distributorPayoutAddress,
+        ))
+
+    return updateAndDistributeResult
+  }
+
+  protected async _withdrawFundsTransaction({
+    address,
+    tokens,
+  }: WithdrawFundsConfig): Promise<ContractTransaction | BigNumber | CallData> {
+    validateAddress(address)
+    if (this._shouldRequireSigner) this._requireSigner()
+
+    const withdrawEth = tokens.includes(AddressZero) ? 1 : 0
+    const erc20s = tokens.filter((token) => token !== AddressZero)
+
+    const withdrawResult = await this._splitMain.withdraw(
+      address,
+      withdrawEth,
+      erc20s,
+    )
+
+    return withdrawResult
+  }
+
+  protected async _initiateControlTransferTransaction({
+    splitId,
+    newController,
+  }: InititateControlTransferConfig): Promise<
+    ContractTransaction | BigNumber | CallData
+  > {
+    validateAddress(splitId)
+
+    if (this._shouldRequireSigner) {
+      this._requireSigner()
+      await this._requireController(splitId)
+    }
+
+    const transferSplitResult = await this._splitMain.transferControl(
+      splitId,
+      newController,
+    )
+
+    return transferSplitResult
+  }
+
+  protected async _cancelControlTransferTransaction({
+    splitId,
+  }: CancelControlTransferConfig): Promise<
+    ContractTransaction | BigNumber | CallData
+  > {
+    validateAddress(splitId)
+
+    if (this._shouldRequireSigner) {
+      this._requireSigner()
+      await this._requireController(splitId)
+    }
+
+    const cancelTransferSplitResult =
+      await this._splitMain.cancelControlTransfer(splitId)
+    return cancelTransferSplitResult
+  }
+
+  protected async _acceptControlTransferTransaction({
+    splitId,
+  }: AcceptControlTransferConfig): Promise<
+    ContractTransaction | BigNumber | CallData
+  > {
+    validateAddress(splitId)
+
+    if (this._shouldRequireSigner) {
+      this._requireSigner()
+      await this._requireNewPotentialController(splitId)
+    }
+
+    const acceptTransferSplitResult = await this._splitMain.acceptControl(
+      splitId,
+    )
+    return acceptTransferSplitResult
+  }
+
+  protected async _makeSplitImmutableTransaction({
+    splitId,
+  }: MakeSplitImmutableConfig): Promise<
+    ContractTransaction | BigNumber | CallData
+  > {
+    validateAddress(splitId)
+
+    if (this._shouldRequireSigner) {
+      this._requireSigner()
+      await this._requireController(splitId)
+    }
+
+    const makeSplitImmutableResult = await this._splitMain.makeSplitImmutable(
+      splitId,
+    )
+    return makeSplitImmutableResult
+  }
+
+  // Graphql read actions
+  async getSplitMetadata({ splitId }: { splitId: string }): Promise<Split> {
+    validateAddress(splitId)
+
+    const response = await this._makeGqlRequest<{ split: GqlSplit }>(
+      SPLIT_QUERY,
+      {
+        splitId: splitId.toLowerCase(),
+      },
+    )
+
+    if (!response.split)
+      throw new AccountNotFoundError(
+        `No split found at address ${splitId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
+      )
+
+    return await this._formatSplit(response.split)
+  }
+
+  protected async _formatSplit(gqlSplit: GqlSplit): Promise<Split> {
+    const split = protectedFormatSplit(gqlSplit)
+
+    if (this._includeEnsNames) {
+      if (!this._ensProvider) throw new Error()
+      await addEnsNames(this._ensProvider, split.recipients)
+    }
+
+    return split
+  }
+
+  private async _requireController(splitId: string) {
+    const controller = await this._splitMain.getController(splitId)
+    // TODO: how to get rid of this, needed for typescript check
+    if (!this._signer) throw new Error()
+
+    const signerAddress = await this._signer.getAddress()
+
+    if (controller !== signerAddress)
+      throw new InvalidAuthError(
+        `Action only available to the split controller. Split id: ${splitId}, split controller: ${controller}, signer: ${signerAddress}`,
+      )
+  }
+
+  private async _requireNewPotentialController(splitId: string) {
+    const newPotentialController =
+      await this._splitMain.getNewPotentialController(splitId)
+    // TODO: how to get rid of this, needed for typescript check
+    if (!this._signer) throw new Error()
+    const signerAddress = await this._signer.getAddress()
+
+    if (newPotentialController !== signerAddress)
+      throw new InvalidAuthError(
+        `Action only available to the split's new potential controller. Split new potential controller: ${newPotentialController}. Signer: ${signerAddress}`,
+      )
+  }
+
+  private _getSplitMainContract() {
+    if (this._transactionType === 'callData')
+      if (ETHEREUM_CHAIN_IDS.includes(this._chainId)) {
+        return new ContractCallData(
+          SPLIT_MAIN_ADDRESS,
+          SPLIT_MAIN_ARTIFACT_ETHEREUM.abi,
+        )
+      } else {
+        return new ContractCallData(
+          SPLIT_MAIN_ADDRESS,
+          SPLIT_MAIN_ARTIFACT_POLYGON.abi,
+        )
+      }
+
+    const splitMainContract = new Contract(
+      SPLIT_MAIN_ADDRESS,
+      this._splitMainInterface,
+      this._signer || this._provider,
+    ) as SplitMainType
+    if (this._transactionType === 'gasEstimate')
+      return splitMainContract.estimateGas
+
+    return splitMainContract
+  }
+}
+
+export class SplitsClient extends SplitsTransactions {
   readonly eventTopics: { [key: string]: string[] }
   readonly waterfall: WaterfallClient | undefined
   readonly liquidSplits: LiquidSplitClient | undefined
   readonly vesting: VestingClient | undefined
   readonly callData: SplitsCallData
+  readonly estimateGas: SplitsGasEstimates
 
   constructor({
     chainId,
@@ -96,31 +462,13 @@ export class SplitsClient extends BaseClient {
     ensProvider,
   }: SplitsClientConfig) {
     super({
+      transactionType: 'transaction',
       chainId,
       provider,
       ensProvider,
       signer,
       includeEnsNames,
     })
-
-    const polygonInterfaceChainIds = [
-      ...POLYGON_CHAIN_IDS,
-      ...OPTIMISM_CHAIN_IDS,
-      ...ARBITRUM_CHAIN_IDS,
-    ]
-
-    let splitMainInterface: Interface
-    if (ETHEREUM_CHAIN_IDS.includes(chainId))
-      splitMainInterface = splitMainInterfaceEthereum
-    else if (polygonInterfaceChainIds.includes(chainId))
-      splitMainInterface = splitMainInterfacePolygon
-    else throw new UnsupportedChainIdError(chainId, SPLITS_SUPPORTED_CHAIN_IDS)
-
-    this._splitMain = new Contract(
-      SPLIT_MAIN_ADDRESS,
-      splitMainInterface,
-      provider,
-    ) as SplitMainType
 
     if (WATERFALL_CHAIN_IDS.includes(chainId)) {
       this.waterfall = new WaterfallClient({
@@ -151,31 +499,40 @@ export class SplitsClient extends BaseClient {
     }
 
     this.eventTopics = {
-      createSplit: [splitMainInterface.getEventTopic('CreateSplit')],
-      updateSplit: [splitMainInterface.getEventTopic('UpdateSplit')],
+      createSplit: [this._splitMainInterface.getEventTopic('CreateSplit')],
+      updateSplit: [this._splitMainInterface.getEventTopic('UpdateSplit')],
       distributeToken: [
-        splitMainInterface.getEventTopic('DistributeETH'),
-        splitMainInterface.getEventTopic('DistributeERC20'),
+        this._splitMainInterface.getEventTopic('DistributeETH'),
+        this._splitMainInterface.getEventTopic('DistributeERC20'),
       ],
       updateSplitAndDistributeToken: [
-        splitMainInterface.getEventTopic('UpdateSplit'),
-        splitMainInterface.getEventTopic('DistributeETH'),
-        splitMainInterface.getEventTopic('DistributeERC20'),
+        this._splitMainInterface.getEventTopic('UpdateSplit'),
+        this._splitMainInterface.getEventTopic('DistributeETH'),
+        this._splitMainInterface.getEventTopic('DistributeERC20'),
       ],
-      withdrawFunds: [splitMainInterface.getEventTopic('Withdrawal')],
+      withdrawFunds: [this._splitMainInterface.getEventTopic('Withdrawal')],
       initiateControlTransfer: [
-        splitMainInterface.getEventTopic('InitiateControlTransfer'),
+        this._splitMainInterface.getEventTopic('InitiateControlTransfer'),
       ],
       cancelControlTransfer: [
-        splitMainInterface.getEventTopic('CancelControlTransfer'),
+        this._splitMainInterface.getEventTopic('CancelControlTransfer'),
       ],
       acceptControlTransfer: [
-        splitMainInterface.getEventTopic('ControlTransfer'),
+        this._splitMainInterface.getEventTopic('ControlTransfer'),
       ],
-      makeSplitImmutable: [splitMainInterface.getEventTopic('ControlTransfer')],
+      makeSplitImmutable: [
+        this._splitMainInterface.getEventTopic('ControlTransfer'),
+      ],
     }
 
     this.callData = new SplitsCallData({
+      chainId,
+      provider,
+      ensProvider,
+      signer,
+      includeEnsNames,
+    })
+    this.estimateGas = new SplitsGasEstimates({
       chainId,
       provider,
       ensProvider,
@@ -197,21 +554,15 @@ export class SplitsClient extends BaseClient {
   }: CreateSplitConfig): Promise<{
     tx: ContractTransaction
   }> {
-    validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
-    validateDistributorFeePercent(distributorFeePercent)
-    this._requireSigner()
+    const createSplitTx = await this._createSplitTransaction({
+      recipients,
+      distributorFeePercent,
+      controller,
+    })
+    if (!this._isContractTransaction(createSplitTx))
+      throw new Error('Invalid response')
 
-    const [accounts, percentAllocations] =
-      getRecipientSortedAddressesAndAllocations(recipients)
-    const distributorFee = getBigNumberFromPercent(distributorFeePercent)
-
-    const createSplitTx = await this._splitMain
-      .connect(this._signer)
-      .createSplit(accounts, percentAllocations, distributorFee, controller)
-
-    return {
-      tx: createSplitTx,
-    }
+    return { tx: createSplitTx }
   }
 
   async createSplit({
@@ -248,19 +599,13 @@ export class SplitsClient extends BaseClient {
   }: UpdateSplitConfig): Promise<{
     tx: ContractTransaction
   }> {
-    validateAddress(splitId)
-    validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
-    validateDistributorFeePercent(distributorFeePercent)
-    this._requireSigner()
-    await this._requireController(splitId)
-
-    const [accounts, percentAllocations] =
-      getRecipientSortedAddressesAndAllocations(recipients)
-    const distributorFee = getBigNumberFromPercent(distributorFeePercent)
-
-    const updateSplitTx = await this._splitMain
-      .connect(this._signer)
-      .updateSplit(splitId, accounts, percentAllocations, distributorFee)
+    const updateSplitTx = await this._updateSplitTransaction({
+      splitId,
+      recipients,
+      distributorFeePercent,
+    })
+    if (!this._isContractTransaction(updateSplitTx))
+      throw new Error('Invalid response')
 
     return { tx: updateSplitTx }
   }
@@ -294,45 +639,14 @@ export class SplitsClient extends BaseClient {
   }: DistributeTokenConfig): Promise<{
     tx: ContractTransaction
   }> {
-    validateAddress(splitId)
-    validateAddress(token)
-    this._requireSigner()
-    // TODO: how to remove this, needed for typescript check right now
-    if (!this._signer) throw new Error()
-
-    const distributorPayoutAddress = distributorAddress
-      ? distributorAddress
-      : await this._signer.getAddress()
-    validateAddress(distributorPayoutAddress)
-
-    // TO DO: handle bad split id/no metadata found
-    const { recipients, distributorFeePercent } = await this.getSplitMetadata({
+    const distributeTokenTx = await this._distributeTokenTransaction({
       splitId,
+      token,
+      distributorAddress,
     })
-    const [accounts, percentAllocations] =
-      getRecipientSortedAddressesAndAllocations(recipients)
-    const distributorFee = getBigNumberFromPercent(distributorFeePercent)
+    if (!this._isContractTransaction(distributeTokenTx))
+      throw new Error('Invalid response')
 
-    const distributeTokenTx = await (token === AddressZero
-      ? this._splitMain
-          .connect(this._signer)
-          .distributeETH(
-            splitId,
-            accounts,
-            percentAllocations,
-            distributorFee,
-            distributorPayoutAddress,
-          )
-      : this._splitMain
-          .connect(this._signer)
-          .distributeERC20(
-            splitId,
-            token,
-            accounts,
-            percentAllocations,
-            distributorFee,
-            distributorPayoutAddress,
-          ))
     return { tx: distributeTokenTx }
   }
 
@@ -369,44 +683,16 @@ export class SplitsClient extends BaseClient {
   }: UpdateSplitAndDistributeTokenConfig): Promise<{
     tx: ContractTransaction
   }> {
-    validateAddress(splitId)
-    validateAddress(token)
-    validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
-    validateDistributorFeePercent(distributorFeePercent)
-    this._requireSigner()
-    await this._requireController(splitId)
-
-    // TODO: how to remove this, needed for typescript check right now
-    if (!this._signer) throw new Error()
-
-    const [accounts, percentAllocations] =
-      getRecipientSortedAddressesAndAllocations(recipients)
-    const distributorFee = getBigNumberFromPercent(distributorFeePercent)
-    const distributorPayoutAddress = distributorAddress
-      ? distributorAddress
-      : await this._signer.getAddress()
-    validateAddress(distributorPayoutAddress)
-
-    const updateAndDistributeTx = await (token === AddressZero
-      ? this._splitMain
-          .connect(this._signer)
-          .updateAndDistributeETH(
-            splitId,
-            accounts,
-            percentAllocations,
-            distributorFee,
-            distributorPayoutAddress,
-          )
-      : this._splitMain
-          .connect(this._signer)
-          .updateAndDistributeERC20(
-            splitId,
-            token,
-            accounts,
-            percentAllocations,
-            distributorFee,
-            distributorPayoutAddress,
-          ))
+    const updateAndDistributeTx =
+      await this._updateSplitAndDistributeTokenTransaction({
+        splitId,
+        token,
+        recipients,
+        distributorFeePercent,
+        distributorAddress,
+      })
+    if (!this._isContractTransaction(updateAndDistributeTx))
+      throw new Error('Invalid response')
 
     return { tx: updateAndDistributeTx }
   }
@@ -447,15 +733,12 @@ export class SplitsClient extends BaseClient {
   }: WithdrawFundsConfig): Promise<{
     tx: ContractTransaction
   }> {
-    validateAddress(address)
-    this._requireSigner()
-
-    const withdrawEth = tokens.includes(AddressZero) ? 1 : 0
-    const erc20s = tokens.filter((token) => token !== AddressZero)
-
-    const withdrawTx = await this._splitMain
-      .connect(this._signer)
-      .withdraw(address, withdrawEth, erc20s)
+    const withdrawTx = await this._withdrawFundsTransaction({
+      address,
+      tokens,
+    })
+    if (!this._isContractTransaction(withdrawTx))
+      throw new Error('Invalid response')
 
     return { tx: withdrawTx }
   }
@@ -483,13 +766,12 @@ export class SplitsClient extends BaseClient {
   }: InititateControlTransferConfig): Promise<{
     tx: ContractTransaction
   }> {
-    validateAddress(splitId)
-    this._requireSigner()
-    await this._requireController(splitId)
-
-    const transferSplitTx = await this._splitMain
-      .connect(this._signer)
-      .transferControl(splitId, newController)
+    const transferSplitTx = await this._initiateControlTransferTransaction({
+      splitId,
+      newController,
+    })
+    if (!this._isContractTransaction(transferSplitTx))
+      throw new Error('Invalid response')
 
     return { tx: transferSplitTx }
   }
@@ -520,13 +802,12 @@ export class SplitsClient extends BaseClient {
   }: CancelControlTransferConfig): Promise<{
     tx: ContractTransaction
   }> {
-    validateAddress(splitId)
-    this._requireSigner()
-    await this._requireController(splitId)
+    const cancelTransferSplitTx = await this._cancelControlTransferTransaction({
+      splitId,
+    })
+    if (!this._isContractTransaction(cancelTransferSplitTx))
+      throw new Error('Invalid response')
 
-    const cancelTransferSplitTx = await this._splitMain
-      .connect(this._signer)
-      .cancelControlTransfer(splitId)
     return { tx: cancelTransferSplitTx }
   }
 
@@ -552,13 +833,12 @@ export class SplitsClient extends BaseClient {
   }: AcceptControlTransferConfig): Promise<{
     tx: ContractTransaction
   }> {
-    validateAddress(splitId)
-    this._requireSigner()
-    await this._requireNewPotentialController(splitId)
+    const acceptTransferSplitTx = await this._acceptControlTransferTransaction({
+      splitId,
+    })
+    if (!this._isContractTransaction(acceptTransferSplitTx))
+      throw new Error('Invalid response')
 
-    const acceptTransferSplitTx = await this._splitMain
-      .connect(this._signer)
-      .acceptControl(splitId)
     return { tx: acceptTransferSplitTx }
   }
 
@@ -584,13 +864,12 @@ export class SplitsClient extends BaseClient {
   }: MakeSplitImmutableConfig): Promise<{
     tx: ContractTransaction
   }> {
-    validateAddress(splitId)
-    this._requireSigner()
-    await this._requireController(splitId)
+    const makeSplitImmutableTx = await this._makeSplitImmutableTransaction({
+      splitId,
+    })
+    if (!this._isContractTransaction(makeSplitImmutableTx))
+      throw new Error('Invalid response')
 
-    const makeSplitImmutableTx = await this._splitMain
-      .connect(this._signer)
-      .makeSplitImmutable(splitId)
     return { tx: makeSplitImmutableTx }
   }
 
@@ -734,24 +1013,6 @@ export class SplitsClient extends BaseClient {
   }
 
   // Graphql read actions
-  async getSplitMetadata({ splitId }: { splitId: string }): Promise<Split> {
-    validateAddress(splitId)
-
-    const response = await this._makeGqlRequest<{ split: GqlSplit }>(
-      SPLIT_QUERY,
-      {
-        splitId: splitId.toLowerCase(),
-      },
-    )
-
-    if (!response.split)
-      throw new AccountNotFoundError(
-        `No split found at address ${splitId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
-      )
-
-    return await this._formatSplit(response.split)
-  }
-
   async getRelatedSplits({ address }: { address: string }): Promise<{
     receivingFrom: Split[]
     controlling: Split[]
@@ -801,7 +1062,7 @@ export class SplitsClient extends BaseClient {
     distributed: TokenBalances
   }> {
     validateAddress(splitId)
-    if (includeActiveBalances && !this._splitMain.provider)
+    if (includeActiveBalances && !this._provider)
       throw new MissingProviderError(
         'Provider required to get split active balances. Please update your call to the SplitsClient constructor with a valid provider, or set includeActiveBalances to false',
       )
@@ -832,10 +1093,10 @@ export class SplitsClient extends BaseClient {
     const internalTokens = Object.keys(internalBalances)
 
     // TODO: how to get rid of this if statement? typescript is complaining without it
-    const erc20Tokens = this._splitMain.provider
+    const erc20Tokens = this._provider
       ? await fetchERC20TransferredTokens(
           this._chainId,
-          this._splitMain.provider,
+          this._provider,
           splitId,
         )
       : []
@@ -918,33 +1179,6 @@ export class SplitsClient extends BaseClient {
   }
 
   // Helper functions
-  private async _requireController(splitId: string) {
-    const { controller } = await this.getController({ splitId })
-    // TODO: how to get rid of this, needed for typescript check
-    if (!this._signer) throw new Error()
-
-    const signerAddress = await this._signer.getAddress()
-
-    if (controller !== signerAddress)
-      throw new InvalidAuthError(
-        `Action only available to the split controller. Split id: ${splitId}, split controller: ${controller}, signer: ${signerAddress}`,
-      )
-  }
-
-  private async _requireNewPotentialController(splitId: string) {
-    const { newPotentialController } = await this.getNewPotentialController({
-      splitId,
-    })
-    // TODO: how to get rid of this, needed for typescript check
-    if (!this._signer) throw new Error()
-    const signerAddress = await this._signer.getAddress()
-
-    if (newPotentialController !== signerAddress)
-      throw new InvalidAuthError(
-        `Action only available to the split's new potential controller. Split new potential controller: ${newPotentialController}. Signer: ${signerAddress}`,
-      )
-  }
-
   private async _formatAccount(
     gqlAccount: GqlAccount,
   ): Promise<Account | undefined> {
@@ -957,22 +1191,9 @@ export class SplitsClient extends BaseClient {
     else if (gqlAccount.__typename === 'LiquidSplit' && this.liquidSplits)
       return await this.liquidSplits.formatLiquidSplit(gqlAccount)
   }
-
-  private async _formatSplit(gqlSplit: GqlSplit): Promise<Split> {
-    const split = protectedFormatSplit(gqlSplit)
-
-    if (this._includeEnsNames) {
-      if (!this._ensProvider) throw new Error()
-      await addEnsNames(this._ensProvider, split.recipients)
-    }
-
-    return split
-  }
 }
 
-class SplitsCallData extends BaseClient {
-  private readonly _splitMainContractCallData: ContractCallData
-
+class SplitsGasEstimates extends SplitsTransactions {
   constructor({
     chainId,
     provider,
@@ -981,23 +1202,155 @@ class SplitsCallData extends BaseClient {
     ensProvider,
   }: SplitsClientConfig) {
     super({
+      transactionType: 'gasEstimate',
       chainId,
       provider,
       signer,
       includeEnsNames,
       ensProvider,
     })
-    if (ETHEREUM_CHAIN_IDS.includes(chainId)) {
-      this._splitMainContractCallData = new ContractCallData(
-        SPLIT_MAIN_ADDRESS,
-        SPLIT_MAIN_ARTIFACT_ETHEREUM.abi,
-      )
-    } else {
-      this._splitMainContractCallData = new ContractCallData(
-        SPLIT_MAIN_ADDRESS,
-        SPLIT_MAIN_ARTIFACT_POLYGON.abi,
-      )
-    }
+  }
+
+  async createSplit({
+    recipients,
+    distributorFeePercent,
+    controller = AddressZero,
+  }: CreateSplitConfig): Promise<BigNumber> {
+    const gasEstimate = await this._createSplitTransaction({
+      recipients,
+      distributorFeePercent,
+      controller,
+    })
+    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+
+  async updateSplit({
+    splitId,
+    recipients,
+    distributorFeePercent,
+  }: UpdateSplitConfig): Promise<BigNumber> {
+    const gasEstimate = await this._updateSplitTransaction({
+      splitId,
+      recipients,
+      distributorFeePercent,
+    })
+    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+
+  async distributeToken({
+    splitId,
+    token,
+    distributorAddress,
+  }: DistributeTokenConfig): Promise<BigNumber> {
+    const gasEstimate = await this._distributeTokenTransaction({
+      splitId,
+      token,
+      distributorAddress,
+    })
+    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+
+  async updateSplitAndDistributeToken({
+    splitId,
+    token,
+    recipients,
+    distributorFeePercent,
+    distributorAddress,
+  }: UpdateSplitAndDistributeTokenConfig): Promise<BigNumber> {
+    const gasEstimate = await this._updateSplitAndDistributeTokenTransaction({
+      splitId,
+      token,
+      recipients,
+      distributorFeePercent,
+      distributorAddress,
+    })
+    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+
+  async withdrawFunds({
+    address,
+    tokens,
+  }: WithdrawFundsConfig): Promise<BigNumber> {
+    const gasEstimate = await this._withdrawFundsTransaction({
+      address,
+      tokens,
+    })
+    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+
+  async initiateControlTransfer({
+    splitId,
+    newController,
+  }: InititateControlTransferConfig): Promise<BigNumber> {
+    const gasEstimate = await this._initiateControlTransferTransaction({
+      splitId,
+      newController,
+    })
+    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+
+  async cancelControlTransfer({
+    splitId,
+  }: CancelControlTransferConfig): Promise<BigNumber> {
+    const gasEstimate = await this._cancelControlTransferTransaction({
+      splitId,
+    })
+    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+
+  async acceptControlTransfer({
+    splitId,
+  }: AcceptControlTransferConfig): Promise<BigNumber> {
+    const gasEstimate = await this._acceptControlTransferTransaction({
+      splitId,
+    })
+    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+
+  async makeSplitImmutable({
+    splitId,
+  }: MakeSplitImmutableConfig): Promise<BigNumber> {
+    const gasEstimate = await this._makeSplitImmutableTransaction({
+      splitId,
+    })
+    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+}
+
+class SplitsCallData extends SplitsTransactions {
+  constructor({
+    chainId,
+    provider,
+    signer,
+    includeEnsNames = false,
+    ensProvider,
+  }: SplitsClientConfig) {
+    super({
+      transactionType: 'callData',
+      chainId,
+      provider,
+      signer,
+      includeEnsNames,
+      ensProvider,
+    })
   }
 
   async createSplit({
@@ -1005,19 +1358,13 @@ class SplitsCallData extends BaseClient {
     distributorFeePercent,
     controller = AddressZero,
   }: CreateSplitConfig): Promise<CallData> {
-    validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
-    validateDistributorFeePercent(distributorFeePercent)
-
-    const [accounts, percentAllocations] =
-      getRecipientSortedAddressesAndAllocations(recipients)
-    const distributorFee = getBigNumberFromPercent(distributorFeePercent)
-
-    const callData = this._splitMainContractCallData.createSplit(
-      accounts,
-      percentAllocations,
-      distributorFee,
+    const callData = await this._createSplitTransaction({
+      recipients,
+      distributorFeePercent,
       controller,
-    )
+    })
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
+
     return callData
   }
 
@@ -1026,20 +1373,13 @@ class SplitsCallData extends BaseClient {
     recipients,
     distributorFeePercent,
   }: UpdateSplitConfig): Promise<CallData> {
-    validateAddress(splitId)
-    validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
-    validateDistributorFeePercent(distributorFeePercent)
-
-    const [accounts, percentAllocations] =
-      getRecipientSortedAddressesAndAllocations(recipients)
-    const distributorFee = getBigNumberFromPercent(distributorFeePercent)
-
-    const callData = this._splitMainContractCallData.updateSplit(
+    const callData = await this._updateSplitTransaction({
       splitId,
-      accounts,
-      percentAllocations,
-      distributorFee,
-    )
+      recipients,
+      distributorFeePercent,
+    })
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
+
     return callData
   }
 
@@ -1048,44 +1388,13 @@ class SplitsCallData extends BaseClient {
     token,
     distributorAddress,
   }: DistributeTokenConfig): Promise<CallData> {
-    validateAddress(splitId)
-    validateAddress(token)
-
-    let distributorPayoutAddress = distributorAddress
-    if (!distributorPayoutAddress) {
-      if (!this._signer)
-        throw new Error(
-          'Must pass in a distributor address or include a signer in the client',
-        )
-      distributorPayoutAddress = await this._signer.getAddress()
-    }
-    validateAddress(distributorPayoutAddress)
-
-    const split = await this._getSplitMetadata({
+    const callData = await this._distributeTokenTransaction({
       splitId,
+      token,
+      distributorAddress,
     })
-    const { recipients, distributorFeePercent } = split
-    const [accounts, percentAllocations] =
-      getRecipientSortedAddressesAndAllocations(recipients)
-    const distributorFee = getBigNumberFromPercent(distributorFeePercent)
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
 
-    const callData =
-      token === AddressZero
-        ? this._splitMainContractCallData.distributeETH(
-            splitId,
-            accounts,
-            percentAllocations,
-            distributorFee,
-            distributorPayoutAddress,
-          )
-        : this._splitMainContractCallData.distributeERC20(
-            splitId,
-            token,
-            accounts,
-            percentAllocations,
-            distributorFee,
-            distributorPayoutAddress,
-          )
     return callData
   }
 
@@ -1096,41 +1405,15 @@ class SplitsCallData extends BaseClient {
     distributorFeePercent,
     distributorAddress,
   }: UpdateSplitAndDistributeTokenConfig): Promise<CallData> {
-    validateAddress(splitId)
-    validateAddress(token)
-    validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
-    validateDistributorFeePercent(distributorFeePercent)
+    const callData = await this._updateSplitAndDistributeTokenTransaction({
+      splitId,
+      token,
+      recipients,
+      distributorFeePercent,
+      distributorAddress,
+    })
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
 
-    let distributorPayoutAddress = distributorAddress
-    if (!distributorPayoutAddress) {
-      if (!this._signer)
-        throw new Error(
-          'Must pass in a distributor address or include a signer in the client',
-        )
-      distributorPayoutAddress = await this._signer.getAddress()
-    }
-    validateAddress(distributorPayoutAddress)
-
-    const [accounts, percentAllocations] =
-      getRecipientSortedAddressesAndAllocations(recipients)
-    const distributorFee = getBigNumberFromPercent(distributorFeePercent)
-
-    const callData = await (token === AddressZero
-      ? this._splitMainContractCallData.updateAndDistributeETH(
-          splitId,
-          accounts,
-          percentAllocations,
-          distributorFee,
-          distributorPayoutAddress,
-        )
-      : this._splitMainContractCallData.updateAndDistributeERC20(
-          splitId,
-          token,
-          accounts,
-          percentAllocations,
-          distributorFee,
-          distributorPayoutAddress,
-        ))
     return callData
   }
 
@@ -1138,16 +1421,12 @@ class SplitsCallData extends BaseClient {
     address,
     tokens,
   }: WithdrawFundsConfig): Promise<CallData> {
-    validateAddress(address)
-
-    const withdrawEth = tokens.includes(AddressZero) ? 1 : 0
-    const erc20s = tokens.filter((token) => token !== AddressZero)
-
-    const callData = this._splitMainContractCallData.withdraw(
+    const callData = await this._withdrawFundsTransaction({
       address,
-      withdrawEth,
-      erc20s,
-    )
+      tokens,
+    })
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
+
     return callData
   }
 
@@ -1155,62 +1434,45 @@ class SplitsCallData extends BaseClient {
     splitId,
     newController,
   }: InititateControlTransferConfig): Promise<CallData> {
-    validateAddress(splitId)
-
-    const callData = this._splitMainContractCallData.transferControl(
+    const callData = await this._initiateControlTransferTransaction({
       splitId,
       newController,
-    )
+    })
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
+
     return callData
   }
 
   async cancelControlTransfer({
     splitId,
   }: CancelControlTransferConfig): Promise<CallData> {
-    validateAddress(splitId)
+    const callData = await this._cancelControlTransferTransaction({
+      splitId,
+    })
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
 
-    const callData =
-      this._splitMainContractCallData.cancelControlTransfer(splitId)
     return callData
   }
 
   async acceptControlTransfer({
     splitId,
   }: AcceptControlTransferConfig): Promise<CallData> {
-    validateAddress(splitId)
+    const callData = await this._acceptControlTransferTransaction({
+      splitId,
+    })
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
 
-    const callData = this._splitMainContractCallData.acceptControl(splitId)
     return callData
   }
 
   async makeSplitImmutable({
     splitId,
   }: MakeSplitImmutableConfig): Promise<CallData> {
-    validateAddress(splitId)
+    const callData = await this._makeSplitImmutableTransaction({
+      splitId,
+    })
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
 
-    const callData = this._splitMainContractCallData.makeSplitImmutable(splitId)
     return callData
-  }
-
-  private async _getSplitMetadata({
-    splitId,
-  }: {
-    splitId: string
-  }): Promise<Split> {
-    validateAddress(splitId)
-
-    const response = await this._makeGqlRequest<{ split: GqlSplit }>(
-      SPLIT_QUERY,
-      {
-        splitId: splitId.toLowerCase(),
-      },
-    )
-
-    if (!response.split)
-      throw new AccountNotFoundError(
-        `No split found at address ${splitId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
-      )
-
-    return protectedFormatSplit(response.split)
   }
 }

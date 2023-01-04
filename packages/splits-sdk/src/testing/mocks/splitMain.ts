@@ -3,23 +3,17 @@ import { Provider } from '@ethersproject/abstract-provider'
 import { CONTROLLER_ADDRESS, NEW_CONTROLLER_ADDRESS } from '../constants'
 
 export const writeActions = {
-  createSplit: jest.fn().mockReturnValue('create_split_tx'),
-  updateSplit: jest.fn().mockReturnValue('update_split_tx'),
-  distributeETH: jest.fn().mockReturnValue('distribute_eth_tx'),
-  distributeERC20: jest.fn().mockReturnValue('distribute_erc20_tx'),
-  updateAndDistributeETH: jest
-    .fn()
-    .mockReturnValue('update_and_distribute_eth_tx'),
-  updateAndDistributeERC20: jest
-    .fn()
-    .mockReturnValue('update_and_distribute_erc20_tx'),
-  withdraw: jest.fn().mockReturnValue('withdraw_tx'),
-  transferControl: jest.fn().mockReturnValue('transfer_control_tx'),
-  cancelControlTransfer: jest
-    .fn()
-    .mockReturnValue('cancel_control_transfer_tx'),
-  acceptControl: jest.fn().mockReturnValue('accept_control_tx'),
-  makeSplitImmutable: jest.fn().mockReturnValue('make_split_immutable_tx'),
+  createSplit: jest.fn(),
+  updateSplit: jest.fn(),
+  distributeETH: jest.fn(),
+  distributeERC20: jest.fn(),
+  updateAndDistributeETH: jest.fn(),
+  updateAndDistributeERC20: jest.fn(),
+  withdraw: jest.fn(),
+  transferControl: jest.fn(),
+  cancelControlTransfer: jest.fn(),
+  acceptControl: jest.fn(),
+  makeSplitImmutable: jest.fn(),
 }
 
 export const readActions = {
@@ -38,6 +32,19 @@ export class MockSplitMain {
       format: () => string
     }
   }
+
+  createSplit: jest.Mock
+  updateSplit: jest.Mock
+  distributeETH: jest.Mock
+  distributeERC20: jest.Mock
+  updateAndDistributeETH: jest.Mock
+  updateAndDistributeERC20: jest.Mock
+  withdraw: jest.Mock
+  transferControl: jest.Mock
+  cancelControlTransfer: jest.Mock
+  acceptControl: jest.Mock
+  makeSplitImmutable: jest.Mock
+
   getETHBalance: jest.Mock
   getERC20Balance: jest.Mock
   predictImmutableSplitAddress: jest.Mock
@@ -57,15 +64,23 @@ export class MockSplitMain {
       },
     }
 
+    this.createSplit = writeActions.createSplit
+    this.updateSplit = writeActions.updateSplit
+    this.distributeETH = writeActions.distributeETH
+    this.distributeERC20 = writeActions.distributeERC20
+    this.updateAndDistributeETH = writeActions.updateAndDistributeETH
+    this.updateAndDistributeERC20 = writeActions.updateAndDistributeERC20
+    this.withdraw = writeActions.withdraw
+    this.transferControl = writeActions.transferControl
+    this.cancelControlTransfer = writeActions.cancelControlTransfer
+    this.acceptControl = writeActions.acceptControl
+    this.makeSplitImmutable = writeActions.makeSplitImmutable
+
     this.getETHBalance = readActions.getETHBalance
     this.getERC20Balance = readActions.getERC20Balance
     this.predictImmutableSplitAddress = readActions.predictImmutableSplitAddress
     this.getController = readActions.getController
     this.getNewPotentialController = readActions.getNewPotentialController
     this.getHash = readActions.getHash
-  }
-
-  connect() {
-    return writeActions
   }
 }
