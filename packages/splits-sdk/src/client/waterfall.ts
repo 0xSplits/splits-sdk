@@ -1,7 +1,7 @@
 import { Interface } from '@ethersproject/abi'
 import { BigNumber } from '@ethersproject/bignumber'
 import { AddressZero } from '@ethersproject/constants'
-import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
+import { ContractTransaction, Event } from '@ethersproject/contracts'
 
 import WATERFALL_MODULE_FACTORY_ARTIFACT from '../artifacts/contracts/WaterfallModuleFactory/WaterfallModuleFactory.json'
 import WATERFALL_MODULE_ARTIFACT from '../artifacts/contracts/WaterfallModule/WaterfallModule.json'
@@ -29,6 +29,7 @@ import type {
   RecoverNonWaterfallFundsConfig,
   SplitsClientConfig,
   TransactionConfig,
+  TransactionFormat,
   WaterfallFundsConfig,
   WaterfallModule,
   WithdrawWaterfallPullFundsConfig,
@@ -79,9 +80,7 @@ class WaterfallTransactions extends BaseTransactions {
     token,
     tranches,
     nonWaterfallRecipient = AddressZero,
-  }: CreateWaterfallConfig): Promise<
-    ContractTransaction | BigNumber | CallData
-  > {
+  }: CreateWaterfallConfig): Promise<TransactionFormat> {
     validateAddress(token)
     validateAddress(nonWaterfallRecipient)
     validateTranches(tranches)
@@ -109,9 +108,7 @@ class WaterfallTransactions extends BaseTransactions {
   protected async _waterfallFundsTransaction({
     waterfallModuleId,
     usePull = false,
-  }: WaterfallFundsConfig): Promise<
-    ContractTransaction | BigNumber | CallData
-  > {
+  }: WaterfallFundsConfig): Promise<TransactionFormat> {
     validateAddress(waterfallModuleId)
     if (this._shouldRequireSigner) this._requireSigner()
 
@@ -127,9 +124,7 @@ class WaterfallTransactions extends BaseTransactions {
     waterfallModuleId,
     token,
     recipient = AddressZero,
-  }: RecoverNonWaterfallFundsConfig): Promise<
-    ContractTransaction | BigNumber | CallData
-  > {
+  }: RecoverNonWaterfallFundsConfig): Promise<TransactionFormat> {
     validateAddress(waterfallModuleId)
     validateAddress(token)
     validateAddress(recipient)
@@ -152,9 +147,7 @@ class WaterfallTransactions extends BaseTransactions {
   protected async _withdrawPullFundsTransaction({
     waterfallModuleId,
     address,
-  }: WithdrawWaterfallPullFundsConfig): Promise<
-    ContractTransaction | BigNumber | CallData
-  > {
+  }: WithdrawWaterfallPullFundsConfig): Promise<TransactionFormat> {
     validateAddress(waterfallModuleId)
     validateAddress(address)
     this._requireSigner()
@@ -262,40 +255,21 @@ class WaterfallTransactions extends BaseTransactions {
   }
 
   protected _getWaterfallContract(waterfallModule: string) {
-    if (this._transactionType === TransactionType.CallData)
-      return new ContractCallData(
-        waterfallModule,
-        WATERFALL_MODULE_ARTIFACT.abi,
-      )
-
-    const waterfallContract = new Contract(
-      waterfallModule,
-      waterfallModuleInterface,
-      this._signer || this._provider,
-    ) as WaterfallModuleType
-
-    if (this._transactionType === TransactionType.GasEstimate)
-      return waterfallContract.estimateGas
-
-    return waterfallContract
+    return this._getTransactionContract<
+      WaterfallModuleType,
+      WaterfallModuleType['estimateGas']
+    >(waterfallModule, WATERFALL_MODULE_ARTIFACT.abi, waterfallModuleInterface)
   }
 
   private _getWaterfallFactoryContract() {
-    if (this._transactionType === TransactionType.CallData)
-      return new ContractCallData(
-        WATERFALL_MODULE_FACTORY_ADDRESS,
-        WATERFALL_MODULE_FACTORY_ARTIFACT.abi,
-      )
-
-    const waterfallFactoryContract = new Contract(
+    return this._getTransactionContract<
+      WaterfallModuleFactoryType,
+      WaterfallModuleFactoryType['estimateGas']
+    >(
       WATERFALL_MODULE_FACTORY_ADDRESS,
+      WATERFALL_MODULE_FACTORY_ARTIFACT.abi,
       waterfallModuleFactoryInterface,
-      this._signer || this._provider,
-    ) as WaterfallModuleFactoryType
-    if (this._transactionType === TransactionType.GasEstimate)
-      return waterfallFactoryContract.estimateGas
-
-    return waterfallFactoryContract
+    )
   }
 }
 

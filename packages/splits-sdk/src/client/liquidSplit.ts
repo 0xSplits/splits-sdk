@@ -1,7 +1,7 @@
 import { Interface } from '@ethersproject/abi'
 import { BigNumber } from '@ethersproject/bignumber'
 import { AddressZero } from '@ethersproject/constants'
-import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
+import { ContractTransaction, Event } from '@ethersproject/contracts'
 import { decode } from 'base-64'
 
 import LIQUID_SPLIT_FACTORY_ARTIFACT from '../artifacts/contracts/LiquidSplitFactory/LiquidSplitFactory.json'
@@ -32,6 +32,7 @@ import type {
   TransferLiquidSplitOwnershipConfig,
   CallData,
   TransactionConfig,
+  TransactionFormat,
 } from '../types'
 import {
   getBigNumberFromPercent,
@@ -86,9 +87,7 @@ class LiquidSplitTransactions extends BaseTransactions {
     distributorFeePercent,
     owner = undefined,
     createClone = false,
-  }: CreateLiquidSplitConfig): Promise<
-    ContractTransaction | BigNumber | CallData
-  > {
+  }: CreateLiquidSplitConfig): Promise<TransactionFormat> {
     validateRecipients(recipients, LIQUID_SPLITS_MAX_PRECISION_DECIMALS)
     validateDistributorFeePercent(distributorFeePercent)
 
@@ -126,9 +125,7 @@ class LiquidSplitTransactions extends BaseTransactions {
     liquidSplitId,
     token,
     distributorAddress,
-  }: DistributeLiquidSplitTokenConfig): Promise<
-    ContractTransaction | BigNumber | CallData
-  > {
+  }: DistributeLiquidSplitTokenConfig): Promise<TransactionFormat> {
     validateAddress(liquidSplitId)
     validateAddress(token)
     if (this._shouldRequireSigner) this._requireSigner()
@@ -164,9 +161,7 @@ class LiquidSplitTransactions extends BaseTransactions {
   protected async _transferOwnershipTransaction({
     liquidSplitId,
     newOwner,
-  }: TransferLiquidSplitOwnershipConfig): Promise<
-    ContractTransaction | BigNumber | CallData
-  > {
+  }: TransferLiquidSplitOwnershipConfig): Promise<TransactionFormat> {
     validateAddress(liquidSplitId)
     validateAddress(newOwner)
     if (this._shouldRequireSigner) {
@@ -239,37 +234,22 @@ class LiquidSplitTransactions extends BaseTransactions {
   }
 
   protected _getLiquidSplitContract(liquidSplit: string) {
-    if (this._transactionType === TransactionType.CallData)
-      return new ContractCallData(liquidSplit, LIQUID_SPLIT_ARTIFACT.abi)
-
-    const liquidSplitContract = new Contract(
+    return this._getTransactionContract<LS1155Type, LS1155Type['estimateGas']>(
       liquidSplit,
+      LIQUID_SPLIT_ARTIFACT.abi,
       liquidSplitInterface,
-      this._signer || this._provider,
-    ) as LS1155Type
-
-    if (this._transactionType === TransactionType.GasEstimate)
-      return liquidSplitContract.estimateGas
-
-    return liquidSplitContract
+    )
   }
 
   private _getLiquidSplitFactoryContract() {
-    if (this._transactionType === TransactionType.CallData)
-      return new ContractCallData(
-        LIQUID_SPLIT_FACTORY_ADDRESS,
-        LIQUID_SPLIT_FACTORY_ARTIFACT.abi,
-      )
-
-    const liquidSplitFactoryContract = new Contract(
+    return this._getTransactionContract<
+      LiquidSplitFactoryType,
+      LiquidSplitFactoryType['estimateGas']
+    >(
       LIQUID_SPLIT_FACTORY_ADDRESS,
+      LIQUID_SPLIT_FACTORY_ARTIFACT.abi,
       liquidSplitFactoryInterface,
-      this._signer || this._provider,
-    ) as LiquidSplitFactoryType
-    if (this._transactionType === TransactionType.GasEstimate)
-      return liquidSplitFactoryContract.estimateGas
-
-    return liquidSplitFactoryContract
+    )
   }
 }
 

@@ -1,3 +1,4 @@
+import { Interface, JsonFragment } from '@ethersproject/abi'
 import { Provider } from '@ethersproject/abstract-provider'
 import { Signer } from '@ethersproject/abstract-signer'
 import { BigNumber } from '@ethersproject/bignumber'
@@ -19,7 +20,11 @@ import type {
   TransactionFormat,
 } from '../types'
 import { getTransactionEvents } from '../utils'
-import { abiEncode, multicallInterface } from '../utils/multicall'
+import {
+  abiEncode,
+  ContractCallData,
+  multicallInterface,
+} from '../utils/multicall'
 
 const MISSING_SIGNER = ''
 
@@ -146,6 +151,28 @@ export class BaseTransactions extends BaseClient {
       TransactionType.Transaction,
       TransactionType.CallData,
     ].includes(transactionType)
+  }
+
+  protected _getTransactionContract<
+    T extends Contract,
+    K extends Contract['estimateGas'],
+  >(
+    contractAddress: string,
+    contractAbi: JsonFragment[],
+    contractInterface: Interface,
+  ) {
+    if (this._transactionType === TransactionType.CallData)
+      return new ContractCallData(contractAddress, contractAbi)
+
+    const contract = new Contract(
+      contractAddress,
+      contractInterface,
+      this._signer || this._provider,
+    ) as T
+    if (this._transactionType === TransactionType.GasEstimate)
+      return contract.estimateGas as K
+
+    return contract
   }
 
   protected _isContractTransaction(
