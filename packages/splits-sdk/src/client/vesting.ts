@@ -1,6 +1,6 @@
 import { Interface } from '@ethersproject/abi'
 import { BigNumber } from '@ethersproject/bignumber'
-import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
+import { ContractTransaction, Event } from '@ethersproject/contracts'
 
 import VESTING_MODULE_FACTORY_ARTIFACT from '../artifacts/contracts/VestingModuleFactory/VestingModuleFactory.json'
 import VESTING_MODULE_ARTIFACT from '../artifacts/contracts/VestingModule/VestingModule.json'
@@ -25,6 +25,7 @@ import type {
   SplitsClientConfig,
   StartVestConfig,
   TransactionConfig,
+  TransactionFormat,
   VestingModule,
 } from '../types'
 import { getTransactionEvents, getTokenData, addEnsNames } from '../utils'
@@ -67,7 +68,7 @@ class VestingTransactions extends BaseTransactions {
   protected async _createVestingModuleTransaction({
     beneficiary,
     vestingPeriodSeconds,
-  }: CreateVestingConfig): Promise<ContractTransaction | BigNumber | CallData> {
+  }: CreateVestingConfig): Promise<TransactionFormat> {
     validateAddress(beneficiary)
     validateVestingPeriod(vestingPeriodSeconds)
 
@@ -85,7 +86,7 @@ class VestingTransactions extends BaseTransactions {
   protected async _startVestTransaction({
     vestingModuleId,
     tokens,
-  }: StartVestConfig): Promise<ContractTransaction | BigNumber | CallData> {
+  }: StartVestConfig): Promise<TransactionFormat> {
     validateAddress(vestingModuleId)
     tokens.map((token) => validateAddress(token))
     if (this._shouldRequireSigner) this._requireSigner()
@@ -99,9 +100,7 @@ class VestingTransactions extends BaseTransactions {
   protected async _releaseVestedFundsTransaction({
     vestingModuleId,
     streamIds,
-  }: ReleaseVestedFundsConfig): Promise<
-    ContractTransaction | BigNumber | CallData
-  > {
+  }: ReleaseVestedFundsConfig): Promise<TransactionFormat> {
     validateAddress(vestingModuleId)
     if (this._shouldRequireSigner) this._requireSigner()
 
@@ -114,37 +113,21 @@ class VestingTransactions extends BaseTransactions {
   }
 
   protected _getVestingContract(vestingModule: string) {
-    if (this._transactionType === TransactionType.CallData)
-      return new ContractCallData(vestingModule, VESTING_MODULE_ARTIFACT.abi)
-
-    const vestingContract = new Contract(
-      vestingModule,
-      vestingModuleInterface,
-      this._signer || this._provider,
-    ) as VestingModuleType
-
-    if (this._transactionType === TransactionType.GasEstimate)
-      return vestingContract.estimateGas
-
-    return vestingContract
+    return this._getTransactionContract<
+      VestingModuleType,
+      VestingModuleType['estimateGas']
+    >(vestingModule, VESTING_MODULE_ARTIFACT.abi, vestingModuleInterface)
   }
 
   private _getVestingFactoryContract() {
-    if (this._transactionType === TransactionType.CallData)
-      return new ContractCallData(
-        VESTING_MODULE_FACTORY_ADDRESS,
-        VESTING_MODULE_FACTORY_ARTIFACT.abi,
-      )
-
-    const vestingFactoryContract = new Contract(
+    return this._getTransactionContract<
+      VestingModuleFactoryType,
+      VestingModuleFactoryType['estimateGas']
+    >(
       VESTING_MODULE_FACTORY_ADDRESS,
+      VESTING_MODULE_FACTORY_ARTIFACT.abi,
       vestingModuleFactoryInterface,
-      this._signer || this._provider,
-    ) as VestingModuleFactoryType
-    if (this._transactionType === TransactionType.GasEstimate)
-      return vestingFactoryContract.estimateGas
-
-    return vestingFactoryContract
+    )
   }
 }
 

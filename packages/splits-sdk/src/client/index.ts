@@ -62,6 +62,7 @@ import type {
   Account,
   CallData,
   TransactionConfig,
+  TransactionFormat,
 } from '../types'
 import {
   getRecipientSortedAddressesAndAllocations,
@@ -125,7 +126,7 @@ class SplitsTransactions extends BaseTransactions {
     recipients,
     distributorFeePercent,
     controller = AddressZero,
-  }: CreateSplitConfig): Promise<ContractTransaction | BigNumber | CallData> {
+  }: CreateSplitConfig): Promise<TransactionFormat> {
     validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
     validateDistributorFeePercent(distributorFeePercent)
     if (this._shouldRequireSigner) this._requireSigner()
@@ -148,7 +149,7 @@ class SplitsTransactions extends BaseTransactions {
     splitId,
     recipients,
     distributorFeePercent,
-  }: UpdateSplitConfig): Promise<ContractTransaction | BigNumber | CallData> {
+  }: UpdateSplitConfig): Promise<TransactionFormat> {
     validateAddress(splitId)
     validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
     validateDistributorFeePercent(distributorFeePercent)
@@ -176,9 +177,7 @@ class SplitsTransactions extends BaseTransactions {
     splitId,
     token,
     distributorAddress,
-  }: DistributeTokenConfig): Promise<
-    ContractTransaction | BigNumber | CallData
-  > {
+  }: DistributeTokenConfig): Promise<TransactionFormat> {
     validateAddress(splitId)
     validateAddress(token)
     if (this._shouldRequireSigner) this._requireSigner()
@@ -223,9 +222,7 @@ class SplitsTransactions extends BaseTransactions {
     recipients,
     distributorFeePercent,
     distributorAddress,
-  }: UpdateSplitAndDistributeTokenConfig): Promise<
-    ContractTransaction | BigNumber | CallData
-  > {
+  }: UpdateSplitAndDistributeTokenConfig): Promise<TransactionFormat> {
     validateAddress(splitId)
     validateAddress(token)
     validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
@@ -269,7 +266,7 @@ class SplitsTransactions extends BaseTransactions {
   protected async _withdrawFundsTransaction({
     address,
     tokens,
-  }: WithdrawFundsConfig): Promise<ContractTransaction | BigNumber | CallData> {
+  }: WithdrawFundsConfig): Promise<TransactionFormat> {
     validateAddress(address)
     if (this._shouldRequireSigner) this._requireSigner()
 
@@ -288,9 +285,7 @@ class SplitsTransactions extends BaseTransactions {
   protected async _initiateControlTransferTransaction({
     splitId,
     newController,
-  }: InititateControlTransferConfig): Promise<
-    ContractTransaction | BigNumber | CallData
-  > {
+  }: InititateControlTransferConfig): Promise<TransactionFormat> {
     validateAddress(splitId)
 
     if (this._shouldRequireSigner) {
@@ -308,9 +303,7 @@ class SplitsTransactions extends BaseTransactions {
 
   protected async _cancelControlTransferTransaction({
     splitId,
-  }: CancelControlTransferConfig): Promise<
-    ContractTransaction | BigNumber | CallData
-  > {
+  }: CancelControlTransferConfig): Promise<TransactionFormat> {
     validateAddress(splitId)
 
     if (this._shouldRequireSigner) {
@@ -325,9 +318,7 @@ class SplitsTransactions extends BaseTransactions {
 
   protected async _acceptControlTransferTransaction({
     splitId,
-  }: AcceptControlTransferConfig): Promise<
-    ContractTransaction | BigNumber | CallData
-  > {
+  }: AcceptControlTransferConfig): Promise<TransactionFormat> {
     validateAddress(splitId)
 
     if (this._shouldRequireSigner) {
@@ -343,9 +334,7 @@ class SplitsTransactions extends BaseTransactions {
 
   protected async _makeSplitImmutableTransaction({
     splitId,
-  }: MakeSplitImmutableConfig): Promise<
-    ContractTransaction | BigNumber | CallData
-  > {
+  }: MakeSplitImmutableConfig): Promise<TransactionFormat> {
     validateAddress(splitId)
 
     if (this._shouldRequireSigner) {
