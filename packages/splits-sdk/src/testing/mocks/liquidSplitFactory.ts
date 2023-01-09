@@ -1,7 +1,6 @@
 import { Provider } from '@ethersproject/abstract-provider'
 
 export const writeActions = {
-  createLiquidSplit: jest.fn(),
   createLiquidSplitClone: jest.fn(),
 }
 
@@ -13,7 +12,6 @@ export class MockLiquidSplitFactory {
     }
   }
 
-  createLiquidSplit: jest.Mock
   createLiquidSplitClone: jest.Mock
 
   constructor(provider: Provider) {
@@ -28,7 +26,6 @@ export class MockLiquidSplitFactory {
       },
     }
 
-    this.createLiquidSplit = writeActions.createLiquidSplit
     this.createLiquidSplitClone = writeActions.createLiquidSplitClone
   }
 }

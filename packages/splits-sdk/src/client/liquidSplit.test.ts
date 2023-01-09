@@ -160,21 +160,13 @@ describe('Liquid split writes', () => {
       { address: '0xuser2', percentAllocation: 60 },
     ]
     const distributorFeePercent = 7.35
-    const createLiquidSplitResult = {
-      value: 'create_liquid_split_tx',
-      wait: 'wait',
-    }
     const createLiquidSplitCloneResult = {
       value: 'create_liquid_split_clone_tx',
       wait: 'wait',
     }
 
     beforeEach(() => {
-      factoryWriteActions.createLiquidSplit.mockClear()
       factoryWriteActions.createLiquidSplitClone.mockClear()
-      factoryWriteActions.createLiquidSplit.mockReturnValueOnce(
-        createLiquidSplitResult,
-      )
       factoryWriteActions.createLiquidSplitClone.mockReturnValueOnce(
         createLiquidSplitCloneResult,
       )
@@ -209,36 +201,15 @@ describe('Liquid split writes', () => {
       ).rejects.toThrow(MissingSignerError)
     })
 
-    test('Create liquid split passes', async () => {
-      const { event, liquidSplitId } =
-        await liquidSplitClient.createLiquidSplit({
-          recipients,
-          distributorFeePercent,
-        })
-
-      expect(event.blockNumber).toEqual(12345)
-      expect(liquidSplitId).toEqual('0xliquidSplit')
-      expect(validateAddress).toBeCalledWith(CONTROLLER_ADDRESS)
-      expect(validateRecipients).toBeCalledWith(
-        recipients,
-        LIQUID_SPLITS_MAX_PRECISION_DECIMALS,
-      )
-      expect(validateDistributorFeePercent).toBeCalledWith(
-        distributorFeePercent,
-      )
-      expect(getSortedRecipientsMock).toBeCalledWith(recipients)
-      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
-      expect(getNftCountsMock).toBeCalledWith(SORTED_ALLOCATIONS)
-      expect(factoryWriteActions.createLiquidSplit).toBeCalledWith(
-        SORTED_ADDRESSES,
-        NFT_COUNTS,
-        DISTRIBUTOR_FEE,
-        CONTROLLER_ADDRESS,
-      )
-      expect(factoryWriteActions.createLiquidSplitClone).not.toBeCalled()
-      expect(getTransactionEventsSpy).toBeCalledWith(createLiquidSplitResult, [
-        liquidSplitClient.eventTopics.createLiquidSplit[1],
-      ])
+    test('Create liquid split non-clone fails', async () => {
+      await expect(
+        async () =>
+          await liquidSplitClient.createLiquidSplit({
+            recipients,
+            distributorFeePercent,
+            createClone: false,
+          }),
+      ).rejects.toThrow(Error)
     })
 
     test('Create liquid split clone passes', async () => {
@@ -246,7 +217,6 @@ describe('Liquid split writes', () => {
         await liquidSplitClient.createLiquidSplit({
           recipients,
           distributorFeePercent,
-          createClone: true,
         })
 
       expect(event.blockNumber).toEqual(12345)
@@ -268,7 +238,6 @@ describe('Liquid split writes', () => {
         DISTRIBUTOR_FEE,
         CONTROLLER_ADDRESS,
       )
-      expect(factoryWriteActions.createLiquidSplit).not.toBeCalled()
       expect(getTransactionEventsSpy).toBeCalledWith(
         createLiquidSplitCloneResult,
         [liquidSplitClient.eventTopics.createLiquidSplit[0]],
@@ -296,15 +265,16 @@ describe('Liquid split writes', () => {
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
       expect(getNftCountsMock).toBeCalledWith(SORTED_ALLOCATIONS)
-      expect(factoryWriteActions.createLiquidSplit).toBeCalledWith(
+      expect(factoryWriteActions.createLiquidSplitClone).toBeCalledWith(
         SORTED_ADDRESSES,
         NFT_COUNTS,
         DISTRIBUTOR_FEE,
         '0xowner',
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(createLiquidSplitResult, [
-        liquidSplitClient.eventTopics.createLiquidSplit[1],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith(
+        createLiquidSplitCloneResult,
+        [liquidSplitClient.eventTopics.createLiquidSplit[0]],
+      )
     })
   })
 

@@ -187,6 +187,9 @@ export type CreateLiquidSplitConfig = {
   recipients: SplitRecipient[]
   distributorFeePercent: number
   owner?: string
+  // This option is a bug, should not exist. Since a version of the SDK
+  // with it is out there, going to leave it in. But if the invalid value ('false')
+  // is passed in, will raise an error.
   createClone?: boolean
 }
 

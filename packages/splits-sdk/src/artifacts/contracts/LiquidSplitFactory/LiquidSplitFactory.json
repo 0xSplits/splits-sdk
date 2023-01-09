@@ -27,19 +27,6 @@
       "inputs": [
         {
           "indexed": true,
-          "internalType": "contract LS1155",
-          "name": "ls",
-          "type": "address"
-        }
-      ],
-      "name": "CreateLS1155",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
           "internalType": "contract LS1155CloneImpl",
           "name": "ls",
           "type": "address"
@@ -84,40 +71,6 @@
           "type": "address"
         }
       ],
-      "name": "createLiquidSplit",
-      "outputs": [
-        {
-          "internalType": "contract LS1155",
-          "name": "ls",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address[]",
-          "name": "accounts",
-          "type": "address[]"
-        },
-        {
-          "internalType": "uint32[]",
-          "name": "initAllocations",
-          "type": "uint32[]"
-        },
-        {
-          "internalType": "uint32",
-          "name": "_distributorFee",
-          "type": "uint32"
-        },
-        {
-          "internalType": "address",
-          "name": "owner",
-          "type": "address"
-        }
-      ],
       "name": "createLiquidSplitClone",
       "outputs": [
         {
@@ -132,19 +85,6 @@
     {
       "inputs": [],
       "name": "ls1155CloneImpl",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "splitMain",
       "outputs": [
         {
           "internalType": "address",
