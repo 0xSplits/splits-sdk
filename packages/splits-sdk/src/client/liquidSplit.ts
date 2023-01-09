@@ -86,10 +86,14 @@ class LiquidSplitTransactions extends BaseTransactions {
     recipients,
     distributorFeePercent,
     owner = undefined,
-    createClone = false,
+    createClone = true,
   }: CreateLiquidSplitConfig): Promise<TransactionFormat> {
     validateRecipients(recipients, LIQUID_SPLITS_MAX_PRECISION_DECIMALS)
     validateDistributorFeePercent(distributorFeePercent)
+    if (createClone === false)
+      throw new Error(
+        'Non-clone liquid splits are not available through the SDK. See the splits-liquid-template repository in the 0xSplits github if you would like to create your own custom liquid split',
+      )
 
     if (this._shouldRequireSigner) this._requireSigner()
     const ownerAddress = owner
@@ -104,19 +108,13 @@ class LiquidSplitTransactions extends BaseTransactions {
     const nftAmounts = getNftCountsFromPercents(percentAllocations)
     const distributorFee = getBigNumberFromPercent(distributorFeePercent)
 
-    const createSplitResult = createClone
-      ? await this._liquidSplitFactoryContract.createLiquidSplitClone(
-          accounts,
-          nftAmounts,
-          distributorFee,
-          ownerAddress,
-        )
-      : await this._liquidSplitFactoryContract.createLiquidSplit(
-          accounts,
-          nftAmounts,
-          distributorFee,
-          ownerAddress,
-        )
+    const createSplitResult =
+      await this._liquidSplitFactoryContract.createLiquidSplitClone(
+        accounts,
+        nftAmounts,
+        distributorFee,
+        ownerAddress,
+      )
 
     return createSplitResult
   }
@@ -280,7 +278,6 @@ export default class LiquidSplitClient extends LiquidSplitTransactions {
     this.eventTopics = {
       createLiquidSplit: [
         liquidSplitFactoryInterface.getEventTopic('CreateLS1155Clone'),
-        liquidSplitFactoryInterface.getEventTopic('CreateLS1155'),
       ],
       distributeToken: [
         splitMainInterface.getEventTopic('UpdateSplit'),
@@ -333,7 +330,7 @@ export default class LiquidSplitClient extends LiquidSplitTransactions {
     recipients,
     distributorFeePercent,
     owner,
-    createClone = false,
+    createClone = true,
   }: CreateLiquidSplitConfig): Promise<{
     liquidSplitId: string
     event: Event
@@ -562,7 +559,7 @@ class LiquidSplitGasEstimates extends LiquidSplitTransactions {
     recipients,
     distributorFeePercent,
     owner = undefined,
-    createClone = false,
+    createClone = true,
   }: CreateLiquidSplitConfig): Promise<BigNumber> {
     const gasEstimate = await this._createLiquidSplitTransaction({
       recipients,
@@ -626,7 +623,7 @@ class LiquidSplitCallData extends LiquidSplitTransactions {
     recipients,
     distributorFeePercent,
     owner = undefined,
-    createClone = false,
+    createClone = true,
   }: CreateLiquidSplitConfig): Promise<CallData> {
     const callData = await this._createLiquidSplitTransaction({
       recipients,
