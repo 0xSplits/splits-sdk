@@ -12,7 +12,11 @@ import LiquidSplitClient from './liquidSplit'
 import VestingClient from './vesting'
 import {
   ARBITRUM_CHAIN_IDS,
+  AURORA_CHAIN_IDS,
+  AVALANCHE_CHAIN_IDS,
+  BSC_CHAIN_IDS,
   ETHEREUM_CHAIN_IDS,
+  FANTOM_CHAIN_IDS,
   GNOSIS_CHAIN_IDS,
   LIQUID_SPLIT_CHAIN_IDS,
   OPTIMISM_CHAIN_IDS,
@@ -89,6 +93,10 @@ const polygonInterfaceChainIds = [
   ...OPTIMISM_CHAIN_IDS,
   ...ARBITRUM_CHAIN_IDS,
   ...GNOSIS_CHAIN_IDS,
+  ...FANTOM_CHAIN_IDS,
+  ...AVALANCHE_CHAIN_IDS,
+  ...BSC_CHAIN_IDS,
+  ...AURORA_CHAIN_IDS,
 ]
 
 class SplitsTransactions extends BaseTransactions {

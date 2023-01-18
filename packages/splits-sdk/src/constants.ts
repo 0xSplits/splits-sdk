@@ -20,12 +20,20 @@ export const POLYGON_CHAIN_IDS = [137, 80001]
 export const OPTIMISM_CHAIN_IDS = [10, 420]
 export const ARBITRUM_CHAIN_IDS = [42161, 421613]
 export const GNOSIS_CHAIN_IDS = [100]
+export const FANTOM_CHAIN_IDS = [250]
+export const AVALANCHE_CHAIN_IDS = [43114]
+export const BSC_CHAIN_IDS = [56]
+export const AURORA_CHAIN_IDS = [1313161554]
 export const SPLITS_SUPPORTED_CHAIN_IDS = [
   ...ETHEREUM_CHAIN_IDS,
   ...POLYGON_CHAIN_IDS,
   ...OPTIMISM_CHAIN_IDS,
   ...ARBITRUM_CHAIN_IDS,
   ...GNOSIS_CHAIN_IDS,
+  ...FANTOM_CHAIN_IDS,
+  ...AVALANCHE_CHAIN_IDS,
+  ...BSC_CHAIN_IDS,
+  ...AURORA_CHAIN_IDS,
 ]
 
 export const SPLITS_SUBGRAPH_CHAIN_IDS = [
@@ -35,6 +43,10 @@ export const SPLITS_SUBGRAPH_CHAIN_IDS = [
   ...OPTIMISM_CHAIN_IDS,
   ...ARBITRUM_CHAIN_IDS,
   ...GNOSIS_CHAIN_IDS,
+  ...FANTOM_CHAIN_IDS,
+  ...AVALANCHE_CHAIN_IDS,
+  ...BSC_CHAIN_IDS,
+  ...AURORA_CHAIN_IDS,
 ]
 export const WATERFALL_CHAIN_IDS = [
   1,
@@ -43,6 +55,10 @@ export const WATERFALL_CHAIN_IDS = [
   ...OPTIMISM_CHAIN_IDS,
   ...ARBITRUM_CHAIN_IDS,
   ...GNOSIS_CHAIN_IDS,
+  ...FANTOM_CHAIN_IDS,
+  ...AVALANCHE_CHAIN_IDS,
+  ...BSC_CHAIN_IDS,
+  ...AURORA_CHAIN_IDS,
 ]
 export const LIQUID_SPLIT_CHAIN_IDS = [
   1,
@@ -51,6 +67,10 @@ export const LIQUID_SPLIT_CHAIN_IDS = [
   ...OPTIMISM_CHAIN_IDS,
   ...ARBITRUM_CHAIN_IDS,
   ...GNOSIS_CHAIN_IDS,
+  ...FANTOM_CHAIN_IDS,
+  ...AVALANCHE_CHAIN_IDS,
+  ...BSC_CHAIN_IDS,
+  ...AURORA_CHAIN_IDS,
 ]
 export const VESTING_CHAIN_IDS = [
   1,
@@ -59,6 +79,10 @@ export const VESTING_CHAIN_IDS = [
   ...OPTIMISM_CHAIN_IDS,
   ...ARBITRUM_CHAIN_IDS,
   ...GNOSIS_CHAIN_IDS,
+  ...FANTOM_CHAIN_IDS,
+  ...AVALANCHE_CHAIN_IDS,
+  ...BSC_CHAIN_IDS,
+  ...AURORA_CHAIN_IDS,
 ]
 
 export const SPLITS_MAX_PRECISION_DECIMALS = 4
@@ -103,6 +127,9 @@ export const CHAIN_INFO: { [chainId: number]: { startBlock: number } } = {
   },
   100: {
     startBlock: 26014830,
+  },
+  250: {
+    startBlock: 53993922,
   },
 }
 
