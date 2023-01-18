@@ -13,6 +13,7 @@ import VestingClient from './vesting'
 import {
   ARBITRUM_CHAIN_IDS,
   ETHEREUM_CHAIN_IDS,
+  GNOSIS_CHAIN_IDS,
   LIQUID_SPLIT_CHAIN_IDS,
   OPTIMISM_CHAIN_IDS,
   POLYGON_CHAIN_IDS,
@@ -87,6 +88,7 @@ const polygonInterfaceChainIds = [
   ...POLYGON_CHAIN_IDS,
   ...OPTIMISM_CHAIN_IDS,
   ...ARBITRUM_CHAIN_IDS,
+  ...GNOSIS_CHAIN_IDS,
 ]
 
 class SplitsTransactions extends BaseTransactions {
@@ -1076,7 +1078,6 @@ export class SplitsClient extends SplitsTransactions {
     )
     const internalTokens = Object.keys(internalBalances)
 
-    // TODO: how to get rid of this if statement? typescript is complaining without it
     const erc20Tokens = this._provider
       ? await fetchERC20TransferredTokens(
           this._chainId,
