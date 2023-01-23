@@ -23,7 +23,7 @@ import {
   POLYGON_CHAIN_IDS,
   SPLITS_MAX_PRECISION_DECIMALS,
   SPLITS_SUPPORTED_CHAIN_IDS,
-  SPLIT_MAIN_ADDRESS,
+  getSplitMainAddress,
   TransactionType,
   VESTING_CHAIN_IDS,
   WATERFALL_CHAIN_IDS,
@@ -415,21 +415,23 @@ class SplitsTransactions extends BaseTransactions {
   }
 
   private _getSplitMainContract() {
+    const splitMainAddress = getSplitMainAddress(this._chainId)
+
     if (this._transactionType === TransactionType.CallData)
       if (ETHEREUM_CHAIN_IDS.includes(this._chainId)) {
         return new ContractCallData(
-          SPLIT_MAIN_ADDRESS,
+          splitMainAddress,
           SPLIT_MAIN_ARTIFACT_ETHEREUM.abi,
         )
       } else {
         return new ContractCallData(
-          SPLIT_MAIN_ADDRESS,
+          splitMainAddress,
           SPLIT_MAIN_ARTIFACT_POLYGON.abi,
         )
       }
 
     const splitMainContract = new Contract(
-      SPLIT_MAIN_ADDRESS,
+      splitMainAddress,
       this._splitMainInterface,
       this._signer || this._provider,
     ) as SplitMainType

@@ -10,7 +10,7 @@ import { BaseTransactions } from './base'
 import {
   TransactionType,
   WATERFALL_CHAIN_IDS,
-  WATERFALL_MODULE_FACTORY_ADDRESS,
+  getWaterfallFactoryAddress,
 } from '../constants'
 import {
   AccountNotFoundError,
@@ -266,7 +266,7 @@ class WaterfallTransactions extends BaseTransactions {
       WaterfallModuleFactoryType,
       WaterfallModuleFactoryType['estimateGas']
     >(
-      WATERFALL_MODULE_FACTORY_ADDRESS,
+      getWaterfallFactoryAddress(this._chainId),
       WATERFALL_MODULE_FACTORY_ARTIFACT.abi,
       waterfallModuleFactoryInterface,
     )

@@ -12,7 +12,7 @@ import { BaseTransactions } from './base'
 import {
   LIQUID_SPLITS_MAX_PRECISION_DECIMALS,
   LIQUID_SPLIT_CHAIN_IDS,
-  LIQUID_SPLIT_FACTORY_ADDRESS,
+  getLiquidSplitFactoryAddress,
   LIQUID_SPLIT_URI_BASE_64_HEADER,
   TransactionType,
 } from '../constants'
@@ -244,7 +244,7 @@ class LiquidSplitTransactions extends BaseTransactions {
       LiquidSplitFactoryType,
       LiquidSplitFactoryType['estimateGas']
     >(
-      LIQUID_SPLIT_FACTORY_ADDRESS,
+      getLiquidSplitFactoryAddress(this._chainId),
       LIQUID_SPLIT_FACTORY_ARTIFACT.abi,
       liquidSplitFactoryInterface,
     )

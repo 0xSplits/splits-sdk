@@ -9,7 +9,7 @@ import { BaseTransactions } from './base'
 import {
   TransactionType,
   VESTING_CHAIN_IDS,
-  VESTING_MODULE_FACTORY_ADDRESS,
+  getVestingFactoryAddress,
 } from '../constants'
 import {
   AccountNotFoundError,
@@ -124,7 +124,7 @@ class VestingTransactions extends BaseTransactions {
       VestingModuleFactoryType,
       VestingModuleFactoryType['estimateGas']
     >(
-      VESTING_MODULE_FACTORY_ADDRESS,
+      getVestingFactoryAddress(this._chainId),
       VESTING_MODULE_FACTORY_ARTIFACT.abi,
       vestingModuleFactoryInterface,
     )
