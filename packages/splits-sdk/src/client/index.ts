@@ -1,7 +1,6 @@
 import { Interface } from '@ethersproject/abi'
-import { getAddress } from '@ethersproject/address'
 import { BigNumber } from '@ethersproject/bignumber'
-import { AddressZero, One } from '@ethersproject/constants'
+import { AddressZero } from '@ethersproject/constants'
 import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
 
 import SPLIT_MAIN_ARTIFACT_ETHEREUM from '../artifacts/contracts/SplitMain/ethereum/SplitMain.json'
@@ -36,18 +35,12 @@ import {
   UnsupportedChainIdError,
 } from '../errors'
 import {
-  ACCOUNT_BALANCES_QUERY,
   ACCOUNT_QUERY,
-  formatAccountBalances,
   protectedFormatSplit,
   RELATED_SPLITS_QUERY,
   SPLIT_QUERY,
 } from '../subgraph'
-import type {
-  GqlAccount,
-  GqlAccountBalances,
-  GqlSplit,
-} from '../subgraph/types'
+import type { GqlAccount, GqlSplit } from '../subgraph/types'
 import type {
   SplitMainType,
   SplitsClientConfig,
@@ -72,7 +65,6 @@ import type {
 import {
   getRecipientSortedAddressesAndAllocations,
   getTransactionEvents,
-  fetchERC20TransferredTokens,
   addEnsNames,
   getBigNumberFromPercent,
 } from '../utils'
@@ -1050,9 +1042,11 @@ export class SplitsClient extends SplitsTransactions {
   async getSplitEarnings({
     splitId,
     includeActiveBalances = true,
+    erc20TokenList,
   }: {
     splitId: string
     includeActiveBalances?: boolean
+    erc20TokenList?: string[]
   }): Promise<{
     activeBalances?: TokenBalances
     distributed: TokenBalances
@@ -1063,59 +1057,14 @@ export class SplitsClient extends SplitsTransactions {
         'Provider required to get split active balances. Please update your call to the SplitsClient constructor with a valid provider, or set includeActiveBalances to false',
       )
 
-    const response = await this._makeGqlRequest<{
-      accountBalances: GqlAccountBalances
-    }>(ACCOUNT_BALANCES_QUERY, {
-      accountId: splitId.toLowerCase(),
+    const { withdrawn, activeBalances } = await this._getAccountBalances({
+      accountId: splitId,
+      includeActiveBalances,
+      erc20TokenList,
     })
 
-    if (!response.accountBalances)
-      throw new AccountNotFoundError(
-        `No split found at address ${splitId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
-      )
-
-    const distributed = formatAccountBalances(
-      response.accountBalances.withdrawals,
-    )
-
-    if (!includeActiveBalances)
-      return {
-        distributed,
-      }
-
-    const internalBalances = formatAccountBalances(
-      response.accountBalances.internalBalances,
-    )
-    const internalTokens = Object.keys(internalBalances)
-
-    const erc20Tokens = this._provider
-      ? await fetchERC20TransferredTokens(
-          this._chainId,
-          this._provider,
-          splitId,
-        )
-      : []
-
-    const tokens = Array.from(
-      new Set(internalTokens.concat(erc20Tokens).concat([AddressZero])),
-    )
-
-    const activeBalances = (
-      await Promise.all(
-        tokens.map((token) => this.getSplitBalance({ splitId, token })),
-      )
-    ).reduce((acc, balanceDict, index) => {
-      const balance = balanceDict.balance
-      const token = getAddress(tokens[index])
-
-      if (balance > One) acc[token] = balance
-      return acc
-    }, {} as TokenBalances)
-
-    return {
-      activeBalances,
-      distributed,
-    }
+    if (!includeActiveBalances) return { distributed: withdrawn }
+    return { distributed: withdrawn, activeBalances }
   }
 
   async getUserEarnings({ userId }: { userId: string }): Promise<{
@@ -1124,23 +1073,11 @@ export class SplitsClient extends SplitsTransactions {
   }> {
     validateAddress(userId)
 
-    const response = await this._makeGqlRequest<{
-      accountBalances: GqlAccountBalances
-    }>(ACCOUNT_BALANCES_QUERY, {
-      accountId: userId.toLowerCase(),
+    const { withdrawn, activeBalances } = await this._getAccountBalances({
+      accountId: userId,
+      includeActiveBalances: true,
     })
-
-    if (!response.accountBalances)
-      throw new AccountNotFoundError(
-        `No user found at address ${userId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
-      )
-
-    const withdrawn = formatAccountBalances(
-      response.accountBalances.withdrawals,
-    )
-    const activeBalances = formatAccountBalances(
-      response.accountBalances.internalBalances,
-    )
+    if (!activeBalances) throw new Error('Missing active balances')
 
     return { withdrawn, activeBalances }
   }

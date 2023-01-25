@@ -1,6 +1,6 @@
 import { Interface } from '@ethersproject/abi'
 
-const IERC20_ABI = [
+export const IERC20_ABI = [
   'function name() view returns (string name)',
   'function symbol() view returns (string symbol)',
   'function decimals() view returns (uint8 decimals)',

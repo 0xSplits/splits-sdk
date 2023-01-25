@@ -359,7 +359,7 @@ export const formatAccountBalances = (
     const tokenId = getAddress(gqlTokenBalance.token.id)
     const amount = BigNumber.from(gqlTokenBalance.amount)
 
-    if (amount > One) acc[tokenId] = amount
+    if (amount.gt(One)) acc[tokenId] = amount
     return acc
   }, {} as TokenBalances)
 }
@@ -442,6 +442,7 @@ export const RELATED_SPLITS_QUERY = gql`
 export const ACCOUNT_BALANCES_QUERY = gql`
   query accountBalances($accountId: ID!) {
     accountBalances: account(id: $accountId) {
+      __typename
       ...AccountBalancesFragment
     }
   }

@@ -1,13 +1,12 @@
 import { Provider } from '@ethersproject/abstract-provider'
 import { BigNumber } from '@ethersproject/bignumber'
-import { hexZeroPad } from '@ethersproject/bytes'
 import { AddressZero } from '@ethersproject/constants'
 import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
 import { nameprep } from '@ethersproject/strings'
 import { parseUnits } from '@ethersproject/units'
+import { ConnectionInfo } from '@ethersproject/web'
 
 import {
-  CHAIN_INFO,
   LIQUID_SPLIT_NFT_COUNT,
   PERCENTAGE_SCALE,
   POLYGON_CHAIN_IDS,
@@ -82,30 +81,6 @@ export const getTransactionEvents = async (
   }
 
   return []
-}
-
-export const fetchERC20TransferredTokens = async (
-  chainId: number,
-  provider: Provider,
-  splitId: string,
-): Promise<string[]> => {
-  const tokens = new Set<string>([])
-
-  const transferLogs = await provider.getLogs({
-    topics: [
-      ierc20Interface.getEventTopic('Transfer'),
-      null,
-      hexZeroPad(splitId, 32),
-    ],
-    fromBlock: CHAIN_INFO[chainId].startBlock,
-    toBlock: 'latest',
-  })
-  transferLogs.map((log) => {
-    const erc20Address = log.address
-    tokens.add(erc20Address)
-  })
-
-  return Array.from(tokens)
 }
 
 const fetchEnsNames = async (
@@ -229,4 +204,18 @@ export const getTokenData = async (
     symbol,
     decimals,
   }
+}
+
+type ProviderWrapper = Provider & {
+  readonly connection: ConnectionInfo
+}
+
+// Return true if the provider supports a large enough logs request to fetch erc20 tranfer history
+export const isLogsProvider = (provider: Provider): boolean => {
+  const castedProvider = provider as ProviderWrapper // Cast so we can access the connection prop.
+  if (castedProvider.connection?.url?.includes('.alchemy.')) return true
+  if (castedProvider.connection?.url?.includes('.alchemyapi.')) return true
+  if (castedProvider.connection?.url?.includes('.infura.')) return true
+
+  return false
 }

@@ -1,25 +1,39 @@
 import { Interface, JsonFragment } from '@ethersproject/abi'
 import { Provider } from '@ethersproject/abstract-provider'
 import { Signer } from '@ethersproject/abstract-signer'
+import { getAddress } from '@ethersproject/address'
 import { BigNumber } from '@ethersproject/bignumber'
+import { AddressZero, Zero, One } from '@ethersproject/constants'
 import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
 import { GraphQLClient, Variables } from 'graphql-request'
 
 import { MULTICALL_3_ADDRESS, TransactionType } from '../constants'
 import {
+  AccountNotFoundError,
+  InvalidArgumentError,
   InvalidConfigError,
   MissingProviderError,
   MissingSignerError,
   UnsupportedSubgraphChainIdError,
 } from '../errors'
-import { getGraphqlClient } from '../subgraph'
+import {
+  ACCOUNT_BALANCES_QUERY,
+  formatAccountBalances,
+  getGraphqlClient,
+} from '../subgraph'
+import { GqlAccountBalances } from '../subgraph/types'
 import type {
   CallData,
   SplitsClientConfig,
+  TokenBalances,
   TransactionConfig,
   TransactionFormat,
 } from '../types'
-import { getTransactionEvents } from '../utils'
+import { getTransactionEvents, isLogsProvider } from '../utils'
+import {
+  fetchActiveBalances,
+  fetchERC20TransferredTokens,
+} from '../utils/balances'
 import {
   abiEncode,
   ContractCallData,
@@ -123,6 +137,88 @@ export default class BaseClient {
     })
     const events = await getTransactionEvents(multicallTx, [], true)
     return { events }
+  }
+
+  protected async _getAccountBalances({
+    accountId,
+    includeActiveBalances,
+    erc20TokenList,
+  }: {
+    accountId: string
+    includeActiveBalances: boolean
+    erc20TokenList?: string[]
+  }): Promise<{
+    withdrawn: TokenBalances
+    activeBalances?: TokenBalances
+  }> {
+    const response = await this._makeGqlRequest<{
+      accountBalances: GqlAccountBalances
+    }>(ACCOUNT_BALANCES_QUERY, {
+      accountId: accountId.toLowerCase(),
+    })
+
+    if (!response.accountBalances)
+      throw new AccountNotFoundError(
+        `No account found at address ${accountId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
+      )
+
+    const withdrawn = formatAccountBalances(
+      response.accountBalances.withdrawals,
+    )
+    if (!includeActiveBalances) {
+      return { withdrawn }
+    }
+
+    const internalBalances = formatAccountBalances(
+      response.accountBalances.internalBalances,
+    )
+    if (response.accountBalances.__typename === 'User') {
+      // Only including split main balance for users
+      return { withdrawn, activeBalances: internalBalances }
+    }
+
+    // Need to fetch current balance. Handle alchemy/infura with logs, and all other providers with token list
+    if (!this._provider)
+      throw new MissingProviderError(
+        'Provider required to get active balances. Please update your call to the client constructor with a valid provider, or set includeActiveBalances to false',
+      )
+    const tokenList = erc20TokenList ?? []
+    if (erc20TokenList === undefined) {
+      if (!isLogsProvider(this._provider))
+        throw new InvalidArgumentError(
+          'Token list required if provider is not alchemy or infura',
+        )
+      const transferredErc20Tokens = await fetchERC20TransferredTokens(
+        this._chainId,
+        this._provider,
+        accountId,
+      )
+      tokenList.push(...transferredErc20Tokens)
+    }
+
+    // Include already distributed tokens in list for balances
+    const customTokens = Object.keys(withdrawn) ?? []
+    const fullTokenList = Array.from(
+      new Set(
+        [AddressZero, ...tokenList]
+          .concat(Object.keys(internalBalances ?? {}))
+          .concat(customTokens)
+          .map((token) => getAddress(token)),
+      ),
+    )
+    const balances = await fetchActiveBalances(
+      accountId,
+      this._provider,
+      fullTokenList,
+    )
+    const filteredBalances = Object.keys(balances).reduce((acc, token) => {
+      const tokenBalance = balances[token].add(internalBalances[token] ?? Zero)
+
+      if (tokenBalance.gt(One)) acc[token] = tokenBalance
+      return acc
+    }, {} as TokenBalances)
+
+    return { withdrawn, activeBalances: filteredBalances }
   }
 }
 
