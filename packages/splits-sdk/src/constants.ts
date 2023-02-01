@@ -136,9 +136,13 @@ export const LIQUID_SPLITS_MAX_PRECISION_DECIMALS = 1
 export const LIQUID_SPLIT_NFT_COUNT = 1000
 export const LIQUID_SPLIT_URI_BASE_64_HEADER = 'data:application/json;base64,'
 
-export const CHAIN_INFO: { [chainId: number]: { startBlock: number } } = {
+export const CHAIN_INFO: {
+  [chainId: number]: { startBlock: number; gqlEndpoint?: string }
+} = {
   [ChainId.MAINNET]: {
     startBlock: 14206768,
+    gqlEndpoint:
+      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-ethereum',
   },
   3: {
     startBlock: 11962375,
@@ -148,42 +152,66 @@ export const CHAIN_INFO: { [chainId: number]: { startBlock: number } } = {
   },
   [ChainId.GOERLI]: {
     startBlock: 6374540,
+    gqlEndpoint:
+      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-goerli',
   },
   42: {
     startBlock: 29821123,
   },
   [ChainId.POLYGON]: {
     startBlock: 25303316,
+    gqlEndpoint:
+      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-polygon',
   },
   [ChainId.POLYGON_MUMBAI]: {
     startBlock: 25258326,
+    gqlEndpoint:
+      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-mumbai',
   },
   [ChainId.OPTIMISM]: {
     startBlock: 24704537,
+    gqlEndpoint:
+      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-optimism',
   },
   [ChainId.OPTIMISM_GOERLI]: {
     startBlock: 1324620,
+    gqlEndpoint:
+      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-opt-goerli',
   },
   [ChainId.ARBITRUM]: {
     startBlock: 26082503,
+    gqlEndpoint:
+      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-arbitrum',
   },
   [ChainId.ARBITRUM_GOERLI]: {
     startBlock: 383218,
+    gqlEndpoint:
+      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-arb-goerli',
   },
   [ChainId.GNOSIS]: {
     startBlock: 26014830,
+    gqlEndpoint:
+      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-gnosis',
   },
   [ChainId.FANTOM]: {
     startBlock: 53993922,
+    gqlEndpoint:
+      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-fantom',
   },
   [ChainId.AVALANCHE]: {
     startBlock: 25125818,
+    gqlEndpoint:
+      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-avalanche',
   },
   [ChainId.BSC]: {
     startBlock: 24962607,
+    gqlEndpoint:
+      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-bsc',
   },
   [ChainId.AURORA]: {
     startBlock: 83401794,
+    gqlEndpoint:
+      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-aurora',
   },
 }
 

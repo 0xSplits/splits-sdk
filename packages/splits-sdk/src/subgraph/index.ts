@@ -3,7 +3,7 @@ import { BigNumber } from '@ethersproject/bignumber'
 import { AddressZero, One } from '@ethersproject/constants'
 import { GraphQLClient, gql } from 'graphql-request'
 
-import { SPLITS_SUBGRAPH_CHAIN_IDS } from '../constants'
+import { CHAIN_INFO } from '../constants'
 import type {
   LiquidSplit,
   Split,
@@ -24,20 +24,6 @@ import {
   GqlWaterfallModule,
   GqlWaterfallTranche,
 } from './types'
-
-const GQL_ENDPOINTS: { [chainId: number]: string } = {
-  1: 'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-ethereum',
-  5: 'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-goerli',
-  137: 'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-polygon',
-  80001:
-    'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-mumbai',
-  10: 'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-optimism',
-  420: 'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-opt-goerli',
-  42161:
-    'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-arbitrum',
-  421613:
-    'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-arb-goerli',
-}
 
 const TOKEN_BALANCE_FIELDS_FRAGMENT = gql`
   fragment TokenBalanceFieldsFragment on TokenBalance {
@@ -453,7 +439,8 @@ export const ACCOUNT_BALANCES_QUERY = gql`
 export const getGraphqlClient = (
   chainId: number,
 ): GraphQLClient | undefined => {
-  if (!SPLITS_SUBGRAPH_CHAIN_IDS.includes(chainId)) return
+  const gqlEndpoint = CHAIN_INFO[chainId].gqlEndpoint
+  if (!gqlEndpoint) return
 
-  return new GraphQLClient(GQL_ENDPOINTS[chainId])
+  return new GraphQLClient(gqlEndpoint)
 }
