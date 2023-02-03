@@ -119,12 +119,8 @@ export default class BaseClient {
         callData,
       }
     })
-    const multicallContract = new Contract(
-      MULTICALL_3_ADDRESS,
-      multicallInterface,
-      this._signer,
-    )
-    const multicallTx = await multicallContract.aggregate(callRequests)
+
+    const multicallTx = await this._multicallContract.aggregate(callRequests)
 
     return { tx: multicallTx }
   }

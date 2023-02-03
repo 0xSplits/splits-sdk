@@ -439,7 +439,7 @@ export const ACCOUNT_BALANCES_QUERY = gql`
 export const getGraphqlClient = (
   chainId: number,
 ): GraphQLClient | undefined => {
-  const gqlEndpoint = CHAIN_INFO[chainId].gqlEndpoint
+  const gqlEndpoint = CHAIN_INFO[chainId]?.gqlEndpoint
   if (!gqlEndpoint) return
 
   return new GraphQLClient(gqlEndpoint)
