@@ -923,6 +923,34 @@ export class SplitsClient extends SplitsTransactions {
     return { events }
   }
 
+  async batchDistributeAndWithdrawForAll({
+    splitId,
+    tokens,
+    distributorAddress,
+  }: {
+    splitId: string
+    tokens: string[]
+    distributorAddress?: string
+  }): Promise<{
+    events: Event[]
+  }> {
+    validateAddress(splitId)
+    tokens.map((token) => validateAddress(token))
+    this._requireSigner()
+
+    const { recipients } = await this.getSplitMetadata({ splitId })
+    const recipientAddresses = recipients.map((recipient) => recipient.address)
+
+    const { events } = await this.batchDistributeAndWithdraw({
+      splitId,
+      tokens,
+      recipientAddresses,
+      distributorAddress,
+    })
+
+    return { events }
+  }
+
   // Read actions
   async getSplitBalance({
     splitId,
