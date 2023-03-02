@@ -20,7 +20,6 @@ import {
   LIQUID_SPLIT_CHAIN_IDS,
   OPTIMISM_CHAIN_IDS,
   POLYGON_CHAIN_IDS,
-  SPLITS_MAX_PRECISION_DECIMALS,
   SPLITS_SUPPORTED_CHAIN_IDS,
   getSplitMainAddress,
   TransactionType,
@@ -69,11 +68,7 @@ import {
   getBigNumberFromPercent,
 } from '../utils'
 import { ContractCallData } from '../utils/multicall'
-import {
-  validateRecipients,
-  validateDistributorFeePercent,
-  validateAddress,
-} from '../utils/validation'
+import { validateAddress, validateSplitInputs } from '../utils/validation'
 
 const splitMainInterfaceEthereum = new Interface(
   SPLIT_MAIN_ARTIFACT_ETHEREUM.abi,
@@ -129,8 +124,7 @@ class SplitsTransactions extends BaseTransactions {
     distributorFeePercent,
     controller = AddressZero,
   }: CreateSplitConfig): Promise<TransactionFormat> {
-    validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
-    validateDistributorFeePercent(distributorFeePercent)
+    validateSplitInputs({ recipients, distributorFeePercent, controller })
     if (this._shouldRequireSigner) this._requireSigner()
 
     const [accounts, percentAllocations] =
@@ -153,8 +147,7 @@ class SplitsTransactions extends BaseTransactions {
     distributorFeePercent,
   }: UpdateSplitConfig): Promise<TransactionFormat> {
     validateAddress(splitId)
-    validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
-    validateDistributorFeePercent(distributorFeePercent)
+    validateSplitInputs({ recipients, distributorFeePercent })
 
     if (this._shouldRequireSigner) {
       this._requireSigner()
@@ -227,8 +220,7 @@ class SplitsTransactions extends BaseTransactions {
   }: UpdateSplitAndDistributeTokenConfig): Promise<TransactionFormat> {
     validateAddress(splitId)
     validateAddress(token)
-    validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
-    validateDistributorFeePercent(distributorFeePercent)
+    validateSplitInputs({ recipients, distributorFeePercent })
 
     if (this._shouldRequireSigner) {
       this._requireSigner()
@@ -978,8 +970,7 @@ export class SplitsClient extends SplitsTransactions {
   }): Promise<{
     splitId: string
   }> {
-    validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
-    validateDistributorFeePercent(distributorFeePercent)
+    validateSplitInputs({ recipients, distributorFeePercent })
     this._requireProvider()
 
     const [accounts, percentAllocations] =

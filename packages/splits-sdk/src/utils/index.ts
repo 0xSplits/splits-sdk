@@ -13,6 +13,8 @@ import {
   REVERSE_RECORDS_ADDRESS,
 } from '../constants'
 import type {
+  RecoupTranche,
+  RecoupTrancheInput,
   SplitRecipient,
   WaterfallTranche,
   WaterfallTrancheInput,
@@ -169,6 +171,50 @@ export const getTrancheRecipientsAndSizes = async (
   })
 
   return [recipients, sizes]
+}
+
+export const getRecoupTranchesAndSizes = async (
+  chainId: number,
+  token: string,
+  tranches: RecoupTrancheInput[],
+  provider: Provider,
+): Promise<[RecoupTranche[], BigNumber[]]> => {
+  const recoupTranches: RecoupTranche[] = []
+  const sizes: BigNumber[] = []
+
+  const tokenData = await getTokenData(chainId, token, provider)
+  let trancheSum = BigNumber.from(0)
+  tranches.forEach((tranche) => {
+    if (typeof tranche.recipient === 'string') {
+      recoupTranches.push({
+        addresses: [tranche.recipient],
+        percentAllocations: [PERCENTAGE_SCALE],
+        distributorFee: BigNumber.from(0),
+        controller: AddressZero,
+      })
+    } else {
+      const [addresses, percentAllocations] =
+        getRecipientSortedAddressesAndAllocations(tranche.recipient.recipients)
+      const distributorFee = getBigNumberFromPercent(
+        tranche.recipient.distributorFeePercent,
+      )
+      recoupTranches.push({
+        addresses,
+        percentAllocations,
+        distributorFee,
+        controller: tranche.recipient.controller ?? AddressZero,
+      })
+    }
+
+    if (tranche.size) {
+      trancheSum = trancheSum.add(
+        getBigNumberTokenValue(tranche.size, tokenData.decimals),
+      )
+      sizes.push(trancheSum)
+    }
+  })
+
+  return [recoupTranches, sizes]
 }
 
 export const getTokenData = async (

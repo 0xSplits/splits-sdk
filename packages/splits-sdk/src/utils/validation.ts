@@ -1,4 +1,5 @@
 import { isAddress } from '@ethersproject/address'
+import { AddressZero } from '@ethersproject/constants'
 
 import { SPLITS_MAX_PRECISION_DECIMALS } from '../constants'
 import {
@@ -6,7 +7,12 @@ import {
   InvalidDistributorFeePercentError,
   InvalidArgumentError,
 } from '../errors'
-import type { SplitRecipient, WaterfallTrancheInput } from '../types'
+import type {
+  CreateSplitConfig,
+  RecoupTrancheInput,
+  SplitRecipient,
+  WaterfallTrancheInput,
+} from '../types'
 
 const getNumDigitsAfterDecimal = (value: number): number => {
   if (Number.isInteger(value)) return 0
@@ -82,24 +88,63 @@ export const validateAddress = (address: string): void => {
 }
 
 export const validateTranches = (tranches: WaterfallTrancheInput[]): void => {
+  validateNumTranches(tranches.length)
   tranches.forEach((tranche, index) => {
     if (!isAddress(tranche.recipient))
       throw new InvalidArgumentError(
         `Invalid recipient address: ${tranche.recipient}`,
       )
 
-    if (index === tranches.length - 1) {
-      if (tranche.size !== undefined)
+    validateTrancheSize(tranches.length, index, tranche.size)
+  })
+}
+
+export const validateRecoupTranches = (
+  tranches: RecoupTrancheInput[],
+): void => {
+  validateNumTranches(tranches.length)
+  tranches.forEach((tranche, index) => {
+    if (typeof tranche.recipient === 'string') {
+      if (!isAddress(tranche.recipient))
         throw new InvalidArgumentError(
-          'Residual tranche cannot have a size. Please leave as undefined.',
+          `Invalid recipient address: ${tranche.recipient}`,
         )
     } else {
-      if (!tranche.size)
-        throw new InvalidArgumentError(
-          'Size required for all tranches except the residual',
-        )
+      validateSplitInputs({
+        recipients: tranche.recipient.recipients,
+        distributorFeePercent: tranche.recipient.distributorFeePercent,
+        controller: tranche.recipient.controller,
+      })
     }
+
+    validateTrancheSize(tranches.length, index, tranche.size)
   })
+}
+
+const validateNumTranches = (numTranches: number): void => {
+  if (numTranches < 2) {
+    throw new InvalidArgumentError(
+      'Invalid number of tranches, at least two are required',
+    )
+  }
+}
+
+const validateTrancheSize = (
+  numTranches: number,
+  index: number,
+  size: number | undefined,
+): void => {
+  if (index === numTranches - 1) {
+    if (size !== undefined)
+      throw new InvalidArgumentError(
+        'Residual tranche cannot have a size. Please leave as undefined.',
+      )
+  } else {
+    if (!size)
+      throw new InvalidArgumentError(
+        'Size required for all tranches except the residual',
+      )
+  }
 }
 
 export const validateVestingPeriod = (vestingPeriod: number): void => {
@@ -107,4 +152,41 @@ export const validateVestingPeriod = (vestingPeriod: number): void => {
     throw new InvalidArgumentError(
       'Invalid vesting period, must be greater than 0',
     )
+}
+
+export const validateSplitInputs = ({
+  recipients,
+  distributorFeePercent,
+  controller = AddressZero,
+}: CreateSplitConfig): void => {
+  validateAddress(controller)
+  validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
+  validateDistributorFeePercent(distributorFeePercent)
+}
+
+export const validateRecoupNonWaterfallRecipient = (
+  numTranches: number,
+  nonWaterfallRecipientAddress: string,
+  nonWaterfallRecipientTrancheIndex: number | undefined,
+): void => {
+  validateAddress(nonWaterfallRecipientAddress)
+
+  if (nonWaterfallRecipientTrancheIndex !== undefined) {
+    if (
+      nonWaterfallRecipientTrancheIndex < 0 ||
+      nonWaterfallRecipientTrancheIndex >= numTranches
+    ) {
+      throw new InvalidArgumentError(
+        `Invalid nonWaterfallRecipientTrancheIndex: ${nonWaterfallRecipientTrancheIndex}. Must be valid index between 0 and ${
+          numTranches - 1
+        }`,
+      )
+    }
+
+    if (nonWaterfallRecipientAddress !== AddressZero) {
+      throw new InvalidArgumentError(
+        'Cannot set the non-waterfall recipient twice. Either set the nonWaterfallRecipientAddress or set the nonWaterfallRecipientTrancheIndex',
+      )
+    }
+  }
 }

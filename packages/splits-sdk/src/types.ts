@@ -227,3 +227,22 @@ export type CallData = {
 }
 
 export type TransactionFormat = ContractTransaction | BigNumber | CallData
+
+export type RecoupTrancheInput = {
+  recipient: string | CreateSplitConfig
+  size?: number
+}
+
+export type RecoupTranche = {
+  addresses: string[]
+  percentAllocations: BigNumber[]
+  distributorFee: BigNumber
+  controller: string
+}
+
+export type CreateRecoupConfig = {
+  token: string
+  tranches: RecoupTrancheInput[]
+  nonWaterfallRecipientAddress?: string
+  nonWaterfallRecipientTrancheIndex?: number
+}
