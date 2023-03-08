@@ -15,6 +15,7 @@ const WATERFALL_MODULE_FACTORY_ADDRESS =
   '0x4Df01754eBd055498C8087b1e9a5c7a9ad19b0F6'
 const LIQUID_SPLIT_FACTORY_ADDRESS =
   '0xdEcd8B99b7F763e16141450DAa5EA414B7994831'
+const RECOUP_ADDRESS = '0x3667ca385DF60C4548998B645EB60FdfCef80b84'
 
 const SPLIT_MAIN_ADDRESS_BSC = '0x5924cD81dC672151527B1E4b5Ef57B69cBD07Eda'
 const VESTING_MODULE_FACTORY_ADDRESS_BSC =
@@ -23,6 +24,7 @@ const WATERFALL_MODULE_FACTORY_ADDRESS_BSC =
   '0xB7CCCcCeb459F0910589556123dC5fA6DC8dE4E0'
 const LIQUID_SPLIT_FACTORY_ADDRESS_BSC =
   '0xCDe071bE119024EdC970B3Da15003ee834ae40D2'
+const RECOUP_ADDRESS_BSC = '0x3667ca385DF60C4548998B645EB60FdfCef80b84'
 
 export const getSplitMainAddress = (chainId: number): string => {
   if (chainId === ChainId.BSC) return SPLIT_MAIN_ADDRESS_BSC
@@ -42,6 +44,11 @@ export const getWaterfallFactoryAddress = (chainId: number): string => {
 export const getLiquidSplitFactoryAddress = (chainId: number): string => {
   if (chainId === ChainId.BSC) return LIQUID_SPLIT_FACTORY_ADDRESS_BSC
   return LIQUID_SPLIT_FACTORY_ADDRESS
+}
+
+export const getRecoupAddress = (chainId: number): string => {
+  if (chainId === ChainId.BSC) return RECOUP_ADDRESS_BSC
+  return RECOUP_ADDRESS
 }
 
 enum ChainId {
