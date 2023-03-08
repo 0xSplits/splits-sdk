@@ -1,9 +1,16 @@
 import LiquidSplitClient from './client/liquidSplit'
 import WaterfallClient from './client/waterfall'
 import VestingClient from './client/vesting'
+import TemplatesClient from './client/templates'
 import { SplitsClient } from './client'
 
-export { SplitsClient, WaterfallClient, LiquidSplitClient, VestingClient }
+export {
+  SplitsClient,
+  WaterfallClient,
+  LiquidSplitClient,
+  VestingClient,
+  TemplatesClient,
+}
 export * from './errors'
 
 export {
@@ -12,6 +19,7 @@ export {
   WATERFALL_CHAIN_IDS,
   LIQUID_SPLIT_CHAIN_IDS,
   VESTING_CHAIN_IDS,
+  TEMPLATES_CHAIN_IDS,
   SPLITS_MAX_PRECISION_DECIMALS,
   LIQUID_SPLITS_MAX_PRECISION_DECIMALS,
 } from './constants'
@@ -36,6 +44,7 @@ export type {
   CreateVestingConfig,
   StartVestConfig,
   ReleaseVestedFundsConfig,
+  CreateRecoupConfig,
   SplitMainType,
   SplitsClientConfig,
   SplitRecipient,

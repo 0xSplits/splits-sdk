@@ -25,6 +25,7 @@ import {
   TransactionType,
   VESTING_CHAIN_IDS,
   WATERFALL_CHAIN_IDS,
+  TEMPLATES_CHAIN_IDS,
 } from '../constants'
 import {
   AccountNotFoundError,
@@ -69,6 +70,7 @@ import {
 } from '../utils'
 import { ContractCallData } from '../utils/multicall'
 import { validateAddress, validateSplitInputs } from '../utils/validation'
+import TemplatesClient from './templates'
 
 const splitMainInterfaceEthereum = new Interface(
   SPLIT_MAIN_ARTIFACT_ETHEREUM.abi,
@@ -431,6 +433,7 @@ export class SplitsClient extends SplitsTransactions {
   readonly waterfall: WaterfallClient | undefined
   readonly liquidSplits: LiquidSplitClient | undefined
   readonly vesting: VestingClient | undefined
+  readonly templates: TemplatesClient | undefined
   readonly callData: SplitsCallData
   readonly estimateGas: SplitsGasEstimates
 
@@ -470,6 +473,15 @@ export class SplitsClient extends SplitsTransactions {
     }
     if (VESTING_CHAIN_IDS.includes(chainId)) {
       this.vesting = new VestingClient({
+        chainId,
+        provider,
+        ensProvider,
+        signer,
+        includeEnsNames,
+      })
+    }
+    if (TEMPLATES_CHAIN_IDS.includes(chainId)) {
+      this.templates = new TemplatesClient({
         chainId,
         provider,
         ensProvider,
