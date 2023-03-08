@@ -12,6 +12,7 @@ export type {
   VestingStream,
   VestingModule,
   RecoupTrancheInput,
+  RecoupTranche,
 } from '@0xsplits/splits-sdk'
 export { SplitsProvider } from './context'
 export {
