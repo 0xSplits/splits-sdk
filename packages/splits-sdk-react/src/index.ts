@@ -11,6 +11,7 @@ export type {
   LiquidSplit,
   VestingStream,
   VestingModule,
+  RecoupTrancheInput,
 } from '@0xsplits/splits-sdk'
 export { SplitsProvider } from './context'
 export {
@@ -39,4 +40,5 @@ export {
   useWaterfallMetadata,
   useLiquidSplitMetadata,
   useVestingMetadata,
+  useCreateRecoup,
 } from './hooks'
