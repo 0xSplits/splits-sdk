@@ -82,10 +82,15 @@ class TemplatesTransactions extends BaseTransactions {
       this._provider,
     )
 
+    const formattedNonWaterfallRecipientTrancheIndex =
+      nonWaterfallRecipientTrancheIndex === undefined
+        ? recoupTranches.length
+        : nonWaterfallRecipientTrancheIndex
+
     const createRecoupResult = await this._recoupContract.createRecoup(
       token,
       nonWaterfallRecipientAddress,
-      nonWaterfallRecipientTrancheIndex,
+      formattedNonWaterfallRecipientTrancheIndex,
       recoupTranches,
       trancheSizes,
     )

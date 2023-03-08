@@ -233,12 +233,7 @@ export type RecoupTrancheInput = {
   size?: number
 }
 
-export type RecoupTranche = {
-  addresses: string[]
-  percentAllocations: BigNumber[]
-  distributorFee: BigNumber
-  controller: string
-}
+export type ContractRecoupTranche = [string[], BigNumber[], string, BigNumber]
 
 export type CreateRecoupConfig = {
   token: string
