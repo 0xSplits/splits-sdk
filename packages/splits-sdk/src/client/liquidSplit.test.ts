@@ -7,7 +7,7 @@ import { encode } from 'base-64'
 import LiquidSplitClient from './liquidSplit'
 import {
   LIQUID_SPLITS_MAX_PRECISION_DECIMALS,
-  LIQUID_SPLIT_FACTORY_ADDRESS,
+  getLiquidSplitFactoryAddress,
   LIQUID_SPLIT_URI_BASE_64_HEADER,
 } from '../constants'
 import {
@@ -48,7 +48,7 @@ jest.mock('@ethersproject/contracts', () => {
     Contract: jest
       .fn()
       .mockImplementation((contractAddress, _contractInterface, provider) => {
-        if (contractAddress === LIQUID_SPLIT_FACTORY_ADDRESS)
+        if (contractAddress === getLiquidSplitFactoryAddress(1))
           return new MockLiquidSplitFactory(provider)
 
         return new MockLiquidSplit(provider)

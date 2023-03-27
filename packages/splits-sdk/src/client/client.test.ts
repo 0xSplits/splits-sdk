@@ -5,7 +5,6 @@ import { AddressZero } from '@ethersproject/constants'
 import type { Event } from '@ethersproject/contracts'
 
 import { SplitsClient } from './index'
-import { SPLITS_MAX_PRECISION_DECIMALS } from '../constants'
 import {
   InvalidAuthError,
   InvalidConfigError,
@@ -16,11 +15,7 @@ import {
 } from '../errors'
 import * as subgraph from '../subgraph'
 import * as utils from '../utils'
-import {
-  validateRecipients,
-  validateDistributorFeePercent,
-  validateAddress,
-} from '../utils/validation'
+import { validateSplitInputs, validateAddress } from '../utils/validation'
 import {
   SORTED_ADDRESSES,
   SORTED_ALLOCATIONS,
@@ -164,8 +159,7 @@ describe('SplitMain writes', () => {
   })
 
   beforeEach(() => {
-    ;(validateRecipients as jest.Mock).mockClear()
-    ;(validateDistributorFeePercent as jest.Mock).mockClear()
+    ;(validateSplitInputs as jest.Mock).mockClear()
     ;(validateAddress as jest.Mock).mockClear()
     getTransactionEventsSpy.mockClear()
     getSortedRecipientsMock.mockClear()
@@ -222,12 +216,11 @@ describe('SplitMain writes', () => {
 
       expect(event.blockNumber).toEqual(12345)
       expect(splitId).toEqual('0xsplit')
-      expect(validateRecipients).toBeCalledWith(
-        recipients,
-        SPLITS_MAX_PRECISION_DECIMALS,
-      )
-      expect(validateDistributorFeePercent).toBeCalledWith(
-        distributorFeePercent,
+      expect(validateSplitInputs).toBeCalledWith(
+        expect.objectContaining({
+          recipients,
+          distributorFeePercent,
+        }),
       )
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
@@ -252,12 +245,12 @@ describe('SplitMain writes', () => {
 
       expect(event.blockNumber).toEqual(12345)
       expect(splitId).toEqual('0xsplit')
-      expect(validateRecipients).toBeCalledWith(
-        recipients,
-        SPLITS_MAX_PRECISION_DECIMALS,
-      )
-      expect(validateDistributorFeePercent).toBeCalledWith(
-        distributorFeePercent,
+      expect(validateSplitInputs).toBeCalledWith(
+        expect.objectContaining({
+          recipients,
+          distributorFeePercent,
+          controller,
+        }),
       )
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
@@ -345,12 +338,11 @@ describe('SplitMain writes', () => {
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitId)
-      expect(validateRecipients).toBeCalledWith(
-        recipients,
-        SPLITS_MAX_PRECISION_DECIMALS,
-      )
-      expect(validateDistributorFeePercent).toBeCalledWith(
-        distributorFeePercent,
+      expect(validateSplitInputs).toBeCalledWith(
+        expect.objectContaining({
+          recipients,
+          distributorFeePercent,
+        }),
       )
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
@@ -616,12 +608,11 @@ describe('SplitMain writes', () => {
       expect(validateAddress).toBeCalledWith(splitId)
       expect(validateAddress).toBeCalledWith(AddressZero)
       expect(validateAddress).toBeCalledWith(CONTROLLER_ADDRESS)
-      expect(validateRecipients).toBeCalledWith(
-        recipients,
-        SPLITS_MAX_PRECISION_DECIMALS,
-      )
-      expect(validateDistributorFeePercent).toBeCalledWith(
-        distributorFeePercent,
+      expect(validateSplitInputs).toBeCalledWith(
+        expect.objectContaining({
+          recipients,
+          distributorFeePercent,
+        }),
       )
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
@@ -651,13 +642,10 @@ describe('SplitMain writes', () => {
       expect(validateAddress).toBeCalledWith(splitId)
       expect(validateAddress).toBeCalledWith(token)
       expect(validateAddress).toBeCalledWith(CONTROLLER_ADDRESS)
-      expect(validateRecipients).toBeCalledWith(
+      expect(validateSplitInputs).toBeCalledWith({
         recipients,
-        SPLITS_MAX_PRECISION_DECIMALS,
-      )
-      expect(validateDistributorFeePercent).toBeCalledWith(
         distributorFeePercent,
-      )
+      })
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
       expect(writeActions.updateAndDistributeERC20).toBeCalledWith(
@@ -688,13 +676,10 @@ describe('SplitMain writes', () => {
       expect(validateAddress).toBeCalledWith(splitId)
       expect(validateAddress).toBeCalledWith(AddressZero)
       expect(validateAddress).toBeCalledWith(distributorAddress)
-      expect(validateRecipients).toBeCalledWith(
+      expect(validateSplitInputs).toBeCalledWith({
         recipients,
-        SPLITS_MAX_PRECISION_DECIMALS,
-      )
-      expect(validateDistributorFeePercent).toBeCalledWith(
         distributorFeePercent,
-      )
+      })
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
       expect(writeActions.updateAndDistributeETH).toBeCalledWith(
@@ -725,13 +710,10 @@ describe('SplitMain writes', () => {
       expect(validateAddress).toBeCalledWith(splitId)
       expect(validateAddress).toBeCalledWith(token)
       expect(validateAddress).toBeCalledWith(distributorAddress)
-      expect(validateRecipients).toBeCalledWith(
+      expect(validateSplitInputs).toBeCalledWith({
         recipients,
-        SPLITS_MAX_PRECISION_DECIMALS,
-      )
-      expect(validateDistributorFeePercent).toBeCalledWith(
         distributorFeePercent,
-      )
+      })
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
       expect(writeActions.updateAndDistributeERC20).toBeCalledWith(
@@ -1123,8 +1105,7 @@ describe('SplitMain reads', () => {
   })
 
   beforeEach(() => {
-    ;(validateRecipients as jest.Mock).mockClear()
-    ;(validateDistributorFeePercent as jest.Mock).mockClear()
+    ;(validateSplitInputs as jest.Mock).mockClear()
     ;(validateAddress as jest.Mock).mockClear()
     getSortedRecipientsMock.mockClear()
     getBigNumberMock.mockClear()
@@ -1200,13 +1181,10 @@ describe('SplitMain reads', () => {
       })
 
       expect(splitId).toEqual('0xpredict')
-      expect(validateRecipients).toBeCalledWith(
+      expect(validateSplitInputs).toBeCalledWith({
         recipients,
-        SPLITS_MAX_PRECISION_DECIMALS,
-      )
-      expect(validateDistributorFeePercent).toBeCalledWith(
         distributorFeePercent,
-      )
+      })
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
       expect(readActions.predictImmutableSplitAddress).toBeCalledWith(

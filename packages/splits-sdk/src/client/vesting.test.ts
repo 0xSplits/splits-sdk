@@ -4,7 +4,7 @@ import { BigNumber } from '@ethersproject/bignumber'
 import type { Event } from '@ethersproject/contracts'
 
 import VestingClient from './vesting'
-import { VESTING_MODULE_FACTORY_ADDRESS } from '../constants'
+import { getVestingFactoryAddress } from '../constants'
 import {
   InvalidConfigError,
   MissingProviderError,
@@ -33,7 +33,7 @@ jest.mock('@ethersproject/contracts', () => {
     Contract: jest
       .fn()
       .mockImplementation((contractAddress, _contractInterface, provider) => {
-        if (contractAddress === VESTING_MODULE_FACTORY_ADDRESS)
+        if (contractAddress === getVestingFactoryAddress(1))
           return new MockVestingFactory(provider)
 
         return new MockVestingModule(provider)

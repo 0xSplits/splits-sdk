@@ -5,7 +5,7 @@ import { AddressZero } from '@ethersproject/constants'
 import type { Event } from '@ethersproject/contracts'
 
 import WaterfallClient from './waterfall'
-import { WATERFALL_MODULE_FACTORY_ADDRESS } from '../constants'
+import { getWaterfallFactoryAddress } from '../constants'
 import {
   InvalidArgumentError,
   InvalidConfigError,
@@ -38,7 +38,7 @@ jest.mock('@ethersproject/contracts', () => {
     Contract: jest
       .fn()
       .mockImplementation((contractAddress, _contractInterface, provider) => {
-        if (contractAddress === WATERFALL_MODULE_FACTORY_ADDRESS)
+        if (contractAddress === getWaterfallFactoryAddress(1))
           return new MockWaterfallFactory(provider)
 
         return new MockWaterfallModule(provider)
