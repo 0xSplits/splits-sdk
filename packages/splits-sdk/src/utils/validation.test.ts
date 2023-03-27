@@ -1,3 +1,5 @@
+import { AddressZero } from '@ethersproject/constants'
+
 import { SPLITS_MAX_PRECISION_DECIMALS } from '../constants'
 import {
   InvalidRecipientsError,
@@ -11,6 +13,7 @@ import {
   validateAddress,
   validateTranches,
   validateVestingPeriod,
+  validateRecoupNonWaterfallRecipient,
 } from './validation'
 
 describe('Address validation', () => {
@@ -153,5 +156,61 @@ describe('Vesting period validation', () => {
 
   test('Valid period pass', () => {
     expect(() => validateVestingPeriod(1)).not.toThrow()
+  })
+})
+
+describe('Recoup non waterfall recipient validation', () => {
+  test('Setting address and index fails', () => {
+    expect(() =>
+      validateRecoupNonWaterfallRecipient(
+        3,
+        '0x25ED37D355DF14013d24d75508CB7344aBB59814',
+        2,
+      ),
+    ).toThrow(InvalidArgumentError)
+  })
+
+  test('Setting invalid index fails', () => {
+    expect(() =>
+      validateRecoupNonWaterfallRecipient(
+        3,
+        '0x25ED37D355DF14013d24d75508CB7344aBB59814',
+        3,
+      ),
+    ).toThrow(InvalidArgumentError)
+
+    expect(() =>
+      validateRecoupNonWaterfallRecipient(
+        3,
+        '0x25ED37D355DF14013d24d75508CB7344aBB59814',
+        -1,
+      ),
+    ).toThrow(InvalidArgumentError)
+  })
+
+  test('Invalid address fails', () => {
+    expect(() => validateRecoupNonWaterfallRecipient(3, '0xfake', 2)).toThrow(
+      InvalidArgumentError,
+    )
+  })
+
+  test('Valid address passes', () => {
+    expect(() =>
+      validateRecoupNonWaterfallRecipient(
+        3,
+        '0x25ED37D355DF14013d24d75508CB7344aBB59814',
+        undefined,
+      ),
+    ).not.toThrow()
+
+    expect(() =>
+      validateRecoupNonWaterfallRecipient(3, AddressZero, undefined),
+    ).not.toThrow()
+  })
+
+  test('Valid index passes', () => {
+    expect(() =>
+      validateRecoupNonWaterfallRecipient(3, AddressZero, 1),
+    ).not.toThrow()
   })
 })
