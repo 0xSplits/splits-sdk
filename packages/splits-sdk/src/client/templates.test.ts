@@ -29,10 +29,6 @@ jest.mock('@ethersproject/contracts', () => {
       .fn()
       .mockImplementation((_contractAddress, _contractInterface, provider) => {
         return new MockRecoup(provider)
-        // if (contractAddress === getRecoupAddress(1))
-        //   return new MockLiquidSplitFactory(provider)
-
-        // return new MockLiquidSplit(provider)
       }),
   }
 })
@@ -115,9 +111,6 @@ describe('Template writes', () => {
     ;(validateAddress as jest.Mock).mockClear()
     getRecoupTranchesAndSizesMock.mockClear()
     getTransactionEventsSpy.mockClear()
-    // getSortedRecipientsMock.mockClear()
-    // getNftCountsMock.mockClear()
-    // getBigNumberMock.mockClear()
   })
 
   describe('Create recoup tests', () => {
