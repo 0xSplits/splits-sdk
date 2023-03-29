@@ -38,11 +38,12 @@ import {
   abiEncode,
   ContractCallData,
   multicallInterface,
+  multicallAbi,
 } from '../utils/multicall'
 
 const MISSING_SIGNER = ''
 
-export default class BaseClient {
+class BaseClient {
   readonly _chainId: number
   protected readonly _ensProvider: Provider | undefined
   // TODO: something better we can do here to handle typescript check for missing signer?
@@ -50,7 +51,6 @@ export default class BaseClient {
   readonly _provider: Provider | undefined
   private readonly _graphqlClient: GraphQLClient | undefined
   protected readonly _includeEnsNames: boolean
-  private readonly _multicallContract: Contract
 
   constructor({
     chainId,
@@ -70,12 +70,6 @@ export default class BaseClient {
     this._signer = signer ?? MISSING_SIGNER
     this._graphqlClient = getGraphqlClient(chainId)
     this._includeEnsNames = includeEnsNames
-
-    this._multicallContract = new Contract(
-      MULTICALL_3_ADDRESS,
-      multicallInterface,
-      signer,
-    )
   }
 
   protected async _makeGqlRequest<ResponseType>(
@@ -104,35 +98,6 @@ export default class BaseClient {
       throw new MissingSignerError(
         'Signer required to perform this action, please update your call to the constructor',
       )
-  }
-
-  async submitMulticallTransaction({ calls }: { calls: CallData[] }): Promise<{
-    tx: ContractTransaction
-  }> {
-    this._requireSigner()
-    if (!this._signer) throw new Error()
-
-    const callRequests = calls.map((call) => {
-      const callData = abiEncode(call.name, call.inputs, call.params)
-      return {
-        target: call.contract.address,
-        callData,
-      }
-    })
-
-    const multicallTx = await this._multicallContract.aggregate(callRequests)
-
-    return { tx: multicallTx }
-  }
-
-  async multicall({ calls }: { calls: CallData[] }): Promise<{
-    events: Event[]
-  }> {
-    const { tx: multicallTx } = await this.submitMulticallTransaction({
-      calls,
-    })
-    const events = await getTransactionEvents(multicallTx, [], true)
-    return { events }
   }
 
   protected async _getAccountBalances({
@@ -221,6 +186,7 @@ export default class BaseClient {
 export class BaseTransactions extends BaseClient {
   protected readonly _transactionType: TransactionType
   protected readonly _shouldRequireSigner: boolean
+  private readonly _multicallContract: Contract | Contract['estimateGas']
 
   constructor({
     transactionType,
@@ -243,6 +209,11 @@ export class BaseTransactions extends BaseClient {
       TransactionType.Transaction,
       TransactionType.CallData,
     ].includes(transactionType)
+
+    this._multicallContract = this._getTransactionContract<
+      Contract,
+      Contract['estimateGas']
+    >(MULTICALL_3_ADDRESS, multicallAbi, multicallInterface)
   }
 
   protected _getTransactionContract<
@@ -285,5 +256,60 @@ export class BaseTransactions extends BaseClient {
     if (callData instanceof BigNumber) return false
     if ('wait' in callData) return false
     return true
+  }
+
+  async _multicallTransaction({
+    calls,
+  }: {
+    calls: CallData[]
+  }): Promise<ContractTransaction | BigNumber> {
+    this._requireSigner()
+    if (!this._signer) throw new Error()
+
+    const callRequests = calls.map((call) => {
+      const callData = abiEncode(call.name, call.inputs, call.params)
+      return {
+        target: call.contract.address,
+        callData,
+      }
+    })
+
+    const result = await this._multicallContract.aggregate(callRequests)
+    return result
+  }
+}
+
+export class BaseClientMixin extends BaseTransactions {
+  async submitMulticallTransaction({ calls }: { calls: CallData[] }): Promise<{
+    tx: ContractTransaction
+  }> {
+    const multicallResult = await this._multicallTransaction({ calls })
+    if (!this._isContractTransaction(multicallResult))
+      throw new Error('Invalid response')
+
+    return { tx: multicallResult }
+  }
+
+  async multicall({
+    calls,
+  }: {
+    calls: CallData[]
+  }): Promise<{ events: Event[] }> {
+    const { tx: multicallTx } = await this.submitMulticallTransaction({
+      calls,
+    })
+    const events = await getTransactionEvents(multicallTx, [], true)
+    return { events }
+  }
+}
+
+export class BaseGasEstimatesMixin extends BaseTransactions {
+  async multicall({ calls }: { calls: CallData[] }): Promise<BigNumber> {
+    const gasEstimate = await this._multicallTransaction({
+      calls,
+    })
+    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
   }
 }

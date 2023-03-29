@@ -5,7 +5,11 @@ import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
 
 import SPLIT_MAIN_ARTIFACT_ETHEREUM from '../artifacts/contracts/SplitMain/ethereum/SplitMain.json'
 import SPLIT_MAIN_ARTIFACT_POLYGON from '../artifacts/contracts/SplitMain/polygon/SplitMain.json'
-import { BaseTransactions } from './base'
+import {
+  BaseClientMixin,
+  BaseGasEstimatesMixin,
+  BaseTransactions,
+} from './base'
 import WaterfallClient from './waterfall'
 import LiquidSplitClient from './liquidSplit'
 import VestingClient from './vesting'
@@ -34,6 +38,7 @@ import {
   TransactionFailedError,
   UnsupportedChainIdError,
 } from '../errors'
+import { applyMixins } from './mixin'
 import {
   ACCOUNT_QUERY,
   protectedFormatSplit,
@@ -1156,6 +1161,10 @@ export class SplitsClient extends SplitsTransactions {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface SplitsClient extends BaseClientMixin {}
+applyMixins(SplitsClient, [BaseClientMixin])
+
 class SplitsGasEstimates extends SplitsTransactions {
   constructor({
     chainId,
@@ -1297,6 +1306,10 @@ class SplitsGasEstimates extends SplitsTransactions {
     return gasEstimate
   }
 }
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+interface SplitsGasEstimates extends BaseGasEstimatesMixin {}
+applyMixins(SplitsGasEstimates, [BaseGasEstimatesMixin])
 
 class SplitsCallData extends SplitsTransactions {
   constructor({
