@@ -5,13 +5,18 @@ import { ContractTransaction, Event } from '@ethersproject/contracts'
 
 import RECOUP_ARTIFACT from '../artifacts/contracts/Recoup/Recoup.json'
 
-import { BaseTransactions } from './base'
+import {
+  BaseClientMixin,
+  BaseGasEstimatesMixin,
+  BaseTransactions,
+} from './base'
 import {
   TransactionType,
   getRecoupAddress,
   TEMPLATES_CHAIN_IDS,
 } from '../constants'
 import { TransactionFailedError, UnsupportedChainIdError } from '../errors'
+import { applyMixins } from './mixin'
 import type {
   CallData,
   CreateRecoupConfig,
@@ -107,7 +112,7 @@ class TemplatesTransactions extends BaseTransactions {
   }
 }
 
-export default class TemplatesClient extends TemplatesTransactions {
+export class TemplatesClient extends TemplatesTransactions {
   readonly eventTopics: { [key: string]: string[] }
   readonly callData: TemplatesCallData
   readonly estimateGas: TemplatesGasEstimates
@@ -203,6 +208,10 @@ export default class TemplatesClient extends TemplatesTransactions {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface TemplatesClient extends BaseClientMixin {}
+applyMixins(TemplatesClient, [BaseClientMixin])
+
 class TemplatesGasEstimates extends TemplatesTransactions {
   constructor({
     chainId,
@@ -238,6 +247,10 @@ class TemplatesGasEstimates extends TemplatesTransactions {
     return gasEstimate
   }
 }
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+interface TemplatesGasEstimates extends BaseGasEstimatesMixin {}
+applyMixins(TemplatesGasEstimates, [BaseGasEstimatesMixin])
 
 class TemplatesCallData extends TemplatesTransactions {
   constructor({

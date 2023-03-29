@@ -8,7 +8,11 @@ import LIQUID_SPLIT_FACTORY_ARTIFACT from '../artifacts/contracts/LiquidSplitFac
 import LIQUID_SPLIT_ARTIFACT from '../artifacts/contracts/LS1155/LS1155.json'
 import SPLIT_MAIN_ARTIFACT_POLYGON from '../artifacts/contracts/SplitMain/polygon/SplitMain.json'
 
-import { BaseTransactions } from './base'
+import {
+  BaseClientMixin,
+  BaseGasEstimatesMixin,
+  BaseTransactions,
+} from './base'
 import {
   LIQUID_SPLITS_MAX_PRECISION_DECIMALS,
   LIQUID_SPLIT_CHAIN_IDS,
@@ -22,6 +26,7 @@ import {
   TransactionFailedError,
   UnsupportedChainIdError,
 } from '../errors'
+import { applyMixins } from './mixin'
 import { protectedFormatLiquidSplit, LIQUID_SPLIT_QUERY } from '../subgraph'
 import type { GqlLiquidSplit } from '../subgraph/types'
 import type {
@@ -251,7 +256,7 @@ class LiquidSplitTransactions extends BaseTransactions {
   }
 }
 
-export default class LiquidSplitClient extends LiquidSplitTransactions {
+export class LiquidSplitClient extends LiquidSplitTransactions {
   readonly eventTopics: { [key: string]: string[] }
   readonly callData: LiquidSplitCallData
   readonly estimateGas: LiquidSplitGasEstimates
@@ -537,6 +542,10 @@ export default class LiquidSplitClient extends LiquidSplitTransactions {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface LiquidSplitClient extends BaseClientMixin {}
+applyMixins(LiquidSplitClient, [BaseClientMixin])
+
 class LiquidSplitGasEstimates extends LiquidSplitTransactions {
   constructor({
     chainId,
@@ -600,6 +609,10 @@ class LiquidSplitGasEstimates extends LiquidSplitTransactions {
     return gasEstimate
   }
 }
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+interface LiquidSplitGasEstimates extends BaseGasEstimatesMixin {}
+applyMixins(LiquidSplitGasEstimates, [BaseGasEstimatesMixin])
 
 class LiquidSplitCallData extends LiquidSplitTransactions {
   constructor({

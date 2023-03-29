@@ -1,7 +1,7 @@
-import LiquidSplitClient from './client/liquidSplit'
-import WaterfallClient from './client/waterfall'
-import VestingClient from './client/vesting'
-import TemplatesClient from './client/templates'
+import { LiquidSplitClient } from './client/liquidSplit'
+import { WaterfallClient } from './client/waterfall'
+import { VestingClient } from './client/vesting'
+import { TemplatesClient } from './client/templates'
 import { SplitsClient } from './client'
 
 export {

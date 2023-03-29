@@ -5,7 +5,11 @@ import { ContractTransaction, Event } from '@ethersproject/contracts'
 import VESTING_MODULE_FACTORY_ARTIFACT from '../artifacts/contracts/VestingModuleFactory/VestingModuleFactory.json'
 import VESTING_MODULE_ARTIFACT from '../artifacts/contracts/VestingModule/VestingModule.json'
 
-import { BaseTransactions } from './base'
+import {
+  BaseClientMixin,
+  BaseGasEstimatesMixin,
+  BaseTransactions,
+} from './base'
 import {
   TransactionType,
   VESTING_CHAIN_IDS,
@@ -16,6 +20,7 @@ import {
   TransactionFailedError,
   UnsupportedChainIdError,
 } from '../errors'
+import { applyMixins } from './mixin'
 import { protectedFormatVestingModule, VESTING_MODULE_QUERY } from '../subgraph'
 import type { GqlVestingModule } from '../subgraph/types'
 import type {
@@ -131,7 +136,7 @@ class VestingTransactions extends BaseTransactions {
   }
 }
 
-export default class VestingClient extends VestingTransactions {
+export class VestingClient extends VestingTransactions {
   readonly eventTopics: { [key: string]: string[] }
   readonly callData: VestingCallData
   readonly estimateGas: VestingGasEstimates
@@ -431,6 +436,10 @@ export default class VestingClient extends VestingTransactions {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface VestingClient extends BaseClientMixin {}
+applyMixins(VestingClient, [BaseClientMixin])
+
 class VestingGasEstimates extends VestingTransactions {
   constructor({
     chainId,
@@ -488,6 +497,10 @@ class VestingGasEstimates extends VestingTransactions {
     return gasEstimate
   }
 }
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+interface VestingGasEstimates extends BaseGasEstimatesMixin {}
+applyMixins(VestingGasEstimates, [BaseGasEstimatesMixin])
 
 class VestingCallData extends VestingTransactions {
   constructor({

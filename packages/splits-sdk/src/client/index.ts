@@ -10,9 +10,11 @@ import {
   BaseGasEstimatesMixin,
   BaseTransactions,
 } from './base'
-import WaterfallClient from './waterfall'
-import LiquidSplitClient from './liquidSplit'
-import VestingClient from './vesting'
+import { applyMixins } from './mixin'
+import { WaterfallClient } from './waterfall'
+import { LiquidSplitClient } from './liquidSplit'
+import { VestingClient } from './vesting'
+import { TemplatesClient } from './templates'
 import {
   ARBITRUM_CHAIN_IDS,
   AURORA_CHAIN_IDS,
@@ -38,7 +40,6 @@ import {
   TransactionFailedError,
   UnsupportedChainIdError,
 } from '../errors'
-import { applyMixins } from './mixin'
 import {
   ACCOUNT_QUERY,
   protectedFormatSplit,
@@ -75,7 +76,6 @@ import {
 } from '../utils'
 import { ContractCallData } from '../utils/multicall'
 import { validateAddress, validateSplitInputs } from '../utils/validation'
-import TemplatesClient from './templates'
 
 const splitMainInterfaceEthereum = new Interface(
   SPLIT_MAIN_ARTIFACT_ETHEREUM.abi,

@@ -6,7 +6,11 @@ import { ContractTransaction, Event } from '@ethersproject/contracts'
 import WATERFALL_MODULE_FACTORY_ARTIFACT from '../artifacts/contracts/WaterfallModuleFactory/WaterfallModuleFactory.json'
 import WATERFALL_MODULE_ARTIFACT from '../artifacts/contracts/WaterfallModule/WaterfallModule.json'
 
-import { BaseTransactions } from './base'
+import {
+  BaseClientMixin,
+  BaseGasEstimatesMixin,
+  BaseTransactions,
+} from './base'
 import {
   TransactionType,
   WATERFALL_CHAIN_IDS,
@@ -18,6 +22,7 @@ import {
   TransactionFailedError,
   UnsupportedChainIdError,
 } from '../errors'
+import { applyMixins } from './mixin'
 import {
   protectedFormatWaterfallModule,
   WATERFALL_MODULE_QUERY,
@@ -273,7 +278,7 @@ class WaterfallTransactions extends BaseTransactions {
   }
 }
 
-export default class WaterfallClient extends WaterfallTransactions {
+export class WaterfallClient extends WaterfallTransactions {
   readonly eventTopics: { [key: string]: string[] }
   readonly callData: WaterfallCallData
   readonly estimateGas: WaterfallGasEstimates
@@ -610,6 +615,10 @@ export default class WaterfallClient extends WaterfallTransactions {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface WaterfallClient extends BaseClientMixin {}
+applyMixins(WaterfallClient, [BaseClientMixin])
+
 class WaterfallGasEstimates extends WaterfallTransactions {
   constructor({
     chainId,
@@ -684,6 +693,10 @@ class WaterfallGasEstimates extends WaterfallTransactions {
     return gasEstimate
   }
 }
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+interface WaterfallGasEstimates extends BaseGasEstimatesMixin {}
+applyMixins(WaterfallGasEstimates, [BaseGasEstimatesMixin])
 
 class WaterfallCallData extends WaterfallTransactions {
   constructor({
