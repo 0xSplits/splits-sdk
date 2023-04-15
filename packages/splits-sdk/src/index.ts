@@ -3,6 +3,7 @@ import { WaterfallClient } from './client/waterfall'
 import { VestingClient } from './client/vesting'
 import { TemplatesClient } from './client/templates'
 import { SplitsClient } from './client'
+import { PassThroughWalletClient } from './client/passThroughWallet'
 
 export {
   SplitsClient,
@@ -10,6 +11,7 @@ export {
   LiquidSplitClient,
   VestingClient,
   TemplatesClient,
+  PassThroughWalletClient,
 }
 export * from './errors'
 

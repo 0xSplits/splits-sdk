@@ -16,6 +16,8 @@ const WATERFALL_MODULE_FACTORY_ADDRESS =
 const LIQUID_SPLIT_FACTORY_ADDRESS =
   '0xdEcd8B99b7F763e16141450DAa5EA414B7994831'
 const RECOUP_ADDRESS = '0xCbB386B801Ec72A5aB02AEB723dECd12f96EdE41'
+const PASS_THROUGH_WALLET_FACTORY_ADDRESS =
+  '0x199e8153817cbFeC2068DBEA13f3d046c7F1c425'
 
 const SPLIT_MAIN_ADDRESS_BSC = '0x5924cD81dC672151527B1E4b5Ef57B69cBD07Eda'
 const VESTING_MODULE_FACTORY_ADDRESS_BSC =
@@ -49,6 +51,11 @@ export const getLiquidSplitFactoryAddress = (chainId: number): string => {
 export const getRecoupAddress = (chainId: number): string => {
   if (chainId === ChainId.BSC) return RECOUP_ADDRESS_BSC
   return RECOUP_ADDRESS
+}
+
+export const getPassThroughWalletFactoryAddress = (chainId: number): string => {
+  if (chainId === ChainId.BSC) return PASS_THROUGH_WALLET_FACTORY_ADDRESS
+  return PASS_THROUGH_WALLET_FACTORY_ADDRESS
 }
 
 enum ChainId {
@@ -96,6 +103,7 @@ export const SPLITS_SUBGRAPH_CHAIN_IDS = ALL_CHAIN_IDS.slice()
 export const WATERFALL_CHAIN_IDS = ALL_CHAIN_IDS.slice()
 export const LIQUID_SPLIT_CHAIN_IDS = ALL_CHAIN_IDS.slice()
 export const VESTING_CHAIN_IDS = ALL_CHAIN_IDS.slice()
+export const PASS_THROUGH_WALLET_CHAIN_IDS = ALL_CHAIN_IDS.slice()
 export const SPLITS_MAX_PRECISION_DECIMALS = 4
 export const LIQUID_SPLITS_MAX_PRECISION_DECIMALS = 1
 

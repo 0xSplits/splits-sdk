@@ -13,6 +13,7 @@ import {
 import { applyMixins } from './mixin'
 import { WaterfallClient } from './waterfall'
 import { LiquidSplitClient } from './liquidSplit'
+import { PassThroughWalletClient } from './passThroughWallet'
 import { VestingClient } from './vesting'
 import { TemplatesClient } from './templates'
 import {
@@ -32,6 +33,7 @@ import {
   VESTING_CHAIN_IDS,
   WATERFALL_CHAIN_IDS,
   TEMPLATES_CHAIN_IDS,
+  PASS_THROUGH_WALLET_CHAIN_IDS,
 } from '../constants'
 import {
   AccountNotFoundError,
@@ -459,6 +461,7 @@ export class SplitsClient extends SplitsTransactions {
   readonly eventTopics: { [key: string]: string[] }
   readonly waterfall: WaterfallClient | undefined
   readonly liquidSplits: LiquidSplitClient | undefined
+  readonly passThroughWallet: PassThroughWalletClient | undefined
   readonly vesting: VestingClient | undefined
   readonly templates: TemplatesClient | undefined
   readonly callData: SplitsCallData
@@ -509,6 +512,15 @@ export class SplitsClient extends SplitsTransactions {
     }
     if (TEMPLATES_CHAIN_IDS.includes(chainId)) {
       this.templates = new TemplatesClient({
+        chainId,
+        provider,
+        ensProvider,
+        signer,
+        includeEnsNames,
+      })
+    }
+    if (PASS_THROUGH_WALLET_CHAIN_IDS.includes(chainId)) {
+      this.passThroughWallet = new PassThroughWalletClient({
         chainId,
         provider,
         ensProvider,

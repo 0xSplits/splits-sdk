@@ -276,3 +276,14 @@ export type CreateRecoupConfig = {
   nonWaterfallRecipientAddress?: string
   nonWaterfallRecipientTrancheIndex?: number
 } & TransactionOverrides
+
+export type CreatePassThroughWalletConfig = {
+  owner: string
+  paused?: boolean
+  passThrough: string
+}
+
+export type PassThroughTokensConfig = {
+  passThroughWalletId: string
+  tokens: string[]
+}
