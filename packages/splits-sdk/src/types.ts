@@ -288,6 +288,26 @@ export type PassThroughTokensConfig = {
   tokens: string[]
 }
 
+export type CreateSwapperConfig = {
+  owner: string
+  paused?: boolean
+  beneficiary: string
+  tokenToBeneficiary: string
+  oracle: string
+}
+
+export type FlashConfig = {
+  swapperId: string
+  outputToken: string // TODO: read from graphql
+  excessRecipient?: string // defaults to signer
+  inputAssets: {
+    encodedPath: string
+    token: string
+    amountIn: number
+    amountOutMin: number
+  }[]
+}
+
 export type QuoteParams = {
   quotePair: {
     base: string
@@ -296,3 +316,12 @@ export type QuoteParams = {
   baseAmount: BigNumber
   data?: string
 }
+
+export type ContractQuoteParams = [[string, string], BigNumber, string]
+export type ContractSwapperCallbackData = [
+  string,
+  string,
+  number,
+  BigNumber,
+  BigNumber,
+]

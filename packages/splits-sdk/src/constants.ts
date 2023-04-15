@@ -18,6 +18,8 @@ const LIQUID_SPLIT_FACTORY_ADDRESS =
 const RECOUP_ADDRESS = '0xCbB386B801Ec72A5aB02AEB723dECd12f96EdE41'
 const PASS_THROUGH_WALLET_FACTORY_ADDRESS =
   '0x199e8153817cbFeC2068DBEA13f3d046c7F1c425'
+const SWAPPER_FACTORY_ADDRESS = '0x89385F35Ee5815DC201030AB969669ca5E06B8A3'
+const UNI_V3_SWAP_ADDRESS = '0xfa2a7c66b340F71d7f1fe5D9Bb43eb9B001f39C2'
 const UNI_V3_ORACLE_FACTORY_ADDRESS =
   '0x008dFA72a4Abaf69455d8b7EabA10FD89F743446'
 
@@ -58,6 +60,16 @@ export const getRecoupAddress = (chainId: number): string => {
 export const getPassThroughWalletFactoryAddress = (chainId: number): string => {
   if (chainId === ChainId.BSC) return PASS_THROUGH_WALLET_FACTORY_ADDRESS
   return PASS_THROUGH_WALLET_FACTORY_ADDRESS
+}
+
+export const getSwapperFactoryAddress = (chainId: number): string => {
+  if (chainId === ChainId.BSC) return SWAPPER_FACTORY_ADDRESS
+  return SWAPPER_FACTORY_ADDRESS
+}
+
+export const getUniV3SwapAddress = (chainId: number): string => {
+  if (chainId === ChainId.BSC) return UNI_V3_SWAP_ADDRESS
+  return UNI_V3_SWAP_ADDRESS
 }
 
 enum ChainId {
@@ -106,6 +118,7 @@ export const WATERFALL_CHAIN_IDS = ALL_CHAIN_IDS.slice()
 export const LIQUID_SPLIT_CHAIN_IDS = ALL_CHAIN_IDS.slice()
 export const VESTING_CHAIN_IDS = ALL_CHAIN_IDS.slice()
 export const PASS_THROUGH_WALLET_CHAIN_IDS = ALL_CHAIN_IDS.slice()
+export const SWAPPER_CHAIN_IDS = ALL_CHAIN_IDS.slice()
 export const ORACLE_CHAIN_IDS = ALL_CHAIN_IDS.slice()
 export const TEMPLATES_CHAIN_IDS = ALL_CHAIN_IDS.slice()
 

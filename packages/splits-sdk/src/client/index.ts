@@ -15,6 +15,7 @@ import { WaterfallClient } from './waterfall'
 import { LiquidSplitClient } from './liquidSplit'
 import { PassThroughWalletClient } from './passThroughWallet'
 import { OracleClient } from './oracle'
+import { SwapperClient } from './swapper'
 import { VestingClient } from './vesting'
 import { TemplatesClient } from './templates'
 import {
@@ -35,6 +36,7 @@ import {
   WATERFALL_CHAIN_IDS,
   TEMPLATES_CHAIN_IDS,
   ORACLE_CHAIN_IDS,
+  SWAPPER_CHAIN_IDS,
   PASS_THROUGH_WALLET_CHAIN_IDS,
 } from '../constants'
 import {
@@ -466,6 +468,7 @@ export class SplitsClient extends SplitsTransactions {
   readonly passThroughWallet: PassThroughWalletClient | undefined
   readonly vesting: VestingClient | undefined
   readonly oracle: OracleClient | undefined
+  readonly swapper: SwapperClient | undefined
   readonly templates: TemplatesClient | undefined
   readonly callData: SplitsCallData
   readonly estimateGas: SplitsGasEstimates
@@ -524,6 +527,15 @@ export class SplitsClient extends SplitsTransactions {
     }
     if (ORACLE_CHAIN_IDS.includes(chainId)) {
       this.oracle = new OracleClient({
+        chainId,
+        provider,
+        ensProvider,
+        signer,
+        includeEnsNames,
+      })
+    }
+    if (SWAPPER_CHAIN_IDS.includes(chainId)) {
+      this.swapper = new SwapperClient({
         chainId,
         provider,
         ensProvider,

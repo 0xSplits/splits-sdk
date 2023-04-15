@@ -4,6 +4,7 @@ import { VestingClient } from './client/vesting'
 import { TemplatesClient } from './client/templates'
 import { SplitsClient } from './client'
 import { PassThroughWalletClient } from './client/passThroughWallet'
+import { SwapperClient } from './client/swapper'
 import { OracleClient } from './client/oracle'
 
 export {
@@ -13,6 +14,7 @@ export {
   VestingClient,
   TemplatesClient,
   PassThroughWalletClient,
+  SwapperClient,
   OracleClient,
 }
 export * from './errors'
