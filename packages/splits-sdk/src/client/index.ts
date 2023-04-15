@@ -14,6 +14,7 @@ import { applyMixins } from './mixin'
 import { WaterfallClient } from './waterfall'
 import { LiquidSplitClient } from './liquidSplit'
 import { PassThroughWalletClient } from './passThroughWallet'
+import { OracleClient } from './oracle'
 import { VestingClient } from './vesting'
 import { TemplatesClient } from './templates'
 import {
@@ -33,6 +34,7 @@ import {
   VESTING_CHAIN_IDS,
   WATERFALL_CHAIN_IDS,
   TEMPLATES_CHAIN_IDS,
+  ORACLE_CHAIN_IDS,
   PASS_THROUGH_WALLET_CHAIN_IDS,
 } from '../constants'
 import {
@@ -463,6 +465,7 @@ export class SplitsClient extends SplitsTransactions {
   readonly liquidSplits: LiquidSplitClient | undefined
   readonly passThroughWallet: PassThroughWalletClient | undefined
   readonly vesting: VestingClient | undefined
+  readonly oracle: OracleClient | undefined
   readonly templates: TemplatesClient | undefined
   readonly callData: SplitsCallData
   readonly estimateGas: SplitsGasEstimates
@@ -512,6 +515,15 @@ export class SplitsClient extends SplitsTransactions {
     }
     if (TEMPLATES_CHAIN_IDS.includes(chainId)) {
       this.templates = new TemplatesClient({
+        chainId,
+        provider,
+        ensProvider,
+        signer,
+        includeEnsNames,
+      })
+    }
+    if (ORACLE_CHAIN_IDS.includes(chainId)) {
+      this.oracle = new OracleClient({
         chainId,
         provider,
         ensProvider,

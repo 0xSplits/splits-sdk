@@ -287,3 +287,12 @@ export type PassThroughTokensConfig = {
   passThroughWalletId: string
   tokens: string[]
 }
+
+export type QuoteParams = {
+  quotePair: {
+    base: string
+    quote: string
+  }
+  baseAmount: BigNumber
+  data?: string
+}
