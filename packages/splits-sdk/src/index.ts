@@ -67,5 +67,7 @@ export type {
   LiquidSplit,
   VestingStream,
   VestingModule,
+  CreateSwapperConfig,
+  FlashConfig,
   CallData,
 } from './types'

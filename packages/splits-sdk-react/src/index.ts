@@ -42,4 +42,6 @@ export {
   useLiquidSplitMetadata,
   useVestingMetadata,
   useCreateRecoup,
+  useCreateSwapper,
+  useFlashFunds,
 } from './hooks'

@@ -303,8 +303,8 @@ export type FlashConfig = {
   inputAssets: {
     encodedPath: string
     token: string
-    amountIn: number
-    amountOutMin: number
+    amountIn: BigNumber
+    amountOutMin: BigNumber
   }[]
 }
 
@@ -318,7 +318,7 @@ export type QuoteParams = {
 }
 
 export type ContractQuoteParams = [[string, string], BigNumber, string]
-export type ContractSwapperCallbackData = [
+export type ContractSwapperExactInputParams = [
   string,
   string,
   number,

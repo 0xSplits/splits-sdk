@@ -23,18 +23,14 @@ import { applyMixins } from './mixin'
 import type {
   CallData,
   ContractQuoteParams,
-  ContractSwapperCallbackData,
+  ContractSwapperExactInputParams,
   CreateSwapperConfig,
   FlashConfig,
   SplitsClientConfig,
   TransactionConfig,
   TransactionFormat,
 } from '../types'
-import {
-  getBigNumberTokenValue,
-  getTokenData,
-  getTransactionEvents,
-} from '../utils'
+import { getTransactionEvents } from '../utils'
 import { validateAddress } from '../utils/validation'
 import { ContractCallData } from '../utils/multicall'
 
@@ -119,45 +115,26 @@ class SwapperTransactions extends BaseTransactions {
     const deadlineTime = Math.floor(Date.now() / 1000) + 30 // 30 seconds into future
 
     const quoteParams: ContractQuoteParams[] = []
-    const callbackData: ContractSwapperCallbackData[] = []
-    const outputTokenData = await getTokenData(
-      this._chainId,
-      outputToken,
-      this._provider,
-    )
-    await Promise.all(
-      inputAssets.map(async (inputAsset) => {
-        if (!this._provider) throw new Error('Provider required')
-        const tokenData = await getTokenData(
-          this._chainId,
-          inputAsset.token,
-          this._provider,
-        )
-        const amountInBigNumber = getBigNumberTokenValue(
-          inputAsset.amountIn,
-          tokenData.decimals,
-        )
-        const amountOutMinBigNumber = getBigNumberTokenValue(
-          inputAsset.amountOutMin,
-          outputTokenData.decimals,
-        )
+    const exactInputParams: ContractSwapperExactInputParams[] = []
+    inputAssets.map((inputAsset) => {
+      quoteParams.push([
+        [inputAsset.token, outputToken],
+        inputAsset.amountIn,
+        AddressZero,
+      ])
+      exactInputParams.push([
+        inputAsset.encodedPath,
+        swapRecipient,
+        deadlineTime,
+        inputAsset.amountIn,
+        inputAsset.amountOutMin,
+      ])
+    })
 
-        quoteParams.push([
-          [inputAsset.token, outputToken],
-          amountInBigNumber,
-          AddressZero,
-        ])
-        callbackData.push([
-          inputAsset.encodedPath,
-          swapRecipient,
-          deadlineTime,
-          amountInBigNumber,
-          amountOutMinBigNumber,
-        ])
-      }),
-    )
-
-    const flashParams = [quoteParams, callbackData]
+    const flashParams = [
+      quoteParams,
+      [exactInputParams, excessRecipientAddress],
+    ]
 
     const flashResult = await uniV3SwapContract.initFlash(
       swapperId,
@@ -217,9 +194,7 @@ export class SwapperClient extends SwapperTransactions {
       throw new UnsupportedChainIdError(chainId, SWAPPER_CHAIN_IDS)
 
     this.eventTopics = {
-      createPassThroughWallet: [
-        swapperFactoryInterface.getEventTopic('CreateSwapper'),
-      ],
+      createSwapper: [swapperFactoryInterface.getEventTopic('CreateSwapper')],
       flash: [swapperInterface.getEventTopic('Flash')],
     }
 
