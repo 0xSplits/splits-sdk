@@ -21,7 +21,7 @@ import {
   RECOUP_TRANCHE_RECIPIENTS,
 } from '../testing/constants'
 import { MockRecoup, writeActions } from '../testing/mocks/recoup'
-import TemplatesClient from './templates'
+import { TemplatesClient } from './templates'
 
 jest.mock('@ethersproject/contracts', () => {
   return {

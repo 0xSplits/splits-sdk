@@ -4,7 +4,7 @@ import { AddressZero } from '@ethersproject/constants'
 import type { Event } from '@ethersproject/contracts'
 import { encode } from 'base-64'
 
-import LiquidSplitClient from './liquidSplit'
+import { LiquidSplitClient } from './liquidSplit'
 import {
   LIQUID_SPLITS_MAX_PRECISION_DECIMALS,
   getLiquidSplitFactoryAddress,

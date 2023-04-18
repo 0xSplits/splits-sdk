@@ -229,6 +229,7 @@ describe('SplitMain writes', () => {
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
         AddressZero,
+        undefined,
       )
       expect(getTransactionEventsSpy).toBeCalledWith(createSplitResult, [
         splitsClient.eventTopics.createSplit[0],
@@ -259,6 +260,7 @@ describe('SplitMain writes', () => {
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
         controller,
+        undefined,
       )
       expect(getTransactionEventsSpy).toBeCalledWith(createSplitResult, [
         splitsClient.eventTopics.createSplit[0],

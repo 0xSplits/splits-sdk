@@ -4,7 +4,7 @@ import { BigNumber } from '@ethersproject/bignumber'
 import { AddressZero } from '@ethersproject/constants'
 import type { Event } from '@ethersproject/contracts'
 
-import WaterfallClient from './waterfall'
+import { WaterfallClient } from './waterfall'
 import { getWaterfallFactoryAddress } from '../constants'
 import {
   InvalidArgumentError,

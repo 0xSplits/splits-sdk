@@ -3,7 +3,7 @@ import { Signer } from '@ethersproject/abstract-signer'
 import { BigNumber } from '@ethersproject/bignumber'
 import type { Event } from '@ethersproject/contracts'
 
-import VestingClient from './vesting'
+import { VestingClient } from './vesting'
 import { getVestingFactoryAddress } from '../constants'
 import {
   InvalidConfigError,
