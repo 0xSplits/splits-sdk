@@ -1,12 +1,19 @@
 import { JsonFragmentType } from '@ethersproject/abi'
 import type { Provider } from '@ethersproject/abstract-provider'
 import type { Signer } from '@ethersproject/abstract-signer'
-import { BigNumber } from '@ethersproject/bignumber'
+import { BigNumber, BigNumberish } from '@ethersproject/bignumber'
 import { ContractTransaction } from '@ethersproject/contracts'
 
 import { TransactionType } from './constants'
 import type { SplitMain as SplitMainEthereumType } from './typechain/SplitMain/ethereum'
 import type { SplitMain as SplitMainPolygonType } from './typechain/SplitMain/polygon'
+
+type TransactionOverrides = {
+  transactionOverrides?: {
+    maxFeePerGas?: BigNumberish | Promise<BigNumberish>
+    maxPriorityFeePerGas?: BigNumberish | Promise<BigNumberish>
+  }
+}
 
 export type SplitMainType = SplitMainEthereumType | SplitMainPolygonType
 
@@ -34,7 +41,7 @@ export type CreateSplitConfig = {
   recipients: SplitRecipient[]
   distributorFeePercent: number
   controller?: string
-}
+} & TransactionOverrides
 
 export type UpdateSplitConfig = {
   splitId: string

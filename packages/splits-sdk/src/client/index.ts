@@ -130,6 +130,7 @@ class SplitsTransactions extends BaseTransactions {
     recipients,
     distributorFeePercent,
     controller = AddressZero,
+    transactionOverrides,
   }: CreateSplitConfig): Promise<TransactionFormat> {
     validateSplitInputs({ recipients, distributorFeePercent, controller })
     if (this._shouldRequireSigner) this._requireSigner()
@@ -143,6 +144,7 @@ class SplitsTransactions extends BaseTransactions {
       percentAllocations,
       distributorFee,
       controller,
+      transactionOverrides,
     )
 
     return createSplitResult
@@ -544,18 +546,12 @@ export class SplitsClient extends SplitsTransactions {
   /
   */
   // Write actions
-  async submitCreateSplitTransaction({
-    recipients,
-    distributorFeePercent,
-    controller = AddressZero,
-  }: CreateSplitConfig): Promise<{
+  async submitCreateSplitTransaction(
+    createSplitArgs: CreateSplitConfig,
+  ): Promise<{
     tx: ContractTransaction
   }> {
-    const createSplitTx = await this._createSplitTransaction({
-      recipients,
-      distributorFeePercent,
-      controller,
-    })
+    const createSplitTx = await this._createSplitTransaction(createSplitArgs)
     if (!this._isContractTransaction(createSplitTx))
       throw new Error('Invalid response')
 
@@ -1183,16 +1179,8 @@ class SplitsGasEstimates extends SplitsTransactions {
     })
   }
 
-  async createSplit({
-    recipients,
-    distributorFeePercent,
-    controller = AddressZero,
-  }: CreateSplitConfig): Promise<BigNumber> {
-    const gasEstimate = await this._createSplitTransaction({
-      recipients,
-      distributorFeePercent,
-      controller,
-    })
+  async createSplit(createSplitArgs: CreateSplitConfig): Promise<BigNumber> {
+    const gasEstimate = await this._createSplitTransaction(createSplitArgs)
     if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
@@ -1329,16 +1317,8 @@ class SplitsCallData extends SplitsTransactions {
     })
   }
 
-  async createSplit({
-    recipients,
-    distributorFeePercent,
-    controller = AddressZero,
-  }: CreateSplitConfig): Promise<CallData> {
-    const callData = await this._createSplitTransaction({
-      recipients,
-      distributorFeePercent,
-      controller,
-    })
+  async createSplit(createSplitArgs: CreateSplitConfig): Promise<CallData> {
+    const callData = await this._createSplitTransaction(createSplitArgs)
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData
