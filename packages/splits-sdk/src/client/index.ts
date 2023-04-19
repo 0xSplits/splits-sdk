@@ -130,7 +130,7 @@ class SplitsTransactions extends BaseTransactions {
     recipients,
     distributorFeePercent,
     controller = AddressZero,
-    transactionOverrides,
+    transactionOverrides = {},
   }: CreateSplitConfig): Promise<TransactionFormat> {
     validateSplitInputs({ recipients, distributorFeePercent, controller })
     if (this._shouldRequireSigner) this._requireSigner()
