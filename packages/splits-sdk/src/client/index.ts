@@ -154,6 +154,7 @@ class SplitsTransactions extends BaseTransactions {
     splitId,
     recipients,
     distributorFeePercent,
+    transactionOverrides = {},
   }: UpdateSplitConfig): Promise<TransactionFormat> {
     validateAddress(splitId)
     validateSplitInputs({ recipients, distributorFeePercent })
@@ -172,6 +173,7 @@ class SplitsTransactions extends BaseTransactions {
       accounts,
       percentAllocations,
       distributorFee,
+      transactionOverrides,
     )
 
     return updateSplitResult
@@ -181,6 +183,7 @@ class SplitsTransactions extends BaseTransactions {
     splitId,
     token,
     distributorAddress,
+    transactionOverrides = {},
   }: DistributeTokenConfig): Promise<TransactionFormat> {
     validateAddress(splitId)
     validateAddress(token)
@@ -208,6 +211,7 @@ class SplitsTransactions extends BaseTransactions {
           percentAllocations,
           distributorFee,
           distributorPayoutAddress,
+          transactionOverrides,
         )
       : this._splitMain.distributeERC20(
           splitId,
@@ -216,6 +220,7 @@ class SplitsTransactions extends BaseTransactions {
           percentAllocations,
           distributorFee,
           distributorPayoutAddress,
+          transactionOverrides,
         ))
     return distributeTokenResult
   }
@@ -226,6 +231,7 @@ class SplitsTransactions extends BaseTransactions {
     recipients,
     distributorFeePercent,
     distributorAddress,
+    transactionOverrides = {},
   }: UpdateSplitAndDistributeTokenConfig): Promise<TransactionFormat> {
     validateAddress(splitId)
     validateAddress(token)
@@ -253,6 +259,7 @@ class SplitsTransactions extends BaseTransactions {
           percentAllocations,
           distributorFee,
           distributorPayoutAddress,
+          transactionOverrides,
         )
       : this._splitMain.updateAndDistributeERC20(
           splitId,
@@ -261,6 +268,7 @@ class SplitsTransactions extends BaseTransactions {
           percentAllocations,
           distributorFee,
           distributorPayoutAddress,
+          transactionOverrides,
         ))
 
     return updateAndDistributeResult
@@ -269,6 +277,7 @@ class SplitsTransactions extends BaseTransactions {
   protected async _withdrawFundsTransaction({
     address,
     tokens,
+    transactionOverrides = {},
   }: WithdrawFundsConfig): Promise<TransactionFormat> {
     validateAddress(address)
     if (this._shouldRequireSigner) this._requireSigner()
@@ -280,6 +289,7 @@ class SplitsTransactions extends BaseTransactions {
       address,
       withdrawEth,
       erc20s,
+      transactionOverrides,
     )
 
     return withdrawResult
@@ -288,6 +298,7 @@ class SplitsTransactions extends BaseTransactions {
   protected async _initiateControlTransferTransaction({
     splitId,
     newController,
+    transactionOverrides = {},
   }: InititateControlTransferConfig): Promise<TransactionFormat> {
     validateAddress(splitId)
 
@@ -299,6 +310,7 @@ class SplitsTransactions extends BaseTransactions {
     const transferSplitResult = await this._splitMain.transferControl(
       splitId,
       newController,
+      transactionOverrides,
     )
 
     return transferSplitResult
@@ -306,6 +318,7 @@ class SplitsTransactions extends BaseTransactions {
 
   protected async _cancelControlTransferTransaction({
     splitId,
+    transactionOverrides = {},
   }: CancelControlTransferConfig): Promise<TransactionFormat> {
     validateAddress(splitId)
 
@@ -315,12 +328,13 @@ class SplitsTransactions extends BaseTransactions {
     }
 
     const cancelTransferSplitResult =
-      await this._splitMain.cancelControlTransfer(splitId)
+      await this._splitMain.cancelControlTransfer(splitId, transactionOverrides)
     return cancelTransferSplitResult
   }
 
   protected async _acceptControlTransferTransaction({
     splitId,
+    transactionOverrides = {},
   }: AcceptControlTransferConfig): Promise<TransactionFormat> {
     validateAddress(splitId)
 
@@ -331,12 +345,14 @@ class SplitsTransactions extends BaseTransactions {
 
     const acceptTransferSplitResult = await this._splitMain.acceptControl(
       splitId,
+      transactionOverrides,
     )
     return acceptTransferSplitResult
   }
 
   protected async _makeSplitImmutableTransaction({
     splitId,
+    transactionOverrides = {},
   }: MakeSplitImmutableConfig): Promise<TransactionFormat> {
     validateAddress(splitId)
 
@@ -347,6 +363,7 @@ class SplitsTransactions extends BaseTransactions {
 
     const makeSplitImmutableResult = await this._splitMain.makeSplitImmutable(
       splitId,
+      transactionOverrides,
     )
     return makeSplitImmutableResult
   }
@@ -558,19 +575,13 @@ export class SplitsClient extends SplitsTransactions {
     return { tx: createSplitTx }
   }
 
-  async createSplit({
-    recipients,
-    distributorFeePercent,
-    controller,
-  }: CreateSplitConfig): Promise<{
+  async createSplit(createSplitArgs: CreateSplitConfig): Promise<{
     splitId: string
     event: Event
   }> {
-    const { tx: createSplitTx } = await this.submitCreateSplitTransaction({
-      recipients,
-      distributorFeePercent,
-      controller,
-    })
+    const { tx: createSplitTx } = await this.submitCreateSplitTransaction(
+      createSplitArgs,
+    )
     const events = await getTransactionEvents(
       createSplitTx,
       this.eventTopics.createSplit,
@@ -585,36 +596,24 @@ export class SplitsClient extends SplitsTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitUpdateSplitTransaction({
-    splitId,
-    recipients,
-    distributorFeePercent,
-  }: UpdateSplitConfig): Promise<{
+  async submitUpdateSplitTransaction(
+    updateSplitArgs: UpdateSplitConfig,
+  ): Promise<{
     tx: ContractTransaction
   }> {
-    const updateSplitTx = await this._updateSplitTransaction({
-      splitId,
-      recipients,
-      distributorFeePercent,
-    })
+    const updateSplitTx = await this._updateSplitTransaction(updateSplitArgs)
     if (!this._isContractTransaction(updateSplitTx))
       throw new Error('Invalid response')
 
     return { tx: updateSplitTx }
   }
 
-  async updateSplit({
-    splitId,
-    recipients,
-    distributorFeePercent,
-  }: UpdateSplitConfig): Promise<{
+  async updateSplit(updateSplitArgs: UpdateSplitConfig): Promise<{
     event: Event
   }> {
-    const { tx: updateSplitTx } = await this.submitUpdateSplitTransaction({
-      splitId,
-      recipients,
-      distributorFeePercent,
-    })
+    const { tx: updateSplitTx } = await this.submitUpdateSplitTransaction(
+      updateSplitArgs,
+    )
     const events = await getTransactionEvents(
       updateSplitTx,
       this.eventTopics.updateSplit,
@@ -625,37 +624,26 @@ export class SplitsClient extends SplitsTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitDistributeTokenTransaction({
-    splitId,
-    token,
-    distributorAddress,
-  }: DistributeTokenConfig): Promise<{
+  async submitDistributeTokenTransaction(
+    distributeTokenArgs: DistributeTokenConfig,
+  ): Promise<{
     tx: ContractTransaction
   }> {
-    const distributeTokenTx = await this._distributeTokenTransaction({
-      splitId,
-      token,
-      distributorAddress,
-    })
+    const distributeTokenTx = await this._distributeTokenTransaction(
+      distributeTokenArgs,
+    )
     if (!this._isContractTransaction(distributeTokenTx))
       throw new Error('Invalid response')
 
     return { tx: distributeTokenTx }
   }
 
-  async distributeToken({
-    splitId,
-    token,
-    distributorAddress,
-  }: DistributeTokenConfig): Promise<{
+  async distributeToken(distributeTokenArgs: DistributeTokenConfig): Promise<{
     event: Event
   }> {
     const { tx: distributeTokenTx } =
-      await this.submitDistributeTokenTransaction({
-        splitId,
-        token,
-        distributorAddress,
-      })
+      await this.submitDistributeTokenTransaction(distributeTokenArgs)
+    const { token } = distributeTokenArgs
     const eventTopic =
       token === AddressZero
         ? this.eventTopics.distributeToken[0]
@@ -667,46 +655,31 @@ export class SplitsClient extends SplitsTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitUpdateSplitAndDistributeTokenTransaction({
-    splitId,
-    token,
-    recipients,
-    distributorFeePercent,
-    distributorAddress,
-  }: UpdateSplitAndDistributeTokenConfig): Promise<{
+  async submitUpdateSplitAndDistributeTokenTransaction(
+    updateAndDistributeArgs: UpdateSplitAndDistributeTokenConfig,
+  ): Promise<{
     tx: ContractTransaction
   }> {
     const updateAndDistributeTx =
-      await this._updateSplitAndDistributeTokenTransaction({
-        splitId,
-        token,
-        recipients,
-        distributorFeePercent,
-        distributorAddress,
-      })
+      await this._updateSplitAndDistributeTokenTransaction(
+        updateAndDistributeArgs,
+      )
     if (!this._isContractTransaction(updateAndDistributeTx))
       throw new Error('Invalid response')
 
     return { tx: updateAndDistributeTx }
   }
 
-  async updateSplitAndDistributeToken({
-    splitId,
-    token,
-    recipients,
-    distributorFeePercent,
-    distributorAddress,
-  }: UpdateSplitAndDistributeTokenConfig): Promise<{
+  async updateSplitAndDistributeToken(
+    updateAndDistributeArgs: UpdateSplitAndDistributeTokenConfig,
+  ): Promise<{
     event: Event
   }> {
     const { tx: updateAndDistributeTx } =
-      await this.submitUpdateSplitAndDistributeTokenTransaction({
-        splitId,
-        token,
-        recipients,
-        distributorFeePercent,
-        distributorAddress,
-      })
+      await this.submitUpdateSplitAndDistributeTokenTransaction(
+        updateAndDistributeArgs,
+      )
+    const { token } = updateAndDistributeArgs
     const eventTopic =
       token === AddressZero
         ? this.eventTopics.updateSplitAndDistributeToken[1]
@@ -720,29 +693,24 @@ export class SplitsClient extends SplitsTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitWithdrawFundsTransaction({
-    address,
-    tokens,
-  }: WithdrawFundsConfig): Promise<{
+  async submitWithdrawFundsTransaction(
+    withdrawArgs: WithdrawFundsConfig,
+  ): Promise<{
     tx: ContractTransaction
   }> {
-    const withdrawTx = await this._withdrawFundsTransaction({
-      address,
-      tokens,
-    })
+    const withdrawTx = await this._withdrawFundsTransaction(withdrawArgs)
     if (!this._isContractTransaction(withdrawTx))
       throw new Error('Invalid response')
 
     return { tx: withdrawTx }
   }
 
-  async withdrawFunds({ address, tokens }: WithdrawFundsConfig): Promise<{
+  async withdrawFunds(withdrawArgs: WithdrawFundsConfig): Promise<{
     event: Event
   }> {
-    const { tx: withdrawTx } = await this.submitWithdrawFundsTransaction({
-      address,
-      tokens,
-    })
+    const { tx: withdrawTx } = await this.submitWithdrawFundsTransaction(
+      withdrawArgs,
+    )
     const events = await getTransactionEvents(
       withdrawTx,
       this.eventTopics.withdrawFunds,
@@ -753,33 +721,27 @@ export class SplitsClient extends SplitsTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitInitiateControlTransferTransaction({
-    splitId,
-    newController,
-  }: InititateControlTransferConfig): Promise<{
+  async submitInitiateControlTransferTransaction(
+    initiateTransferArgs: InititateControlTransferConfig,
+  ): Promise<{
     tx: ContractTransaction
   }> {
-    const transferSplitTx = await this._initiateControlTransferTransaction({
-      splitId,
-      newController,
-    })
+    const transferSplitTx = await this._initiateControlTransferTransaction(
+      initiateTransferArgs,
+    )
     if (!this._isContractTransaction(transferSplitTx))
       throw new Error('Invalid response')
 
     return { tx: transferSplitTx }
   }
 
-  async initiateControlTransfer({
-    splitId,
-    newController,
-  }: InititateControlTransferConfig): Promise<{
+  async initiateControlTransfer(
+    initiateTransferArgs: InititateControlTransferConfig,
+  ): Promise<{
     event: Event
   }> {
     const { tx: transferSplitTx } =
-      await this.submitInitiateControlTransferTransaction({
-        splitId,
-        newController,
-      })
+      await this.submitInitiateControlTransferTransaction(initiateTransferArgs)
     const events = await getTransactionEvents(
       transferSplitTx,
       this.eventTopics.initiateControlTransfer,
@@ -790,27 +752,27 @@ export class SplitsClient extends SplitsTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitCancelControlTransferTransaction({
-    splitId,
-  }: CancelControlTransferConfig): Promise<{
+  async submitCancelControlTransferTransaction(
+    cancelTransferArgs: CancelControlTransferConfig,
+  ): Promise<{
     tx: ContractTransaction
   }> {
-    const cancelTransferSplitTx = await this._cancelControlTransferTransaction({
-      splitId,
-    })
+    const cancelTransferSplitTx = await this._cancelControlTransferTransaction(
+      cancelTransferArgs,
+    )
     if (!this._isContractTransaction(cancelTransferSplitTx))
       throw new Error('Invalid response')
 
     return { tx: cancelTransferSplitTx }
   }
 
-  async cancelControlTransfer({
-    splitId,
-  }: CancelControlTransferConfig): Promise<{
+  async cancelControlTransfer(
+    cancelTransferArgs: CancelControlTransferConfig,
+  ): Promise<{
     event: Event
   }> {
     const { tx: cancelTransferSplitTx } =
-      await this.submitCancelControlTransferTransaction({ splitId })
+      await this.submitCancelControlTransferTransaction(cancelTransferArgs)
     const events = await getTransactionEvents(
       cancelTransferSplitTx,
       this.eventTopics.cancelControlTransfer,
@@ -821,27 +783,27 @@ export class SplitsClient extends SplitsTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitAcceptControlTransferTransaction({
-    splitId,
-  }: AcceptControlTransferConfig): Promise<{
+  async submitAcceptControlTransferTransaction(
+    acceptTransferArgs: AcceptControlTransferConfig,
+  ): Promise<{
     tx: ContractTransaction
   }> {
-    const acceptTransferSplitTx = await this._acceptControlTransferTransaction({
-      splitId,
-    })
+    const acceptTransferSplitTx = await this._acceptControlTransferTransaction(
+      acceptTransferArgs,
+    )
     if (!this._isContractTransaction(acceptTransferSplitTx))
       throw new Error('Invalid response')
 
     return { tx: acceptTransferSplitTx }
   }
 
-  async acceptControlTransfer({
-    splitId,
-  }: AcceptControlTransferConfig): Promise<{
+  async acceptControlTransfer(
+    acceptTransferArgs: AcceptControlTransferConfig,
+  ): Promise<{
     event: Event
   }> {
     const { tx: acceptTransferSplitTx } =
-      await this.submitAcceptControlTransferTransaction({ splitId })
+      await this.submitAcceptControlTransferTransaction(acceptTransferArgs)
     const events = await getTransactionEvents(
       acceptTransferSplitTx,
       this.eventTopics.acceptControlTransfer,
@@ -852,25 +814,27 @@ export class SplitsClient extends SplitsTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitMakeSplitImmutableTransaction({
-    splitId,
-  }: MakeSplitImmutableConfig): Promise<{
+  async submitMakeSplitImmutableTransaction(
+    makeImmutableArgs: MakeSplitImmutableConfig,
+  ): Promise<{
     tx: ContractTransaction
   }> {
-    const makeSplitImmutableTx = await this._makeSplitImmutableTransaction({
-      splitId,
-    })
+    const makeSplitImmutableTx = await this._makeSplitImmutableTransaction(
+      makeImmutableArgs,
+    )
     if (!this._isContractTransaction(makeSplitImmutableTx))
       throw new Error('Invalid response')
 
     return { tx: makeSplitImmutableTx }
   }
 
-  async makeSplitImmutable({ splitId }: MakeSplitImmutableConfig): Promise<{
+  async makeSplitImmutable(
+    makeImmutableArgs: MakeSplitImmutableConfig,
+  ): Promise<{
     event: Event
   }> {
     const { tx: makeSplitImmutableTx } =
-      await this.submitMakeSplitImmutableTransaction({ splitId })
+      await this.submitMakeSplitImmutableTransaction(makeImmutableArgs)
     const events = await getTransactionEvents(
       makeSplitImmutableTx,
       this.eventTopics.makeSplitImmutable,
@@ -1186,109 +1150,81 @@ class SplitsGasEstimates extends SplitsTransactions {
     return gasEstimate
   }
 
-  async updateSplit({
-    splitId,
-    recipients,
-    distributorFeePercent,
-  }: UpdateSplitConfig): Promise<BigNumber> {
-    const gasEstimate = await this._updateSplitTransaction({
-      splitId,
-      recipients,
-      distributorFeePercent,
-    })
+  async updateSplit(updateSplitArgs: UpdateSplitConfig): Promise<BigNumber> {
+    const gasEstimate = await this._updateSplitTransaction(updateSplitArgs)
     if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
-  async distributeToken({
-    splitId,
-    token,
-    distributorAddress,
-  }: DistributeTokenConfig): Promise<BigNumber> {
-    const gasEstimate = await this._distributeTokenTransaction({
-      splitId,
-      token,
-      distributorAddress,
-    })
+  async distributeToken(
+    distributeTokenArgs: DistributeTokenConfig,
+  ): Promise<BigNumber> {
+    const gasEstimate = await this._distributeTokenTransaction(
+      distributeTokenArgs,
+    )
     if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
-  async updateSplitAndDistributeToken({
-    splitId,
-    token,
-    recipients,
-    distributorFeePercent,
-    distributorAddress,
-  }: UpdateSplitAndDistributeTokenConfig): Promise<BigNumber> {
-    const gasEstimate = await this._updateSplitAndDistributeTokenTransaction({
-      splitId,
-      token,
-      recipients,
-      distributorFeePercent,
-      distributorAddress,
-    })
+  async updateSplitAndDistributeToken(
+    updateAndDistributeArgs: UpdateSplitAndDistributeTokenConfig,
+  ): Promise<BigNumber> {
+    const gasEstimate = await this._updateSplitAndDistributeTokenTransaction(
+      updateAndDistributeArgs,
+    )
     if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
-  async withdrawFunds({
-    address,
-    tokens,
-  }: WithdrawFundsConfig): Promise<BigNumber> {
-    const gasEstimate = await this._withdrawFundsTransaction({
-      address,
-      tokens,
-    })
+  async withdrawFunds(withdrawArgs: WithdrawFundsConfig): Promise<BigNumber> {
+    const gasEstimate = await this._withdrawFundsTransaction(withdrawArgs)
     if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
-  async initiateControlTransfer({
-    splitId,
-    newController,
-  }: InititateControlTransferConfig): Promise<BigNumber> {
-    const gasEstimate = await this._initiateControlTransferTransaction({
-      splitId,
-      newController,
-    })
+  async initiateControlTransfer(
+    initiateTransferArgs: InititateControlTransferConfig,
+  ): Promise<BigNumber> {
+    const gasEstimate = await this._initiateControlTransferTransaction(
+      initiateTransferArgs,
+    )
     if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
-  async cancelControlTransfer({
-    splitId,
-  }: CancelControlTransferConfig): Promise<BigNumber> {
-    const gasEstimate = await this._cancelControlTransferTransaction({
-      splitId,
-    })
+  async cancelControlTransfer(
+    cancelTransferArgs: CancelControlTransferConfig,
+  ): Promise<BigNumber> {
+    const gasEstimate = await this._cancelControlTransferTransaction(
+      cancelTransferArgs,
+    )
     if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
-  async acceptControlTransfer({
-    splitId,
-  }: AcceptControlTransferConfig): Promise<BigNumber> {
-    const gasEstimate = await this._acceptControlTransferTransaction({
-      splitId,
-    })
+  async acceptControlTransfer(
+    acceptTransferArgs: AcceptControlTransferConfig,
+  ): Promise<BigNumber> {
+    const gasEstimate = await this._acceptControlTransferTransaction(
+      acceptTransferArgs,
+    )
     if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
-  async makeSplitImmutable({
-    splitId,
-  }: MakeSplitImmutableConfig): Promise<BigNumber> {
-    const gasEstimate = await this._makeSplitImmutableTransaction({
-      splitId,
-    })
+  async makeSplitImmutable(
+    makeImmutableArgs: MakeSplitImmutableConfig,
+  ): Promise<BigNumber> {
+    const gasEstimate = await this._makeSplitImmutableTransaction(
+      makeImmutableArgs,
+    )
     if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
@@ -1324,109 +1260,79 @@ class SplitsCallData extends SplitsTransactions {
     return callData
   }
 
-  async updateSplit({
-    splitId,
-    recipients,
-    distributorFeePercent,
-  }: UpdateSplitConfig): Promise<CallData> {
-    const callData = await this._updateSplitTransaction({
-      splitId,
-      recipients,
-      distributorFeePercent,
-    })
+  async updateSplit(updateSplitArgs: UpdateSplitConfig): Promise<CallData> {
+    const callData = await this._updateSplitTransaction(updateSplitArgs)
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData
   }
 
-  async distributeToken({
-    splitId,
-    token,
-    distributorAddress,
-  }: DistributeTokenConfig): Promise<CallData> {
-    const callData = await this._distributeTokenTransaction({
-      splitId,
-      token,
-      distributorAddress,
-    })
+  async distributeToken(
+    distributeTokenArgs: DistributeTokenConfig,
+  ): Promise<CallData> {
+    const callData = await this._distributeTokenTransaction(distributeTokenArgs)
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData
   }
 
-  async updateSplitAndDistributeToken({
-    splitId,
-    token,
-    recipients,
-    distributorFeePercent,
-    distributorAddress,
-  }: UpdateSplitAndDistributeTokenConfig): Promise<CallData> {
-    const callData = await this._updateSplitAndDistributeTokenTransaction({
-      splitId,
-      token,
-      recipients,
-      distributorFeePercent,
-      distributorAddress,
-    })
+  async updateSplitAndDistributeToken(
+    updateAndDistributeArgs: UpdateSplitAndDistributeTokenConfig,
+  ): Promise<CallData> {
+    const callData = await this._updateSplitAndDistributeTokenTransaction(
+      updateAndDistributeArgs,
+    )
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData
   }
 
-  async withdrawFunds({
-    address,
-    tokens,
-  }: WithdrawFundsConfig): Promise<CallData> {
-    const callData = await this._withdrawFundsTransaction({
-      address,
-      tokens,
-    })
+  async withdrawFunds(withdrawArgs: WithdrawFundsConfig): Promise<CallData> {
+    const callData = await this._withdrawFundsTransaction(withdrawArgs)
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData
   }
 
-  async initiateControlTransfer({
-    splitId,
-    newController,
-  }: InititateControlTransferConfig): Promise<CallData> {
-    const callData = await this._initiateControlTransferTransaction({
-      splitId,
-      newController,
-    })
+  async initiateControlTransfer(
+    initiateTransferArgs: InititateControlTransferConfig,
+  ): Promise<CallData> {
+    const callData = await this._initiateControlTransferTransaction(
+      initiateTransferArgs,
+    )
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData
   }
 
-  async cancelControlTransfer({
-    splitId,
-  }: CancelControlTransferConfig): Promise<CallData> {
-    const callData = await this._cancelControlTransferTransaction({
-      splitId,
-    })
+  async cancelControlTransfer(
+    cancelTransferArgs: CancelControlTransferConfig,
+  ): Promise<CallData> {
+    const callData = await this._cancelControlTransferTransaction(
+      cancelTransferArgs,
+    )
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData
   }
 
-  async acceptControlTransfer({
-    splitId,
-  }: AcceptControlTransferConfig): Promise<CallData> {
-    const callData = await this._acceptControlTransferTransaction({
-      splitId,
-    })
+  async acceptControlTransfer(
+    acceptTransferArgs: AcceptControlTransferConfig,
+  ): Promise<CallData> {
+    const callData = await this._acceptControlTransferTransaction(
+      acceptTransferArgs,
+    )
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData
   }
 
-  async makeSplitImmutable({
-    splitId,
-  }: MakeSplitImmutableConfig): Promise<CallData> {
-    const callData = await this._makeSplitImmutableTransaction({
-      splitId,
-    })
+  async makeSplitImmutable(
+    makeImmutableArgs: MakeSplitImmutableConfig,
+  ): Promise<CallData> {
+    const callData = await this._makeSplitImmutableTransaction(
+      makeImmutableArgs,
+    )
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData

@@ -47,40 +47,13 @@ export type UpdateSplitConfig = {
   splitId: string
   recipients: SplitRecipient[]
   distributorFeePercent: number
-}
+} & TransactionOverrides
 
 export type DistributeTokenConfig = {
   splitId: string
   token: string
   distributorAddress?: string
-}
-
-export type WithdrawFundsConfig = {
-  address: string
-  tokens: string[]
-}
-
-export type InititateControlTransferConfig = {
-  splitId: string
-  newController: string
-}
-
-export type CancelControlTransferConfig = {
-  splitId: string
-}
-
-export type AcceptControlTransferConfig = {
-  splitId: string
-}
-
-export type MakeSplitImmutableConfig = {
-  splitId: string
-}
-
-export type GetSplitBalanceConfig = {
-  splitId: string
-  token?: string
-}
+} & TransactionOverrides
 
 export type UpdateSplitAndDistributeTokenConfig = {
   splitId: string
@@ -88,6 +61,33 @@ export type UpdateSplitAndDistributeTokenConfig = {
   recipients: SplitRecipient[]
   distributorFeePercent: number
   distributorAddress?: string
+} & TransactionOverrides
+
+export type WithdrawFundsConfig = {
+  address: string
+  tokens: string[]
+} & TransactionOverrides
+
+export type InititateControlTransferConfig = {
+  splitId: string
+  newController: string
+} & TransactionOverrides
+
+export type CancelControlTransferConfig = {
+  splitId: string
+} & TransactionOverrides
+
+export type AcceptControlTransferConfig = {
+  splitId: string
+} & TransactionOverrides
+
+export type MakeSplitImmutableConfig = {
+  splitId: string
+} & TransactionOverrides
+
+export type GetSplitBalanceConfig = {
+  splitId: string
+  token?: string
 }
 
 export type TokenBalances = {

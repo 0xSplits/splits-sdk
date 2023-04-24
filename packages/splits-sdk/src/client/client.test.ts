@@ -353,6 +353,7 @@ describe('SplitMain writes', () => {
         SORTED_ADDRESSES,
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
+        {},
       )
       expect(getTransactionEventsSpy).toBeCalledWith(updateSplitResult, [
         splitsClient.eventTopics.updateSplit[0],
@@ -435,6 +436,7 @@ describe('SplitMain writes', () => {
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
         CONTROLLER_ADDRESS,
+        {},
       )
       expect(getTransactionEventsSpy).toBeCalledWith(distributeETHResult, [
         splitsClient.eventTopics.distributeToken[0],
@@ -461,6 +463,7 @@ describe('SplitMain writes', () => {
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
         CONTROLLER_ADDRESS,
+        {},
       )
       expect(getTransactionEventsSpy).toBeCalledWith(distributeERC20Result, [
         splitsClient.eventTopics.distributeToken[1],
@@ -487,6 +490,7 @@ describe('SplitMain writes', () => {
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
         distributorAddress,
+        {},
       )
       expect(getTransactionEventsSpy).toBeCalledWith(distributeETHResult, [
         splitsClient.eventTopics.distributeToken[0],
@@ -515,6 +519,7 @@ describe('SplitMain writes', () => {
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
         distributorAddress,
+        {},
       )
       expect(getTransactionEventsSpy).toBeCalledWith(distributeERC20Result, [
         splitsClient.eventTopics.distributeToken[1],
@@ -624,6 +629,7 @@ describe('SplitMain writes', () => {
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
         CONTROLLER_ADDRESS,
+        {},
       )
       expect(getTransactionEventsSpy).toBeCalledWith(
         updateAndDistributeETHResult,
@@ -657,6 +663,7 @@ describe('SplitMain writes', () => {
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
         CONTROLLER_ADDRESS,
+        {},
       )
       expect(getTransactionEventsSpy).toBeCalledWith(
         updateAndDistributeERC20Result,
@@ -690,6 +697,7 @@ describe('SplitMain writes', () => {
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
         distributorAddress,
+        {},
       )
       expect(getTransactionEventsSpy).toBeCalledWith(
         updateAndDistributeETHResult,
@@ -725,6 +733,7 @@ describe('SplitMain writes', () => {
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
         distributorAddress,
+        {},
       )
       expect(getTransactionEventsSpy).toBeCalledWith(
         updateAndDistributeERC20Result,
@@ -784,7 +793,7 @@ describe('SplitMain writes', () => {
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(address)
-      expect(writeActions.withdraw).toBeCalledWith(address, 1, ['0xerc20'])
+      expect(writeActions.withdraw).toBeCalledWith(address, 1, ['0xerc20'], {})
       expect(getTransactionEventsSpy).toBeCalledWith(withdrawResult, [
         splitsClient.eventTopics.withdrawFunds[0],
       ])
@@ -800,10 +809,12 @@ describe('SplitMain writes', () => {
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(address)
-      expect(writeActions.withdraw).toBeCalledWith(address, 0, [
-        '0xerc20',
-        '0xerc202',
-      ])
+      expect(writeActions.withdraw).toBeCalledWith(
+        address,
+        0,
+        ['0xerc20', '0xerc202'],
+        {},
+      )
       expect(getTransactionEventsSpy).toBeCalledWith(withdrawResult, [
         splitsClient.eventTopics.withdrawFunds[0],
       ])
@@ -880,6 +891,7 @@ describe('SplitMain writes', () => {
       expect(writeActions.transferControl).toBeCalledWith(
         splitId,
         newController,
+        {},
       )
       expect(getTransactionEventsSpy).toBeCalledWith(initiateTransferResult, [
         splitsClient.eventTopics.initiateControlTransfer[0],
@@ -951,7 +963,7 @@ describe('SplitMain writes', () => {
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitId)
-      expect(writeActions.cancelControlTransfer).toBeCalledWith(splitId)
+      expect(writeActions.cancelControlTransfer).toBeCalledWith(splitId, {})
       expect(getTransactionEventsSpy).toBeCalledWith(cancelTransferResult, [
         splitsClient.eventTopics.cancelControlTransfer[0],
       ])
@@ -1020,7 +1032,7 @@ describe('SplitMain writes', () => {
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitId)
-      expect(writeActions.acceptControl).toBeCalledWith(splitId)
+      expect(writeActions.acceptControl).toBeCalledWith(splitId, {})
       expect(getTransactionEventsSpy).toBeCalledWith(acceptTransferResult, [
         splitsClient.eventTopics.acceptControlTransfer[0],
       ])
@@ -1091,7 +1103,7 @@ describe('SplitMain writes', () => {
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitId)
-      expect(writeActions.makeSplitImmutable).toBeCalledWith(splitId)
+      expect(writeActions.makeSplitImmutable).toBeCalledWith(splitId, {})
       expect(getTransactionEventsSpy).toBeCalledWith(makeSplitImmutableResult, [
         splitsClient.eventTopics.makeSplitImmutable[0],
       ])
