@@ -171,6 +171,7 @@ describe('Vesting writes', () => {
       expect(factoryWriteActions.createVestingModule).toBeCalledWith(
         beneficiary,
         vestingPeriodSeconds,
+        {},
       )
       expect(getTransactionEventsSpy).toBeCalledWith(createVestingResult, [
         vestingClient.eventTopics.createVestingModule[0],
@@ -232,7 +233,7 @@ describe('Vesting writes', () => {
       expect(validateAddress).toBeCalledWith(vestingModuleId)
       expect(validateAddress).toBeCalledWith('0xtoken1')
       expect(validateAddress).toBeCalledWith('0xtoken2')
-      expect(moduleWriteActions.createVestingStreams).toBeCalledWith(tokens)
+      expect(moduleWriteActions.createVestingStreams).toBeCalledWith(tokens, {})
       expect(getTransactionEventsSpy).toBeCalledWith(startVestResult, [
         vestingClient.eventTopics.startVest[0],
       ])
@@ -291,7 +292,10 @@ describe('Vesting writes', () => {
 
       expect(events[0].blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(vestingModuleId)
-      expect(moduleWriteActions.releaseFromVesting).toBeCalledWith(streamIds)
+      expect(moduleWriteActions.releaseFromVesting).toBeCalledWith(
+        streamIds,
+        {},
+      )
       expect(getTransactionEventsSpy).toBeCalledWith(releaseVestedFundsResult, [
         vestingClient.eventTopics.releaseVestedFunds[0],
       ])

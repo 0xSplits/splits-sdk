@@ -162,17 +162,17 @@ export type WaterfallModule = {
 export type CreateVestingConfig = {
   beneficiary: string
   vestingPeriodSeconds: number
-}
+} & TransactionOverrides
 
 export type StartVestConfig = {
   vestingModuleId: string
   tokens: string[]
-}
+} & TransactionOverrides
 
 export type ReleaseVestedFundsConfig = {
   vestingModuleId: string
   streamIds: string[]
-}
+} & TransactionOverrides
 
 export type VestingStream = {
   streamId: number

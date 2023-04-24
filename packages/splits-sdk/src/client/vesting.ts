@@ -73,6 +73,7 @@ class VestingTransactions extends BaseTransactions {
   protected async _createVestingModuleTransaction({
     beneficiary,
     vestingPeriodSeconds,
+    transactionOverrides = {},
   }: CreateVestingConfig): Promise<TransactionFormat> {
     validateAddress(beneficiary)
     validateVestingPeriod(vestingPeriodSeconds)
@@ -83,6 +84,7 @@ class VestingTransactions extends BaseTransactions {
       await this._vestingModuleFactoryContract.createVestingModule(
         beneficiary,
         vestingPeriodSeconds,
+        transactionOverrides,
       )
 
     return createVestingResult
@@ -91,13 +93,17 @@ class VestingTransactions extends BaseTransactions {
   protected async _startVestTransaction({
     vestingModuleId,
     tokens,
+    transactionOverrides = {},
   }: StartVestConfig): Promise<TransactionFormat> {
     validateAddress(vestingModuleId)
     tokens.map((token) => validateAddress(token))
     if (this._shouldRequireSigner) this._requireSigner()
 
     const vestingContract = this._getVestingContract(vestingModuleId)
-    const startVestResult = await vestingContract.createVestingStreams(tokens)
+    const startVestResult = await vestingContract.createVestingStreams(
+      tokens,
+      transactionOverrides,
+    )
 
     return startVestResult
   }
@@ -105,6 +111,7 @@ class VestingTransactions extends BaseTransactions {
   protected async _releaseVestedFundsTransaction({
     vestingModuleId,
     streamIds,
+    transactionOverrides = {},
   }: ReleaseVestedFundsConfig): Promise<TransactionFormat> {
     validateAddress(vestingModuleId)
     if (this._shouldRequireSigner) this._requireSigner()
@@ -112,6 +119,7 @@ class VestingTransactions extends BaseTransactions {
     const vestingContract = this._getVestingContract(vestingModuleId)
     const releaseFundsResult = await vestingContract.releaseFromVesting(
       streamIds,
+      transactionOverrides,
     )
 
     return releaseFundsResult
@@ -187,33 +195,27 @@ export class VestingClient extends VestingTransactions {
   }
 
   // Write actions
-  async submitCreateVestingModuleTransaction({
-    beneficiary,
-    vestingPeriodSeconds,
-  }: CreateVestingConfig): Promise<{
+  async submitCreateVestingModuleTransaction(
+    createVestingArgs: CreateVestingConfig,
+  ): Promise<{
     tx: ContractTransaction
   }> {
-    const createVestingTx = await this._createVestingModuleTransaction({
-      beneficiary,
-      vestingPeriodSeconds,
-    })
+    const createVestingTx = await this._createVestingModuleTransaction(
+      createVestingArgs,
+    )
     if (!this._isContractTransaction(createVestingTx))
       throw new Error('Invalid response')
 
     return { tx: createVestingTx }
   }
 
-  async createVestingModule({
-    beneficiary,
-    vestingPeriodSeconds,
-  }: CreateVestingConfig): Promise<{
+  async createVestingModule(createVestingArgs: CreateVestingConfig): Promise<{
     vestingModuleId: string
     event: Event
   }> {
-    const { tx } = await this.submitCreateVestingModuleTransaction({
-      beneficiary,
-      vestingPeriodSeconds,
-    })
+    const { tx } = await this.submitCreateVestingModuleTransaction(
+      createVestingArgs,
+    )
     const events = await getTransactionEvents(
       tx,
       this.eventTopics.createVestingModule,
@@ -228,59 +230,46 @@ export class VestingClient extends VestingTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitStartVestTransaction({
-    vestingModuleId,
-    tokens,
-  }: StartVestConfig): Promise<{
+  async submitStartVestTransaction(startVestArgs: StartVestConfig): Promise<{
     tx: ContractTransaction
   }> {
-    const startVestTx = await this._startVestTransaction({
-      vestingModuleId,
-      tokens,
-    })
+    const startVestTx = await this._startVestTransaction(startVestArgs)
     if (!this._isContractTransaction(startVestTx))
       throw new Error('Invalid response')
 
     return { tx: startVestTx }
   }
 
-  async startVest({ vestingModuleId, tokens }: StartVestConfig): Promise<{
+  async startVest(startVestArgs: StartVestConfig): Promise<{
     events: Event[]
   }> {
-    const { tx } = await this.submitStartVestTransaction({
-      vestingModuleId,
-      tokens,
-    })
+    const { tx } = await this.submitStartVestTransaction(startVestArgs)
     const events = await getTransactionEvents(tx, this.eventTopics.startVest)
     return { events }
   }
 
-  async submitReleaseVestedFundsTransaction({
-    vestingModuleId,
-    streamIds,
-  }: ReleaseVestedFundsConfig): Promise<{
+  async submitReleaseVestedFundsTransaction(
+    releaseFundsArgs: ReleaseVestedFundsConfig,
+  ): Promise<{
     tx: ContractTransaction
   }> {
-    const releaseFundsTx = await this._releaseVestedFundsTransaction({
-      vestingModuleId,
-      streamIds,
-    })
+    const releaseFundsTx = await this._releaseVestedFundsTransaction(
+      releaseFundsArgs,
+    )
     if (!this._isContractTransaction(releaseFundsTx))
       throw new Error('Invalid response')
 
     return { tx: releaseFundsTx }
   }
 
-  async releaseVestedFunds({
-    vestingModuleId,
-    streamIds,
-  }: ReleaseVestedFundsConfig): Promise<{
+  async releaseVestedFunds(
+    releaseFundsArgs: ReleaseVestedFundsConfig,
+  ): Promise<{
     events: Event[]
   }> {
-    const { tx } = await this.submitReleaseVestedFundsTransaction({
-      vestingModuleId,
-      streamIds,
-    })
+    const { tx } = await this.submitReleaseVestedFundsTransaction(
+      releaseFundsArgs,
+    )
     const events = await getTransactionEvents(
       tx,
       this.eventTopics.releaseVestedFunds,
@@ -458,40 +447,30 @@ class VestingGasEstimates extends VestingTransactions {
     })
   }
 
-  async createVestingModule({
-    beneficiary,
-    vestingPeriodSeconds,
-  }: CreateVestingConfig): Promise<BigNumber> {
-    const gasEstimate = await this._createVestingModuleTransaction({
-      beneficiary,
-      vestingPeriodSeconds,
-    })
+  async createVestingModule(
+    createVestingArgs: CreateVestingConfig,
+  ): Promise<BigNumber> {
+    const gasEstimate = await this._createVestingModuleTransaction(
+      createVestingArgs,
+    )
     if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
-  async startVest({
-    vestingModuleId,
-    tokens,
-  }: StartVestConfig): Promise<BigNumber> {
-    const gasEstimate = await this._startVestTransaction({
-      vestingModuleId,
-      tokens,
-    })
+  async startVest(startVestArgs: StartVestConfig): Promise<BigNumber> {
+    const gasEstimate = await this._startVestTransaction(startVestArgs)
     if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
-  async releaseVestedFunds({
-    vestingModuleId,
-    streamIds,
-  }: ReleaseVestedFundsConfig): Promise<BigNumber> {
-    const gasEstimate = await this._releaseVestedFundsTransaction({
-      vestingModuleId,
-      streamIds,
-    })
+  async releaseVestedFunds(
+    releaseFundsArgs: ReleaseVestedFundsConfig,
+  ): Promise<BigNumber> {
+    const gasEstimate = await this._releaseVestedFundsTransaction(
+      releaseFundsArgs,
+    )
     if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
@@ -520,40 +499,28 @@ class VestingCallData extends VestingTransactions {
     })
   }
 
-  async createVestingModule({
-    beneficiary,
-    vestingPeriodSeconds,
-  }: CreateVestingConfig): Promise<CallData> {
-    const callData = await this._createVestingModuleTransaction({
-      beneficiary,
-      vestingPeriodSeconds,
-    })
+  async createVestingModule(
+    createVestingArgs: CreateVestingConfig,
+  ): Promise<CallData> {
+    const callData = await this._createVestingModuleTransaction(
+      createVestingArgs,
+    )
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData
   }
 
-  async startVest({
-    vestingModuleId,
-    tokens,
-  }: StartVestConfig): Promise<CallData> {
-    const callData = await this._startVestTransaction({
-      vestingModuleId,
-      tokens,
-    })
+  async startVest(startVestArgs: StartVestConfig): Promise<CallData> {
+    const callData = await this._startVestTransaction(startVestArgs)
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData
   }
 
-  async releaseVestedFunds({
-    vestingModuleId,
-    streamIds,
-  }: ReleaseVestedFundsConfig): Promise<CallData> {
-    const callData = await this._releaseVestedFundsTransaction({
-      vestingModuleId,
-      streamIds,
-    })
+  async releaseVestedFunds(
+    releaseFundsArgs: ReleaseVestedFundsConfig,
+  ): Promise<CallData> {
+    const callData = await this._releaseVestedFundsTransaction(releaseFundsArgs)
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData
