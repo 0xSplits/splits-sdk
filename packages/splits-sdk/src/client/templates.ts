@@ -66,6 +66,7 @@ class TemplatesTransactions extends BaseTransactions {
     tranches,
     nonWaterfallRecipientAddress = AddressZero,
     nonWaterfallRecipientTrancheIndex = undefined,
+    transactionOverrides = {},
   }: CreateRecoupConfig): Promise<TransactionFormat> {
     validateAddress(token)
     validateAddress(nonWaterfallRecipientAddress)
@@ -98,6 +99,7 @@ class TemplatesTransactions extends BaseTransactions {
       formattedNonWaterfallRecipientTrancheIndex,
       recoupTranches,
       trancheSizes,
+      transactionOverrides,
     )
 
     return createRecoupResult
@@ -158,41 +160,25 @@ export class TemplatesClient extends TemplatesTransactions {
   }
 
   // Write actions
-  async submitCreateRecoupTransaction({
-    token,
-    tranches,
-    nonWaterfallRecipientAddress = AddressZero,
-    nonWaterfallRecipientTrancheIndex = undefined,
-  }: CreateRecoupConfig): Promise<{
+  async submitCreateRecoupTransaction(
+    createRecoupArgs: CreateRecoupConfig,
+  ): Promise<{
     tx: ContractTransaction
   }> {
-    const createRecoupTx = await this._createRecoupTransaction({
-      token,
-      tranches,
-      nonWaterfallRecipientAddress,
-      nonWaterfallRecipientTrancheIndex,
-    })
+    const createRecoupTx = await this._createRecoupTransaction(createRecoupArgs)
     if (!this._isContractTransaction(createRecoupTx))
       throw new Error('Invalid response')
 
     return { tx: createRecoupTx }
   }
 
-  async createRecoup({
-    token,
-    tranches,
-    nonWaterfallRecipientAddress = AddressZero,
-    nonWaterfallRecipientTrancheIndex = undefined,
-  }: CreateRecoupConfig): Promise<{
+  async createRecoup(createRecoupArgs: CreateRecoupConfig): Promise<{
     waterfallModuleId: string
     event: Event
   }> {
-    const { tx: createRecoupTx } = await this.submitCreateRecoupTransaction({
-      token,
-      tranches,
-      nonWaterfallRecipientAddress,
-      nonWaterfallRecipientTrancheIndex,
-    })
+    const { tx: createRecoupTx } = await this.submitCreateRecoupTransaction(
+      createRecoupArgs,
+    )
     const events = await getTransactionEvents(
       createRecoupTx,
       this.eventTopics.createRecoup,
@@ -230,18 +216,8 @@ class TemplatesGasEstimates extends TemplatesTransactions {
     })
   }
 
-  async createRecoup({
-    token,
-    tranches,
-    nonWaterfallRecipientAddress = AddressZero,
-    nonWaterfallRecipientTrancheIndex = undefined,
-  }: CreateRecoupConfig): Promise<BigNumber> {
-    const gasEstimate = await this._createRecoupTransaction({
-      token,
-      tranches,
-      nonWaterfallRecipientAddress,
-      nonWaterfallRecipientTrancheIndex,
-    })
+  async createRecoup(createRecoupArgs: CreateRecoupConfig): Promise<BigNumber> {
+    const gasEstimate = await this._createRecoupTransaction(createRecoupArgs)
     if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
@@ -270,18 +246,8 @@ class TemplatesCallData extends TemplatesTransactions {
     })
   }
 
-  async createRecoup({
-    token,
-    tranches,
-    nonWaterfallRecipientAddress = AddressZero,
-    nonWaterfallRecipientTrancheIndex = undefined,
-  }: CreateRecoupConfig): Promise<CallData> {
-    const callData = await this._createRecoupTransaction({
-      token,
-      tranches,
-      nonWaterfallRecipientAddress,
-      nonWaterfallRecipientTrancheIndex,
-    })
+  async createRecoup(createRecoupArgs: CreateRecoupConfig): Promise<CallData> {
+    const callData = await this._createRecoupTransaction(createRecoupArgs)
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData

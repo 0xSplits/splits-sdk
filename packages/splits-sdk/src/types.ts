@@ -256,4 +256,4 @@ export type CreateRecoupConfig = {
   tranches: RecoupTrancheInput[]
   nonWaterfallRecipientAddress?: string
   nonWaterfallRecipientTrancheIndex?: number
-}
+} & TransactionOverrides

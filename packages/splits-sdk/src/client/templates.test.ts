@@ -197,6 +197,7 @@ describe('Template writes', () => {
         tranches.length,
         RECOUP_TRANCHE_RECIPIENTS,
         TRANCHE_SIZES,
+        {},
       )
 
       expect(getTransactionEventsSpy).toBeCalledWith(
