@@ -198,6 +198,7 @@ describe('Waterfall writes', () => {
         AddressZero,
         TRANCHE_RECIPIENTS,
         TRANCHE_SIZES,
+        {},
       )
       expect(getTransactionEventsSpy).toBeCalledWith(createWaterfallResult, [
         waterfallClient.eventTopics.createWaterfallModule[0],
@@ -227,6 +228,7 @@ describe('Waterfall writes', () => {
         '0xnonWaterfallRecipient',
         TRANCHE_RECIPIENTS,
         TRANCHE_SIZES,
+        {},
       )
       expect(getTransactionEventsSpy).toBeCalledWith(createWaterfallResult, [
         waterfallClient.eventTopics.createWaterfallModule[0],
@@ -290,7 +292,7 @@ describe('Waterfall writes', () => {
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(waterfallModuleId)
-      expect(moduleWriteActions.waterfallFunds).toBeCalled()
+      expect(moduleWriteActions.waterfallFunds).toBeCalledWith({})
       expect(moduleWriteActions.waterfallFundsPull).not.toBeCalled()
       expect(getTransactionEventsSpy).toBeCalledWith(waterfallFundsResult, [
         waterfallClient.eventTopics.waterfallFunds[0],
@@ -306,7 +308,7 @@ describe('Waterfall writes', () => {
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(waterfallModuleId)
       expect(moduleWriteActions.waterfallFunds).not.toBeCalled()
-      expect(moduleWriteActions.waterfallFundsPull).toBeCalled()
+      expect(moduleWriteActions.waterfallFundsPull).toBeCalledWith({})
       expect(getTransactionEventsSpy).toBeCalledWith(waterfallFundsPullResult, [
         waterfallClient.eventTopics.waterfallFunds[0],
       ])
@@ -436,6 +438,7 @@ describe('Waterfall writes', () => {
       expect(moduleWriteActions.recoverNonWaterfallFunds).toBeCalledWith(
         token,
         recipient,
+        {},
       )
       expect(getTransactionEventsSpy).toBeCalledWith(
         recoverNonWaterfallFundsResult,
@@ -470,6 +473,7 @@ describe('Waterfall writes', () => {
       expect(moduleWriteActions.recoverNonWaterfallFunds).toBeCalledWith(
         token,
         nonWaterfallRecipient,
+        {},
       )
       expect(getTransactionEventsSpy).toBeCalledWith(
         recoverNonWaterfallFundsResult,
@@ -529,7 +533,7 @@ describe('Waterfall writes', () => {
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(waterfallModuleId)
       expect(validateAddress).toBeCalledWith(address)
-      expect(moduleWriteActions.withdraw).toBeCalledWith(address)
+      expect(moduleWriteActions.withdraw).toBeCalledWith(address, {})
       expect(getTransactionEventsSpy).toBeCalledWith(withdrawResult, [
         waterfallClient.eventTopics.withdrawPullFunds[0],
       ])

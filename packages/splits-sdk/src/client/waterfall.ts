@@ -85,6 +85,7 @@ class WaterfallTransactions extends BaseTransactions {
     token,
     tranches,
     nonWaterfallRecipient = AddressZero,
+    transactionOverrides = {},
   }: CreateWaterfallConfig): Promise<TransactionFormat> {
     validateAddress(token)
     validateAddress(nonWaterfallRecipient)
@@ -105,6 +106,7 @@ class WaterfallTransactions extends BaseTransactions {
         nonWaterfallRecipient,
         recipients,
         trancheSizes,
+        transactionOverrides,
       )
 
     return createWaterfallResult
@@ -113,14 +115,15 @@ class WaterfallTransactions extends BaseTransactions {
   protected async _waterfallFundsTransaction({
     waterfallModuleId,
     usePull = false,
+    transactionOverrides = {},
   }: WaterfallFundsConfig): Promise<TransactionFormat> {
     validateAddress(waterfallModuleId)
     if (this._shouldRequireSigner) this._requireSigner()
 
     const waterfallContract = this._getWaterfallContract(waterfallModuleId)
     const waterfallFundsResult = usePull
-      ? await waterfallContract.waterfallFundsPull()
-      : await waterfallContract.waterfallFunds()
+      ? await waterfallContract.waterfallFundsPull(transactionOverrides)
+      : await waterfallContract.waterfallFunds(transactionOverrides)
 
     return waterfallFundsResult
   }
@@ -129,6 +132,7 @@ class WaterfallTransactions extends BaseTransactions {
     waterfallModuleId,
     token,
     recipient = AddressZero,
+    transactionOverrides = {},
   }: RecoverNonWaterfallFundsConfig): Promise<TransactionFormat> {
     validateAddress(waterfallModuleId)
     validateAddress(token)
@@ -144,6 +148,7 @@ class WaterfallTransactions extends BaseTransactions {
     const recoverFundsResult = await waterfallContract.recoverNonWaterfallFunds(
       token,
       recipient,
+      transactionOverrides,
     )
 
     return recoverFundsResult
@@ -152,13 +157,17 @@ class WaterfallTransactions extends BaseTransactions {
   protected async _withdrawPullFundsTransaction({
     waterfallModuleId,
     address,
+    transactionOverrides = {},
   }: WithdrawWaterfallPullFundsConfig): Promise<TransactionFormat> {
     validateAddress(waterfallModuleId)
     validateAddress(address)
     this._requireSigner()
 
     const waterfallContract = this._getWaterfallContract(waterfallModuleId)
-    const withdrawResult = await waterfallContract.withdraw(address)
+    const withdrawResult = await waterfallContract.withdraw(
+      address,
+      transactionOverrides,
+    )
 
     return withdrawResult
   }
@@ -332,38 +341,28 @@ export class WaterfallClient extends WaterfallTransactions {
   }
 
   // Write actions
-  async submitCreateWaterfallModuleTransaction({
-    token,
-    tranches,
-    nonWaterfallRecipient = AddressZero,
-  }: CreateWaterfallConfig): Promise<{
+  async submitCreateWaterfallModuleTransaction(
+    createWaterfallArgs: CreateWaterfallConfig,
+  ): Promise<{
     tx: ContractTransaction
   }> {
-    const createWaterfallTx = await this._createWaterfallModuleTransaction({
-      token,
-      tranches,
-      nonWaterfallRecipient,
-    })
+    const createWaterfallTx = await this._createWaterfallModuleTransaction(
+      createWaterfallArgs,
+    )
     if (!this._isContractTransaction(createWaterfallTx))
       throw new Error('Invalid response')
 
     return { tx: createWaterfallTx }
   }
 
-  async createWaterfallModule({
-    token,
-    tranches,
-    nonWaterfallRecipient,
-  }: CreateWaterfallConfig): Promise<{
+  async createWaterfallModule(
+    createWaterfallArgs: CreateWaterfallConfig,
+  ): Promise<{
     waterfallModuleId: string
     event: Event
   }> {
     const { tx: createWaterfallTx } =
-      await this.submitCreateWaterfallModuleTransaction({
-        token,
-        tranches,
-        nonWaterfallRecipient,
-      })
+      await this.submitCreateWaterfallModuleTransaction(createWaterfallArgs)
     const events = await getTransactionEvents(
       createWaterfallTx,
       this.eventTopics.createWaterfallModule,
@@ -378,30 +377,25 @@ export class WaterfallClient extends WaterfallTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitWaterfallFundsTransaction({
-    waterfallModuleId,
-    usePull = false,
-  }: WaterfallFundsConfig): Promise<{
+  async submitWaterfallFundsTransaction(
+    waterfallFundsArgs: WaterfallFundsConfig,
+  ): Promise<{
     tx: ContractTransaction
   }> {
-    const waterfallFundsTx = await this._waterfallFundsTransaction({
-      waterfallModuleId,
-      usePull,
-    })
+    const waterfallFundsTx = await this._waterfallFundsTransaction(
+      waterfallFundsArgs,
+    )
     if (!this._isContractTransaction(waterfallFundsTx))
       throw new Error('Invalid response')
 
     return { tx: waterfallFundsTx }
   }
 
-  async waterfallFunds({
-    waterfallModuleId,
-    usePull,
-  }: WaterfallFundsConfig): Promise<{
+  async waterfallFunds(waterfallFundsArgs: WaterfallFundsConfig): Promise<{
     event: Event
   }> {
     const { tx: waterfallFundsTx } = await this.submitWaterfallFundsTransaction(
-      { waterfallModuleId, usePull },
+      waterfallFundsArgs,
     )
     const events = await getTransactionEvents(
       waterfallFundsTx,
@@ -416,37 +410,27 @@ export class WaterfallClient extends WaterfallTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitRecoverNonWaterfallFundsTransaction({
-    waterfallModuleId,
-    token,
-    recipient = AddressZero,
-  }: RecoverNonWaterfallFundsConfig): Promise<{
+  async submitRecoverNonWaterfallFundsTransaction(
+    recoverFundsArgs: RecoverNonWaterfallFundsConfig,
+  ): Promise<{
     tx: ContractTransaction
   }> {
-    const recoverFundsTx = await this._recoverNonWaterfallFundsTransaction({
-      waterfallModuleId,
-      token,
-      recipient,
-    })
+    const recoverFundsTx = await this._recoverNonWaterfallFundsTransaction(
+      recoverFundsArgs,
+    )
     if (!this._isContractTransaction(recoverFundsTx))
       throw new Error('Invalid response')
 
     return { tx: recoverFundsTx }
   }
 
-  async recoverNonWaterfallFunds({
-    waterfallModuleId,
-    token,
-    recipient,
-  }: RecoverNonWaterfallFundsConfig): Promise<{
+  async recoverNonWaterfallFunds(
+    recoverFundsArgs: RecoverNonWaterfallFundsConfig,
+  ): Promise<{
     event: Event
   }> {
     const { tx: recoverFundsTx } =
-      await this.submitRecoverNonWaterfallFundsTransaction({
-        waterfallModuleId,
-        token,
-        recipient,
-      })
+      await this.submitRecoverNonWaterfallFundsTransaction(recoverFundsArgs)
     const events = await getTransactionEvents(
       recoverFundsTx,
       this.eventTopics.recoverNonWaterfallFunds,
@@ -460,32 +444,28 @@ export class WaterfallClient extends WaterfallTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitWithdrawPullFundsTransaction({
-    waterfallModuleId,
-    address,
-  }: WithdrawWaterfallPullFundsConfig): Promise<{
+  async submitWithdrawPullFundsTransaction(
+    withdrawFundsArgs: WithdrawWaterfallPullFundsConfig,
+  ): Promise<{
     tx: ContractTransaction
   }> {
-    const withdrawTx = await this._withdrawPullFundsTransaction({
-      waterfallModuleId,
-      address,
-    })
+    const withdrawTx = await this._withdrawPullFundsTransaction(
+      withdrawFundsArgs,
+    )
     if (!this._isContractTransaction(withdrawTx))
       throw new Error('Invalid response')
 
     return { tx: withdrawTx }
   }
 
-  async withdrawPullFunds({
-    waterfallModuleId,
-    address,
-  }: WithdrawWaterfallPullFundsConfig): Promise<{
+  async withdrawPullFunds(
+    withdrawFundsArgs: WithdrawWaterfallPullFundsConfig,
+  ): Promise<{
     event: Event
   }> {
-    const { tx: withdrawTx } = await this.submitWithdrawPullFundsTransaction({
-      waterfallModuleId,
-      address,
-    })
+    const { tx: withdrawTx } = await this.submitWithdrawPullFundsTransaction(
+      withdrawFundsArgs,
+    )
     const events = await getTransactionEvents(
       withdrawTx,
       this.eventTopics.withdrawPullFunds,
@@ -637,57 +617,43 @@ class WaterfallGasEstimates extends WaterfallTransactions {
     })
   }
 
-  async createWaterfallModule({
-    token,
-    tranches,
-    nonWaterfallRecipient = AddressZero,
-  }: CreateWaterfallConfig): Promise<BigNumber> {
-    const gasEstimate = await this._createWaterfallModuleTransaction({
-      token,
-      tranches,
-      nonWaterfallRecipient,
-    })
+  async createWaterfallModule(
+    createWaterfallArgs: CreateWaterfallConfig,
+  ): Promise<BigNumber> {
+    const gasEstimate = await this._createWaterfallModuleTransaction(
+      createWaterfallArgs,
+    )
     if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
-  async waterfallFunds({
-    waterfallModuleId,
-    usePull = false,
-  }: WaterfallFundsConfig): Promise<BigNumber> {
-    const gasEstimate = await this._waterfallFundsTransaction({
-      waterfallModuleId,
-      usePull,
-    })
+  async waterfallFunds(
+    waterfallFundsArgs: WaterfallFundsConfig,
+  ): Promise<BigNumber> {
+    const gasEstimate = await this._waterfallFundsTransaction(
+      waterfallFundsArgs,
+    )
     if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
-  async recoverNonWaterfallFunds({
-    waterfallModuleId,
-    token,
-    recipient = AddressZero,
-  }: RecoverNonWaterfallFundsConfig): Promise<BigNumber> {
-    const gasEstimate = await this._recoverNonWaterfallFundsTransaction({
-      waterfallModuleId,
-      token,
-      recipient,
-    })
+  async recoverNonWaterfallFunds(
+    recoverFundsArgs: RecoverNonWaterfallFundsConfig,
+  ): Promise<BigNumber> {
+    const gasEstimate = await this._recoverNonWaterfallFundsTransaction(
+      recoverFundsArgs,
+    )
     if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
-  async withdrawPullFunds({
-    waterfallModuleId,
-    address,
-  }: WithdrawWaterfallPullFundsConfig): Promise<BigNumber> {
-    const gasEstimate = await this._withdrawPullFundsTransaction({
-      waterfallModuleId,
-      address,
-    })
+  async withdrawPullFunds(
+    withdrawArgs: WithdrawWaterfallPullFundsConfig,
+  ): Promise<BigNumber> {
+    const gasEstimate = await this._withdrawPullFundsTransaction(withdrawArgs)
     if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
