@@ -3,15 +3,24 @@ import type { Provider } from '@ethersproject/abstract-provider'
 import type { Signer } from '@ethersproject/abstract-signer'
 import { BigNumber, BigNumberish } from '@ethersproject/bignumber'
 import { ContractTransaction } from '@ethersproject/contracts'
+import { AccessListish } from '@ethersproject/transactions'
 
 import { TransactionType } from './constants'
 import type { SplitMain as SplitMainEthereumType } from './typechain/SplitMain/ethereum'
 import type { SplitMain as SplitMainPolygonType } from './typechain/SplitMain/polygon'
 
-type TransactionOverrides = {
+interface TransactionOverrides {
   transactionOverrides?: {
+    gasLimit?: BigNumberish | Promise<BigNumberish>
+    gasPrice?: BigNumberish | Promise<BigNumberish>
     maxFeePerGas?: BigNumberish | Promise<BigNumberish>
     maxPriorityFeePerGas?: BigNumberish | Promise<BigNumberish>
+    nonce?: BigNumberish | Promise<BigNumberish>
+    type?: number
+    accessList?: AccessListish
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    customData?: Record<string, any>
+    ccipReadEnabled?: boolean
   }
 }
 
