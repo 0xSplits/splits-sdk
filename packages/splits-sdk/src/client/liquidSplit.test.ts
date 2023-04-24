@@ -237,6 +237,7 @@ describe('Liquid split writes', () => {
         NFT_COUNTS,
         DISTRIBUTOR_FEE,
         CONTROLLER_ADDRESS,
+        {},
       )
       expect(getTransactionEventsSpy).toBeCalledWith(
         createLiquidSplitCloneResult,
@@ -270,6 +271,7 @@ describe('Liquid split writes', () => {
         NFT_COUNTS,
         DISTRIBUTOR_FEE,
         '0xowner',
+        {},
       )
       expect(getTransactionEventsSpy).toBeCalledWith(
         createLiquidSplitCloneResult,
@@ -347,6 +349,7 @@ describe('Liquid split writes', () => {
         token,
         holders.map((h) => h.address),
         CONTROLLER_ADDRESS,
+        {},
       )
       expect(getTransactionEventsSpy).toBeCalledWith(
         distributeFundsResult,
@@ -368,6 +371,7 @@ describe('Liquid split writes', () => {
         AddressZero,
         holders.map((h) => h.address),
         CONTROLLER_ADDRESS,
+        {},
       )
       expect(getTransactionEventsSpy).toBeCalledWith(
         distributeFundsResult,
@@ -390,6 +394,7 @@ describe('Liquid split writes', () => {
         token,
         holders.map((h) => h.address),
         '0xdistributor',
+        {},
       )
       expect(getTransactionEventsSpy).toBeCalledWith(
         distributeFundsResult,
@@ -468,7 +473,7 @@ describe('Liquid split writes', () => {
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(liquidSplitId)
       expect(validateAddress).toBeCalledWith(newOwner)
-      expect(moduleWriteActions.transferOwnership).toBeCalledWith(newOwner)
+      expect(moduleWriteActions.transferOwnership).toBeCalledWith(newOwner, {})
       expect(getTransactionEventsSpy).toBeCalledWith(transferOwnershipResult, [
         liquidSplitClient.eventTopics.transferOwnership[0],
       ])

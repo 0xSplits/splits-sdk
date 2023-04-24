@@ -207,18 +207,18 @@ export type CreateLiquidSplitConfig = {
   // with it is out there, going to leave it in. But if the invalid value ('false')
   // is passed in, will raise an error.
   createClone?: boolean
-}
+} & TransactionOverrides
 
 export type DistributeLiquidSplitTokenConfig = {
   liquidSplitId: string
   token: string
   distributorAddress?: string
-}
+} & TransactionOverrides
 
 export type TransferLiquidSplitOwnershipConfig = {
   liquidSplitId: string
   newOwner: string
-}
+} & TransactionOverrides
 
 export type LiquidSplit = {
   type: 'LiquidSplit'

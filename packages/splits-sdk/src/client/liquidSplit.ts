@@ -61,6 +61,8 @@ const liquidSplitFactoryInterface = new Interface(
 const liquidSplitInterface = new Interface(LIQUID_SPLIT_ARTIFACT.abi)
 const splitMainInterface = new Interface(SPLIT_MAIN_ARTIFACT_POLYGON.abi)
 
+const DEFAULT_CREATE_CLONE = true
+
 class LiquidSplitTransactions extends BaseTransactions {
   private readonly _liquidSplitFactoryContract:
     | ContractCallData
@@ -91,7 +93,8 @@ class LiquidSplitTransactions extends BaseTransactions {
     recipients,
     distributorFeePercent,
     owner = undefined,
-    createClone = true,
+    createClone = DEFAULT_CREATE_CLONE,
+    transactionOverrides = {},
   }: CreateLiquidSplitConfig): Promise<TransactionFormat> {
     validateRecipients(recipients, LIQUID_SPLITS_MAX_PRECISION_DECIMALS)
     validateDistributorFeePercent(distributorFeePercent)
@@ -119,6 +122,7 @@ class LiquidSplitTransactions extends BaseTransactions {
         nftAmounts,
         distributorFee,
         ownerAddress,
+        transactionOverrides,
       )
 
     return createSplitResult
@@ -128,6 +132,7 @@ class LiquidSplitTransactions extends BaseTransactions {
     liquidSplitId,
     token,
     distributorAddress,
+    transactionOverrides = {},
   }: DistributeLiquidSplitTokenConfig): Promise<TransactionFormat> {
     validateAddress(liquidSplitId)
     validateAddress(token)
@@ -156,6 +161,7 @@ class LiquidSplitTransactions extends BaseTransactions {
       token,
       accounts,
       distributorPayoutAddress,
+      transactionOverrides,
     )
 
     return distributeTokenResult
@@ -164,6 +170,7 @@ class LiquidSplitTransactions extends BaseTransactions {
   protected async _transferOwnershipTransaction({
     liquidSplitId,
     newOwner,
+    transactionOverrides = {},
   }: TransferLiquidSplitOwnershipConfig): Promise<TransactionFormat> {
     validateAddress(liquidSplitId)
     validateAddress(newOwner)
@@ -175,6 +182,7 @@ class LiquidSplitTransactions extends BaseTransactions {
     const liquidSplitContract = this._getLiquidSplitContract(liquidSplitId)
     const transferOwnershipResult = await liquidSplitContract.transferOwnership(
       newOwner,
+      transactionOverrides,
     )
 
     return transferOwnershipResult
@@ -311,47 +319,35 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
   }
 
   // Write actions
-  async submitCreateLiquidSplitTransaction({
-    recipients,
-    distributorFeePercent,
-    owner = undefined,
-    createClone = false,
-  }: CreateLiquidSplitConfig): Promise<{
+  async submitCreateLiquidSplitTransaction(
+    createLiquidSplitArgs: CreateLiquidSplitConfig,
+  ): Promise<{
     tx: ContractTransaction
   }> {
-    const createSplitTx = await this._createLiquidSplitTransaction({
-      recipients,
-      distributorFeePercent,
-      owner,
-      createClone,
-    })
+    const createSplitTx = await this._createLiquidSplitTransaction(
+      createLiquidSplitArgs,
+    )
     if (!this._isContractTransaction(createSplitTx))
       throw new Error('Invalid response')
 
     return { tx: createSplitTx }
   }
 
-  async createLiquidSplit({
-    recipients,
-    distributorFeePercent,
-    owner,
-    createClone = true,
-  }: CreateLiquidSplitConfig): Promise<{
+  async createLiquidSplit(
+    createLiquidSplitArgs: CreateLiquidSplitConfig,
+  ): Promise<{
     liquidSplitId: string
     event: Event
   }> {
     const { tx: createSplitTx } = await this.submitCreateLiquidSplitTransaction(
-      {
-        recipients,
-        distributorFeePercent,
-        owner,
-        createClone,
-      },
+      createLiquidSplitArgs,
     )
 
-    const eventTopic = createClone
-      ? this.eventTopics.createLiquidSplit[0]
-      : this.eventTopics.createLiquidSplit[1]
+    const { createClone } = createLiquidSplitArgs
+    const eventTopic =
+      createClone ?? DEFAULT_CREATE_CLONE
+        ? this.eventTopics.createLiquidSplit[0]
+        : this.eventTopics.createLiquidSplit[1]
     const events = await getTransactionEvents(createSplitTx, [eventTopic])
     const event = events.length > 0 ? events[0] : undefined
     if (event && event.args)
@@ -363,38 +359,29 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitDistributeTokenTransaction({
-    liquidSplitId,
-    token,
-    distributorAddress,
-  }: DistributeLiquidSplitTokenConfig): Promise<{
+  async submitDistributeTokenTransaction(
+    distributeTokenArgs: DistributeLiquidSplitTokenConfig,
+  ): Promise<{
     tx: ContractTransaction
   }> {
-    const distributeTokenTx = await this._distributeTokenTransaction({
-      liquidSplitId,
-      token,
-      distributorAddress,
-    })
+    const distributeTokenTx = await this._distributeTokenTransaction(
+      distributeTokenArgs,
+    )
     if (!this._isContractTransaction(distributeTokenTx))
       throw new Error('Invalid response')
 
     return { tx: distributeTokenTx }
   }
 
-  async distributeToken({
-    liquidSplitId,
-    token,
-    distributorAddress,
-  }: DistributeLiquidSplitTokenConfig): Promise<{
+  async distributeToken(
+    distributeTokenArgs: DistributeLiquidSplitTokenConfig,
+  ): Promise<{
     event: Event
   }> {
     const { tx: distributeTokenTx } =
-      await this.submitDistributeTokenTransaction({
-        liquidSplitId,
-        token,
-        distributorAddress,
-      })
+      await this.submitDistributeTokenTransaction(distributeTokenArgs)
 
+    const { token } = distributeTokenArgs
     const eventTopic =
       token === AddressZero
         ? this.eventTopics.distributeToken[1]
@@ -406,33 +393,27 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitTransferOwnershipTransaction({
-    liquidSplitId,
-    newOwner,
-  }: TransferLiquidSplitOwnershipConfig): Promise<{
+  async submitTransferOwnershipTransaction(
+    transferOwnershipArgs: TransferLiquidSplitOwnershipConfig,
+  ): Promise<{
     tx: ContractTransaction
   }> {
-    const transferOwnershipTx = await this._transferOwnershipTransaction({
-      liquidSplitId,
-      newOwner,
-    })
+    const transferOwnershipTx = await this._transferOwnershipTransaction(
+      transferOwnershipArgs,
+    )
     if (!this._isContractTransaction(transferOwnershipTx))
       throw new Error('Invalid response')
 
     return { tx: transferOwnershipTx }
   }
 
-  async transferOwnership({
-    liquidSplitId,
-    newOwner,
-  }: TransferLiquidSplitOwnershipConfig): Promise<{
+  async transferOwnership(
+    transferOwnershipArgs: TransferLiquidSplitOwnershipConfig,
+  ): Promise<{
     event: Event
   }> {
     const { tx: transferOwnershipTx } =
-      await this.submitTransferOwnershipTransaction({
-        liquidSplitId,
-        newOwner,
-      })
+      await this.submitTransferOwnershipTransaction(transferOwnershipArgs)
     const events = await getTransactionEvents(
       transferOwnershipTx,
       this.eventTopics.transferOwnership,
@@ -564,46 +545,34 @@ class LiquidSplitGasEstimates extends LiquidSplitTransactions {
     })
   }
 
-  async createLiquidSplit({
-    recipients,
-    distributorFeePercent,
-    owner = undefined,
-    createClone = true,
-  }: CreateLiquidSplitConfig): Promise<BigNumber> {
-    const gasEstimate = await this._createLiquidSplitTransaction({
-      recipients,
-      distributorFeePercent,
-      owner,
-      createClone,
-    })
+  async createLiquidSplit(
+    createLiquidSplitArgs: CreateLiquidSplitConfig,
+  ): Promise<BigNumber> {
+    const gasEstimate = await this._createLiquidSplitTransaction(
+      createLiquidSplitArgs,
+    )
     if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
-  async distributeToken({
-    liquidSplitId,
-    token,
-    distributorAddress,
-  }: DistributeLiquidSplitTokenConfig): Promise<BigNumber> {
-    const gasEstimate = await this._distributeTokenTransaction({
-      liquidSplitId,
-      token,
-      distributorAddress,
-    })
+  async distributeToken(
+    distributeTokenArgs: DistributeLiquidSplitTokenConfig,
+  ): Promise<BigNumber> {
+    const gasEstimate = await this._distributeTokenTransaction(
+      distributeTokenArgs,
+    )
     if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
-  async transferOwnership({
-    liquidSplitId,
-    newOwner,
-  }: TransferLiquidSplitOwnershipConfig): Promise<BigNumber> {
-    const gasEstimate = await this._transferOwnershipTransaction({
-      liquidSplitId,
-      newOwner,
-    })
+  async transferOwnership(
+    transferOwnershipArgs: TransferLiquidSplitOwnershipConfig,
+  ): Promise<BigNumber> {
+    const gasEstimate = await this._transferOwnershipTransaction(
+      transferOwnershipArgs,
+    )
     if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
@@ -632,46 +601,32 @@ class LiquidSplitCallData extends LiquidSplitTransactions {
     })
   }
 
-  async createLiquidSplit({
-    recipients,
-    distributorFeePercent,
-    owner = undefined,
-    createClone = true,
-  }: CreateLiquidSplitConfig): Promise<CallData> {
-    const callData = await this._createLiquidSplitTransaction({
-      recipients,
-      distributorFeePercent,
-      owner,
-      createClone,
-    })
+  async createLiquidSplit(
+    createLiquidSplitArgs: CreateLiquidSplitConfig,
+  ): Promise<CallData> {
+    const callData = await this._createLiquidSplitTransaction(
+      createLiquidSplitArgs,
+    )
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData
   }
 
-  async distributeToken({
-    liquidSplitId,
-    token,
-    distributorAddress,
-  }: DistributeLiquidSplitTokenConfig): Promise<CallData> {
-    const callData = await this._distributeTokenTransaction({
-      liquidSplitId,
-      token,
-      distributorAddress,
-    })
+  async distributeToken(
+    distributeTokenArgs: DistributeLiquidSplitTokenConfig,
+  ): Promise<CallData> {
+    const callData = await this._distributeTokenTransaction(distributeTokenArgs)
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData
   }
 
-  async transferOwnership({
-    liquidSplitId,
-    newOwner,
-  }: TransferLiquidSplitOwnershipConfig): Promise<CallData> {
-    const callData = await this._transferOwnershipTransaction({
-      liquidSplitId,
-      newOwner,
-    })
+  async transferOwnership(
+    transferOwnershipArgs: TransferLiquidSplitOwnershipConfig,
+  ): Promise<CallData> {
+    const callData = await this._transferOwnershipTransaction(
+      transferOwnershipArgs,
+    )
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData
