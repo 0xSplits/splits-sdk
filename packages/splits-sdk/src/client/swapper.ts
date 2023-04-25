@@ -25,12 +25,12 @@ import type {
   ContractQuoteParams,
   ContractSwapperExactInputParams,
   CreateSwapperConfig,
-  FlashConfig,
   SplitsClientConfig,
   TransactionConfig,
   TransactionFormat,
+  UniV3FlashSwapConfig,
 } from '../types'
-import { getTransactionEvents } from '../utils'
+import { getFormattedOracleParams, getTransactionEvents } from '../utils'
 import { validateAddress } from '../utils/validation'
 import { ContractCallData } from '../utils/multicall'
 
@@ -69,13 +69,16 @@ class SwapperTransactions extends BaseTransactions {
     paused = false,
     beneficiary,
     tokenToBeneficiary,
-    oracle,
+    oracleParams,
   }: CreateSwapperConfig): Promise<TransactionFormat> {
     validateAddress(owner)
     validateAddress(beneficiary)
     validateAddress(tokenToBeneficiary)
-    validateAddress(oracle)
+    // TODO
+    // validateOracleParams(oracleParams)
     if (this._shouldRequireSigner) this._requireSigner()
+
+    const formattedOracleParams = getFormattedOracleParams(oracleParams)
 
     const createSwapperResult =
       await this._swapperFactoryContract.createSwapper([
@@ -83,18 +86,19 @@ class SwapperTransactions extends BaseTransactions {
         paused,
         beneficiary,
         tokenToBeneficiary,
-        oracle,
+        formattedOracleParams,
       ])
 
     return createSwapperResult
   }
 
-  protected async _flashTransaction({
+  protected async _uniV3FlashSwapTransaction({
     swapperId,
     outputToken, // TODO: read from graphql
     excessRecipient,
     inputAssets,
-  }: FlashConfig): Promise<TransactionFormat> {
+    transactionTimeLimit = 30,
+  }: UniV3FlashSwapConfig): Promise<TransactionFormat> {
     validateAddress(swapperId)
     validateAddress(outputToken)
     // validateInputAssets(inputAssets) // TODO
@@ -112,7 +116,7 @@ class SwapperTransactions extends BaseTransactions {
 
     const uniV3SwapContract = this._getUniV3SwapContract()
     const swapRecipient = getUniV3SwapAddress(this._chainId)
-    const deadlineTime = Math.floor(Date.now() / 1000) + 30 // 30 seconds into future
+    const deadlineTime = Math.floor(Date.now() / 1000) + transactionTimeLimit
 
     const quoteParams: ContractQuoteParams[] = []
     const exactInputParams: ContractSwapperExactInputParams[] = []
@@ -215,45 +219,27 @@ export class SwapperClient extends SwapperTransactions {
   }
 
   // Write actions
-  async submitCreateSwapperTransaction({
-    owner,
-    paused,
-    beneficiary,
-    tokenToBeneficiary,
-    oracle,
-  }: CreateSwapperConfig): Promise<{
+  async submitCreateSwapperTransaction(
+    createSwapperArgs: CreateSwapperConfig,
+  ): Promise<{
     tx: ContractTransaction
   }> {
-    const createSwapperTx = await this._createSwapperTransaction({
-      owner,
-      paused,
-      beneficiary,
-      tokenToBeneficiary,
-      oracle,
-    })
+    const createSwapperTx = await this._createSwapperTransaction(
+      createSwapperArgs,
+    )
     if (!this._isContractTransaction(createSwapperTx))
       throw new Error('Invalid response')
 
     return { tx: createSwapperTx }
   }
 
-  async createSwapper({
-    owner,
-    paused,
-    beneficiary,
-    tokenToBeneficiary,
-    oracle,
-  }: CreateSwapperConfig): Promise<{
+  async createSwapper(createSwapperArgs: CreateSwapperConfig): Promise<{
     swapperId: string
     event: Event
   }> {
-    const { tx: createSwapperTx } = await this.submitCreateSwapperTransaction({
-      owner,
-      paused,
-      beneficiary,
-      tokenToBeneficiary,
-      oracle,
-    })
+    const { tx: createSwapperTx } = await this.submitCreateSwapperTransaction(
+      createSwapperArgs,
+    )
     const events = await getTransactionEvents(
       createSwapperTx,
       this.eventTopics.createSwapper,
@@ -268,40 +254,24 @@ export class SwapperClient extends SwapperTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitFlashTransaction({
-    swapperId,
-    outputToken, // TODO: read from graphql
-    excessRecipient,
-    inputAssets,
-  }: FlashConfig): Promise<{
+  async submitUniV3FlashSwapTransaction(
+    flashArgs: UniV3FlashSwapConfig,
+  ): Promise<{
     tx: ContractTransaction
   }> {
-    const flashTx = await this._flashTransaction({
-      swapperId,
-      outputToken,
-      excessRecipient,
-      inputAssets,
-    })
+    const flashTx = await this._uniV3FlashSwapTransaction(flashArgs)
     if (!this._isContractTransaction(flashTx))
       throw new Error('Invalid response')
 
     return { tx: flashTx }
   }
 
-  async flash({
-    swapperId,
-    outputToken, // TODO: read from graphql
-    excessRecipient,
-    inputAssets,
-  }: FlashConfig): Promise<{
+  async uniV3FlashSwap(flashArgs: UniV3FlashSwapConfig): Promise<{
     event: Event
   }> {
-    const { tx: flashTx } = await this.submitFlashTransaction({
-      swapperId,
-      outputToken,
-      excessRecipient,
-      inputAssets,
-    })
+    const { tx: flashTx } = await this.submitUniV3FlashSwapTransaction(
+      flashArgs,
+    )
     const events = await getTransactionEvents(flashTx, this.eventTopics.flash)
     const event = events.length > 0 ? events[0] : undefined
     if (event)
@@ -335,37 +305,17 @@ class SwapperGasEstimates extends SwapperTransactions {
     })
   }
 
-  async createSwapper({
-    owner,
-    paused,
-    beneficiary,
-    tokenToBeneficiary,
-    oracle,
-  }: CreateSwapperConfig): Promise<BigNumber> {
-    const gasEstimate = await this._createSwapperTransaction({
-      owner,
-      paused,
-      beneficiary,
-      tokenToBeneficiary,
-      oracle,
-    })
+  async createSwapper(
+    createSwapperArgs: CreateSwapperConfig,
+  ): Promise<BigNumber> {
+    const gasEstimate = await this._createSwapperTransaction(createSwapperArgs)
     if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
-  async flash({
-    swapperId,
-    outputToken, // TODO: read from graphql
-    excessRecipient,
-    inputAssets,
-  }: FlashConfig): Promise<BigNumber> {
-    const gasEstimate = await this._flashTransaction({
-      swapperId,
-      outputToken,
-      excessRecipient,
-      inputAssets,
-    })
+  async uniV3FlashSwap(flashArgs: UniV3FlashSwapConfig): Promise<BigNumber> {
+    const gasEstimate = await this._uniV3FlashSwapTransaction(flashArgs)
     if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
@@ -394,37 +344,17 @@ class SwapperCallData extends SwapperTransactions {
     })
   }
 
-  async createSwapper({
-    owner,
-    paused,
-    beneficiary,
-    tokenToBeneficiary,
-    oracle,
-  }: CreateSwapperConfig): Promise<CallData> {
-    const callData = await this._createSwapperTransaction({
-      owner,
-      paused,
-      beneficiary,
-      tokenToBeneficiary,
-      oracle,
-    })
+  async createSwapper(
+    createSwapperArgs: CreateSwapperConfig,
+  ): Promise<CallData> {
+    const callData = await this._createSwapperTransaction(createSwapperArgs)
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData
   }
 
-  async flash({
-    swapperId,
-    outputToken, // TODO: read from graphql
-    excessRecipient,
-    inputAssets,
-  }: FlashConfig): Promise<CallData> {
-    const callData = await this._flashTransaction({
-      swapperId,
-      outputToken,
-      excessRecipient,
-      inputAssets,
-    })
+  async uniV3FlashSwap(flashArgs: UniV3FlashSwapConfig): Promise<CallData> {
+    const callData = await this._uniV3FlashSwapTransaction(flashArgs)
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData

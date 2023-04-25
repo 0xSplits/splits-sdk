@@ -68,6 +68,6 @@ export type {
   VestingStream,
   VestingModule,
   CreateSwapperConfig,
-  FlashConfig,
+  UniV3FlashSwapConfig,
   CallData,
 } from './types'

@@ -293,10 +293,10 @@ export type CreateSwapperConfig = {
   paused?: boolean
   beneficiary: string
   tokenToBeneficiary: string
-  oracle: string
+  oracleParams: ParseOracleParams
 }
 
-export type FlashConfig = {
+export type UniV3FlashSwapConfig = {
   swapperId: string
   outputToken: string // TODO: read from graphql
   excessRecipient?: string // defaults to signer
@@ -306,7 +306,18 @@ export type FlashConfig = {
     amountIn: BigNumber
     amountOutMin: BigNumber
   }[]
+  transactionTimeLimit?: number
 }
+
+export type ParseOracleParams = {
+  address?: string
+  createOracleParams?: {
+    factory: string
+    data: string
+  }
+}
+
+export type ContractOracleParams = [string, [string, string]]
 
 export type QuoteParams = {
   quotePair: {

@@ -3,7 +3,7 @@ import type { Event } from '@ethersproject/contracts'
 import {
   getTransactionEvents,
   CreateSwapperConfig,
-  FlashConfig,
+  UniV3FlashSwapConfig,
 } from '@0xsplits/splits-sdk'
 
 import { SplitsContext } from '../context'
@@ -61,8 +61,8 @@ export const useCreateSwapper = (): {
   return { createSwapper, status, txHash, error }
 }
 
-export const useFlashFunds = (): {
-  flash: (arg0: FlashConfig) => Promise<Event[] | undefined>
+export const useUniV3FlashSwap = (): {
+  uniV3FlashSwap: (arg0: UniV3FlashSwapConfig) => Promise<Event[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -76,8 +76,8 @@ export const useFlashFunds = (): {
   const [txHash, setTxHash] = useState<string>()
   const [error, setError] = useState<RequestError>()
 
-  const flash = useCallback(
-    async (argsDict: FlashConfig) => {
+  const uniV3FlashSwap = useCallback(
+    async (argsDict: UniV3FlashSwapConfig) => {
       if (!context.splitsClient.swapper)
         throw new Error('Invalid chain id for swapper')
 
@@ -87,14 +87,14 @@ export const useFlashFunds = (): {
         setTxHash(undefined)
 
         const { tx } =
-          await context.splitsClient.swapper.submitFlashTransaction(argsDict)
+          await context.splitsClient.swapper.submitUniV3FlashSwapTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(tx.hash)
 
         const events = await getTransactionEvents(
           tx,
-          context.splitsClient.swapper.eventTopics.flash,
+          context.splitsClient.swapper.eventTopics.uniV3FlashSwap,
         )
 
         setStatus('complete')
@@ -108,5 +108,5 @@ export const useFlashFunds = (): {
     [context.splitsClient],
   )
 
-  return { flash, status, txHash, error }
+  return { uniV3FlashSwap, status, txHash, error }
 }
