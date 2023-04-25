@@ -13,8 +13,10 @@ import {
   REVERSE_RECORDS_ADDRESS,
 } from '../constants'
 import type {
+  ContractDiversifierRecipient,
   ContractOracleParams,
   ContractRecoupTranche,
+  DiversifierRecipient,
   ParseOracleParams,
   RecoupTrancheInput,
   SplitRecipient,
@@ -23,6 +25,10 @@ import type {
 } from '../types'
 import { ierc20Interface } from './ierc20'
 import { reverseRecordsInterface } from './reverseRecords'
+import {
+  validateDiversifierRecipients,
+  validateOracleParams,
+} from './validation'
 
 export const getRecipientSortedAddressesAndAllocations = (
   recipients: SplitRecipient[],
@@ -275,18 +281,38 @@ export const isLogsProvider = (provider: Provider): boolean => {
   return false
 }
 
+export const getDiversifierRecipients = (
+  recipients: DiversifierRecipient[],
+): ContractDiversifierRecipient[] => {
+  validateDiversifierRecipients(recipients)
+  return recipients.map((recipientData) => {
+    if (recipientData.address)
+      return [
+        recipientData.address,
+        [AddressZero, AddressZero],
+        getBigNumberFromPercent(recipientData.percentAllocation),
+      ]
+
+    if (!recipientData.swapperParams) throw new Error()
+    return [
+      AddressZero,
+      [
+        recipientData.swapperParams.beneficiary,
+        recipientData.swapperParams.tokenToBeneficiary,
+      ],
+      getBigNumberFromPercent(recipientData.percentAllocation),
+    ]
+  })
+}
+
 export const getFormattedOracleParams = (
   oracleParams: ParseOracleParams,
 ): ContractOracleParams => {
-  if (oracleParams.address && oracleParams.createOracleParams)
-    throw new Error('Only one of address or createOracleParams allowed')
-
+  validateOracleParams(oracleParams)
   if (oracleParams.address)
     return [oracleParams.address, [AddressZero, AddressZero]]
 
-  if (!oracleParams.createOracleParams)
-    throw new Error('One of address or createOracleParams required')
-
+  if (!oracleParams.createOracleParams) throw new Error()
   return [
     AddressZero,
     [

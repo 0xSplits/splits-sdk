@@ -22,6 +22,7 @@ const SWAPPER_FACTORY_ADDRESS = '0x89385F35Ee5815DC201030AB969669ca5E06B8A3'
 const UNI_V3_SWAP_ADDRESS = '0xfa2a7c66b340F71d7f1fe5D9Bb43eb9B001f39C2'
 const UNI_V3_ORACLE_FACTORY_ADDRESS =
   '0x008dFA72a4Abaf69455d8b7EabA10FD89F743446'
+const DIVERSIFIER_FACTORY_ADDRESS = '0xFE7800f67b3e42ddb004057169603FEAdEeD31B0'
 
 const SPLIT_MAIN_ADDRESS_BSC = '0x5924cD81dC672151527B1E4b5Ef57B69cBD07Eda'
 const VESTING_MODULE_FACTORY_ADDRESS_BSC =
@@ -70,6 +71,11 @@ export const getSwapperFactoryAddress = (chainId: number): string => {
 export const getUniV3SwapAddress = (chainId: number): string => {
   if (chainId === ChainId.BSC) return UNI_V3_SWAP_ADDRESS
   return UNI_V3_SWAP_ADDRESS
+}
+
+export const getDiversifierFactoryAddress = (chainId: number): string => {
+  if (chainId === ChainId.BSC) return DIVERSIFIER_FACTORY_ADDRESS
+  return DIVERSIFIER_FACTORY_ADDRESS
 }
 
 enum ChainId {

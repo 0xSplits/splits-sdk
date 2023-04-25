@@ -9,6 +9,7 @@ import {
 } from '../errors'
 import type {
   CreateSplitConfig,
+  DiversifierRecipient,
   ParseOracleParams,
   RecoupTrancheInput,
   SplitRecipient,
@@ -191,6 +192,42 @@ export const validateRecoupNonWaterfallRecipient = (
       )
     }
   }
+}
+
+export const validateDiversifierRecipients = (
+  recipients: DiversifierRecipient[],
+): void => {
+  recipients.map((recipientData) => {
+    if (recipientData.address && recipientData.swapperParams)
+      throw new InvalidArgumentError(
+        'Only one of address or swapperParams allowed',
+      )
+
+    if (!recipientData.address && !recipientData.swapperParams)
+      throw new InvalidArgumentError('One of address or swapperParams required')
+
+    if (recipientData.address) validateAddress(recipientData.address)
+    else {
+      if (!recipientData.swapperParams) throw new Error()
+      validateAddress(recipientData.swapperParams.beneficiary)
+      validateAddress(recipientData.swapperParams.tokenToBeneficiary)
+    }
+
+    if (
+      recipientData.percentAllocation <= 0 ||
+      recipientData.percentAllocation >= 100
+    )
+      throw new InvalidArgumentError(
+        `Invalid percent allocation: ${recipientData.percentAllocation}. Must be between 0 and 100`,
+      )
+    if (
+      getNumDigitsAfterDecimal(recipientData.percentAllocation) >
+      SPLITS_MAX_PRECISION_DECIMALS
+    )
+      throw new InvalidRecipientsError(
+        `Invalid precision on percent allocation: ${recipientData.percentAllocation}. Maxiumum allowed precision is ${SPLITS_MAX_PRECISION_DECIMALS} decimals`,
+      )
+  })
 }
 
 export const validateOracleParams = (oracleParams: ParseOracleParams): void => {

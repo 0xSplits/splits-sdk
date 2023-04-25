@@ -12,6 +12,7 @@ export type {
   VestingStream,
   VestingModule,
   RecoupTrancheInput,
+  DiversifierRecipient,
 } from '@0xsplits/splits-sdk'
 export { SplitsProvider } from './context'
 export {
@@ -43,5 +44,6 @@ export {
   useVestingMetadata,
   useCreateRecoup,
   useCreateSwapper,
-  useFlashFunds,
+  useUniV3FlashSwap,
+  useCreateDiversifier,
 } from './hooks'

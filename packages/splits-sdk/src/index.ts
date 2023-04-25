@@ -69,5 +69,7 @@ export type {
   VestingModule,
   CreateSwapperConfig,
   UniV3FlashSwapConfig,
+  CreateDiversifierConfig,
+  DiversifierRecipient,
   CallData,
 } from './types'

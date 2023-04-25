@@ -4,6 +4,7 @@ import { AddressZero } from '@ethersproject/constants'
 import { ContractTransaction, Event } from '@ethersproject/contracts'
 
 import RECOUP_ARTIFACT from '../artifacts/contracts/Recoup/Recoup.json'
+import DIVERSIFIER_FACTORY_ARTIFACT from '../artifacts/contracts/DiversifierFactory/DiversifierFactory.json'
 
 import {
   BaseClientMixin,
@@ -14,32 +15,50 @@ import {
   TransactionType,
   getRecoupAddress,
   TEMPLATES_CHAIN_IDS,
+  getDiversifierFactoryAddress,
 } from '../constants'
 import { TransactionFailedError, UnsupportedChainIdError } from '../errors'
 import { applyMixins } from './mixin'
 import type {
   CallData,
+  CreateDiversifierConfig,
   CreateRecoupConfig,
   SplitsClientConfig,
   TransactionConfig,
   TransactionFormat,
 } from '../types'
-import { getTransactionEvents, getRecoupTranchesAndSizes } from '../utils'
+import {
+  getTransactionEvents,
+  getRecoupTranchesAndSizes,
+  getDiversifierRecipients,
+  getFormattedOracleParams,
+} from '../utils'
+import { ContractCallData } from '../utils/multicall'
 import {
   validateAddress,
+  validateDiversifierRecipients,
+  validateOracleParams,
   validateRecoupNonWaterfallRecipient,
   validateRecoupTranches,
 } from '../utils/validation'
 import type { Recoup as RecoupType } from '../typechain/Recoup'
-import { ContractCallData } from '../utils/multicall'
+import type { DiversifierFactory as DiversifierFactoryType } from '../typechain/DiversifierFactory'
 
 const recoupInterface = new Interface(RECOUP_ARTIFACT.abi)
+const diversifierFactoryInterface = new Interface(
+  DIVERSIFIER_FACTORY_ARTIFACT.abi,
+)
 
 class TemplatesTransactions extends BaseTransactions {
   private readonly _recoupContract:
     | ContractCallData
     | RecoupType
     | RecoupType['estimateGas']
+
+  private readonly _diversifierFactoryContract:
+    | ContractCallData
+    | DiversifierFactoryType
+    | DiversifierFactoryType['estimateGas']
 
   constructor({
     transactionType,
@@ -59,6 +78,7 @@ class TemplatesTransactions extends BaseTransactions {
     })
 
     this._recoupContract = this._getRecoupContract()
+    this._diversifierFactoryContract = this._getDiversifierFactoryContract()
   }
 
   protected async _createRecoupTransaction({
@@ -112,6 +132,45 @@ class TemplatesTransactions extends BaseTransactions {
       recoupInterface,
     )
   }
+
+  protected async _createDiversifierTransaction({
+    owner,
+    paused = false,
+    oracleParams,
+    recipients,
+  }: CreateDiversifierConfig): Promise<TransactionFormat> {
+    validateAddress(owner)
+    validateOracleParams(oracleParams)
+    validateDiversifierRecipients(recipients)
+
+    this._requireProvider()
+    if (!this._provider) throw new Error('Provider required')
+    if (this._shouldRequireSigner) this._requireSigner()
+
+    const diversifierRecipients = getDiversifierRecipients(recipients)
+    const formattedOracleParams = getFormattedOracleParams(oracleParams)
+
+    const createDiversifierResult =
+      await this._diversifierFactoryContract.createDiversifier([
+        owner,
+        paused,
+        formattedOracleParams,
+        diversifierRecipients,
+      ])
+
+    return createDiversifierResult
+  }
+
+  private _getDiversifierFactoryContract() {
+    return this._getTransactionContract<
+      DiversifierFactoryType,
+      DiversifierFactoryType['estimateGas']
+    >(
+      getDiversifierFactoryAddress(this._chainId),
+      DIVERSIFIER_FACTORY_ARTIFACT.abi,
+      diversifierFactoryInterface,
+    )
+  }
 }
 
 export class TemplatesClient extends TemplatesTransactions {
@@ -141,6 +200,9 @@ export class TemplatesClient extends TemplatesTransactions {
     this.eventTopics = {
       // TODO: add others here? create waterfall, create split, etc.
       createRecoup: [recoupInterface.getEventTopic('CreateRecoup')],
+      createDiversifier: [
+        diversifierFactoryInterface.getEventTopic('CreateDiversifier'),
+      ],
     }
 
     this.callData = new TemplatesCallData({
@@ -192,6 +254,42 @@ export class TemplatesClient extends TemplatesTransactions {
 
     throw new TransactionFailedError()
   }
+
+  async submitCreateDiversifierTransaction(
+    createDiversifierArgs: CreateDiversifierConfig,
+  ): Promise<{
+    tx: ContractTransaction
+  }> {
+    const createDiversifierTx = await this._createDiversifierTransaction(
+      createDiversifierArgs,
+    )
+    if (!this._isContractTransaction(createDiversifierTx))
+      throw new Error('Invalid response')
+
+    return { tx: createDiversifierTx }
+  }
+
+  async createDiversifier(
+    createDiversifierArgs: CreateDiversifierConfig,
+  ): Promise<{
+    passThroughWalletId: string
+    event: Event
+  }> {
+    const { tx: createDiversifierTx } =
+      await this.submitCreateDiversifierTransaction(createDiversifierArgs)
+    const events = await getTransactionEvents(
+      createDiversifierTx,
+      this.eventTopics.createDiversifier,
+    )
+    const event = events.length > 0 ? events[0] : undefined
+    if (event && event.args)
+      return {
+        passThroughWalletId: event.args.diversifier,
+        event,
+      }
+
+    throw new TransactionFailedError()
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -222,6 +320,17 @@ class TemplatesGasEstimates extends TemplatesTransactions {
 
     return gasEstimate
   }
+
+  async createDiversifier(
+    createDiversifierArgs: CreateDiversifierConfig,
+  ): Promise<BigNumber> {
+    const gasEstimate = await this._createDiversifierTransaction(
+      createDiversifierArgs,
+    )
+    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -248,6 +357,17 @@ class TemplatesCallData extends TemplatesTransactions {
 
   async createRecoup(createRecoupArgs: CreateRecoupConfig): Promise<CallData> {
     const callData = await this._createRecoupTransaction(createRecoupArgs)
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
+
+    return callData
+  }
+
+  async createDiversifier(
+    createDiversifierArgs: CreateDiversifierConfig,
+  ): Promise<CallData> {
+    const callData = await this._createDiversifierTransaction(
+      createDiversifierArgs,
+    )
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData

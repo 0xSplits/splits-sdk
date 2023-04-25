@@ -309,6 +309,24 @@ export type UniV3FlashSwapConfig = {
   transactionTimeLimit?: number
 }
 
+export type DiversifierRecipient = {
+  address?: string
+  swapperParams?: {
+    beneficiary: string
+    tokenToBeneficiary: string
+  }
+  percentAllocation: number
+}
+
+export type CreateDiversifierConfig = {
+  owner: string
+  paused?: boolean
+  oracleParams: ParseOracleParams
+  recipients: DiversifierRecipient[]
+}
+
+export type ContractDiversifierRecipient = [string, [string, string], BigNumber]
+
 export type ParseOracleParams = {
   address?: string
   createOracleParams?: {
