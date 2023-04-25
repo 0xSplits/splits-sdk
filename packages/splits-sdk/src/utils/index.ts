@@ -13,7 +13,9 @@ import {
   REVERSE_RECORDS_ADDRESS,
 } from '../constants'
 import type {
+  ContractOracleParams,
   ContractRecoupTranche,
+  ParseOracleParams,
   RecoupTrancheInput,
   SplitRecipient,
   WaterfallTranche,

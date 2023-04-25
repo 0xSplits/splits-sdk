@@ -9,8 +9,10 @@ import {
 } from '../errors'
 import type {
   CreateSplitConfig,
+  ParseOracleParams,
   RecoupTrancheInput,
   SplitRecipient,
+  UniV3FlashSwapConfig,
   WaterfallTrancheInput,
 } from '../types'
 
@@ -189,4 +191,27 @@ export const validateRecoupNonWaterfallRecipient = (
       )
     }
   }
+}
+
+export const validateOracleParams = (oracleParams: ParseOracleParams): void => {
+  if (oracleParams.address && oracleParams.createOracleParams)
+    throw new InvalidArgumentError(
+      'Only one of address or createOracleParams allowed',
+    )
+  if (!oracleParams.address && !oracleParams.createOracleParams)
+    throw new InvalidArgumentError(
+      'One of address or createOracleParams required',
+    )
+
+  if (oracleParams.address) validateAddress(oracleParams.address)
+  else validateAddress(oracleParams.createOracleParams?.factory ?? '')
+}
+
+export const validateUniV3SwapInputAssets = (
+  inputAssets: UniV3FlashSwapConfig['inputAssets'],
+): void => {
+  inputAssets.map((inputAsset) => {
+    // TODO: validate encoded path?
+    validateAddress(inputAsset.token)
+  })
 }

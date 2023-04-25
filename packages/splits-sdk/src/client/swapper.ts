@@ -31,7 +31,11 @@ import type {
   UniV3FlashSwapConfig,
 } from '../types'
 import { getFormattedOracleParams, getTransactionEvents } from '../utils'
-import { validateAddress } from '../utils/validation'
+import {
+  validateAddress,
+  validateOracleParams,
+  validateUniV3SwapInputAssets,
+} from '../utils/validation'
 import { ContractCallData } from '../utils/multicall'
 
 const swapperFactoryInterface = new Interface(SWAPPER_FACTORY_ARTIFACT.abi)
@@ -74,8 +78,7 @@ class SwapperTransactions extends BaseTransactions {
     validateAddress(owner)
     validateAddress(beneficiary)
     validateAddress(tokenToBeneficiary)
-    // TODO
-    // validateOracleParams(oracleParams)
+    validateOracleParams(oracleParams)
     if (this._shouldRequireSigner) this._requireSigner()
 
     const formattedOracleParams = getFormattedOracleParams(oracleParams)
@@ -101,7 +104,7 @@ class SwapperTransactions extends BaseTransactions {
   }: UniV3FlashSwapConfig): Promise<TransactionFormat> {
     validateAddress(swapperId)
     validateAddress(outputToken)
-    // validateInputAssets(inputAssets) // TODO
+    validateUniV3SwapInputAssets(inputAssets)
 
     this._requireProvider()
     if (!this._provider) throw new Error('Provider required')
@@ -199,7 +202,7 @@ export class SwapperClient extends SwapperTransactions {
 
     this.eventTopics = {
       createSwapper: [swapperFactoryInterface.getEventTopic('CreateSwapper')],
-      flash: [swapperInterface.getEventTopic('Flash')],
+      uniV3FlashSwap: [swapperInterface.getEventTopic('Flash')],
     }
 
     this.callData = new SwapperCallData({
@@ -272,7 +275,10 @@ export class SwapperClient extends SwapperTransactions {
     const { tx: flashTx } = await this.submitUniV3FlashSwapTransaction(
       flashArgs,
     )
-    const events = await getTransactionEvents(flashTx, this.eventTopics.flash)
+    const events = await getTransactionEvents(
+      flashTx,
+      this.eventTopics.uniV3FlashSwap,
+    )
     const event = events.length > 0 ? events[0] : undefined
     if (event)
       return {
