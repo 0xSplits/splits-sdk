@@ -247,6 +247,8 @@ export const validateOracleParams = (oracleParams: ParseOracleParams): void => {
 export const validateUniV3SwapInputAssets = (
   inputAssets: UniV3FlashSwapConfig['inputAssets'],
 ): void => {
+  if (inputAssets.length === 0)
+    throw new InvalidArgumentError('At least one input asset required')
   inputAssets.map((inputAsset) => {
     // TODO: validate encoded path?
     validateAddress(inputAsset.token)

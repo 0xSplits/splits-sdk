@@ -129,13 +129,15 @@ class SwapperTransactions extends BaseTransactions {
         inputAsset.amountIn,
         AddressZero,
       ])
-      exactInputParams.push([
-        inputAsset.encodedPath,
-        swapRecipient,
-        deadlineTime,
-        inputAsset.amountIn,
-        inputAsset.amountOutMin,
-      ])
+      if (inputAsset.encodedPath) {
+        exactInputParams.push([
+          inputAsset.encodedPath,
+          swapRecipient,
+          deadlineTime,
+          inputAsset.amountIn,
+          inputAsset.amountOutMin,
+        ])
+      }
     })
 
     const flashParams = [
