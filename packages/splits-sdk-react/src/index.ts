@@ -46,4 +46,6 @@ export {
   useCreateSwapper,
   useUniV3FlashSwap,
   useCreateDiversifier,
+  useCreatePassThroughWallet,
+  usePassThroughTokens,
 } from './hooks'

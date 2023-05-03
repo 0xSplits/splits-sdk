@@ -87,7 +87,9 @@ export const useUniV3FlashSwap = (): {
         setTxHash(undefined)
 
         const { tx } =
-          await context.splitsClient.swapper.submitUniV3FlashSwapTransaction(argsDict)
+          await context.splitsClient.swapper.submitUniV3FlashSwapTransaction(
+            argsDict,
+          )
 
         setStatus('txInProgress')
         setTxHash(tx.hash)

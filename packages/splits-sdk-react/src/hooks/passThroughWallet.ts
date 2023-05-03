@@ -1,69 +1,17 @@
 import { useCallback, useContext, useState } from 'react'
 import type { Event } from '@ethersproject/contracts'
 import {
-  CreateRecoupConfig,
-  CreateDiversifierConfig,
   getTransactionEvents,
+  CreatePassThroughWalletConfig,
+  PassThroughTokensConfig,
 } from '@0xsplits/splits-sdk'
 
 import { SplitsContext } from '../context'
 import { ContractExecutionStatus, RequestError } from '../types'
 
-export const useCreateRecoup = (): {
-  createRecoup: (arg0: CreateRecoupConfig) => Promise<Event[] | undefined>
-  status?: ContractExecutionStatus
-  txHash?: string
-  error?: RequestError
-} => {
-  const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
-
-  const [status, setStatus] = useState<ContractExecutionStatus>()
-  const [txHash, setTxHash] = useState<string>()
-  const [error, setError] = useState<RequestError>()
-
-  const createRecoup = useCallback(
-    async (argsDict: CreateRecoupConfig) => {
-      if (!context.splitsClient.templates)
-        throw new Error('Invalid chain id for recoup')
-
-      try {
-        setStatus('pendingApproval')
-        setError(undefined)
-        setTxHash(undefined)
-
-        const { tx } =
-          await context.splitsClient.templates.submitCreateRecoupTransaction(
-            argsDict,
-          )
-
-        setStatus('txInProgress')
-        setTxHash(tx.hash)
-
-        const events = await getTransactionEvents(
-          tx,
-          context.splitsClient.templates.eventTopics.createRecoup,
-        )
-
-        setStatus('complete')
-
-        return events
-      } catch (e) {
-        setStatus('error')
-        setError(e)
-      }
-    },
-    [context.splitsClient],
-  )
-
-  return { createRecoup, status, txHash, error }
-}
-
-export const useCreateDiversifier = (): {
-  createDiversifier: (
-    arg0: CreateDiversifierConfig,
+export const useCreatePassThroughWallet = (): {
+  createPassThroughWallet: (
+    arg0: CreatePassThroughWalletConfig,
   ) => Promise<Event[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
@@ -78,10 +26,10 @@ export const useCreateDiversifier = (): {
   const [txHash, setTxHash] = useState<string>()
   const [error, setError] = useState<RequestError>()
 
-  const createDiversifier = useCallback(
-    async (argsDict: CreateDiversifierConfig) => {
-      if (!context.splitsClient.templates)
-        throw new Error('Invalid chain id for diversifier')
+  const createPassThroughWallet = useCallback(
+    async (argsDict: CreatePassThroughWalletConfig) => {
+      if (!context.splitsClient.passThroughWallet)
+        throw new Error('Invalid chain id for pass through wallet')
 
       try {
         setStatus('pendingApproval')
@@ -89,7 +37,7 @@ export const useCreateDiversifier = (): {
         setTxHash(undefined)
 
         const { tx } =
-          await context.splitsClient.templates.submitCreateDiversifierTransaction(
+          await context.splitsClient.passThroughWallet.submitCreatePassThroughWalletTransaction(
             argsDict,
           )
 
@@ -98,7 +46,8 @@ export const useCreateDiversifier = (): {
 
         const events = await getTransactionEvents(
           tx,
-          context.splitsClient.templates.eventTopics.createDiversifier,
+          context.splitsClient.passThroughWallet.eventTopics
+            .createPassThroughWallet,
         )
 
         setStatus('complete')
@@ -112,5 +61,59 @@ export const useCreateDiversifier = (): {
     [context.splitsClient],
   )
 
-  return { createDiversifier, status, txHash, error }
+  return { createPassThroughWallet, status, txHash, error }
+}
+
+export const usePassThroughTokens = (): {
+  passThroughTokens: (
+    arg0: PassThroughTokensConfig,
+  ) => Promise<Event[] | undefined>
+  status?: ContractExecutionStatus
+  txHash?: string
+  error?: RequestError
+} => {
+  const context = useContext(SplitsContext)
+  if (context === undefined) {
+    throw new Error('Make sure to include <SplitsProvider>')
+  }
+
+  const [status, setStatus] = useState<ContractExecutionStatus>()
+  const [txHash, setTxHash] = useState<string>()
+  const [error, setError] = useState<RequestError>()
+
+  const passThroughTokens = useCallback(
+    async (argsDict: PassThroughTokensConfig) => {
+      if (!context.splitsClient.passThroughWallet)
+        throw new Error('Invalid chain id for pass through wallet')
+
+      try {
+        setStatus('pendingApproval')
+        setError(undefined)
+        setTxHash(undefined)
+
+        const { tx } =
+          await context.splitsClient.passThroughWallet.submitPassThroughTokensTransaction(
+            argsDict,
+          )
+
+        setStatus('txInProgress')
+        setTxHash(tx.hash)
+
+        const events = await getTransactionEvents(
+          tx,
+          context.splitsClient.passThroughWallet.eventTopics.passThroughTokens,
+        )
+
+        setStatus('complete')
+
+        return events
+      } catch (e) {
+        setStatus('error')
+        setError(e)
+      }
+    },
+    [context.splitsClient],
+  )
+
+  return { passThroughTokens, status, txHash, error }
 }

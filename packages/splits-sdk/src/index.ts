@@ -72,4 +72,6 @@ export type {
   CreateDiversifierConfig,
   DiversifierRecipient,
   CallData,
+  CreatePassThroughWalletConfig,
+  PassThroughTokensConfig,
 } from './types'
