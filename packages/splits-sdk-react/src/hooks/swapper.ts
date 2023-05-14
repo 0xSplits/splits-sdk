@@ -4,6 +4,7 @@ import {
   getTransactionEvents,
   CreateSwapperConfig,
   UniV3FlashSwapConfig,
+  SwapperExecCallsConfig,
 } from '@0xsplits/splits-sdk'
 
 import { SplitsContext } from '../context'
@@ -111,4 +112,56 @@ export const useUniV3FlashSwap = (): {
   )
 
   return { uniV3FlashSwap, status, txHash, error }
+}
+
+export const useSwapperExecCalls = (): {
+  execCalls: (arg0: SwapperExecCallsConfig) => Promise<Event[] | undefined>
+  status?: ContractExecutionStatus
+  txHash?: string
+  error?: RequestError
+} => {
+  const context = useContext(SplitsContext)
+  if (context === undefined) {
+    throw new Error('Make sure to include <SplitsProvider>')
+  }
+
+  const [status, setStatus] = useState<ContractExecutionStatus>()
+  const [txHash, setTxHash] = useState<string>()
+  const [error, setError] = useState<RequestError>()
+
+  const execCalls = useCallback(
+    async (argsDict: SwapperExecCallsConfig) => {
+      if (!context.splitsClient.swapper)
+        throw new Error('Invalid chain id for swapper')
+
+      try {
+        setStatus('pendingApproval')
+        setError(undefined)
+        setTxHash(undefined)
+
+        const { tx } =
+          await context.splitsClient.swapper.submitExecCallsTransaction(
+            argsDict,
+          )
+
+        setStatus('txInProgress')
+        setTxHash(tx.hash)
+
+        const events = await getTransactionEvents(
+          tx,
+          context.splitsClient.swapper.eventTopics.execCalls,
+        )
+
+        setStatus('complete')
+
+        return events
+      } catch (e) {
+        setStatus('error')
+        setError(e)
+      }
+    },
+    [context.splitsClient],
+  )
+
+  return { execCalls, status, txHash, error }
 }

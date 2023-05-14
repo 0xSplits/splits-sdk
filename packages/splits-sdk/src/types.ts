@@ -309,6 +309,15 @@ export type UniV3FlashSwapConfig = {
   transactionTimeLimit?: number
 }
 
+export type SwapperExecCallsConfig = {
+  swapperId: string
+  calls: {
+    to: string
+    value: BigNumber
+    data: string
+  }[]
+} & TransactionOverrides
+
 export type DiversifierRecipient = {
   address?: string
   swapperParams?: {

@@ -26,6 +26,7 @@ import type {
   ContractSwapperExactInputParams,
   CreateSwapperConfig,
   SplitsClientConfig,
+  SwapperExecCallsConfig,
   TransactionConfig,
   TransactionFormat,
   UniV3FlashSwapConfig,
@@ -153,6 +154,28 @@ class SwapperTransactions extends BaseTransactions {
     return flashResult
   }
 
+  protected async _execCallsTransaction({
+    swapperId,
+    calls,
+    transactionOverrides = {},
+  }: SwapperExecCallsConfig): Promise<TransactionFormat> {
+    validateAddress(swapperId)
+    calls.map((callData) => validateAddress(callData.to))
+    if (this._shouldRequireSigner) this._requireSigner()
+    // TODO: require signer is owner
+
+    const swapperContract = this._getSwapperContract(swapperId)
+    const formattedCalls = calls.map((callData) => {
+      return [callData.to, callData.value, callData.data]
+    })
+    const execCallsResult = await swapperContract.execCalls(
+      formattedCalls,
+      transactionOverrides,
+    )
+
+    return execCallsResult
+  }
+
   protected _getUniV3SwapContract() {
     return this._getTransactionContract<Contract, Contract['estimateGas']>(
       getUniV3SwapAddress(this._chainId),
@@ -205,6 +228,7 @@ export class SwapperClient extends SwapperTransactions {
     this.eventTopics = {
       createSwapper: [swapperFactoryInterface.getEventTopic('CreateSwapper')],
       uniV3FlashSwap: [swapperInterface.getEventTopic('Flash')],
+      execCalls: [swapperInterface.getEventTopic('ExecCalls')],
     }
 
     this.callData = new SwapperCallData({
@@ -289,6 +313,33 @@ export class SwapperClient extends SwapperTransactions {
 
     throw new TransactionFailedError()
   }
+
+  async submitExecCallsTransaction(callArgs: SwapperExecCallsConfig): Promise<{
+    tx: ContractTransaction
+  }> {
+    const execCallsTx = await this._execCallsTransaction(callArgs)
+    if (!this._isContractTransaction(execCallsTx))
+      throw new Error('Invalid response')
+
+    return { tx: execCallsTx }
+  }
+
+  async execCalls(callArgs: SwapperExecCallsConfig): Promise<{
+    event: Event
+  }> {
+    const { tx: execCallsTx } = await this.submitExecCallsTransaction(callArgs)
+    const events = await getTransactionEvents(
+      execCallsTx,
+      this.eventTopics.execCalls,
+    )
+    const event = events.length > 0 ? events[0] : undefined
+    if (event)
+      return {
+        event,
+      }
+
+    throw new TransactionFailedError()
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -328,6 +379,13 @@ class SwapperGasEstimates extends SwapperTransactions {
 
     return gasEstimate
   }
+
+  async execCalls(callArgs: SwapperExecCallsConfig): Promise<BigNumber> {
+    const gasEstimate = await this._execCallsTransaction(callArgs)
+    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -363,6 +421,13 @@ class SwapperCallData extends SwapperTransactions {
 
   async uniV3FlashSwap(flashArgs: UniV3FlashSwapConfig): Promise<CallData> {
     const callData = await this._uniV3FlashSwapTransaction(flashArgs)
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
+
+    return callData
+  }
+
+  async execCalls(callArgs: SwapperExecCallsConfig): Promise<CallData> {
+    const callData = await this._execCallsTransaction(callArgs)
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData

@@ -45,6 +45,7 @@ export {
   useCreateRecoup,
   useCreateSwapper,
   useUniV3FlashSwap,
+  useSwapperExecCalls,
   useCreateDiversifier,
   useCreatePassThroughWallet,
   usePassThroughTokens,
