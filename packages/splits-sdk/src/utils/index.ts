@@ -16,9 +16,11 @@ import type {
   ContractDiversifierRecipient,
   ContractOracleParams,
   ContractRecoupTranche,
+  ContractScaledOfferFactorOverride,
   DiversifierRecipient,
   ParseOracleParams,
   RecoupTrancheInput,
+  ScaledOfferFactorOverride,
   SplitRecipient,
   WaterfallTranche,
   WaterfallTrancheInput,
@@ -28,6 +30,7 @@ import { reverseRecordsInterface } from './reverseRecords'
 import {
   validateDiversifierRecipients,
   validateOracleParams,
+  validateScaledOfferFactor,
 } from './validation'
 
 export const getRecipientSortedAddressesAndAllocations = (
@@ -289,7 +292,7 @@ export const getDiversifierRecipients = (
     if (recipientData.address)
       return [
         recipientData.address,
-        [AddressZero, AddressZero],
+        [AddressZero, AddressZero, BigNumber.from(0), []],
         getBigNumberFromPercent(recipientData.percentAllocation),
       ]
 
@@ -299,6 +302,12 @@ export const getDiversifierRecipients = (
       [
         recipientData.swapperParams.beneficiary,
         recipientData.swapperParams.tokenToBeneficiary,
+        getFormattedScaledOfferFactor(
+          recipientData.swapperParams.defaultScaledOfferFactorPercent,
+        ),
+        getFormattedScaledOfferFactorOverrides(
+          recipientData.swapperParams.scaledOfferFactorOverrides,
+        ),
       ],
       getBigNumberFromPercent(recipientData.percentAllocation),
     ]
@@ -320,6 +329,29 @@ export const getFormattedOracleParams = (
       oracleParams.createOracleParams.data,
     ],
   ]
+}
+
+export const getFormattedScaledOfferFactor = (
+  scaledOfferFactorPercent: number,
+): BigNumber => {
+  validateScaledOfferFactor(scaledOfferFactorPercent)
+
+  const formattedScaledOfferFactor =
+    1000000 - Math.round(10000 * scaledOfferFactorPercent)
+  return BigNumber.from(formattedScaledOfferFactor)
+}
+
+export const getFormattedScaledOfferFactorOverrides = (
+  scaledOfferFactorOverrides: ScaledOfferFactorOverride[],
+): ContractScaledOfferFactorOverride[] => {
+  return scaledOfferFactorOverrides.map(
+    ({ baseToken, quoteToken, scaledOfferFactorPercent }) => {
+      return [
+        [baseToken, quoteToken],
+        getFormattedScaledOfferFactor(scaledOfferFactorPercent),
+      ]
+    },
+  )
 }
 
 export const encodePath = (tokens: string[], fees: number[]): string => {

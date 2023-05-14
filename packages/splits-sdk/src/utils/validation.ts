@@ -12,6 +12,7 @@ import type {
   DiversifierRecipient,
   ParseOracleParams,
   RecoupTrancheInput,
+  ScaledOfferFactorOverride,
   SplitRecipient,
   UniV3FlashSwapConfig,
   WaterfallTrancheInput,
@@ -253,4 +254,25 @@ export const validateUniV3SwapInputAssets = (
     // TODO: validate encoded path?
     validateAddress(inputAsset.token)
   })
+}
+
+export const validateScaledOfferFactor = (
+  scaledOfferFactorPercent: number,
+): void => {
+  if (scaledOfferFactorPercent >= 100)
+    throw new InvalidArgumentError(
+      'Cannot set scaled offer factor this high, would allow any input token to get traded for 0 of the output token.',
+    )
+}
+
+export const validateScaledOfferFactorOverrides = (
+  scaledOfferFactorOverrides: ScaledOfferFactorOverride[],
+): void => {
+  scaledOfferFactorOverrides.map(
+    ({ baseToken, quoteToken, scaledOfferFactorPercent }) => {
+      validateAddress(baseToken)
+      validateAddress(quoteToken)
+      validateScaledOfferFactor(scaledOfferFactorPercent)
+    },
+  )
 }

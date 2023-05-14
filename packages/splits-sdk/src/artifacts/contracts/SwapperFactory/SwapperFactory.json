@@ -37,9 +37,43 @@
               "type": "address"
             },
             {
-              "internalType": "contract OracleImpl",
+              "internalType": "contract IOracle",
               "name": "oracle",
               "type": "address"
+            },
+            {
+              "internalType": "uint32",
+              "name": "defaultScaledOfferFactor",
+              "type": "uint32"
+            },
+            {
+              "components": [
+                {
+                  "components": [
+                    {
+                      "internalType": "address",
+                      "name": "base",
+                      "type": "address"
+                    },
+                    {
+                      "internalType": "address",
+                      "name": "quote",
+                      "type": "address"
+                    }
+                  ],
+                  "internalType": "struct QuotePair",
+                  "name": "quotePair",
+                  "type": "tuple"
+                },
+                {
+                  "internalType": "uint32",
+                  "name": "scaledOfferFactor",
+                  "type": "uint32"
+                }
+              ],
+              "internalType": "struct SwapperImpl.SetPairScaledOfferFactorParams[]",
+              "name": "pairScaledOfferFactors",
+              "type": "tuple[]"
             }
           ],
           "indexed": false,
@@ -78,7 +112,7 @@
             {
               "components": [
                 {
-                  "internalType": "contract OracleImpl",
+                  "internalType": "contract IOracle",
                   "name": "oracle",
                   "type": "address"
                 },
@@ -103,6 +137,40 @@
               "internalType": "struct OracleParams",
               "name": "oracleParams",
               "type": "tuple"
+            },
+            {
+              "internalType": "uint32",
+              "name": "defaultScaledOfferFactor",
+              "type": "uint32"
+            },
+            {
+              "components": [
+                {
+                  "components": [
+                    {
+                      "internalType": "address",
+                      "name": "base",
+                      "type": "address"
+                    },
+                    {
+                      "internalType": "address",
+                      "name": "quote",
+                      "type": "address"
+                    }
+                  ],
+                  "internalType": "struct QuotePair",
+                  "name": "quotePair",
+                  "type": "tuple"
+                },
+                {
+                  "internalType": "uint32",
+                  "name": "scaledOfferFactor",
+                  "type": "uint32"
+                }
+              ],
+              "internalType": "struct SwapperImpl.SetPairScaledOfferFactorParams[]",
+              "name": "pairScaledOfferFactors",
+              "type": "tuple[]"
             }
           ],
           "internalType": "struct SwapperFactory.CreateSwapperParams",
@@ -119,25 +187,6 @@
         }
       ],
       "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "contract SwapperImpl",
-          "name": "swapper",
-          "type": "address"
-        }
-      ],
-      "name": "isSwapper",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
       "type": "function"
     },
     {

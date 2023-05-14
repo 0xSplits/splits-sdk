@@ -288,11 +288,23 @@ export type PassThroughTokensConfig = {
   tokens: string[]
 } & TransactionOverrides
 
-export type CreateSwapperConfig = {
-  owner: string
-  paused?: boolean
+export type ScaledOfferFactorOverride = {
+  baseToken: string
+  quoteToken: string
+  scaledOfferFactorPercent: number
+}
+export type ContractScaledOfferFactorOverride = [[string, string], BigNumber]
+
+type SwapperParams = {
   beneficiary: string
   tokenToBeneficiary: string
+  defaultScaledOfferFactorPercent: number
+  scaledOfferFactorOverrides: ScaledOfferFactorOverride[]
+}
+
+export type CreateSwapperConfig = SwapperParams & {
+  owner: string
+  paused?: boolean
   oracleParams: ParseOracleParams
 } & TransactionOverrides
 
@@ -320,10 +332,7 @@ export type SwapperExecCallsConfig = {
 
 export type DiversifierRecipient = {
   address?: string
-  swapperParams?: {
-    beneficiary: string
-    tokenToBeneficiary: string
-  }
+  swapperParams?: SwapperParams
   percentAllocation: number
 }
 
@@ -334,7 +343,11 @@ export type CreateDiversifierConfig = {
   recipients: DiversifierRecipient[]
 } & TransactionOverrides
 
-export type ContractDiversifierRecipient = [string, [string, string], BigNumber]
+export type ContractDiversifierRecipient = [
+  string,
+  [string, string, BigNumber, ContractScaledOfferFactorOverride[]],
+  BigNumber,
+]
 
 export type ParseOracleParams = {
   address?: string

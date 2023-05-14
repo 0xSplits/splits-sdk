@@ -70,7 +70,7 @@
                   "type": "bytes"
                 }
               ],
-              "internalType": "struct OracleImpl.QuoteParams[]",
+              "internalType": "struct QuoteParams[]",
               "name": "quoteParams",
               "type": "tuple[]"
             },

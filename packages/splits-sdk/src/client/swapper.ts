@@ -31,10 +31,17 @@ import type {
   TransactionFormat,
   UniV3FlashSwapConfig,
 } from '../types'
-import { getFormattedOracleParams, getTransactionEvents } from '../utils'
+import {
+  getFormattedOracleParams,
+  getFormattedScaledOfferFactor,
+  getFormattedScaledOfferFactorOverrides,
+  getTransactionEvents,
+} from '../utils'
 import {
   validateAddress,
   validateOracleParams,
+  validateScaledOfferFactor,
+  validateScaledOfferFactorOverrides,
   validateUniV3SwapInputAssets,
 } from '../utils/validation'
 import { ContractCallData } from '../utils/multicall'
@@ -75,19 +82,36 @@ class SwapperTransactions extends BaseTransactions {
     beneficiary,
     tokenToBeneficiary,
     oracleParams,
+    defaultScaledOfferFactorPercent,
+    scaledOfferFactorOverrides,
     transactionOverrides = {},
   }: CreateSwapperConfig): Promise<TransactionFormat> {
     validateAddress(owner)
     validateAddress(beneficiary)
     validateAddress(tokenToBeneficiary)
     validateOracleParams(oracleParams)
+    validateScaledOfferFactor(defaultScaledOfferFactorPercent)
+    validateScaledOfferFactorOverrides(scaledOfferFactorOverrides)
     if (this._shouldRequireSigner) this._requireSigner()
 
     const formattedOracleParams = getFormattedOracleParams(oracleParams)
+    const formattedDefaultScaledOfferFactor = getFormattedScaledOfferFactor(
+      defaultScaledOfferFactorPercent,
+    )
+    const formattedScaledOfferFactorOverrides =
+      getFormattedScaledOfferFactorOverrides(scaledOfferFactorOverrides)
 
     const createSwapperResult =
       await this._swapperFactoryContract.createSwapper(
-        [owner, paused, beneficiary, tokenToBeneficiary, formattedOracleParams],
+        [
+          owner,
+          paused,
+          beneficiary,
+          tokenToBeneficiary,
+          formattedOracleParams,
+          formattedDefaultScaledOfferFactor,
+          formattedScaledOfferFactorOverrides,
+        ],
         transactionOverrides,
       )
 
