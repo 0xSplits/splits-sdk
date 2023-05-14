@@ -75,6 +75,7 @@ class SwapperTransactions extends BaseTransactions {
     beneficiary,
     tokenToBeneficiary,
     oracleParams,
+    transactionOverrides = {},
   }: CreateSwapperConfig): Promise<TransactionFormat> {
     validateAddress(owner)
     validateAddress(beneficiary)
@@ -85,13 +86,10 @@ class SwapperTransactions extends BaseTransactions {
     const formattedOracleParams = getFormattedOracleParams(oracleParams)
 
     const createSwapperResult =
-      await this._swapperFactoryContract.createSwapper([
-        owner,
-        paused,
-        beneficiary,
-        tokenToBeneficiary,
-        formattedOracleParams,
-      ])
+      await this._swapperFactoryContract.createSwapper(
+        [owner, paused, beneficiary, tokenToBeneficiary, formattedOracleParams],
+        transactionOverrides,
+      )
 
     return createSwapperResult
   }
@@ -102,6 +100,7 @@ class SwapperTransactions extends BaseTransactions {
     excessRecipient,
     inputAssets,
     transactionTimeLimit = 30,
+    transactionOverrides = {},
   }: UniV3FlashSwapConfig): Promise<TransactionFormat> {
     validateAddress(swapperId)
     validateAddress(outputToken)
@@ -149,6 +148,7 @@ class SwapperTransactions extends BaseTransactions {
     const flashResult = await uniV3SwapContract.initFlash(
       swapperId,
       flashParams,
+      transactionOverrides,
     )
 
     return flashResult

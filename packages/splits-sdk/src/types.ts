@@ -281,12 +281,12 @@ export type CreatePassThroughWalletConfig = {
   owner: string
   paused?: boolean
   passThrough: string
-}
+} & TransactionOverrides
 
 export type PassThroughTokensConfig = {
   passThroughWalletId: string
   tokens: string[]
-}
+} & TransactionOverrides
 
 export type CreateSwapperConfig = {
   owner: string
@@ -294,7 +294,7 @@ export type CreateSwapperConfig = {
   beneficiary: string
   tokenToBeneficiary: string
   oracleParams: ParseOracleParams
-}
+} & TransactionOverrides
 
 export type UniV3FlashSwapConfig = {
   swapperId: string
@@ -307,7 +307,7 @@ export type UniV3FlashSwapConfig = {
     amountOutMin: BigNumber
   }[]
   transactionTimeLimit?: number
-}
+} & TransactionOverrides
 
 export type SwapperExecCallsConfig = {
   swapperId: string
@@ -332,7 +332,7 @@ export type CreateDiversifierConfig = {
   paused?: boolean
   oracleParams: ParseOracleParams
   recipients: DiversifierRecipient[]
-}
+} & TransactionOverrides
 
 export type ContractDiversifierRecipient = [string, [string, string], BigNumber]
 
