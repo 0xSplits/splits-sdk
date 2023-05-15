@@ -1,0 +1,34 @@
+{
+  "name": "@0xsplits/splits-kit",
+  "version": "0.0.1",
+  "description": "UI Components for working with 0xSplits contracts",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "keywords": [
+    "0xSplits",
+    "splits",
+    "ethereum",
+    "react"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rm -rf dist && tsc"
+  },
+  "author": "0xSplits (https://0xsplits.com)",
+  "publishConfig": {
+    "access": "public"
+  },
+  "funding": "https://app.0xsplits.xyz/accounts/0xF8843981e7846945960f53243cA2Fd42a579f719/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/0xSplits/splits-sdk.git"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/0xSplits/splits-sdk/issues"
+  },
+  "homepage": "https://docs.0xsplits.xyz/sdk-info/overview",
+  "dependencies": {},
+  "peerDependencies": {},
+  "devDependencies": {}
+}
