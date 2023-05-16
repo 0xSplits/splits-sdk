@@ -27,6 +27,7 @@ import type {
   CreateSwapperConfig,
   SplitsClientConfig,
   SwapperExecCallsConfig,
+  SwapperPauseConfig,
   TransactionConfig,
   TransactionFormat,
   UniV3FlashSwapConfig,
@@ -200,6 +201,24 @@ class SwapperTransactions extends BaseTransactions {
     return execCallsResult
   }
 
+  protected async _setPausedTransaction({
+    swapperId,
+    newPauseState,
+    transactionOverrides = {},
+  }: SwapperPauseConfig): Promise<TransactionFormat> {
+    validateAddress(swapperId)
+    if (this._shouldRequireSigner) this._requireSigner()
+    // TODO: require signer is owner
+
+    const swapperContract = this._getSwapperContract(swapperId)
+    const pauseResult = await swapperContract.setPaused(
+      newPauseState,
+      transactionOverrides,
+    )
+
+    return pauseResult
+  }
+
   protected _getUniV3SwapContract() {
     return this._getTransactionContract<Contract, Contract['estimateGas']>(
       getUniV3SwapAddress(this._chainId),
@@ -253,6 +272,7 @@ export class SwapperClient extends SwapperTransactions {
       createSwapper: [swapperFactoryInterface.getEventTopic('CreateSwapper')],
       uniV3FlashSwap: [swapperInterface.getEventTopic('Flash')],
       execCalls: [swapperInterface.getEventTopic('ExecCalls')],
+      setPaused: [swapperInterface.getEventTopic('SetPaused')],
     }
 
     this.callData = new SwapperCallData({
@@ -364,6 +384,33 @@ export class SwapperClient extends SwapperTransactions {
 
     throw new TransactionFailedError()
   }
+
+  async submitSetPausedTransaction(pauseArgs: SwapperPauseConfig): Promise<{
+    tx: ContractTransaction
+  }> {
+    const pauseTx = await this._setPausedTransaction(pauseArgs)
+    if (!this._isContractTransaction(pauseTx))
+      throw new Error('Invalid reponse')
+
+    return { tx: pauseTx }
+  }
+
+  async setPaused(pauseArgs: SwapperPauseConfig): Promise<{
+    event: Event
+  }> {
+    const { tx: pauseTx } = await this.submitSetPausedTransaction(pauseArgs)
+    const events = await getTransactionEvents(
+      pauseTx,
+      this.eventTopics.setPaused,
+    )
+    const event = events.length > 0 ? events[0] : undefined
+    if (event)
+      return {
+        event,
+      }
+
+    throw new TransactionFailedError()
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -410,6 +457,13 @@ class SwapperGasEstimates extends SwapperTransactions {
 
     return gasEstimate
   }
+
+  async setPaused(args: SwapperPauseConfig): Promise<BigNumber> {
+    const gasEstimate = await this._setPausedTransaction(args)
+    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -452,6 +506,13 @@ class SwapperCallData extends SwapperTransactions {
 
   async execCalls(callArgs: SwapperExecCallsConfig): Promise<CallData> {
     const callData = await this._execCallsTransaction(callArgs)
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
+
+    return callData
+  }
+
+  async setPaused(args: SwapperPauseConfig): Promise<CallData> {
+    const callData = await this._setPausedTransaction(args)
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData

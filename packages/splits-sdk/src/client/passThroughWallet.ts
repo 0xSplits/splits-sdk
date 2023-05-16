@@ -21,6 +21,7 @@ import type {
   CallData,
   CreatePassThroughWalletConfig,
   PassThroughTokensConfig,
+  PassThroughWalletPauseConfig,
   SplitsClientConfig,
   TransactionConfig,
   TransactionFormat,
@@ -98,6 +99,25 @@ class PassThroughWalletTransactions extends BaseTransactions {
     return passThroughTokensResult
   }
 
+  protected async _setPausedTransaction({
+    passThroughWalletId,
+    newPauseState,
+    transactionOverrides = {},
+  }: PassThroughWalletPauseConfig): Promise<TransactionFormat> {
+    validateAddress(passThroughWalletId)
+    if (this._shouldRequireSigner) this._requireSigner()
+    // TODO: require signer is owner
+
+    const passThroughWalletContract =
+      this._getPassThroughWalletContract(passThroughWalletId)
+    const pauseResult = await passThroughWalletContract.setPaused(
+      newPauseState,
+      transactionOverrides,
+    )
+
+    return pauseResult
+  }
+
   protected _getPassThroughWalletContract(passThroughWallet: string) {
     return this._getTransactionContract<Contract, Contract['estimateGas']>(
       passThroughWallet,
@@ -148,6 +168,7 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
       passThroughTokens: [
         passThroughWalletInterface.getEventTopic('PassThrough'),
       ],
+      setPaused: [passThroughWalletInterface.getEventTopic('SetPaused')],
     }
 
     this.callData = new PassThroughWalletCallData({
@@ -253,6 +274,35 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
 
     throw new TransactionFailedError()
   }
+
+  async submitSetPausedTransaction(
+    pauseArgs: PassThroughWalletPauseConfig,
+  ): Promise<{
+    tx: ContractTransaction
+  }> {
+    const pauseTx = await this._setPausedTransaction(pauseArgs)
+    if (!this._isContractTransaction(pauseTx))
+      throw new Error('Invalid reponse')
+
+    return { tx: pauseTx }
+  }
+
+  async setPaused(pauseArgs: PassThroughWalletPauseConfig): Promise<{
+    event: Event
+  }> {
+    const { tx: pauseTx } = await this.submitSetPausedTransaction(pauseArgs)
+    const events = await getTransactionEvents(
+      pauseTx,
+      this.eventTopics.setPaused,
+    )
+    const event = events.length > 0 ? events[0] : undefined
+    if (event)
+      return {
+        event,
+      }
+
+    throw new TransactionFailedError()
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -304,6 +354,13 @@ class PassThroughWalletGasEstimates extends PassThroughWalletTransactions {
 
     return gasEstimate
   }
+
+  async setPaused(args: PassThroughWalletPauseConfig): Promise<BigNumber> {
+    const gasEstimate = await this._setPausedTransaction(args)
+    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -351,6 +408,13 @@ class PassThroughWalletCallData extends PassThroughWalletTransactions {
       passThroughWalletId,
       tokens,
     })
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
+
+    return callData
+  }
+
+  async setPaused(args: PassThroughWalletPauseConfig): Promise<CallData> {
+    const callData = await this._setPausedTransaction(args)
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData

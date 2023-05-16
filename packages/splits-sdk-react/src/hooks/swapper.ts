@@ -5,6 +5,7 @@ import {
   CreateSwapperConfig,
   UniV3FlashSwapConfig,
   SwapperExecCallsConfig,
+  SwapperPauseConfig,
 } from '@0xsplits/splits-sdk'
 
 import { SplitsContext } from '../context'
@@ -164,4 +165,55 @@ export const useSwapperExecCalls = (): {
   )
 
   return { execCalls, status, txHash, error }
+}
+
+export const useSwapperPause = (): {
+  setPaused: (arg0: SwapperPauseConfig) => Promise<Event[] | undefined>
+  status?: ContractExecutionStatus
+  txHash?: string
+  error?: RequestError
+} => {
+  const context = useContext(SplitsContext)
+  if (context === undefined) {
+    throw new Error('Make sure to include <SplitsProvider>')
+  }
+
+  const [status, setStatus] = useState<ContractExecutionStatus>()
+  const [txHash, setTxHash] = useState<string>()
+  const [error, setError] = useState<RequestError>()
+
+  const setPaused = useCallback(
+    async (argsDict: SwapperPauseConfig) => {
+      if (!context.splitsClient.swapper)
+        throw new Error('Invalid chain id for swapper')
+
+      try {
+        setStatus('pendingApproval')
+        setError(undefined)
+        setTxHash(undefined)
+
+        const { tx } = await context.splitsClient.swapper.submitSetPausedTransaction(
+          argsDict,
+        )
+
+        setStatus('txInProgress')
+        setTxHash(tx.hash)
+
+        const events = await getTransactionEvents(
+          tx,
+          context.splitsClient.swapper.eventTopics.setPaused,
+        )
+
+        setStatus('complete')
+
+        return events
+      } catch (e) {
+        setStatus('error')
+        setError(e)
+      }
+    },
+    [context.splitsClient],
+  )
+
+  return { setPaused, status, txHash, error }
 }

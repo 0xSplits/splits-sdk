@@ -70,9 +70,11 @@ export type {
   CreateSwapperConfig,
   UniV3FlashSwapConfig,
   SwapperExecCallsConfig,
+  SwapperPauseConfig,
   CreateDiversifierConfig,
   DiversifierRecipient,
   CallData,
   CreatePassThroughWalletConfig,
   PassThroughTokensConfig,
+  PassThroughWalletPauseConfig,
 } from './types'

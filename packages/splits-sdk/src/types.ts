@@ -288,6 +288,11 @@ export type PassThroughTokensConfig = {
   tokens: string[]
 } & TransactionOverrides
 
+export type PassThroughWalletPauseConfig = {
+  passThroughWalletId: string
+  newPauseState: boolean
+} & TransactionOverrides
+
 export type ScaledOfferFactorOverride = {
   baseToken: string
   quoteToken: string
@@ -328,6 +333,11 @@ export type SwapperExecCallsConfig = {
     value: BigNumber
     data: string
   }[]
+} & TransactionOverrides
+
+export type SwapperPauseConfig = {
+  swapperId: string
+  newPauseState: boolean
 } & TransactionOverrides
 
 export type DiversifierRecipient = {
