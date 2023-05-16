@@ -340,6 +340,26 @@ export type SwapperPauseConfig = {
   newPauseState: boolean
 } & TransactionOverrides
 
+export type SwapperSetBeneficiaryConfig = {
+  swapperId: string
+  beneficiary: string
+} & TransactionOverrides
+
+export type SwapperSetTokenToBeneficiaryConfig = {
+  swapperId: string
+  tokenToBeneficiary: string
+} & TransactionOverrides
+
+export type SwapperSetOracleConfig = {
+  swapperId: string
+  oracle: string
+} & TransactionOverrides
+
+export type SwapperSetDefaultScaledOfferFactorConfig = {
+  swapperId: string
+  defaultScaledOfferFactorPercent: number
+} & TransactionOverrides
+
 export type DiversifierRecipient = {
   address?: string
   swapperParams?: SwapperParams

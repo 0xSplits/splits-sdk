@@ -28,6 +28,10 @@ import type {
   SplitsClientConfig,
   SwapperExecCallsConfig,
   SwapperPauseConfig,
+  SwapperSetBeneficiaryConfig,
+  SwapperSetDefaultScaledOfferFactorConfig,
+  SwapperSetOracleConfig,
+  SwapperSetTokenToBeneficiaryConfig,
   TransactionConfig,
   TransactionFormat,
   UniV3FlashSwapConfig,
@@ -179,6 +183,85 @@ class SwapperTransactions extends BaseTransactions {
     return flashResult
   }
 
+  protected async _setBeneficiaryTransaction({
+    swapperId,
+    beneficiary,
+    transactionOverrides = {},
+  }: SwapperSetBeneficiaryConfig): Promise<TransactionFormat> {
+    validateAddress(swapperId)
+    validateAddress(beneficiary)
+    if (this._shouldRequireSigner) this._requireSigner()
+    // TODO: require signer is owner
+
+    const swapperContract = this._getSwapperContract(swapperId)
+    const editResult = await swapperContract.setBeneficiary(
+      beneficiary,
+      transactionOverrides,
+    )
+
+    return editResult
+  }
+
+  protected async _setTokenToBeneficiaryTransaction({
+    swapperId,
+    tokenToBeneficiary,
+    transactionOverrides = {},
+  }: SwapperSetTokenToBeneficiaryConfig): Promise<TransactionFormat> {
+    validateAddress(swapperId)
+    if (this._shouldRequireSigner) this._requireSigner()
+    // TODO: require signer is owner
+
+    const swapperContract = this._getSwapperContract(swapperId)
+    const editResult = await swapperContract.setTokenToBeneficiary(
+      tokenToBeneficiary,
+      transactionOverrides,
+    )
+
+    return editResult
+  }
+
+  protected async _setOracleTransaction({
+    swapperId,
+    oracle,
+    transactionOverrides = {},
+  }: SwapperSetOracleConfig): Promise<TransactionFormat> {
+    validateAddress(swapperId)
+    validateAddress(oracle)
+    if (this._shouldRequireSigner) this._requireSigner()
+    // TODO: require signer is owner
+
+    const swapperContract = this._getSwapperContract(swapperId)
+    const editResult = await swapperContract.setOracle(
+      oracle,
+      transactionOverrides,
+    )
+
+    return editResult
+  }
+
+  protected async _setDefaultScaledOfferFactorTransaction({
+    swapperId,
+    defaultScaledOfferFactorPercent,
+    transactionOverrides = {},
+  }: SwapperSetDefaultScaledOfferFactorConfig): Promise<TransactionFormat> {
+    validateAddress(swapperId)
+    validateScaledOfferFactor(defaultScaledOfferFactorPercent)
+    if (this._shouldRequireSigner) this._requireSigner()
+    // TODO: require signer is owner
+
+    const formattedDefaultScaledOfferFactor = getFormattedScaledOfferFactor(
+      defaultScaledOfferFactorPercent,
+    )
+
+    const swapperContract = this._getSwapperContract(swapperId)
+    const editResult = await swapperContract.setDefaultScaledOfferFactor(
+      formattedDefaultScaledOfferFactor,
+      transactionOverrides,
+    )
+
+    return editResult
+  }
+
   protected async _execCallsTransaction({
     swapperId,
     calls,
@@ -273,6 +356,14 @@ export class SwapperClient extends SwapperTransactions {
       uniV3FlashSwap: [swapperInterface.getEventTopic('Flash')],
       execCalls: [swapperInterface.getEventTopic('ExecCalls')],
       setPaused: [swapperInterface.getEventTopic('SetPaused')],
+      setBeneficiary: [swapperInterface.getEventTopic('SetBeneficiary')],
+      setTokenToBeneficiary: [
+        swapperInterface.getEventTopic('SetTokenToBeneficiary'),
+      ],
+      setOracle: [swapperInterface.getEventTopic('SetOracle')],
+      setDefaultScaledOfferFactor: [
+        swapperInterface.getEventTopic('SetDefaultScaledOfferFactor'),
+      ],
     }
 
     this.callData = new SwapperCallData({
@@ -411,6 +502,119 @@ export class SwapperClient extends SwapperTransactions {
 
     throw new TransactionFailedError()
   }
+
+  async submitSetBeneficiaryTransaction(
+    args: SwapperSetBeneficiaryConfig,
+  ): Promise<{
+    tx: ContractTransaction
+  }> {
+    const tx = await this._setBeneficiaryTransaction(args)
+    if (!this._isContractTransaction(tx)) throw new Error('Invalid reponse')
+
+    return { tx }
+  }
+
+  async setBeneficiary(args: SwapperSetBeneficiaryConfig): Promise<{
+    event: Event
+  }> {
+    const { tx } = await this.submitSetBeneficiaryTransaction(args)
+    const events = await getTransactionEvents(
+      tx,
+      this.eventTopics.setBeneficiary,
+    )
+    const event = events.length > 0 ? events[0] : undefined
+    if (event)
+      return {
+        event,
+      }
+
+    throw new TransactionFailedError()
+  }
+
+  async submitSetTokenToBeneficiaryTransaction(
+    args: SwapperSetTokenToBeneficiaryConfig,
+  ): Promise<{
+    tx: ContractTransaction
+  }> {
+    const tx = await this._setTokenToBeneficiaryTransaction(args)
+    if (!this._isContractTransaction(tx)) throw new Error('Invalid reponse')
+
+    return { tx }
+  }
+
+  async setTokenToBeneficiary(
+    args: SwapperSetTokenToBeneficiaryConfig,
+  ): Promise<{
+    event: Event
+  }> {
+    const { tx } = await this.submitSetTokenToBeneficiaryTransaction(args)
+    const events = await getTransactionEvents(
+      tx,
+      this.eventTopics.setBeneficiary,
+    )
+    const event = events.length > 0 ? events[0] : undefined
+    if (event)
+      return {
+        event,
+      }
+
+    throw new TransactionFailedError()
+  }
+
+  async submitSetOracleTransaction(args: SwapperSetOracleConfig): Promise<{
+    tx: ContractTransaction
+  }> {
+    const tx = await this._setOracleTransaction(args)
+    if (!this._isContractTransaction(tx)) throw new Error('Invalid reponse')
+
+    return { tx }
+  }
+
+  async setOracle(args: SwapperSetOracleConfig): Promise<{
+    event: Event
+  }> {
+    const { tx } = await this.submitSetOracleTransaction(args)
+    const events = await getTransactionEvents(
+      tx,
+      this.eventTopics.setBeneficiary,
+    )
+    const event = events.length > 0 ? events[0] : undefined
+    if (event)
+      return {
+        event,
+      }
+
+    throw new TransactionFailedError()
+  }
+
+  async submitSetDefaultScaledOfferFactorTransaction(
+    args: SwapperSetDefaultScaledOfferFactorConfig,
+  ): Promise<{
+    tx: ContractTransaction
+  }> {
+    const tx = await this._setDefaultScaledOfferFactorTransaction(args)
+    if (!this._isContractTransaction(tx)) throw new Error('Invalid reponse')
+
+    return { tx }
+  }
+
+  // eslint-disable-next-line prettier/prettier
+  async setDefaultScaledOfferFactor(args: SwapperSetDefaultScaledOfferFactorConfig): Promise<{
+    event: Event
+  }> {
+    const { tx } = await this.submitSetDefaultScaledOfferFactorTransaction(args)
+    const events = await getTransactionEvents(
+      tx,
+      this.eventTopics.setBeneficiary,
+    )
+    const event = events.length > 0 ? events[0] : undefined
+    if (event)
+      return {
+        event,
+      }
+
+    throw new TransactionFailedError()
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -464,6 +668,38 @@ class SwapperGasEstimates extends SwapperTransactions {
 
     return gasEstimate
   }
+
+  async setBeneficiary(args: SwapperSetBeneficiaryConfig): Promise<BigNumber> {
+    const gasEstimate = await this._setBeneficiaryTransaction(args)
+    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+
+  async setTokenToBeneficiary(
+    args: SwapperSetTokenToBeneficiaryConfig,
+  ): Promise<BigNumber> {
+    const gasEstimate = await this._setTokenToBeneficiaryTransaction(args)
+    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+
+  async setOracle(args: SwapperSetOracleConfig): Promise<BigNumber> {
+    const gasEstimate = await this._setOracleTransaction(args)
+    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+
+  async setDefaultScaledOfferFactor(
+    args: SwapperSetDefaultScaledOfferFactorConfig,
+  ): Promise<BigNumber> {
+    const gasEstimate = await this._setDefaultScaledOfferFactorTransaction(args)
+    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -513,6 +749,38 @@ class SwapperCallData extends SwapperTransactions {
 
   async setPaused(args: SwapperPauseConfig): Promise<CallData> {
     const callData = await this._setPausedTransaction(args)
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
+
+    return callData
+  }
+
+  async setBeneficiary(args: SwapperSetBeneficiaryConfig): Promise<CallData> {
+    const callData = await this._setBeneficiaryTransaction(args)
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
+
+    return callData
+  }
+
+  async setTokenToBeneficiary(
+    args: SwapperSetTokenToBeneficiaryConfig,
+  ): Promise<CallData> {
+    const callData = await this._setTokenToBeneficiaryTransaction(args)
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
+
+    return callData
+  }
+
+  async setOracle(args: SwapperSetOracleConfig): Promise<CallData> {
+    const callData = await this._setOracleTransaction(args)
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
+
+    return callData
+  }
+
+  async setDefaultScaledOfferFactor(
+    args: SwapperSetDefaultScaledOfferFactorConfig,
+  ): Promise<CallData> {
+    const callData = await this._setDefaultScaledOfferFactorTransaction(args)
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData
