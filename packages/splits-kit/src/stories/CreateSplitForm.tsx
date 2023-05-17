@@ -1,5 +1,6 @@
 import React from 'react';
 import { RecipientRow } from './RecipientRow';
+import { Button } from './Button';
 
 interface SplitFormProps {
     onClick?: () => void;
@@ -8,10 +9,29 @@ interface SplitFormProps {
 export const CreateSplitForm = ({
     ...props
 }: SplitFormProps) => {
+    const generateKey = (pre:string) => {
+        return `${ pre }_${ new Date().getTime() }`;
+    }
+    const [rows, setRows] = React.useState([<RecipientRow key={1} />]);
+    function removeRow(index:string) {
+        setRows(
+            rows.filter((_) => _.key !== index)
+        );
+    }
+
+    function addRow() {
+        const key = generateKey((rows.length+1).toString())
+        setRows([...rows, <RecipientRow key={key} deleteClick={() => removeRow(key)} />]);
+    }
 
     return(
-        <div className={'relative flex items-stretch space-x-3 text-xs md:text-sm'}>
-            <RecipientRow />
-        </div>
+        <>
+            <div>
+                {rows}
+            </div>
+            <div className={'my-5'}>
+                <Button variant="Secondary" onClick={addRow}>Add Recipient</Button>
+            </div>
+        </>
     )
 }
