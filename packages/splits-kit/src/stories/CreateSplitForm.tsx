@@ -12,10 +12,10 @@ export const CreateSplitForm = ({
     const generateKey = (pre:string) => {
         return `${ pre }_${ new Date().getTime() }`;
     }
-    const [rows, setRows] = React.useState([<RecipientRow key={1} />]);
+    const [rows, setRows] = React.useState([<RecipientRow />]);
     function removeRow(index:string) {
-        setRows(
-            rows.filter((_) => _.key !== index)
+        setRows((current) =>
+            current.filter((_) => _.key !== index)
         );
     }
 
