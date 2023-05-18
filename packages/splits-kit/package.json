@@ -11,6 +11,7 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
+    "@headlessui/react": "^1.7.14",
     "@heroicons/react": "^2.0.18",
     "@storybook/addon-postcss": "^2.0.0",
     "@types/node": "20.1.4",
@@ -21,6 +22,7 @@
     "next": "13.4.2",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "storybook-tailwind-dark-mode": "^1.0.22",
     "typescript": "5.0.4"
   },
   "devDependencies": {

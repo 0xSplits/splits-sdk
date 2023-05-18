@@ -25,15 +25,14 @@ export const RecipientRow = ({
             <div className={'relative w-20 rounded border border-gray-200 focus-within:border-blue-500 focus-within:shadow dark:border-gray-700 dark:focus-within:border-blue-400'}>
                 <input
                     type={'number'}
-                    className={`items-center space-x-2 bg-transparent px-3 p-2 transition focus:outline-none`}
+                    className={`w-full items-center space-x-2 bg-transparent px-3 p-2 transition focus:outline-none`}
                     placeholder={
                         "%"
                     }
-                    onClick={props.deleteClick}
                 />
             </div>
             {props.deleteClick && (
-                <Button variant="Secondary"><XMarkIcon className="h-4 w-4" /></Button>
+                <Button variant="Secondary" onClick={props.deleteClick}><XMarkIcon className="h-4 w-4" /></Button>
             )}
             {!props.deleteClick && (
                 <Button disabled={true} variant="Secondary"><XMarkIcon className="h-4 w-4" /></Button>

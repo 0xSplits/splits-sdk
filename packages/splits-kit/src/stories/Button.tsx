@@ -1,5 +1,4 @@
 import React from 'react';
-import './button.css';
 
 interface ButtonProps {
   /**
@@ -36,13 +35,25 @@ export const Button = ({
 }: ButtonProps) => {
   const secondaryClasses = `whitespace-nowrap rounded text-${size} border border-gray-200 px-1.5 py-1  text-black dark:border-gray-700 dark:text-white`;
   const primaryClasses = `whitespace-nowrap rounded text-${size} border border-gray-900 bg-gray-800 px-3 py-1 text-white dark:border-gray-200 dark:bg-gray-300 dark:text-black`;
-  const miniClasses = `whitespace-nowrap rounded text-${size} px-1.5 py-1  text-black dark:border-gray-700 dark:text-white`;
+  const miniClasses = `whitespace-nowrap rounded text-${size} px-1.5 py-1  text-black dark:border-gray-700 dark:text-white absolute inset-y-0 right-0 focus:outline-none`;
+  const hoverClasses = `cursor-pointer hover:border-black hover:shadow dark:hover:border-white`;
   const setVariant = function () {
+    let classFactory=[];
     switch(variant) {
-      case "Primary": return primaryClasses
-      case "Secondary": return secondaryClasses
-      case "Mini": return miniClasses
+      case "Primary":  
+        classFactory.push(primaryClasses)
+        break
+      case "Secondary":  
+        classFactory.push(secondaryClasses)
+        break
+      case "Mini": 
+        classFactory.push(miniClasses)
+        break
     }
+    if(!disabled) {
+      classFactory.push(hoverClasses)
+    }
+    return classFactory.join('')
   }
 
   return (
