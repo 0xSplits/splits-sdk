@@ -39,7 +39,7 @@ export const Select = ({
                 <div className="text-base mb-2">{label}</div>
               </Listbox.Label>
               <div className="relative">
-                <Listbox.Button className={`text-sm flex w-full items-center justify-between rounded border transition md:max-w-xs ${
+                <Listbox.Button className={`text-sm flex w-full items-center justify-between rounded border transition md:max-w-sm ${
                 open
                   ? `border-gray-300 shadow-sm dark:border-gray-600`
                   : isDisabled
@@ -64,7 +64,7 @@ export const Select = ({
                 leaveFrom="opacity-100 translate-y-0 "
                 leaveTo="opacity-25 -translate-y-1"
               >
-                <Listbox.Options className={`absolute z-40 mt-1 w-full max-w-xs overflow-hidden rounded border border-gray-200 bg-white p-1 focus:outline-none dark:border-gray-700 dark:bg-black md:shadow-lg`}>
+                <Listbox.Options className={`absolute z-40 mt-1 w-full max-w-sm overflow-hidden rounded border border-gray-200 bg-white p-1 focus:outline-none dark:border-gray-700 dark:bg-black md:shadow-lg`}>
                   {options.map((option:SelectOption, index:number) => (
                     <Listbox.Option
                       key={index}

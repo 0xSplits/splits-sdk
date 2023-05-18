@@ -35,9 +35,9 @@ export const SearchSelect = ({
         return(
             <>
                 <div className="text-base mb-2">{label}</div>
-                <div className={'relative flex-grow rounded border border-gray-200 focus-within:border-blue-500 focus-within:shadow dark:border-gray-700 dark:focus-within:border-blue-400'}>
+                <div className={'relative flex-grow md:max-w-sm rounded border border-gray-200 focus-within:border-blue-500 focus-within:shadow dark:border-gray-700 dark:focus-within:border-blue-400'}>
                     <input
-                        className={`flex w-full flex-grow items-center space-x-2 bg-transparent p-2 transition focus:outline-none`}
+                        className={`flex w-full max-w-sm flex-grow items-center space-x-2 bg-transparent p-2 transition focus:outline-none`}
                         placeholder={searchName}
                         autoComplete={'off'}
                         autoFocus={true}

@@ -9,6 +9,7 @@ interface ButtonProps {
    * How large should the button be?
    */
   size?: 'xs' | 'sm';
+  fullWidth?: boolean;
   /**
    * Button contents
    */
@@ -31,6 +32,7 @@ export const Button = ({
   size = 'sm',
   disabled,
   children,
+  fullWidth=false,
   ...props
 }: ButtonProps) => {
   const secondaryClasses = `whitespace-nowrap rounded text-${size} border border-gray-200 px-1.5 py-1  text-black dark:border-gray-700 dark:text-white`;
@@ -52,6 +54,9 @@ export const Button = ({
     }
     if(!disabled) {
       classFactory.push(hoverClasses)
+    }
+    if(fullWidth) {
+      classFactory.push(' w-full')
     }
     return classFactory.join('')
   }
