@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/20/solid'
+import { MagnifyingGlassIcon, XMarkIcon, PencilIcon } from '@heroicons/react/20/solid'
 import { Select, SelectOption } from './Select';
 import { Button } from './Button';
 
@@ -26,7 +26,7 @@ export const SearchSelect = ({
         callback: () => (setIsSearching(true)),
         display: () => (
             <div className="flex items-center space-x-2 mr-2">
-              <MagnifyingGlassIcon className="mx-0.5 h-4 w-4" />
+              <PencilIcon className="mx-0.5 h-4 w-4" />
             </div>
           ),
     }])
@@ -34,7 +34,7 @@ export const SearchSelect = ({
     if(isSearching) {
         return(
             <>
-                {label}
+                <div className="text-base mb-2">{label}</div>
                 <div className={'relative flex-grow rounded border border-gray-200 focus-within:border-blue-500 focus-within:shadow dark:border-gray-700 dark:focus-within:border-blue-400'}>
                     <input
                         className={`flex w-full flex-grow items-center space-x-2 bg-transparent p-2 transition focus:outline-none`}
@@ -56,7 +56,7 @@ export const SearchSelect = ({
 
     return(
         <>
-            {label}
+            <div className="text-base mb-2">{label}</div>
             <Select options={withSearchOptions} isDisabled={isDisabled} />
         </>
     )

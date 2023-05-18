@@ -36,10 +36,10 @@ export const Select = ({
           return(
             <>
               <Listbox.Label>
-                <span>{label}</span>
+                <div className="text-base mb-2">{label}</div>
               </Listbox.Label>
               <div className="relative">
-                <Listbox.Button className={`flex w-full items-center justify-between rounded border transition md:max-w-xs ${
+                <Listbox.Button className={`text-sm flex w-full items-center justify-between rounded border transition md:max-w-xs ${
                 open
                   ? `border-gray-300 shadow-sm dark:border-gray-600`
                   : isDisabled
@@ -72,7 +72,7 @@ export const Select = ({
                       onClick={() => (option.callback ? option.callback() : null)}
                     >
                       {({ selected, active })=>(
-                        <div  className={`focus:outline-none-sm w-full cursor-pointer rounded-sm px-3 py-2 ${
+                        <div  className={`text-sm focus:outline-none-sm w-full cursor-pointer rounded-sm px-3 py-2 ${
                           active && `bg-gray-100 dark:bg-gray-800`
                         }`}>
                           <span className="flex">
