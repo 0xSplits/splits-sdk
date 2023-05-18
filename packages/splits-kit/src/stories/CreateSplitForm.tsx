@@ -37,7 +37,7 @@ export const CreateSplitForm = ({
             <SearchSelect label="Controller" searchName="Enter Address" options={[{name: "No Controller (immutable)", value: "no-controller"}]} />
             </div>
             
-            <SearchSelect label="Distributor Fee" searchName="Custom" options={[{name: "0.1%", value: "0.1"},{name: "1%", value: "1"},{name: "5%", value: "5"}]} />
+            <SearchSelect label="Distributor Fee" searchName="Custom %" searchType='number' options={[{name: "0.1%", value: "0.1"},{name: "1%", value: "1"},{name: "5%", value: "5"}]} />
         </>
     )
 }

@@ -8,6 +8,7 @@ interface SearchSelectProps {
     label: string
     isDisabled?:boolean
     searchName: string
+    searchType?: 'number' | 'text'
 }
 
 export const SearchSelect = ({
@@ -15,6 +16,7 @@ export const SearchSelect = ({
     options,
     label,
     searchName,
+    searchType = 'text',
     ...props
   }: SearchSelectProps) => {
     const [isSearching, setIsSearching] = useState(false)
@@ -39,6 +41,7 @@ export const SearchSelect = ({
                         placeholder={searchName}
                         autoComplete={'off'}
                         autoFocus={true}
+                        type={searchType}
                     />
                     <Button
                         variant="Mini"
