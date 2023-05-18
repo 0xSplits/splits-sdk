@@ -42,7 +42,7 @@ export const CreateSplitForm = ({
             <div className={'my-5'}>
             <Button variant='Primary' fullWidth={true}>Create Split</Button>
             </div>
-            <div className="leading-relaxed text-gray-500 text-center">
+            <div className="text-xs leading-relaxed text-gray-500 dark:text-gray-400 text-center">
                 Lorem ipsum...
             </div>
         </>

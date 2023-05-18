@@ -14,12 +14,14 @@ interface SelectProps {
   options: SelectOption[]
   label?: string
   isDisabled?:boolean
+  size?: 'xs' | 'sm';
 }
 
 export const Select = ({
   isDisabled,
   options,
   label,
+  size='sm',
   ...props
 }: SelectProps) => {
   const [selectedOption, setSelectedOption] = useState(options[0])
@@ -39,7 +41,7 @@ export const Select = ({
                 <div className="text-base mb-2">{label}</div>
               </Listbox.Label>
               <div className="relative">
-                <Listbox.Button className={`text-sm flex w-full items-center justify-between rounded border transition md:max-w-sm ${
+                <Listbox.Button className={`text-${size} flex w-full items-center justify-between rounded border transition md:max-w-sm ${
                 open
                   ? `border-gray-300 shadow-sm dark:border-gray-600`
                   : isDisabled
