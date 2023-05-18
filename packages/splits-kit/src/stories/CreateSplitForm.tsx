@@ -1,6 +1,7 @@
 import React from 'react';
 import { RecipientRow } from './RecipientRow';
 import { Button } from './Button';
+import { SearchSelect } from './SearchSelect';
 
 interface SplitFormProps {
     onClick?: () => void;
@@ -32,6 +33,11 @@ export const CreateSplitForm = ({
             <div className={'my-5'}>
                 <Button variant="Secondary" onClick={addRow}>Add Recipient</Button>
             </div>
+            <div className={'my-5'}>
+            <SearchSelect label="Controller" searchName="Enter Address" options={[{name: "No Controller (immutable)", value: "no-controller"}]} />
+            </div>
+            
+            <SearchSelect label="Distributor Fee" searchName="Custom" options={[{name: "0.1%", value: "0.1"},{name: "1%", value: "1"},{name: "5%", value: "5"}]} />
         </>
     )
 }
