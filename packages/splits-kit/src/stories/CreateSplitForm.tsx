@@ -10,9 +10,13 @@ interface SplitFormProps {
 export const CreateSplitForm = ({
     ...props
 }: SplitFormProps) => {
+
+    // this is a little clunky and may work without it
     const generateKey = (pre:string) => {
         return `${ pre }_${ new Date().getTime() }`;
     }
+    //
+    
     const [rows, setRows] = React.useState([<RecipientRow key={generateKey('1')} />]);
     function removeRow(index:string) {
         setRows((current) =>
