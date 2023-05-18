@@ -31,12 +31,7 @@ export const RecipientRow = ({
                     }
                 />
             </div>
-            {props.deleteClick && (
-                <Button variant="Secondary" onClick={props.deleteClick}><XMarkIcon className="h-4 w-4" /></Button>
-            )}
-            {!props.deleteClick && (
-                <Button disabled={true} variant="Secondary"><XMarkIcon className="h-4 w-4" /></Button>
-            )}
+            <Button disabled={props.deleteClick ? false : true} variant="Secondary"><XMarkIcon className="h-4 w-4" /></Button>
         </div>
     )
 }
