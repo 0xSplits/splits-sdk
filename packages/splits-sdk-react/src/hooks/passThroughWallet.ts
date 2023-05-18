@@ -5,6 +5,7 @@ import {
   CreatePassThroughWalletConfig,
   PassThroughTokensConfig,
   PassThroughWalletPauseConfig,
+  PassThroughWalletExecCallsConfig,
 } from '@0xsplits/splits-sdk'
 
 import { SplitsContext } from '../context'
@@ -171,4 +172,56 @@ export const usePassThroughWalletPause = (): {
   )
 
   return { setPaused, status, txHash, error }
+}
+
+export const usePassThroughWalletExecCalls = (): {
+  execCalls: (arg0: PassThroughWalletExecCallsConfig) => Promise<Event[] | undefined>
+  status?: ContractExecutionStatus
+  txHash?: string
+  error?: RequestError
+} => {
+  const context = useContext(SplitsContext)
+  if (context === undefined) {
+    throw new Error('Make sure to include <SplitsProvider>')
+  }
+
+  const [status, setStatus] = useState<ContractExecutionStatus>()
+  const [txHash, setTxHash] = useState<string>()
+  const [error, setError] = useState<RequestError>()
+
+  const execCalls = useCallback(
+    async (argsDict: PassThroughWalletExecCallsConfig) => {
+      if (!context.splitsClient.passThroughWallet)
+        throw new Error('Invalid chain id for pass through wallet')
+
+      try {
+        setStatus('pendingApproval')
+        setError(undefined)
+        setTxHash(undefined)
+
+        const { tx } =
+          await context.splitsClient.passThroughWallet.submitExecCallsTransaction(
+            argsDict,
+          )
+
+        setStatus('txInProgress')
+        setTxHash(tx.hash)
+
+        const events = await getTransactionEvents(
+          tx,
+          context.splitsClient.passThroughWallet.eventTopics.execCalls,
+        )
+
+        setStatus('complete')
+
+        return events
+      } catch (e) {
+        setStatus('error')
+        setError(e)
+      }
+    },
+    [context.splitsClient],
+  )
+
+  return { execCalls, status, txHash, error }
 }

@@ -81,4 +81,5 @@ export type {
   CreatePassThroughWalletConfig,
   PassThroughTokensConfig,
   PassThroughWalletPauseConfig,
+  PassThroughWalletExecCallsConfig,
 } from './types'

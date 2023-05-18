@@ -55,4 +55,5 @@ export {
   useCreatePassThroughWallet,
   usePassThroughTokens,
   usePassThroughWalletPause,
+  usePassThroughWalletExecCalls,
 } from './hooks'

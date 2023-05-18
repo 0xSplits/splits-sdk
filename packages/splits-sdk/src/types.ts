@@ -293,6 +293,15 @@ export type PassThroughWalletPauseConfig = {
   newPauseState: boolean
 } & TransactionOverrides
 
+export type PassThroughWalletExecCallsConfig = {
+  passThroughWalletId: string
+  calls: {
+    to: string
+    value: BigNumber
+    data: string
+  }[]
+} & TransactionOverrides
+
 export type ScaledOfferFactorOverride = {
   baseToken: string
   quoteToken: string
