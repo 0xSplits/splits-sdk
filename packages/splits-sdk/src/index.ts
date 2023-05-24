@@ -51,6 +51,7 @@ export type {
   SplitRecipient,
   Split,
   TokenBalances,
+  FormattedTokenBalances,
   WaterfallTranche,
   WaterfallModule,
   WaterfallTrancheInput,

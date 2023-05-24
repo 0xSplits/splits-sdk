@@ -3,7 +3,7 @@ import { BigNumber } from '@ethersproject/bignumber'
 import { AddressZero } from '@ethersproject/constants'
 import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
 import { nameprep } from '@ethersproject/strings'
-import { parseUnits } from '@ethersproject/units'
+import { formatUnits, parseUnits } from '@ethersproject/units'
 import { ConnectionInfo } from '@ethersproject/web'
 
 import {
@@ -66,6 +66,13 @@ export const getBigNumberTokenValue = (
   decimals: number,
 ): BigNumber => {
   return parseUnits(value.toString(), decimals)
+}
+
+export const fromBigNumberToTokenValue = (
+  amount: BigNumber,
+  decimals: number,
+): string => {
+  return formatUnits(amount, decimals)
 }
 
 export const getTransactionEvents = async (

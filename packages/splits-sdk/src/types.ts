@@ -103,6 +103,15 @@ export type TokenBalances = {
   [token: string]: BigNumber
 }
 
+export type FormattedTokenBalances = {
+  [token: string]: {
+    symbol: string
+    decimals: number
+    rawAmount: BigNumber
+    formattedAmount: string
+  }
+}
+
 export type Split = {
   type: 'Split'
   id: string

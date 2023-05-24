@@ -24,12 +24,18 @@ import {
 import { GqlAccountBalances } from '../subgraph/types'
 import type {
   CallData,
+  FormattedTokenBalances,
   SplitsClientConfig,
   TokenBalances,
   TransactionConfig,
   TransactionFormat,
 } from '../types'
-import { getTransactionEvents, isLogsProvider } from '../utils'
+import {
+  fromBigNumberToTokenValue,
+  getTokenData,
+  getTransactionEvents,
+  isLogsProvider,
+} from '../utils'
 import {
   fetchActiveBalances,
   fetchERC20TransferredTokens,
@@ -180,6 +186,50 @@ class BaseClient {
     }, {} as TokenBalances)
 
     return { withdrawn, activeBalances: filteredBalances }
+  }
+
+  protected async _getFormattedTokenBalances(
+    tokenBalancesList: TokenBalances[],
+  ): Promise<FormattedTokenBalances[]> {
+    const localProvider = this._provider
+    if (!localProvider)
+      throw new Error('Provider required to fetch token contract data')
+    const tokenData: { [token: string]: { symbol: string; decimals: number } } =
+      {}
+
+    const formattedTokenBalancesList = await Promise.all(
+      tokenBalancesList.map(async (tokenBalances) => {
+        const formattedTokenBalances = await Object.keys(tokenBalances).reduce(
+          async (acc, token) => {
+            const awaitedAcc = await acc
+
+            const rawAmount = tokenBalances[token]
+            if (!tokenData[token]) {
+              tokenData[token] = await getTokenData(
+                this._chainId,
+                token,
+                localProvider,
+              )
+            }
+
+            awaitedAcc[token] = {
+              ...tokenData[token],
+              rawAmount,
+              formattedAmount: fromBigNumberToTokenValue(
+                rawAmount,
+                tokenData[token].decimals,
+              ),
+            }
+            return awaitedAcc
+          },
+          {} as Promise<FormattedTokenBalances>,
+        )
+
+        return formattedTokenBalances
+      }),
+    )
+
+    return formattedTokenBalancesList
   }
 }
 

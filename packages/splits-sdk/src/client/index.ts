@@ -67,6 +67,7 @@ import type {
   CallData,
   TransactionConfig,
   TransactionFormat,
+  FormattedTokenBalances,
 } from '../types'
 import {
   getRecipientSortedAddressesAndAllocations,
@@ -1061,6 +1062,43 @@ export class SplitsClient extends SplitsTransactions {
 
     if (!includeActiveBalances) return { distributed: withdrawn }
     return { distributed: withdrawn, activeBalances }
+  }
+
+  async getFormattedSplitEarnings({
+    splitId,
+    includeActiveBalances = true,
+    erc20TokenList,
+  }: {
+    splitId: string
+    includeActiveBalances?: boolean
+    erc20TokenList?: string[]
+  }): Promise<{
+    activeBalances?: FormattedTokenBalances
+    distributed: FormattedTokenBalances
+  }> {
+    const { distributed, activeBalances } = await this.getSplitEarnings({
+      splitId,
+      includeActiveBalances,
+      erc20TokenList,
+    })
+
+    const balancesToFormat = [distributed]
+    if (activeBalances) balancesToFormat.push(activeBalances)
+
+    const formattedBalances = await this._getFormattedTokenBalances(
+      balancesToFormat,
+    )
+    const returnData: {
+      distributed: FormattedTokenBalances
+      activeBalances?: FormattedTokenBalances
+    } = {
+      distributed: formattedBalances[0],
+    }
+    if (includeActiveBalances) {
+      returnData['activeBalances'] = formattedBalances[1]
+    }
+
+    return returnData
   }
 
   async getUserEarnings({ userId }: { userId: string }): Promise<{
