@@ -1076,6 +1076,10 @@ export class SplitsClient extends SplitsTransactions {
     activeBalances?: FormattedTokenBalances
     distributed: FormattedTokenBalances
   }> {
+    if (!this._provider)
+      throw new MissingProviderError(
+        'Provider required to get formatted earnings. Please update your call to the SplitsClient constructor with a valid provider',
+      )
     const { distributed, activeBalances } = await this.getSplitEarnings({
       splitId,
       includeActiveBalances,
@@ -1095,7 +1099,7 @@ export class SplitsClient extends SplitsTransactions {
       distributed: formattedBalances[0],
     }
     if (includeActiveBalances) {
-      returnData['activeBalances'] = formattedBalances[1]
+      returnData.activeBalances = formattedBalances[1]
     }
 
     return returnData
