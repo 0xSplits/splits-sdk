@@ -1,6 +1,6 @@
 {
   "name": "@0xsplits/splits-kit",
-  "version": "0.0.1",
+  "version": "0.0.2-beta.0",
   "description": "UI Components for working with 0xSplits contracts",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -27,8 +27,5 @@
   "bugs": {
     "url": "https://github.com/0xSplits/splits-sdk/issues"
   },
-  "homepage": "https://docs.0xsplits.xyz/sdk-info/overview",
-  "dependencies": {},
-  "peerDependencies": {},
-  "devDependencies": {}
+  "homepage": "https://docs.0xsplits.xyz/sdk-info/overview"
 }
