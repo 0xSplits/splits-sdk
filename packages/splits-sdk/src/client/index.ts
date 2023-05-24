@@ -68,6 +68,8 @@ import type {
   TransactionConfig,
   TransactionFormat,
   FormattedTokenBalances,
+  SplitEarnings,
+  FormattedSplitEarnings,
 } from '../types'
 import {
   getRecipientSortedAddressesAndAllocations,
@@ -1044,10 +1046,7 @@ export class SplitsClient extends SplitsTransactions {
     splitId: string
     includeActiveBalances?: boolean
     erc20TokenList?: string[]
-  }): Promise<{
-    activeBalances?: TokenBalances
-    distributed: TokenBalances
-  }> {
+  }): Promise<SplitEarnings> {
     validateAddress(splitId)
     if (includeActiveBalances && !this._provider)
       throw new MissingProviderError(
@@ -1072,10 +1071,7 @@ export class SplitsClient extends SplitsTransactions {
     splitId: string
     includeActiveBalances?: boolean
     erc20TokenList?: string[]
-  }): Promise<{
-    activeBalances?: FormattedTokenBalances
-    distributed: FormattedTokenBalances
-  }> {
+  }): Promise<FormattedSplitEarnings> {
     if (!this._provider)
       throw new MissingProviderError(
         'Provider required to get formatted earnings. Please update your call to the SplitsClient constructor with a valid provider',

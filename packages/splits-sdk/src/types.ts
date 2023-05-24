@@ -112,6 +112,16 @@ export type FormattedTokenBalances = {
   }
 }
 
+export type SplitEarnings = {
+  distributed: TokenBalances
+  activeBalances?: TokenBalances
+}
+
+export type FormattedSplitEarnings = {
+  distributed: FormattedTokenBalances
+  activeBalances?: FormattedTokenBalances
+}
+
 export type Split = {
   type: 'Split'
   id: string

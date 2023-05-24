@@ -14,6 +14,8 @@ import {
   CancelControlTransferConfig,
   AcceptControlTransferConfig,
   MakeSplitImmutableConfig,
+  SplitEarnings,
+  FormattedSplitEarnings,
 } from '@0xsplits/splits-sdk'
 
 import { SplitsContext } from '../context'
@@ -527,5 +529,84 @@ export const useSplitMetadata = (
   return {
     isLoading,
     splitMetadata,
+  }
+}
+
+export const useSplitEarnings = (
+  splitId: string,
+  includeActiveBalances?: boolean,
+  erc20TokenList?: string[],
+  formatted?: boolean,
+): {
+  isLoading: boolean
+  splitEarnings: SplitEarnings | undefined
+  formattedSplitEarnings: FormattedSplitEarnings | undefined
+} => {
+  const context = useContext(SplitsContext)
+  if (context === undefined) {
+    throw new Error('Make sure to include <SplitsProvider>')
+  }
+
+  const [splitEarnings, setSplitEarnings] = useState<
+    SplitEarnings | undefined
+  >()
+  const [formattedSplitEarnings, setFormattedSplitEarnings] = useState<
+    FormattedSplitEarnings | undefined
+  >()
+  const [isLoading, setIsLoading] = useState(!!splitId)
+
+  useEffect(() => {
+    let isActive = true
+
+    const fetchMetadata = async () => {
+      try {
+        if (formatted) {
+          const formattedEarnings =
+            await context.splitsClient.getFormattedSplitEarnings({
+              splitId,
+              includeActiveBalances,
+              erc20TokenList,
+            })
+          if (!isActive) return
+          setFormattedSplitEarnings(formattedEarnings)
+          setSplitEarnings(undefined)
+        } else {
+          const earnings = await context.splitsClient.getSplitEarnings({
+            splitId,
+            includeActiveBalances,
+            erc20TokenList,
+          })
+          if (!isActive) return
+          setSplitEarnings(earnings)
+          setFormattedSplitEarnings(undefined)
+        }
+      } finally {
+        if (isActive) setIsLoading(false)
+      }
+    }
+
+    if (splitId) {
+      setIsLoading(true)
+      fetchMetadata()
+    } else {
+      setSplitEarnings(undefined)
+      setFormattedSplitEarnings(undefined)
+    }
+
+    return () => {
+      isActive = false
+    }
+  }, [
+    context.splitsClient,
+    splitId,
+    formatted,
+    includeActiveBalances,
+    erc20TokenList,
+  ])
+
+  return {
+    isLoading,
+    splitEarnings,
+    formattedSplitEarnings,
   }
 }
