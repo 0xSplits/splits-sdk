@@ -558,9 +558,9 @@ export const useSplitEarnings = (
   useEffect(() => {
     let isActive = true
 
-    const fetchMetadata = async () => {
+    const fetchMetadata = async (fetchFormattedEarnings?: boolean) => {
       try {
-        if (formatted) {
+        if (fetchFormattedEarnings) {
           const formattedEarnings =
             await context.splitsClient.getFormattedSplitEarnings({
               splitId,
@@ -587,7 +587,7 @@ export const useSplitEarnings = (
 
     if (splitId) {
       setIsLoading(true)
-      fetchMetadata()
+      fetchMetadata(formatted)
     } else {
       setSplitEarnings(undefined)
       setFormattedSplitEarnings(undefined)
