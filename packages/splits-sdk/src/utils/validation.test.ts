@@ -1,3 +1,4 @@
+import { BigNumber } from '@ethersproject/bignumber'
 import { AddressZero } from '@ethersproject/constants'
 
 import { SPLITS_MAX_PRECISION_DECIMALS } from '../constants'
@@ -14,6 +15,10 @@ import {
   validateTranches,
   validateVestingPeriod,
   validateRecoupNonWaterfallRecipient,
+  validateDiversifierRecipients,
+  validateOracleParams,
+  validateUniV3SwapInputAssets,
+  validateScaledOfferFactor,
 } from './validation'
 
 describe('Address validation', () => {
@@ -212,5 +217,277 @@ describe('Recoup non waterfall recipient validation', () => {
     expect(() =>
       validateRecoupNonWaterfallRecipient(3, AddressZero, 1),
     ).not.toThrow()
+  })
+})
+
+describe('Diversifier recipient validation', () => {
+  test('Only one recipient fails', () => {
+    expect(() =>
+      validateDiversifierRecipients([
+        {
+          address: '0x25ED37D355DF14013d24d75508CB7344aBB59814',
+          percentAllocation: 50,
+        },
+      ]),
+    ).toThrow(InvalidArgumentError)
+  })
+
+  test('Setting address and swapper params fails', () => {
+    expect(() =>
+      validateDiversifierRecipients([
+        {
+          address: '0x25ED37D355DF14013d24d75508CB7344aBB59814',
+          swapperParams: {
+            beneficiary: '0x25ED37D355DF14013d24d75508CB7344aBB59814',
+            tokenToBeneficiary: '0x0000000000000000000000000000000000000000',
+            defaultScaledOfferFactorPercent: 1,
+            scaledOfferFactorOverrides: [],
+          },
+          percentAllocation: 50,
+        },
+        {
+          address: '0x25ED37D355DF14013d24d75508CB7344aBB59814',
+          percentAllocation: 50,
+        },
+      ]),
+    ).toThrow(InvalidArgumentError)
+  })
+
+  test('No address or swapper params fails', () => {
+    expect(() =>
+      validateDiversifierRecipients([
+        {
+          percentAllocation: 50,
+        },
+        {
+          address: '0x25ED37D355DF14013d24d75508CB7344aBB59814',
+          percentAllocation: 50,
+        },
+      ]),
+    ).toThrow(InvalidArgumentError)
+  })
+
+  test('Invalid address fails', () => {
+    expect(() =>
+      validateDiversifierRecipients([
+        {
+          address: 'invalid address',
+          percentAllocation: 50,
+        },
+        {
+          address: '0x25ED37D355DF14013d24d75508CB7344aBB59814',
+          percentAllocation: 50,
+        },
+      ]),
+    ).toThrow(InvalidArgumentError)
+  })
+
+  test('Invalid swapper beneficiary or token fails', () => {
+    expect(() =>
+      validateDiversifierRecipients([
+        {
+          swapperParams: {
+            beneficiary: 'invalid address',
+            tokenToBeneficiary: '0x0000000000000000000000000000000000000000',
+            defaultScaledOfferFactorPercent: 1,
+            scaledOfferFactorOverrides: [],
+          },
+          percentAllocation: 50,
+        },
+        {
+          address: '0x25ED37D355DF14013d24d75508CB7344aBB59814',
+          percentAllocation: 50,
+        },
+      ]),
+    ).toThrow(InvalidArgumentError)
+
+    expect(() =>
+      validateDiversifierRecipients([
+        {
+          swapperParams: {
+            beneficiary: '0x25ED37D355DF14013d24d75508CB7344aBB59814',
+            tokenToBeneficiary: 'invalid token',
+            defaultScaledOfferFactorPercent: 1,
+            scaledOfferFactorOverrides: [],
+          },
+          percentAllocation: 50,
+        },
+        {
+          address: '0x25ED37D355DF14013d24d75508CB7344aBB59814',
+          percentAllocation: 50,
+        },
+      ]),
+    ).toThrow(InvalidArgumentError)
+  })
+
+  test('Invalid percent allocation fails', () => {
+    expect(() =>
+      validateDiversifierRecipients([
+        {
+          address: '0x25ED37D355DF14013d24d75508CB7344aBB59814',
+          percentAllocation: 0,
+        },
+        {
+          address: '0x25ED37D355DF14013d24d75508CB7344aBB59814',
+          percentAllocation: 50,
+        },
+      ]),
+    ).toThrow(InvalidArgumentError)
+
+    expect(() =>
+      validateDiversifierRecipients([
+        {
+          address: '0x25ED37D355DF14013d24d75508CB7344aBB59814',
+          percentAllocation: 100,
+        },
+        {
+          address: '0x25ED37D355DF14013d24d75508CB7344aBB59814',
+          percentAllocation: 50,
+        },
+      ]),
+    ).toThrow(InvalidArgumentError)
+
+    expect(() =>
+      validateDiversifierRecipients([
+        {
+          address: '0x25ED37D355DF14013d24d75508CB7344aBB59814',
+          percentAllocation: 50.00001,
+        },
+        {
+          address: '0x25ED37D355DF14013d24d75508CB7344aBB59814',
+          percentAllocation: 49.99999,
+        },
+      ]),
+    ).toThrow(InvalidArgumentError)
+  })
+
+  test('Invalid total percent allocation fails', () => {
+    expect(() =>
+      validateDiversifierRecipients([
+        {
+          address: '0x25ED37D355DF14013d24d75508CB7344aBB59814',
+          percentAllocation: 50,
+        },
+        {
+          address: '0x25ED37D355DF14013d24d75508CB7344aBB59814',
+          percentAllocation: 50.1,
+        },
+      ]),
+    ).toThrow(InvalidArgumentError)
+  })
+
+  test('Valid recipients passes', () => {
+    expect(() =>
+      validateDiversifierRecipients([
+        {
+          address: '0x25ED37D355DF14013d24d75508CB7344aBB59814',
+          percentAllocation: 60,
+        },
+        {
+          swapperParams: {
+            beneficiary: '0x25ED37D355DF14013d24d75508CB7344aBB59814',
+            tokenToBeneficiary: '0x0000000000000000000000000000000000000000',
+            defaultScaledOfferFactorPercent: 1,
+            scaledOfferFactorOverrides: [],
+          },
+          percentAllocation: 40,
+        },
+      ]),
+    ).not.toThrow()
+  })
+})
+
+describe('oracle params validation', () => {
+  test('Setting address and create params fails', () => {
+    expect(() =>
+      validateOracleParams({
+        address: '0x25ED37D355DF14013d24d75508CB7344aBB59814',
+        createOracleParams: {
+          factory: '0x25ED37D355DF14013d24d75508CB7344aBB59814',
+          data: 'oracle data',
+        },
+      }),
+    ).toThrow(InvalidArgumentError)
+  })
+
+  test('Setting neither address nor create params fails', () => {
+    expect(() => validateOracleParams({})).toThrow(InvalidArgumentError)
+  })
+
+  test('Invalid address fails', () => {
+    expect(() => validateOracleParams({ address: 'bad address' })).toThrow(
+      InvalidArgumentError,
+    )
+  })
+
+  test('Invalid factory address fails', () => {
+    expect(() =>
+      validateOracleParams({
+        createOracleParams: { factory: 'bad factory ', data: 'oracle data' },
+      }),
+    ).toThrow(InvalidArgumentError)
+  })
+
+  test('Valid address passes', () => {
+    expect(() =>
+      validateOracleParams({
+        address: '0x25ED37D355DF14013d24d75508CB7344aBB59814',
+      }),
+    ).not.toThrow()
+  })
+
+  test('Valid factory address passes', () => {
+    expect(() =>
+      validateOracleParams({
+        createOracleParams: {
+          factory: '0x25ED37D355DF14013d24d75508CB7344aBB59814',
+          data: 'oracle data',
+        },
+      }),
+    ).not.toThrow()
+  })
+})
+
+describe('uni v3 swap inputs validation', () => {
+  test('Empty input assets fails', () => {
+    expect(() => validateUniV3SwapInputAssets([])).toThrow(InvalidArgumentError)
+  })
+
+  test('Invalid token fails', () => {
+    expect(() =>
+      validateUniV3SwapInputAssets([
+        {
+          encodedPath: '',
+          token: 'bad token',
+          amountIn: BigNumber.from(1),
+          amountOutMin: BigNumber.from(1),
+        },
+      ]),
+    )
+  })
+
+  test('Valid assets pass', () => {
+    expect(() =>
+      validateUniV3SwapInputAssets([
+        {
+          encodedPath: '',
+          token: '0x0000000000000000000000000000000000000000',
+          amountIn: BigNumber.from(1),
+          amountOutMin: BigNumber.from(1),
+        },
+      ]),
+    )
+  })
+})
+
+describe('validate scaled offer factor', () => {
+  test('Invalid scaled offer factor fails', () => {
+    expect(() => validateScaledOfferFactor(100)).toThrow(InvalidArgumentError)
+  })
+
+  test('Valid scaled offer factor passes', () => {
+    expect(() => validateScaledOfferFactor(1)).not.toThrow()
+
+    expect(() => validateScaledOfferFactor(-1)).not.toThrow()
   })
 })

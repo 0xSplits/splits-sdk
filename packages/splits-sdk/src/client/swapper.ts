@@ -208,6 +208,7 @@ class SwapperTransactions extends BaseTransactions {
     transactionOverrides = {},
   }: SwapperSetTokenToBeneficiaryConfig): Promise<TransactionFormat> {
     validateAddress(swapperId)
+    validateAddress(tokenToBeneficiary)
     if (this._shouldRequireSigner) this._requireSigner()
     // TODO: require signer is owner
 
@@ -286,7 +287,7 @@ class SwapperTransactions extends BaseTransactions {
 
   protected async _setPausedTransaction({
     swapperId,
-    newPauseState,
+    paused,
     transactionOverrides = {},
   }: SwapperPauseConfig): Promise<TransactionFormat> {
     validateAddress(swapperId)
@@ -295,7 +296,7 @@ class SwapperTransactions extends BaseTransactions {
 
     const swapperContract = this._getSwapperContract(swapperId)
     const pauseResult = await swapperContract.setPaused(
-      newPauseState,
+      paused,
       transactionOverrides,
     )
 
@@ -550,7 +551,7 @@ export class SwapperClient extends SwapperTransactions {
     const { tx } = await this.submitSetTokenToBeneficiaryTransaction(args)
     const events = await getTransactionEvents(
       tx,
-      this.eventTopics.setBeneficiary,
+      this.eventTopics.setTokenToBeneficiary,
     )
     const event = events.length > 0 ? events[0] : undefined
     if (event)
@@ -574,10 +575,7 @@ export class SwapperClient extends SwapperTransactions {
     event: Event
   }> {
     const { tx } = await this.submitSetOracleTransaction(args)
-    const events = await getTransactionEvents(
-      tx,
-      this.eventTopics.setBeneficiary,
-    )
+    const events = await getTransactionEvents(tx, this.eventTopics.setOracle)
     const event = events.length > 0 ? events[0] : undefined
     if (event)
       return {
@@ -598,14 +596,15 @@ export class SwapperClient extends SwapperTransactions {
     return { tx }
   }
 
-  // eslint-disable-next-line prettier/prettier
-  async setDefaultScaledOfferFactor(args: SwapperSetDefaultScaledOfferFactorConfig): Promise<{
+  async setDefaultScaledOfferFactor(
+    args: SwapperSetDefaultScaledOfferFactorConfig,
+  ): Promise<{
     event: Event
   }> {
     const { tx } = await this.submitSetDefaultScaledOfferFactorTransaction(args)
     const events = await getTransactionEvents(
       tx,
-      this.eventTopics.setBeneficiary,
+      this.eventTopics.setDefaultScaledOfferFactor,
     )
     const event = events.length > 0 ? events[0] : undefined
     if (event)
@@ -614,6 +613,68 @@ export class SwapperClient extends SwapperTransactions {
       }
 
     throw new TransactionFailedError()
+  }
+
+  // Read actions
+  async getBeneficiary({ swapperId }: { swapperId: string }): Promise<{
+    beneficiary: string
+  }> {
+    validateAddress(swapperId)
+    this._requireProvider()
+
+    const swapperContract = this._getSwapperContract(swapperId)
+    const beneficiary = await swapperContract.beneficiary()
+
+    return {
+      beneficiary,
+    }
+  }
+
+  async getTokenToBeneficiary({ swapperId }: { swapperId: string }): Promise<{
+    tokenToBeneficiary: string
+  }> {
+    validateAddress(swapperId)
+    this._requireProvider()
+
+    const swapperContract = this._getSwapperContract(swapperId)
+    const tokenToBeneficiary = await swapperContract.tokenToBeneficiary()
+
+    return {
+      tokenToBeneficiary,
+    }
+  }
+
+  async getOracle({ swapperId }: { swapperId: string }): Promise<{
+    oracle: string
+  }> {
+    validateAddress(swapperId)
+    this._requireProvider()
+
+    const swapperContract = this._getSwapperContract(swapperId)
+    const oracle = await swapperContract.oracle()
+
+    return {
+      oracle,
+    }
+  }
+
+  async getDefaultScaledOfferFactor({
+    swapperId,
+  }: {
+    swapperId: string
+  }): Promise<{
+    defaultScaledOfferFactor: BigNumber
+  }> {
+    validateAddress(swapperId)
+    this._requireProvider()
+
+    const swapperContract = this._getSwapperContract(swapperId)
+    const defaultScaledOfferFactor =
+      await swapperContract.defaultScaledOfferFactor()
+
+    return {
+      defaultScaledOfferFactor,
+    }
   }
 }
 

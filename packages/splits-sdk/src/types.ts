@@ -346,7 +346,7 @@ export type SwapperExecCallsConfig = {
 
 export type SwapperPauseConfig = {
   swapperId: string
-  newPauseState: boolean
+  paused: boolean
 } & TransactionOverrides
 
 export type SwapperSetBeneficiaryConfig = {

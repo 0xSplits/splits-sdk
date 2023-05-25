@@ -198,6 +198,10 @@ export const validateRecoupNonWaterfallRecipient = (
 export const validateDiversifierRecipients = (
   recipients: DiversifierRecipient[],
 ): void => {
+  let totalPercentAllocation = 0
+  if (recipients.length < 2)
+    throw new InvalidArgumentError('At least two recipients are required')
+
   recipients.map((recipientData) => {
     if (recipientData.address && recipientData.swapperParams)
       throw new InvalidArgumentError(
@@ -225,10 +229,22 @@ export const validateDiversifierRecipients = (
       getNumDigitsAfterDecimal(recipientData.percentAllocation) >
       SPLITS_MAX_PRECISION_DECIMALS
     )
-      throw new InvalidRecipientsError(
+      throw new InvalidArgumentError(
         `Invalid precision on percent allocation: ${recipientData.percentAllocation}. Maxiumum allowed precision is ${SPLITS_MAX_PRECISION_DECIMALS} decimals`,
       )
+
+    totalPercentAllocation += recipientData.percentAllocation
   })
+
+  // Cutoff any decimals beyond the max precision, they may get introduced due
+  // to javascript floating point precision
+  const factorOfTen = Math.pow(10, SPLITS_MAX_PRECISION_DECIMALS)
+  totalPercentAllocation =
+    Math.round(totalPercentAllocation * factorOfTen) / factorOfTen
+  if (totalPercentAllocation !== 100)
+    throw new InvalidArgumentError(
+      `Percent allocation must add up to 100. Currently adds up to ${totalPercentAllocation}`,
+    )
 }
 
 export const validateOracleParams = (oracleParams: ParseOracleParams): void => {

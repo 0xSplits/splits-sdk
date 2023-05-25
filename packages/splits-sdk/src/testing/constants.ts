@@ -1,6 +1,10 @@
 import { BigNumber } from '@ethersproject/bignumber'
 import { AddressZero } from '@ethersproject/constants'
-import { ContractRecoupTranche } from '../types'
+import {
+  ContractOracleParams,
+  ContractRecoupTranche,
+  ContractScaledOfferFactorOverride,
+} from '../types'
 
 export const CONTROLLER_ADDRESS = '0xcontroller'
 export const NEW_CONTROLLER_ADDRESS = '0xnewController'
@@ -20,3 +24,11 @@ export const RECOUP_TRANCHE_RECIPIENTS: ContractRecoupTranche[] = [
   [['0x1'], [BigNumber.from(1000000)], AddressZero, BigNumber.from(0)],
   [['0x2'], [BigNumber.from(1000000)], AddressZero, BigNumber.from(1000)],
 ]
+
+export const FORMATTED_ORACLE_PARAMS: ContractOracleParams = [
+  '0xOracleFactory',
+  ['0x0', '0x0'],
+]
+export const FORMATTED_SCALED_OFFER_FACTOR = BigNumber.from(990000)
+export const FORMATTED_SCALED_OFFER_FACTOR_OVERRIDES: ContractScaledOfferFactorOverride[] =
+  [[['0xtoken1', '0xtoken2'], BigNumber.from(999000)]]
