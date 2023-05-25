@@ -1116,6 +1116,27 @@ export class SplitsClient extends SplitsTransactions {
     return { withdrawn, activeBalances }
   }
 
+  async getFormattedUserEarnings({ userId }: { userId: string }): Promise<{
+    withdrawn: FormattedTokenBalances
+    activeBalances: FormattedTokenBalances
+  }> {
+    if (!this._provider)
+      throw new MissingProviderError(
+        'Provider required to get formatted earnings. Please update your call to the SplitsClient constructor with a valid provider',
+      )
+
+    const { withdrawn, activeBalances } = await this.getUserEarnings({ userId })
+    const balancesToFormat = [withdrawn, activeBalances]
+    const formattedBalances = await this._getFormattedTokenBalances(
+      balancesToFormat,
+    )
+
+    return {
+      withdrawn: formattedBalances[0],
+      activeBalances: formattedBalances[1],
+    }
+  }
+
   /*
   /
   / ACCOUNT ACTIONS
