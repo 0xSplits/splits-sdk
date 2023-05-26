@@ -349,7 +349,6 @@ export type CreateSwapperConfig = SwapperParams & {
 
 export type UniV3FlashSwapConfig = {
   swapperId: string
-  outputToken: string // TODO: read from graphql
   excessRecipient?: string // defaults to signer
   inputAssets: {
     encodedPath: string
