@@ -1,4 +1,5 @@
 import { Provider } from '@ethersproject/abstract-provider'
+import { OWNER_ADDRESS } from '../constants'
 
 export const writeActions = {
   setBeneficiary: jest.fn(),
@@ -16,6 +17,7 @@ export const readActions = {
   oracle: jest.fn(),
   defaultScaledOfferFactor: jest.fn(),
   getPairScaledOfferFactors: jest.fn(),
+  owner: jest.fn().mockReturnValue(OWNER_ADDRESS),
 }
 
 export class MockSwapper {
@@ -37,6 +39,7 @@ export class MockSwapper {
   oracle: jest.Mock
   defaultScaledOfferFactor: jest.Mock
   getPairScaledOfferFactors: jest.Mock
+  owner: jest.Mock
 
   constructor(provider: Provider) {
     this.provider = provider
@@ -62,6 +65,7 @@ export class MockSwapper {
     this.oracle = readActions.oracle
     this.defaultScaledOfferFactor = readActions.defaultScaledOfferFactor
     this.getPairScaledOfferFactors = readActions.getPairScaledOfferFactors
+    this.owner = readActions.owner
   }
 
   connect() {

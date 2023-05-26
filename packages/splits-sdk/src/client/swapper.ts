@@ -20,6 +20,7 @@ import {
 } from '../constants'
 import {
   AccountNotFoundError,
+  InvalidAuthError,
   TransactionFailedError,
   UnsupportedChainIdError,
 } from '../errors'
@@ -133,14 +134,12 @@ class SwapperTransactions extends BaseTransactions {
 
   protected async _uniV3FlashSwapTransaction({
     swapperId,
-    outputToken, // TODO: read from graphql
     excessRecipient,
     inputAssets,
     transactionTimeLimit = 30,
     transactionOverrides = {},
   }: UniV3FlashSwapConfig): Promise<TransactionFormat> {
     validateAddress(swapperId)
-    validateAddress(outputToken)
     validateUniV3SwapInputAssets(inputAssets)
 
     this._requireProvider()
@@ -154,6 +153,11 @@ class SwapperTransactions extends BaseTransactions {
       : AddressZero
     validateAddress(excessRecipientAddress)
 
+    // TO DO: handle bad swapper id/no metadata found
+    const { tokenToBeneficiary } = await this.getSwapperMetadata({
+      swapperId,
+    })
+
     const uniV3SwapContract = this._getUniV3SwapContract()
     const swapRecipient = getUniV3SwapAddress(this._chainId)
     const deadlineTime = Math.floor(Date.now() / 1000) + transactionTimeLimit
@@ -162,7 +166,7 @@ class SwapperTransactions extends BaseTransactions {
     const exactInputParams: ContractSwapperExactInputParams[] = []
     inputAssets.map((inputAsset) => {
       quoteParams.push([
-        [inputAsset.token, outputToken],
+        [inputAsset.token, tokenToBeneficiary.address],
         inputAsset.amountIn,
         AddressZero,
       ])
@@ -198,8 +202,10 @@ class SwapperTransactions extends BaseTransactions {
   }: SwapperSetBeneficiaryConfig): Promise<TransactionFormat> {
     validateAddress(swapperId)
     validateAddress(beneficiary)
-    if (this._shouldRequireSigner) this._requireSigner()
-    // TODO: require signer is owner
+    if (this._shouldRequireSigner) {
+      this._requireSigner()
+      await this._requireOwner(swapperId)
+    }
 
     const swapperContract = this._getSwapperContract(swapperId)
     const editResult = await swapperContract.setBeneficiary(
@@ -217,8 +223,10 @@ class SwapperTransactions extends BaseTransactions {
   }: SwapperSetTokenToBeneficiaryConfig): Promise<TransactionFormat> {
     validateAddress(swapperId)
     validateAddress(tokenToBeneficiary)
-    if (this._shouldRequireSigner) this._requireSigner()
-    // TODO: require signer is owner
+    if (this._shouldRequireSigner) {
+      this._requireSigner()
+      await this._requireOwner(swapperId)
+    }
 
     const swapperContract = this._getSwapperContract(swapperId)
     const editResult = await swapperContract.setTokenToBeneficiary(
@@ -236,8 +244,10 @@ class SwapperTransactions extends BaseTransactions {
   }: SwapperSetOracleConfig): Promise<TransactionFormat> {
     validateAddress(swapperId)
     validateAddress(oracle)
-    if (this._shouldRequireSigner) this._requireSigner()
-    // TODO: require signer is owner
+    if (this._shouldRequireSigner) {
+      this._requireSigner()
+      await this._requireOwner(swapperId)
+    }
 
     const swapperContract = this._getSwapperContract(swapperId)
     const editResult = await swapperContract.setOracle(
@@ -255,8 +265,10 @@ class SwapperTransactions extends BaseTransactions {
   }: SwapperSetDefaultScaledOfferFactorConfig): Promise<TransactionFormat> {
     validateAddress(swapperId)
     validateScaledOfferFactor(defaultScaledOfferFactorPercent)
-    if (this._shouldRequireSigner) this._requireSigner()
-    // TODO: require signer is owner
+    if (this._shouldRequireSigner) {
+      this._requireSigner()
+      await this._requireOwner(swapperId)
+    }
 
     const formattedDefaultScaledOfferFactor = getFormattedScaledOfferFactor(
       defaultScaledOfferFactorPercent,
@@ -280,8 +292,10 @@ class SwapperTransactions extends BaseTransactions {
   }: SwapperExecCallsConfig): Promise<TransactionFormat> {
     validateAddress(swapperId)
     calls.map((callData) => validateAddress(callData.to))
-    if (this._shouldRequireSigner) this._requireSigner()
-    // TODO: require signer is owner
+    if (this._shouldRequireSigner) {
+      this._requireSigner()
+      await this._requireOwner(swapperId)
+    }
 
     const swapperContract = this._getSwapperContract(swapperId)
     const formattedCalls = calls.map((callData) => {
@@ -301,8 +315,10 @@ class SwapperTransactions extends BaseTransactions {
     transactionOverrides = {},
   }: SwapperPauseConfig): Promise<TransactionFormat> {
     validateAddress(swapperId)
-    if (this._shouldRequireSigner) this._requireSigner()
-    // TODO: require signer is owner
+    if (this._shouldRequireSigner) {
+      this._requireSigner()
+      await this._requireOwner(swapperId)
+    }
 
     const swapperContract = this._getSwapperContract(swapperId)
     const pauseResult = await swapperContract.setPaused(
@@ -311,6 +327,52 @@ class SwapperTransactions extends BaseTransactions {
     )
 
     return pauseResult
+  }
+
+  // Graphql read actions
+  async getSwapperMetadata({
+    swapperId,
+  }: {
+    swapperId: string
+  }): Promise<Swapper> {
+    validateAddress(swapperId)
+
+    const response = await this._makeGqlRequest<{
+      swapper: GqlSwapper
+    }>(SWAPPER_QUERY, {
+      swapperId: swapperId.toLowerCase(),
+    })
+
+    if (!response.swapper)
+      throw new AccountNotFoundError(
+        `No swapper found at address ${swapperId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
+      )
+
+    return await this.formatSwapper(response.swapper)
+  }
+
+  async formatSwapper(gqlSwapper: GqlSwapper): Promise<Swapper> {
+    const swapper = protectedFormatSwapper(gqlSwapper)
+    if (this._includeEnsNames) {
+      if (!this._ensProvider) throw new Error()
+      await addSwapperEnsNames(this._ensProvider, swapper)
+    }
+
+    return swapper
+  }
+
+  private async _requireOwner(swapperId: string) {
+    const swapperContract = this._getSwapperContract(swapperId)
+    const owner = await swapperContract.owner()
+    // TODO: how to get rid of this, needed for typescript check
+    if (!this._signer) throw new Error()
+
+    const signerAddress = await this._signer.getAddress()
+
+    if (owner !== signerAddress)
+      throw new InvalidAuthError(
+        `Action only available to the swapper owner. Swapper id: ${swapperContract}, owner: ${owner}, signer: ${signerAddress}`,
+      )
   }
 
   protected _getUniV3SwapContract() {
@@ -688,38 +750,6 @@ export class SwapperClient extends SwapperTransactions {
   }
 
   // TODO: get pair overrides
-
-  // Graphql read actions
-  async getSwapperMetadata({
-    swapperId,
-  }: {
-    swapperId: string
-  }): Promise<Swapper> {
-    validateAddress(swapperId)
-
-    const response = await this._makeGqlRequest<{
-      swapper: GqlSwapper
-    }>(SWAPPER_QUERY, {
-      swapperId: swapperId.toLowerCase(),
-    })
-
-    if (!response.swapper)
-      throw new AccountNotFoundError(
-        `No swapper found at address ${swapperId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
-      )
-
-    return await this.formatSwapper(response.swapper)
-  }
-
-  async formatSwapper(gqlSwapper: GqlSwapper): Promise<Swapper> {
-    const swapper = protectedFormatSwapper(gqlSwapper)
-    if (this._includeEnsNames) {
-      if (!this._ensProvider) throw new Error()
-      await addSwapperEnsNames(this._ensProvider, swapper)
-    }
-
-    return swapper
-  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface

@@ -6,6 +6,7 @@ import type { Event } from '@ethersproject/contracts'
 import { SwapperClient } from './swapper'
 import { getSwapperFactoryAddress } from '../constants'
 import {
+  InvalidAuthError,
   InvalidConfigError,
   MissingProviderError,
   MissingSignerError,
@@ -23,6 +24,7 @@ import {
   FORMATTED_ORACLE_PARAMS,
   FORMATTED_SCALED_OFFER_FACTOR,
   FORMATTED_SCALED_OFFER_FACTOR_OVERRIDES,
+  OWNER_ADDRESS,
 } from '../testing/constants'
 import { MockGraphqlClient } from '../testing/mocks/graphql'
 import {
@@ -79,7 +81,20 @@ const getFormattedScaledOfferFactorOverridesMock = jest
   })
 
 const mockProvider = jest.fn<Provider, unknown[]>()
-const mockSigner = jest.fn<Signer, unknown[]>()
+const mockSigner = jest.fn<Signer, unknown[]>(() => {
+  return {
+    getAddress: () => {
+      return OWNER_ADDRESS
+    },
+  } as unknown as Signer
+})
+const mockSignerNonOwner = jest.fn<Signer, unknown[]>(() => {
+  return {
+    getAddress: () => {
+      return '0xnotOwner'
+    },
+  } as unknown as Signer
+})
 
 describe('Client config validation', () => {
   test('Including ens names with no provider fails', () => {
@@ -289,6 +304,23 @@ describe('Swapper writes', () => {
       ).rejects.toThrow(MissingSignerError)
     })
 
+    test('Set beneficiary fails from non owner', async () => {
+      const nonOwnerSigner = new mockSignerNonOwner()
+      const badClient = new SwapperClient({
+        chainId: 1,
+        provider,
+        signer: nonOwnerSigner,
+      })
+
+      await expect(
+        async () =>
+          await badClient.setBeneficiary({
+            swapperId,
+            beneficiary,
+          }),
+      ).rejects.toThrow(InvalidAuthError)
+    })
+
     test('Set beneficiary passes', async () => {
       const { event } = await client.setBeneficiary({
         swapperId,
@@ -313,22 +345,7 @@ describe('Swapper writes', () => {
       wait: 'wait',
     }
 
-    // const mockGetWaterfallData = jest
-    //   .spyOn(waterfallClient, 'getWaterfallMetadata')
-    //   .mockImplementation(async () => {
-    //     return {
-    //       token: {
-    //         address: '0xwaterfalltoken',
-    //       },
-    //       tranches: [
-    //         { recipientAddress: '0xrecipient1' },
-    //         { recipientAddress: '0xrecipient2' },
-    //       ],
-    //     } as WaterfallModule
-    //   })
-
     beforeEach(() => {
-      // mockGetWaterfallData.mockClear()
       moduleWriteActions.setTokenToBeneficiary.mockClear()
       moduleWriteActions.setTokenToBeneficiary.mockReturnValueOnce(
         setTokenToBeneficiaryResult,
@@ -362,6 +379,23 @@ describe('Swapper writes', () => {
             tokenToBeneficiary,
           }),
       ).rejects.toThrow(MissingSignerError)
+    })
+
+    test('Set token to beneficiary fails from non owner', async () => {
+      const nonOwnerSigner = new mockSignerNonOwner()
+      const badClient = new SwapperClient({
+        chainId: 1,
+        provider,
+        signer: nonOwnerSigner,
+      })
+
+      await expect(
+        async () =>
+          await badClient.setTokenToBeneficiary({
+            swapperId,
+            tokenToBeneficiary,
+          }),
+      ).rejects.toThrow(InvalidAuthError)
     })
 
     test('Set token to beneficiary passes', async () => {
@@ -426,6 +460,23 @@ describe('Swapper writes', () => {
       ).rejects.toThrow(MissingSignerError)
     })
 
+    test('Set oracle fails from non owner', async () => {
+      const nonOwnerSigner = new mockSignerNonOwner()
+      const badClient = new SwapperClient({
+        chainId: 1,
+        provider,
+        signer: nonOwnerSigner,
+      })
+
+      await expect(
+        async () =>
+          await badClient.setOracle({
+            swapperId,
+            oracle,
+          }),
+      ).rejects.toThrow(InvalidAuthError)
+    })
+
     test('Set oracle passes', async () => {
       const { event } = await client.setOracle({
         swapperId,
@@ -484,6 +535,23 @@ describe('Swapper writes', () => {
             defaultScaledOfferFactorPercent,
           }),
       ).rejects.toThrow(MissingSignerError)
+    })
+
+    test('Set default scale fails from non owner', async () => {
+      const nonOwnerSigner = new mockSignerNonOwner()
+      const badClient = new SwapperClient({
+        chainId: 1,
+        provider,
+        signer: nonOwnerSigner,
+      })
+
+      await expect(
+        async () =>
+          await badClient.setDefaultScaledOfferFactor({
+            swapperId,
+            defaultScaledOfferFactorPercent,
+          }),
+      ).rejects.toThrow(InvalidAuthError)
     })
 
     test('Set default scale passes', async () => {
@@ -555,6 +623,23 @@ describe('Swapper writes', () => {
       ).rejects.toThrow(MissingSignerError)
     })
 
+    test('Set paused fails from non owner', async () => {
+      const nonOwnerSigner = new mockSignerNonOwner()
+      const badClient = new SwapperClient({
+        chainId: 1,
+        provider,
+        signer: nonOwnerSigner,
+      })
+
+      await expect(
+        async () =>
+          await badClient.setPaused({
+            swapperId,
+            paused,
+          }),
+      ).rejects.toThrow(InvalidAuthError)
+    })
+
     test('Set paused passes', async () => {
       const { event } = await client.setPaused({
         swapperId,
@@ -617,6 +702,23 @@ describe('Swapper writes', () => {
             calls,
           }),
       ).rejects.toThrow(MissingSignerError)
+    })
+
+    test('Exec calls fails from non owner', async () => {
+      const nonOwnerSigner = new mockSignerNonOwner()
+      const badClient = new SwapperClient({
+        chainId: 1,
+        provider,
+        signer: nonOwnerSigner,
+      })
+
+      await expect(
+        async () =>
+          await badClient.execCalls({
+            swapperId,
+            calls,
+          }),
+      ).rejects.toThrow(InvalidAuthError)
     })
 
     test('Exec calls passes', async () => {

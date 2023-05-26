@@ -25,6 +25,7 @@ export const RECOUP_TRANCHE_RECIPIENTS: ContractRecoupTranche[] = [
   [['0x2'], [BigNumber.from(1000000)], AddressZero, BigNumber.from(1000)],
 ]
 
+export const OWNER_ADDRESS = '0xowner'
 export const FORMATTED_ORACLE_PARAMS: ContractOracleParams = [
   '0xOracleFactory',
   ['0x0', '0x0'],

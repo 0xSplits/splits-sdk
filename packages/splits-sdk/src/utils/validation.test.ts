@@ -491,3 +491,5 @@ describe('validate scaled offer factor', () => {
     expect(() => validateScaledOfferFactor(-1)).not.toThrow()
   })
 })
+
+// TODO: scale factor overrides validation test
