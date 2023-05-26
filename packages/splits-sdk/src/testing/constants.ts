@@ -1,6 +1,7 @@
 import { BigNumber } from '@ethersproject/bignumber'
 import { AddressZero } from '@ethersproject/constants'
 import {
+  ContractDiversifierRecipient,
   ContractOracleParams,
   ContractRecoupTranche,
   ContractScaledOfferFactorOverride,
@@ -33,3 +34,12 @@ export const FORMATTED_ORACLE_PARAMS: ContractOracleParams = [
 export const FORMATTED_SCALED_OFFER_FACTOR = BigNumber.from(990000)
 export const FORMATTED_SCALED_OFFER_FACTOR_OVERRIDES: ContractScaledOfferFactorOverride[] =
   [[['0xtoken1', '0xtoken2'], BigNumber.from(999000)]]
+
+export const FORMATTED_DIVERSIFIER_RECIPIENTS: ContractDiversifierRecipient[] =
+  [
+    [
+      '0xrecipient',
+      [AddressZero, AddressZero, BigNumber.from(0), []],
+      BigNumber.from(1),
+    ],
+  ]

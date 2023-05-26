@@ -138,6 +138,7 @@ class TemplatesTransactions extends BaseTransactions {
     paused = false,
     oracleParams,
     recipients,
+    transactionOverrides = {},
   }: CreateDiversifierConfig): Promise<TransactionFormat> {
     validateAddress(owner)
     validateOracleParams(oracleParams)
@@ -151,12 +152,10 @@ class TemplatesTransactions extends BaseTransactions {
     const formattedOracleParams = getFormattedOracleParams(oracleParams)
 
     const createDiversifierResult =
-      await this._diversifierFactoryContract.createDiversifier([
-        owner,
-        paused,
-        formattedOracleParams,
-        diversifierRecipients,
-      ])
+      await this._diversifierFactoryContract.createDiversifier(
+        [owner, paused, formattedOracleParams, diversifierRecipients],
+        transactionOverrides,
+      )
 
     return createDiversifierResult
   }
