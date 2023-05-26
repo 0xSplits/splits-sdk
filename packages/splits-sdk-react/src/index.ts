@@ -42,6 +42,7 @@ export {
   useWaterfallMetadata,
   useLiquidSplitMetadata,
   useVestingMetadata,
+  useSwapperMetadata,
   useCreateRecoup,
   useCreateSwapper,
   useUniV3FlashSwap,

@@ -1,4 +1,4 @@
-import { useCallback, useContext, useState } from 'react'
+import { useCallback, useContext, useEffect, useState } from 'react'
 import type { Event } from '@ethersproject/contracts'
 import {
   getTransactionEvents,
@@ -10,6 +10,7 @@ import {
   SwapperSetTokenToBeneficiaryConfig,
   SwapperSetOracleConfig,
   SwapperSetDefaultScaledOfferFactorConfig,
+  Swapper,
 } from '@0xsplits/splits-sdk'
 
 import { SplitsContext } from '../context'
@@ -435,4 +436,50 @@ export const useSwapperSetDefaultScaledOfferFactor = (): {
   )
 
   return { setDefaultScaledOfferFactor, status, txHash, error }
+}
+
+export const useSwapperMetadata = (
+  swapperId: string,
+): { isLoading: boolean; swapperMetadata: Swapper | undefined } => {
+  const context = useContext(SplitsContext)
+  if (context === undefined) {
+    throw new Error('Make sure to include <SplitsProvider>')
+  }
+  const swapperClient = context.splitsClient.swapper
+  if (!swapperClient) {
+    throw new Error('Invalid chain id for swapper')
+  }
+
+  const [swapperMetadata, setSwapperMetadata] = useState<Swapper | undefined>()
+  const [isLoading, setIsLoading] = useState(!!swapperId)
+
+  useEffect(() => {
+    let isActive = true
+
+    const fetchMetadata = async () => {
+      try {
+        const swapper = await swapperClient.getSwapperMetadata({ swapperId })
+        if (!isActive) return
+        setSwapperMetadata(swapper)
+      } finally {
+        if (isActive) setIsLoading(false)
+      }
+    }
+
+    if (swapperId) {
+      setIsLoading(true)
+      fetchMetadata()
+    } else {
+      setSwapperMetadata(undefined)
+    }
+
+    return () => {
+      isActive = false
+    }
+  }, [context.splitsClient, swapperId])
+
+  return {
+    isLoading,
+    swapperMetadata,
+  }
 }
