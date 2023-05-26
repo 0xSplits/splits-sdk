@@ -15,7 +15,11 @@ import {
   PASS_THROUGH_WALLET_CHAIN_IDS,
   getPassThroughWalletFactoryAddress,
 } from '../constants'
-import { TransactionFailedError, UnsupportedChainIdError } from '../errors'
+import {
+  InvalidAuthError,
+  TransactionFailedError,
+  UnsupportedChainIdError,
+} from '../errors'
 import { applyMixins } from './mixin'
 import type {
   CallData,
@@ -112,7 +116,10 @@ class PassThroughWalletTransactions extends BaseTransactions {
   }: SetPassThroughConfig): Promise<TransactionFormat> {
     validateAddress(passThroughWalletId)
     validateAddress(passThrough)
-    if (this._shouldRequireSigner) this._requireSigner()
+    if (this._shouldRequireSigner) {
+      this._requireSigner()
+      await this._requireOwner(passThroughWalletId)
+    }
 
     const passThroughWalletContract =
       this._getPassThroughWalletContract(passThroughWalletId)
@@ -130,8 +137,10 @@ class PassThroughWalletTransactions extends BaseTransactions {
     transactionOverrides = {},
   }: PassThroughWalletPauseConfig): Promise<TransactionFormat> {
     validateAddress(passThroughWalletId)
-    if (this._shouldRequireSigner) this._requireSigner()
-    // TODO: require signer is owner
+    if (this._shouldRequireSigner) {
+      this._requireSigner()
+      await this._requireOwner(passThroughWalletId)
+    }
 
     const passThroughWalletContract =
       this._getPassThroughWalletContract(passThroughWalletId)
@@ -150,8 +159,10 @@ class PassThroughWalletTransactions extends BaseTransactions {
   }: PassThroughWalletExecCallsConfig): Promise<TransactionFormat> {
     validateAddress(passThroughWalletId)
     calls.map((callData) => validateAddress(callData.to))
-    if (this._shouldRequireSigner) this._requireSigner()
-    // TODO: require signer is owner
+    if (this._shouldRequireSigner) {
+      this._requireSigner()
+      await this._requireOwner(passThroughWalletId)
+    }
 
     const passThroughWalletContract =
       this._getPassThroughWalletContract(passThroughWalletId)
@@ -164,6 +175,21 @@ class PassThroughWalletTransactions extends BaseTransactions {
     )
 
     return execCallsResult
+  }
+
+  private async _requireOwner(passThroughWalletId: string) {
+    const passThroughWalletContract =
+      this._getPassThroughWalletContract(passThroughWalletId)
+    const owner = await passThroughWalletContract.owner()
+    // TODO: how to get rid of this, needed for typescript check
+    if (!this._signer) throw new Error()
+
+    const signerAddress = await this._signer.getAddress()
+
+    if (owner !== signerAddress)
+      throw new InvalidAuthError(
+        `Action only available to the pass through wallet owner. Pass through wallet id: ${passThroughWalletId}, owner: ${owner}, signer: ${signerAddress}`,
+      )
   }
 
   protected _getPassThroughWalletContract(passThroughWallet: string) {

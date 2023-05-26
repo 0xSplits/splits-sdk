@@ -371,7 +371,7 @@ class SwapperTransactions extends BaseTransactions {
 
     if (owner !== signerAddress)
       throw new InvalidAuthError(
-        `Action only available to the swapper owner. Swapper id: ${swapperContract}, owner: ${owner}, signer: ${signerAddress}`,
+        `Action only available to the swapper owner. Swapper id: ${swapperId}, owner: ${owner}, signer: ${signerAddress}`,
       )
   }
 

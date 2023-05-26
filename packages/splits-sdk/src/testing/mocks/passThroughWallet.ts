@@ -1,4 +1,5 @@
 import { Provider } from '@ethersproject/abstract-provider'
+import { OWNER_ADDRESS } from '../constants'
 
 export const writeActions = {
   passThroughTokens: jest.fn(),
@@ -9,6 +10,7 @@ export const writeActions = {
 
 export const readActions = {
   passThrough: jest.fn(),
+  owner: jest.fn().mockReturnValue(OWNER_ADDRESS),
 }
 
 export class MockPassThroughWallet {
@@ -23,6 +25,7 @@ export class MockPassThroughWallet {
   setPaused: jest.Mock
   execCalls: jest.Mock
   passThrough: jest.Mock
+  owner: jest.Mock
 
   constructor(provider: Provider) {
     this.provider = provider
@@ -41,6 +44,7 @@ export class MockPassThroughWallet {
     this.setPaused = writeActions.setPaused
     this.execCalls = writeActions.execCalls
     this.passThrough = readActions.passThrough
+    this.owner = readActions.owner
   }
 
   connect() {

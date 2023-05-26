@@ -6,6 +6,7 @@ import type { Event } from '@ethersproject/contracts'
 import { PassThroughWalletClient } from './passThroughWallet'
 import { getPassThroughWalletFactoryAddress } from '../constants'
 import {
+  InvalidAuthError,
   InvalidConfigError,
   MissingProviderError,
   MissingSignerError,
@@ -22,6 +23,7 @@ import {
   writeActions as moduleWriteActions,
   readActions,
 } from '../testing/mocks/passThroughWallet'
+import { OWNER_ADDRESS } from '../testing/constants'
 
 jest.mock('@ethersproject/contracts', () => {
   return {
@@ -51,7 +53,20 @@ const getTransactionEventsSpy = jest
   })
 
 const mockProvider = jest.fn<Provider, unknown[]>()
-const mockSigner = jest.fn<Signer, unknown[]>()
+const mockSigner = jest.fn<Signer, unknown[]>(() => {
+  return {
+    getAddress: () => {
+      return OWNER_ADDRESS
+    },
+  } as unknown as Signer
+})
+const mockSignerNonOwner = jest.fn<Signer, unknown[]>(() => {
+  return {
+    getAddress: () => {
+      return '0xnotOwner'
+    },
+  } as unknown as Signer
+})
 
 describe('Client config validation', () => {
   test('Including ens names with no provider fails', () => {
@@ -278,6 +293,23 @@ describe('Pass through wallet writes', () => {
       ).rejects.toThrow(MissingSignerError)
     })
 
+    test('Set pass through fails from non owner', async () => {
+      const nonOwnerSigner = new mockSignerNonOwner()
+      const badClient = new PassThroughWalletClient({
+        chainId: 1,
+        provider,
+        signer: nonOwnerSigner,
+      })
+
+      await expect(
+        async () =>
+          await badClient.setPassThrough({
+            passThroughWalletId,
+            passThrough,
+          }),
+      ).rejects.toThrow(InvalidAuthError)
+    })
+
     test('Set pass through passes', async () => {
       const { event } = await client.setPassThrough({
         passThroughWalletId,
@@ -334,6 +366,23 @@ describe('Pass through wallet writes', () => {
             paused,
           }),
       ).rejects.toThrow(MissingSignerError)
+    })
+
+    test('Set paused fails from non owner', async () => {
+      const nonOwnerSigner = new mockSignerNonOwner()
+      const badClient = new PassThroughWalletClient({
+        chainId: 1,
+        provider,
+        signer: nonOwnerSigner,
+      })
+
+      await expect(
+        async () =>
+          await badClient.setPaused({
+            passThroughWalletId,
+            paused,
+          }),
+      ).rejects.toThrow(InvalidAuthError)
     })
 
     test('Set paused passes', async () => {
@@ -398,6 +447,23 @@ describe('Pass through wallet writes', () => {
             calls,
           }),
       ).rejects.toThrow(MissingSignerError)
+    })
+
+    test('Exec calls fails from non owner', async () => {
+      const nonOwnerSigner = new mockSignerNonOwner()
+      const badClient = new PassThroughWalletClient({
+        chainId: 1,
+        provider,
+        signer: nonOwnerSigner,
+      })
+
+      await expect(
+        async () =>
+          await badClient.execCalls({
+            passThroughWalletId,
+            calls,
+          }),
+      ).rejects.toThrow(InvalidAuthError)
     })
 
     test('Exec calls passes', async () => {
