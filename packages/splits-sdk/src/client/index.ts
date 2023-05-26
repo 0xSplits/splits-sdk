@@ -1213,6 +1213,8 @@ export class SplitsClient extends SplitsTransactions {
       return await this.waterfall.formatWaterfallModule(gqlAccount)
     else if (gqlAccount.__typename === 'LiquidSplit' && this.liquidSplits)
       return await this.liquidSplits.formatLiquidSplit(gqlAccount)
+    else if (gqlAccount.__typename === 'Swapper' && this.swapper)
+      return await this.swapper.formatSwapper(gqlAccount)
   }
 }
 

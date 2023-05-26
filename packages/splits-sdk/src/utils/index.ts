@@ -22,6 +22,7 @@ import type {
   RecoupTrancheInput,
   ScaledOfferFactorOverride,
   SplitRecipient,
+  Swapper,
   WaterfallTranche,
   WaterfallTrancheInput,
 } from '../types'
@@ -156,6 +157,33 @@ export const addWaterfallEnsNames = async (
       try {
         if (nameprep(ens)) {
           tranches[index].recipientEnsName = ens
+        }
+      } catch (e) {
+        // nameprep generates an error for certain characters (like emojis).
+        // Let's just ignore for now and not add the ens
+        return
+      }
+    }
+  })
+}
+
+export const addSwapperEnsNames = async (
+  provider: Provider,
+  swapper: Swapper,
+): Promise<void> => {
+  const addresses = [swapper.beneficiary.address]
+  if (swapper.owner) addresses.push(swapper.owner.address)
+  const allNames = await fetchEnsNames(provider, addresses)
+
+  allNames.map((ens, index) => {
+    if (ens) {
+      try {
+        if (nameprep(ens)) {
+          if (index === 0) {
+            swapper.beneficiary.ens = ens
+          } else if (swapper.owner) {
+            swapper.owner.ens = ens
+          }
         }
       } catch (e) {
         // nameprep generates an error for certain characters (like emojis).

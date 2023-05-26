@@ -101,8 +101,26 @@ type GqlHolder = {
   ownership: Scalars['Int']
 }
 
+export type GqlSwapper = {
+  __typename: 'Swapper'
+  id: Scalars['ID']
+  beneficiary: GqlAccount
+  tokenToBeneficiary: GqlToken
+  owner: GqlAccount
+  paused: Scalars['Boolean']
+  defaultScaledOfferFactor: Scalars['String']
+  scaledOfferFactorPairOverrides: GqlSwapperScaledOfferFactorOverride[]
+}
+
+type GqlSwapperScaledOfferFactorOverride = {
+  base: GqlToken
+  quote: GqlToken
+  scaledOfferFactor: Scalars['String']
+}
+
 export type GqlAccount =
   | GqlUser
   | GqlSplit
   | GqlWaterfallModule
   | GqlLiquidSplit
+  | GqlSwapper

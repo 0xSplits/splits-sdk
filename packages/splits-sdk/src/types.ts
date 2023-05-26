@@ -178,6 +178,26 @@ export type WaterfallModule = {
   tranches: WaterfallTranche[]
 }
 
+export type Recipient = {
+  address: string
+  ens?: string
+}
+
+export type Token = {
+  address: string
+}
+
+export type Swapper = {
+  type: 'Swapper'
+  id: string
+  beneficiary: Recipient
+  tokenToBeneficiary: Token
+  owner: Recipient | null
+  paused: boolean
+  defaultScaledOfferFactorPercent: number
+  scaledOfferFactorOverrides: ScaledOfferFactorOverride[]
+}
+
 export type CreateVestingConfig = {
   beneficiary: string
   vestingPeriodSeconds: number
@@ -248,7 +268,7 @@ export type LiquidSplit = {
   isFactoryGenerated: boolean
 }
 
-export type Account = Split | WaterfallModule | LiquidSplit
+export type Account = Split | WaterfallModule | LiquidSplit | Swapper
 
 export type CallData = {
   contract: {

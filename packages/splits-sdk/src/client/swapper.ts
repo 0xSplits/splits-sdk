@@ -18,7 +18,11 @@ import {
   SWAPPER_CHAIN_IDS,
   getUniV3SwapAddress,
 } from '../constants'
-import { TransactionFailedError, UnsupportedChainIdError } from '../errors'
+import {
+  AccountNotFoundError,
+  TransactionFailedError,
+  UnsupportedChainIdError,
+} from '../errors'
 import { applyMixins } from './mixin'
 import type {
   CallData,
@@ -26,6 +30,7 @@ import type {
   ContractSwapperExactInputParams,
   CreateSwapperConfig,
   SplitsClientConfig,
+  Swapper,
   SwapperExecCallsConfig,
   SwapperPauseConfig,
   SwapperSetBeneficiaryConfig,
@@ -37,6 +42,7 @@ import type {
   UniV3FlashSwapConfig,
 } from '../types'
 import {
+  addSwapperEnsNames,
   getFormattedOracleParams,
   getFormattedScaledOfferFactor,
   getFormattedScaledOfferFactorOverrides,
@@ -50,6 +56,8 @@ import {
   validateUniV3SwapInputAssets,
 } from '../utils/validation'
 import { ContractCallData } from '../utils/multicall'
+import { GqlSwapper } from '../subgraph/types'
+import { SWAPPER_QUERY, protectedFormatSwapper } from '../subgraph'
 
 const swapperFactoryInterface = new Interface(SWAPPER_FACTORY_ARTIFACT.abi)
 const swapperInterface = new Interface(SWAPPER_ARTIFACT.abi)
@@ -262,6 +270,8 @@ class SwapperTransactions extends BaseTransactions {
 
     return editResult
   }
+
+  // TODO: set scaled offer factor pair overrides
 
   protected async _execCallsTransaction({
     swapperId,
@@ -675,6 +685,40 @@ export class SwapperClient extends SwapperTransactions {
     return {
       defaultScaledOfferFactor,
     }
+  }
+
+  // TODO: get pair overrides
+
+  // Graphql read actions
+  async getSwapperMetadata({
+    swapperId,
+  }: {
+    swapperId: string
+  }): Promise<Swapper> {
+    validateAddress(swapperId)
+
+    const response = await this._makeGqlRequest<{
+      swapper: GqlSwapper
+    }>(SWAPPER_QUERY, {
+      swapperId: swapperId.toLowerCase(),
+    })
+
+    if (!response.swapper)
+      throw new AccountNotFoundError(
+        `No swapper found at address ${swapperId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
+      )
+
+    return await this.formatSwapper(response.swapper)
+  }
+
+  async formatSwapper(gqlSwapper: GqlSwapper): Promise<Swapper> {
+    const swapper = protectedFormatSwapper(gqlSwapper)
+    if (this._includeEnsNames) {
+      if (!this._ensProvider) throw new Error()
+      await addSwapperEnsNames(this._ensProvider, swapper)
+    }
+
+    return swapper
   }
 }
 

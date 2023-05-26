@@ -8,6 +8,7 @@ import type {
   LiquidSplit,
   Split,
   SplitRecipient,
+  Swapper,
   TokenBalances,
   VestingModule,
   VestingStream,
@@ -18,6 +19,7 @@ import { fromBigNumberToPercent } from '../utils'
 import {
   GqlLiquidSplit,
   GqlSplit,
+  GqlSwapper,
   GqlTokenBalance,
   GqlVestingModule,
   GqlVestingStream,
@@ -206,6 +208,42 @@ const FULL_LIQUID_SPLIT_FIELDS_FRAGMENT = gql`
   ${LIQUID_SPLIT_FIELDS_FRAGMENT}
 `
 
+const SWAPPER_FIELDS_FRAGMENT = gql`
+  fragment SwapperFieldsFragment on Swapper {
+    latestBlock
+    beneficiary {
+      id
+    }
+    tokenToBeneficiary {
+      id
+    }
+    owner {
+      id
+    }
+    paused
+    defaultScaledOfferFactor
+    scaledOfferFactorPairOverrides(first: 1000) {
+      base {
+        id
+      }
+      quote {
+        id
+      }
+      scaledOfferFactor
+    }
+  }
+`
+
+const FULL_SWAPPER_FIELDS_FRAGMENT = gql`
+  fragment FullSwapperFieldsFragment on Swapper {
+    ...AccountFieldsFragment
+    ...SwapperFieldsFragment
+  }
+
+  ${ACCOUNT_FIELDS_FRAGMENT}
+  ${SWAPPER_FIELDS_FRAGMENT}
+`
+
 const formatRecipient = (gqlRecipient: {
   account: { id: string }
   ownership: number
@@ -338,6 +376,42 @@ export const protectedFormatLiquidSplit = (
   }
 }
 
+export const protectedFormatSwapper = (gqlSwapper: GqlSwapper): Swapper => {
+  return {
+    type: 'Swapper',
+    id: getAddress(gqlSwapper.id),
+    beneficiary: {
+      address: getAddress(gqlSwapper.beneficiary.id),
+    },
+    tokenToBeneficiary: {
+      address: getAddress(gqlSwapper.tokenToBeneficiary.id),
+    },
+    owner:
+      gqlSwapper.owner.id !== AddressZero
+        ? {
+            address: getAddress(gqlSwapper.owner.id),
+          }
+        : null,
+    paused: gqlSwapper.paused,
+    defaultScaledOfferFactorPercent:
+      (1e6 - parseInt(gqlSwapper.defaultScaledOfferFactor)) / 1e4,
+    scaledOfferFactorOverrides: gqlSwapper.scaledOfferFactorPairOverrides.map(
+      (scaleOfferFactorOverride) => {
+        const baseToken = getAddress(scaleOfferFactorOverride.base.id)
+        const quoteToken = getAddress(scaleOfferFactorOverride.quote.id)
+        const scaledOfferFactorPercent =
+          (1e6 - parseInt(scaleOfferFactorOverride.scaledOfferFactor)) / 1e4
+
+        return {
+          baseToken,
+          quoteToken,
+          scaledOfferFactorPercent,
+        }
+      },
+    ),
+  }
+}
+
 export const formatAccountBalances = (
   gqlTokenBalances: GqlTokenBalance[],
 ): TokenBalances => {
@@ -390,6 +464,16 @@ export const LIQUID_SPLIT_QUERY = gql`
   ${FULL_LIQUID_SPLIT_FIELDS_FRAGMENT}
 `
 
+export const SWAPPER_QUERY = gql`
+  query swapper($swapperId: ID!) {
+    swapper(id: $swapperId) {
+      ...FullSwapperFieldsFragment
+    }
+  }
+
+  ${FULL_SWAPPER_FIELDS_FRAGMENT}
+`
+
 export const ACCOUNT_QUERY = gql`
   query account($accountId: ID!) {
     account(id: $accountId) {
@@ -398,6 +482,7 @@ export const ACCOUNT_QUERY = gql`
       ...SplitFieldsFragment
       ...WaterfallModuleFieldsFragment
       ...LiquidSplitFieldsFragment
+      ...SwapperFieldsFragment
     }
   }
 
@@ -405,6 +490,7 @@ export const ACCOUNT_QUERY = gql`
   ${SPLIT_FIELDS_FRAGMENT}
   ${WATERFALL_MODULE_FIELDS_FRAGMENT}
   ${LIQUID_SPLIT_FIELDS_FRAGMENT}
+  ${SWAPPER_FIELDS_FRAGMENT}
 `
 
 export const RELATED_SPLITS_QUERY = gql`
