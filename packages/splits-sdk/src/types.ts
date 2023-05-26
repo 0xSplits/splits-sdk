@@ -288,9 +288,14 @@ export type PassThroughTokensConfig = {
   tokens: string[]
 } & TransactionOverrides
 
+export type SetPassThroughConfig = {
+  passThroughWalletId: string
+  passThrough: string
+} & TransactionOverrides
+
 export type PassThroughWalletPauseConfig = {
   passThroughWalletId: string
-  newPauseState: boolean
+  paused: boolean
 } & TransactionOverrides
 
 export type PassThroughWalletExecCallsConfig = {
