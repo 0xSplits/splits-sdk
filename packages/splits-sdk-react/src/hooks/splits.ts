@@ -19,7 +19,7 @@ import {
 } from '@0xsplits/splits-sdk'
 
 import { SplitsContext } from '../context'
-import { ContractExecutionStatus, RequestError } from '../types'
+import { ContractExecutionStatus, DataLoadStatus, RequestError } from '../types'
 import { getSplitsClient } from '../utils'
 
 export const useSplitsClient = (config: SplitsClientConfig): SplitsClient => {
@@ -466,12 +466,19 @@ export const useMakeSplitImmutable = (): {
 
 export const useSplitMetadata = (
   splitId: string,
-): { isLoading: boolean; splitMetadata: Split | undefined } => {
+): {
+  isLoading: boolean
+  splitMetadata: Split | undefined
+  status?: DataLoadStatus
+  error?: RequestError
+} => {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context)
 
   const [splitMetadata, setSplitMetadata] = useState<Split | undefined>()
   const [isLoading, setIsLoading] = useState(!!splitId)
+  const [status, setStatus] = useState<DataLoadStatus>()
+  const [error, setError] = useState<RequestError>()
 
   useEffect(() => {
     let isActive = true
@@ -481,15 +488,24 @@ export const useSplitMetadata = (
         const split = await splitsClient.getSplitMetadata({ splitId })
         if (!isActive) return
         setSplitMetadata(split)
+        setStatus('success')
+      } catch (e) {
+        if (isActive) {
+          setStatus('error')
+          setError(e)
+        }
       } finally {
         if (isActive) setIsLoading(false)
       }
     }
 
+    setError(undefined)
     if (splitId) {
       setIsLoading(true)
+      setStatus('loading')
       fetchMetadata()
     } else {
+      setStatus(undefined)
       setSplitMetadata(undefined)
     }
 
@@ -501,6 +517,8 @@ export const useSplitMetadata = (
   return {
     isLoading,
     splitMetadata,
+    error,
+    status,
   }
 }
 

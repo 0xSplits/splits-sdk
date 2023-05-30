@@ -4,5 +4,7 @@ export type ContractExecutionStatus =
   | 'complete'
   | 'error'
 
+export type DataLoadStatus = 'success' | 'error' | 'loading'
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type RequestError = any
