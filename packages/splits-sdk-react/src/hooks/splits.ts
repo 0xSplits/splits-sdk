@@ -477,7 +477,9 @@ export const useSplitMetadata = (
 
   const [splitMetadata, setSplitMetadata] = useState<Split | undefined>()
   const [isLoading, setIsLoading] = useState(!!splitId)
-  const [status, setStatus] = useState<DataLoadStatus>()
+  const [status, setStatus] = useState<DataLoadStatus | undefined>(
+    splitId ? 'loading' : undefined,
+  )
   const [error, setError] = useState<RequestError>()
 
   useEffect(() => {
