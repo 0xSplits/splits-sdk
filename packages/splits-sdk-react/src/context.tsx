@@ -19,7 +19,7 @@ export const SplitsProvider: React.FC<Props> = ({
   config = { chainId: 1 },
   children,
 }) => {
-  const [splitsClient, setSplitsClient] = useState<SplitsClient | undefined>(
+  const [splitsClient, setSplitsClient] = useState<SplitsClient>(
     () => new SplitsClient(config),
   )
   const initClient = (config: SplitsClientConfig) => {
