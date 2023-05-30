@@ -380,6 +380,7 @@ class SplitsTransactions extends BaseTransactions {
   // Graphql read actions
   async getSplitMetadata({ splitId }: { splitId: string }): Promise<Split> {
     validateAddress(splitId)
+    const chainId = this._chainId
 
     const response = await this._makeGqlRequest<{ split: GqlSplit }>(
       SPLIT_QUERY,
@@ -390,7 +391,7 @@ class SplitsTransactions extends BaseTransactions {
 
     if (!response.split)
       throw new AccountNotFoundError(
-        `No split found at address ${splitId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
+        `No split found at address ${splitId} on chain ${chainId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
       )
 
     return await this._formatSplit(response.split)
@@ -1187,6 +1188,8 @@ export class SplitsClient extends SplitsTransactions {
     validateAddress(accountId)
     this._requireProvider()
 
+    const chainId = this._chainId
+
     const response = await this._makeGqlRequest<{
       account: GqlAccount
     }>(ACCOUNT_QUERY, {
@@ -1195,7 +1198,7 @@ export class SplitsClient extends SplitsTransactions {
 
     if (!response.account)
       throw new AccountNotFoundError(
-        `No account found at address ${accountId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
+        `No account found at address ${accountId} on chain ${chainId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
       )
 
     return await this._formatAccount(response.account)

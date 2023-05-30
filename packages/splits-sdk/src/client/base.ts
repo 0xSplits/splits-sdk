@@ -118,6 +118,8 @@ class BaseClient {
     withdrawn: TokenBalances
     activeBalances?: TokenBalances
   }> {
+    const chainId = this._chainId
+
     const response = await this._makeGqlRequest<{
       accountBalances: GqlAccountBalances
     }>(ACCOUNT_BALANCES_QUERY, {
@@ -126,7 +128,7 @@ class BaseClient {
 
     if (!response.accountBalances)
       throw new AccountNotFoundError(
-        `No account found at address ${accountId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
+        `No account found at address ${accountId} on chain ${chainId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
       )
 
     const withdrawn = formatAccountBalances(
