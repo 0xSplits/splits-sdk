@@ -20,6 +20,7 @@ import {
 
 import { SplitsContext } from '../context'
 import { ContractExecutionStatus, RequestError } from '../types'
+import { getSplitsClient } from '../utils'
 
 export const useSplitsClient = (config: SplitsClientConfig): SplitsClient => {
   const context = useContext(SplitsContext)
@@ -42,7 +43,7 @@ export const useSplitsClient = (config: SplitsClientConfig): SplitsClient => {
     })
   }, [chainId, provider, signer, includeEnsNames, ensProvider])
 
-  return context.splitsClient
+  return context.splitsClient as SplitsClient
 }
 
 export const useCreateSplit = (): {
@@ -52,9 +53,7 @@ export const useCreateSplit = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
+  const splitsClient = getSplitsClient(context)
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -67,16 +66,14 @@ export const useCreateSplit = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } = await context.splitsClient.submitCreateSplitTransaction(
-          argsDict,
-        )
+        const { tx } = await splitsClient.submitCreateSplitTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(tx.hash)
 
         const events = await getTransactionEvents(
           tx,
-          context.splitsClient.eventTopics.createSplit,
+          splitsClient.eventTopics.createSplit,
         )
 
         setStatus('complete')
@@ -87,7 +84,7 @@ export const useCreateSplit = (): {
         setError(e)
       }
     },
-    [context.splitsClient],
+    [splitsClient],
   )
 
   return { createSplit, status, txHash, error }
@@ -100,9 +97,7 @@ export const useUpdateSplit = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
+  const splitsClient = getSplitsClient(context)
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -115,16 +110,14 @@ export const useUpdateSplit = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } = await context.splitsClient.submitUpdateSplitTransaction(
-          argsDict,
-        )
+        const { tx } = await splitsClient.submitUpdateSplitTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(tx.hash)
 
         const events = await getTransactionEvents(
           tx,
-          context.splitsClient.eventTopics.updateSplit,
+          splitsClient.eventTopics.updateSplit,
         )
 
         setStatus('complete')
@@ -135,7 +128,7 @@ export const useUpdateSplit = (): {
         setError(e)
       }
     },
-    [context.splitsClient],
+    [splitsClient],
   )
 
   return { updateSplit, status, txHash, error }
@@ -148,9 +141,7 @@ export const useDistributeToken = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
+  const splitsClient = getSplitsClient(context)
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -163,15 +154,16 @@ export const useDistributeToken = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
-          await context.splitsClient.submitDistributeTokenTransaction(argsDict)
+        const { tx } = await splitsClient.submitDistributeTokenTransaction(
+          argsDict,
+        )
 
         setStatus('txInProgress')
         setTxHash(tx.hash)
 
         const events = await getTransactionEvents(
           tx,
-          context.splitsClient.eventTopics.distributeToken,
+          splitsClient.eventTopics.distributeToken,
         )
 
         setStatus('complete')
@@ -182,7 +174,7 @@ export const useDistributeToken = (): {
         setError(e)
       }
     },
-    [context.splitsClient],
+    [splitsClient],
   )
 
   return { distributeToken, status, txHash, error }
@@ -197,9 +189,7 @@ export const useUpdateSplitAndDistributeToken = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
+  const splitsClient = getSplitsClient(context)
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -213,7 +203,7 @@ export const useUpdateSplitAndDistributeToken = (): {
         setTxHash(undefined)
 
         const { tx } =
-          await context.splitsClient.submitUpdateSplitAndDistributeTokenTransaction(
+          await splitsClient.submitUpdateSplitAndDistributeTokenTransaction(
             argsDict,
           )
 
@@ -222,7 +212,7 @@ export const useUpdateSplitAndDistributeToken = (): {
 
         const events = await getTransactionEvents(
           tx,
-          context.splitsClient.eventTopics.updateSplitAndDistributeToken,
+          splitsClient.eventTopics.updateSplitAndDistributeToken,
         )
 
         setStatus('complete')
@@ -233,7 +223,7 @@ export const useUpdateSplitAndDistributeToken = (): {
         setError(e)
       }
     },
-    [context.splitsClient],
+    [splitsClient],
   )
 
   return { updateSplitAndDistributeToken, status, txHash, error }
@@ -246,9 +236,7 @@ export const useWithdrawFunds = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
+  const splitsClient = getSplitsClient(context)
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -261,15 +249,16 @@ export const useWithdrawFunds = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
-          await context.splitsClient.submitWithdrawFundsTransaction(argsDict)
+        const { tx } = await splitsClient.submitWithdrawFundsTransaction(
+          argsDict,
+        )
 
         setStatus('txInProgress')
         setTxHash(tx.hash)
 
         const events = await getTransactionEvents(
           tx,
-          context.splitsClient.eventTopics.withdrawFunds,
+          splitsClient.eventTopics.withdrawFunds,
         )
 
         setStatus('complete')
@@ -280,7 +269,7 @@ export const useWithdrawFunds = (): {
         setError(e)
       }
     },
-    [context.splitsClient],
+    [splitsClient],
   )
 
   return { withdrawFunds, status, txHash, error }
@@ -295,9 +284,7 @@ export const useInitiateControlTransfer = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
+  const splitsClient = getSplitsClient(context)
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -311,16 +298,14 @@ export const useInitiateControlTransfer = (): {
         setTxHash(undefined)
 
         const { tx } =
-          await context.splitsClient.submitInitiateControlTransferTransaction(
-            argsDict,
-          )
+          await splitsClient.submitInitiateControlTransferTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(tx.hash)
 
         const events = await getTransactionEvents(
           tx,
-          context.splitsClient.eventTopics.initiateControlTransfer,
+          splitsClient.eventTopics.initiateControlTransfer,
         )
 
         setStatus('complete')
@@ -331,7 +316,7 @@ export const useInitiateControlTransfer = (): {
         setError(e)
       }
     },
-    [context.splitsClient],
+    [splitsClient],
   )
 
   return { initiateControlTransfer, status, txHash, error }
@@ -346,9 +331,7 @@ export const useCancelControlTransfer = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
+  const splitsClient = getSplitsClient(context)
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -362,16 +345,14 @@ export const useCancelControlTransfer = (): {
         setTxHash(undefined)
 
         const { tx } =
-          await context.splitsClient.submitCancelControlTransferTransaction(
-            argsDict,
-          )
+          await splitsClient.submitCancelControlTransferTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(tx.hash)
 
         const events = await getTransactionEvents(
           tx,
-          context.splitsClient.eventTopics.cancelControlTransfer,
+          splitsClient.eventTopics.cancelControlTransfer,
         )
 
         setStatus('complete')
@@ -382,7 +363,7 @@ export const useCancelControlTransfer = (): {
         setError(e)
       }
     },
-    [context.splitsClient],
+    [splitsClient],
   )
 
   return { cancelControlTransfer, status, txHash, error }
@@ -397,9 +378,7 @@ export const useAcceptControlTransfer = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
+  const splitsClient = getSplitsClient(context)
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -413,16 +392,14 @@ export const useAcceptControlTransfer = (): {
         setTxHash(undefined)
 
         const { tx } =
-          await context.splitsClient.submitAcceptControlTransferTransaction(
-            argsDict,
-          )
+          await splitsClient.submitAcceptControlTransferTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(tx.hash)
 
         const events = await getTransactionEvents(
           tx,
-          context.splitsClient.eventTopics.acceptControlTransfer,
+          splitsClient.eventTopics.acceptControlTransfer,
         )
 
         setStatus('complete')
@@ -433,7 +410,7 @@ export const useAcceptControlTransfer = (): {
         setError(e)
       }
     },
-    [context.splitsClient],
+    [splitsClient],
   )
 
   return { acceptControlTransfer, status, txHash, error }
@@ -448,9 +425,7 @@ export const useMakeSplitImmutable = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
+  const splitsClient = getSplitsClient(context)
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -463,17 +438,16 @@ export const useMakeSplitImmutable = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
-          await context.splitsClient.submitMakeSplitImmutableTransaction(
-            argsDict,
-          )
+        const { tx } = await splitsClient.submitMakeSplitImmutableTransaction(
+          argsDict,
+        )
 
         setStatus('txInProgress')
         setTxHash(tx.hash)
 
         const events = await getTransactionEvents(
           tx,
-          context.splitsClient.eventTopics.makeSplitImmutable,
+          splitsClient.eventTopics.makeSplitImmutable,
         )
 
         setStatus('complete')
@@ -484,7 +458,7 @@ export const useMakeSplitImmutable = (): {
         setError(e)
       }
     },
-    [context.splitsClient],
+    [splitsClient],
   )
 
   return { makeSplitImmutable, status, txHash, error }
@@ -494,9 +468,7 @@ export const useSplitMetadata = (
   splitId: string,
 ): { isLoading: boolean; splitMetadata: Split | undefined } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
+  const splitsClient = getSplitsClient(context)
 
   const [splitMetadata, setSplitMetadata] = useState<Split | undefined>()
   const [isLoading, setIsLoading] = useState(!!splitId)
@@ -506,7 +478,7 @@ export const useSplitMetadata = (
 
     const fetchMetadata = async () => {
       try {
-        const split = await context.splitsClient.getSplitMetadata({ splitId })
+        const split = await splitsClient.getSplitMetadata({ splitId })
         if (!isActive) return
         setSplitMetadata(split)
       } finally {
@@ -524,7 +496,7 @@ export const useSplitMetadata = (
     return () => {
       isActive = false
     }
-  }, [context.splitsClient, splitId])
+  }, [splitsClient, splitId])
 
   return {
     isLoading,
@@ -543,9 +515,7 @@ export const useSplitEarnings = (
   formattedSplitEarnings: FormattedSplitEarnings | undefined
 } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
+  const splitsClient = getSplitsClient(context)
 
   const [splitEarnings, setSplitEarnings] = useState<
     SplitEarnings | undefined
@@ -562,7 +532,7 @@ export const useSplitEarnings = (
       try {
         if (fetchFormattedEarnings) {
           const formattedEarnings =
-            await context.splitsClient.getFormattedSplitEarnings({
+            await splitsClient.getFormattedSplitEarnings({
               splitId,
               includeActiveBalances,
               erc20TokenList,
@@ -571,7 +541,7 @@ export const useSplitEarnings = (
           setFormattedSplitEarnings(formattedEarnings)
           setSplitEarnings(undefined)
         } else {
-          const earnings = await context.splitsClient.getSplitEarnings({
+          const earnings = await splitsClient.getSplitEarnings({
             splitId,
             includeActiveBalances,
             erc20TokenList,
@@ -596,13 +566,7 @@ export const useSplitEarnings = (
     return () => {
       isActive = false
     }
-  }, [
-    context.splitsClient,
-    splitId,
-    formatted,
-    includeActiveBalances,
-    erc20TokenList,
-  ])
+  }, [splitsClient, splitId, formatted, includeActiveBalances, erc20TokenList])
 
   return {
     isLoading,

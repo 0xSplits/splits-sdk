@@ -4,6 +4,7 @@ import { getTransactionEvents, CallData } from '@0xsplits/splits-sdk'
 
 import { SplitsContext } from '../context'
 import { ContractExecutionStatus, RequestError } from '../types'
+import { getSplitsClient } from '../utils'
 
 export const useMulticall = (): {
   multicall: (arg0: { calls: CallData[] }) => Promise<Event[] | undefined>
@@ -12,9 +13,7 @@ export const useMulticall = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
+  const splitsClient = getSplitsClient(context)
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -27,9 +26,7 @@ export const useMulticall = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } = await context.splitsClient.submitMulticallTransaction(
-          argsDict,
-        )
+        const { tx } = await splitsClient.submitMulticallTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(tx.hash)
@@ -44,7 +41,7 @@ export const useMulticall = (): {
         setError(e)
       }
     },
-    [context.splitsClient],
+    [splitsClient],
   )
 
   return { multicall, status, txHash, error }

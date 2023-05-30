@@ -10,6 +10,7 @@ import {
 
 import { SplitsContext } from '../context'
 import { ContractExecutionStatus, RequestError } from '../types'
+import { getSplitsClient } from '../utils'
 
 export const useCreateVestingModule = (): {
   createVestingModule: (
@@ -20,9 +21,7 @@ export const useCreateVestingModule = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
+  const splitsClient = getSplitsClient(context)
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -30,8 +29,7 @@ export const useCreateVestingModule = (): {
 
   const createVestingModule = useCallback(
     async (argsDict: CreateVestingConfig) => {
-      if (!context.splitsClient.vesting)
-        throw new Error('Invalid chain id for vesting')
+      if (!splitsClient.vesting) throw new Error('Invalid chain id for vesting')
 
       try {
         setStatus('pendingApproval')
@@ -39,7 +37,7 @@ export const useCreateVestingModule = (): {
         setTxHash(undefined)
 
         const { tx } =
-          await context.splitsClient.vesting.submitCreateVestingModuleTransaction(
+          await splitsClient.vesting.submitCreateVestingModuleTransaction(
             argsDict,
           )
 
@@ -48,7 +46,7 @@ export const useCreateVestingModule = (): {
 
         const events = await getTransactionEvents(
           tx,
-          context.splitsClient.vesting.eventTopics.createVestingModule,
+          splitsClient.vesting.eventTopics.createVestingModule,
         )
 
         setStatus('complete')
@@ -59,7 +57,7 @@ export const useCreateVestingModule = (): {
         setError(e)
       }
     },
-    [context.splitsClient],
+    [splitsClient],
   )
 
   return { createVestingModule, status, txHash, error }
@@ -72,9 +70,7 @@ export const useStartVest = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
+  const splitsClient = getSplitsClient(context)
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -82,25 +78,23 @@ export const useStartVest = (): {
 
   const startVest = useCallback(
     async (argsDict: StartVestConfig) => {
-      if (!context.splitsClient.vesting)
-        throw new Error('Invalid chain id for vesting')
+      if (!splitsClient.vesting) throw new Error('Invalid chain id for vesting')
 
       try {
         setStatus('pendingApproval')
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
-          await context.splitsClient.vesting.submitStartVestTransaction(
-            argsDict,
-          )
+        const { tx } = await splitsClient.vesting.submitStartVestTransaction(
+          argsDict,
+        )
 
         setStatus('txInProgress')
         setTxHash(tx.hash)
 
         const events = await getTransactionEvents(
           tx,
-          context.splitsClient.vesting.eventTopics.startVest,
+          splitsClient.vesting.eventTopics.startVest,
         )
 
         setStatus('complete')
@@ -111,7 +105,7 @@ export const useStartVest = (): {
         setError(e)
       }
     },
-    [context.splitsClient],
+    [splitsClient],
   )
 
   return { startVest, status, txHash, error }
@@ -126,9 +120,7 @@ export const useReleaseVestedFunds = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
+  const splitsClient = getSplitsClient(context)
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -136,8 +128,7 @@ export const useReleaseVestedFunds = (): {
 
   const releaseVestedFunds = useCallback(
     async (argsDict: ReleaseVestedFundsConfig) => {
-      if (!context.splitsClient.vesting)
-        throw new Error('Invalid chain id for vesting')
+      if (!splitsClient.vesting) throw new Error('Invalid chain id for vesting')
 
       try {
         setStatus('pendingApproval')
@@ -145,7 +136,7 @@ export const useReleaseVestedFunds = (): {
         setTxHash(undefined)
 
         const { tx } =
-          await context.splitsClient.vesting.submitReleaseVestedFundsTransaction(
+          await splitsClient.vesting.submitReleaseVestedFundsTransaction(
             argsDict,
           )
 
@@ -154,7 +145,7 @@ export const useReleaseVestedFunds = (): {
 
         const events = await getTransactionEvents(
           tx,
-          context.splitsClient.vesting.eventTopics.releaseVestedFunds,
+          splitsClient.vesting.eventTopics.releaseVestedFunds,
         )
 
         setStatus('complete')
@@ -165,7 +156,7 @@ export const useReleaseVestedFunds = (): {
         setError(e)
       }
     },
-    [context.splitsClient],
+    [splitsClient],
   )
 
   return { releaseVestedFunds, status, txHash, error }
@@ -175,10 +166,8 @@ export const useVestingMetadata = (
   vestingModuleId: string,
 ): { isLoading: boolean; vestingMetadata: VestingModule | undefined } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
-  const vestingClient = context.splitsClient.vesting
+  const splitsClient = getSplitsClient(context)
+  const vestingClient = splitsClient.vesting
   if (!vestingClient) {
     throw new Error('Invalid chain id for vesting')
   }

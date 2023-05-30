@@ -8,6 +8,7 @@ import {
 
 import { SplitsContext } from '../context'
 import { ContractExecutionStatus, RequestError } from '../types'
+import { getSplitsClient } from '../utils'
 
 export const useCreateRecoup = (): {
   createRecoup: (arg0: CreateRecoupConfig) => Promise<Event[] | undefined>
@@ -16,9 +17,7 @@ export const useCreateRecoup = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
+  const splitsClient = getSplitsClient(context)
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -26,7 +25,7 @@ export const useCreateRecoup = (): {
 
   const createRecoup = useCallback(
     async (argsDict: CreateRecoupConfig) => {
-      if (!context.splitsClient.templates)
+      if (!splitsClient.templates)
         throw new Error('Invalid chain id for recoup')
 
       try {
@@ -35,16 +34,14 @@ export const useCreateRecoup = (): {
         setTxHash(undefined)
 
         const { tx } =
-          await context.splitsClient.templates.submitCreateRecoupTransaction(
-            argsDict,
-          )
+          await splitsClient.templates.submitCreateRecoupTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(tx.hash)
 
         const events = await getTransactionEvents(
           tx,
-          context.splitsClient.templates.eventTopics.createRecoup,
+          splitsClient.templates.eventTopics.createRecoup,
         )
 
         setStatus('complete')
@@ -55,7 +52,7 @@ export const useCreateRecoup = (): {
         setError(e)
       }
     },
-    [context.splitsClient],
+    [splitsClient],
   )
 
   return { createRecoup, status, txHash, error }
@@ -70,9 +67,7 @@ export const useCreateDiversifier = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
+  const splitsClient = getSplitsClient(context)
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -80,7 +75,7 @@ export const useCreateDiversifier = (): {
 
   const createDiversifier = useCallback(
     async (argsDict: CreateDiversifierConfig) => {
-      if (!context.splitsClient.templates)
+      if (!splitsClient.templates)
         throw new Error('Invalid chain id for diversifier')
 
       try {
@@ -89,7 +84,7 @@ export const useCreateDiversifier = (): {
         setTxHash(undefined)
 
         const { tx } =
-          await context.splitsClient.templates.submitCreateDiversifierTransaction(
+          await splitsClient.templates.submitCreateDiversifierTransaction(
             argsDict,
           )
 
@@ -98,7 +93,7 @@ export const useCreateDiversifier = (): {
 
         const events = await getTransactionEvents(
           tx,
-          context.splitsClient.templates.eventTopics.createDiversifier,
+          splitsClient.templates.eventTopics.createDiversifier,
         )
 
         setStatus('complete')
@@ -109,7 +104,7 @@ export const useCreateDiversifier = (): {
         setError(e)
       }
     },
-    [context.splitsClient],
+    [splitsClient],
   )
 
   return { createDiversifier, status, txHash, error }

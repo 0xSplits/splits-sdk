@@ -10,6 +10,7 @@ import {
 
 import { SplitsContext } from '../context'
 import { ContractExecutionStatus, RequestError } from '../types'
+import { getSplitsClient } from '../utils'
 
 export const useCreateLiquidSplit = (): {
   createLiquidSplit: (
@@ -20,9 +21,7 @@ export const useCreateLiquidSplit = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
+  const splitsClient = getSplitsClient(context)
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -30,7 +29,7 @@ export const useCreateLiquidSplit = (): {
 
   const createLiquidSplit = useCallback(
     async (argsDict: CreateLiquidSplitConfig) => {
-      if (!context.splitsClient.liquidSplits)
+      if (!splitsClient.liquidSplits)
         throw new Error('Invalid chain id for liquid splits')
 
       try {
@@ -39,7 +38,7 @@ export const useCreateLiquidSplit = (): {
         setTxHash(undefined)
 
         const { tx } =
-          await context.splitsClient.liquidSplits.submitCreateLiquidSplitTransaction(
+          await splitsClient.liquidSplits.submitCreateLiquidSplitTransaction(
             argsDict,
           )
 
@@ -48,7 +47,7 @@ export const useCreateLiquidSplit = (): {
 
         const events = await getTransactionEvents(
           tx,
-          context.splitsClient.liquidSplits.eventTopics.createLiquidSplit,
+          splitsClient.liquidSplits.eventTopics.createLiquidSplit,
         )
 
         setStatus('complete')
@@ -59,7 +58,7 @@ export const useCreateLiquidSplit = (): {
         setError(e)
       }
     },
-    [context.splitsClient],
+    [splitsClient],
   )
 
   return { createLiquidSplit, status, txHash, error }
@@ -74,9 +73,7 @@ export const useDistributeLiquidSplitToken = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
+  const splitsClient = getSplitsClient(context)
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -84,7 +81,7 @@ export const useDistributeLiquidSplitToken = (): {
 
   const distributeToken = useCallback(
     async (argsDict: DistributeLiquidSplitTokenConfig) => {
-      if (!context.splitsClient.liquidSplits)
+      if (!splitsClient.liquidSplits)
         throw new Error('Invalid chain id for liquid splits')
 
       try {
@@ -93,7 +90,7 @@ export const useDistributeLiquidSplitToken = (): {
         setTxHash(undefined)
 
         const { tx } =
-          await context.splitsClient.liquidSplits.submitDistributeTokenTransaction(
+          await splitsClient.liquidSplits.submitDistributeTokenTransaction(
             argsDict,
           )
 
@@ -102,7 +99,7 @@ export const useDistributeLiquidSplitToken = (): {
 
         const events = await getTransactionEvents(
           tx,
-          context.splitsClient.liquidSplits.eventTopics.distributeToken,
+          splitsClient.liquidSplits.eventTopics.distributeToken,
         )
 
         setStatus('complete')
@@ -113,7 +110,7 @@ export const useDistributeLiquidSplitToken = (): {
         setError(e)
       }
     },
-    [context.splitsClient],
+    [splitsClient],
   )
 
   return { distributeToken, status, txHash, error }
@@ -128,9 +125,7 @@ export const useTransferLiquidSplitOwnership = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
+  const splitsClient = getSplitsClient(context)
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -138,7 +133,7 @@ export const useTransferLiquidSplitOwnership = (): {
 
   const transferOwnership = useCallback(
     async (argsDict: TransferLiquidSplitOwnershipConfig) => {
-      if (!context.splitsClient.liquidSplits)
+      if (!splitsClient.liquidSplits)
         throw new Error('Invalid chain id for liquid splits')
 
       try {
@@ -147,7 +142,7 @@ export const useTransferLiquidSplitOwnership = (): {
         setTxHash(undefined)
 
         const { tx } =
-          await context.splitsClient.liquidSplits.submitTransferOwnershipTransaction(
+          await splitsClient.liquidSplits.submitTransferOwnershipTransaction(
             argsDict,
           )
 
@@ -156,7 +151,7 @@ export const useTransferLiquidSplitOwnership = (): {
 
         const events = await getTransactionEvents(
           tx,
-          context.splitsClient.liquidSplits.eventTopics.transferOwnership,
+          splitsClient.liquidSplits.eventTopics.transferOwnership,
         )
 
         setStatus('complete')
@@ -167,7 +162,7 @@ export const useTransferLiquidSplitOwnership = (): {
         setError(e)
       }
     },
-    [context.splitsClient],
+    [splitsClient],
   )
 
   return { transferOwnership, status, txHash, error }
@@ -177,10 +172,8 @@ export const useLiquidSplitMetadata = (
   liquidSplitId: string,
 ): { isLoading: boolean; liquidSplitMetadata: LiquidSplit | undefined } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
-  const liquidSplitClient = context.splitsClient.liquidSplits
+  const splitsClient = getSplitsClient(context)
+  const liquidSplitClient = splitsClient.liquidSplits
   if (!liquidSplitClient) {
     throw new Error('Invalid chain id for liquid splits')
   }
