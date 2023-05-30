@@ -9,7 +9,7 @@ import {
 } from '@0xsplits/splits-sdk'
 
 import { SplitsContext } from '../context'
-import { ContractExecutionStatus, RequestError } from '../types'
+import { ContractExecutionStatus, DataLoadStatus, RequestError } from '../types'
 import { getSplitsClient } from '../utils'
 
 export const useCreateVestingModule = (): {
@@ -164,7 +164,12 @@ export const useReleaseVestedFunds = (): {
 
 export const useVestingMetadata = (
   vestingModuleId: string,
-): { isLoading: boolean; vestingMetadata: VestingModule | undefined } => {
+): {
+  isLoading: boolean
+  vestingMetadata: VestingModule | undefined
+  status?: DataLoadStatus
+  error?: RequestError
+} => {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context)
   const vestingClient = splitsClient.vesting
@@ -176,6 +181,10 @@ export const useVestingMetadata = (
     VestingModule | undefined
   >()
   const [isLoading, setIsLoading] = useState(!!vestingModuleId)
+  const [status, setStatus] = useState<DataLoadStatus | undefined>(
+    vestingModuleId ? 'loading' : undefined,
+  )
+  const [error, setError] = useState<RequestError>()
 
   useEffect(() => {
     let isActive = true
@@ -187,15 +196,25 @@ export const useVestingMetadata = (
         })
         if (!isActive) return
         setVestingMetadata(vesting)
+        setStatus('success')
+      } catch (e) {
+        if (isActive) {
+          setStatus('error')
+          setError(e)
+        }
       } finally {
         if (isActive) setIsLoading(false)
       }
     }
 
+    setError(undefined)
     if (vestingModuleId) {
       setIsLoading(true)
+      setStatus('loading')
       fetchMetadata()
     } else {
+      setStatus(undefined)
+      setIsLoading(false)
       setVestingMetadata(undefined)
     }
 
@@ -207,5 +226,7 @@ export const useVestingMetadata = (
   return {
     isLoading,
     vestingMetadata,
+    status,
+    error,
   }
 }

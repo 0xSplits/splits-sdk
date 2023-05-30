@@ -10,7 +10,7 @@ import {
 } from '@0xsplits/splits-sdk'
 
 import { SplitsContext } from '../context'
-import { ContractExecutionStatus, RequestError } from '../types'
+import { ContractExecutionStatus, DataLoadStatus, RequestError } from '../types'
 import { getSplitsClient } from '../utils'
 
 export const useCreateWaterfallModule = (): {
@@ -219,7 +219,12 @@ export const useWithdrawWaterfallPullFunds = (): {
 
 export const useWaterfallMetadata = (
   waterfallModuleId: string,
-): { isLoading: boolean; waterfallMetadata: WaterfallModule | undefined } => {
+): {
+  isLoading: boolean
+  waterfallMetadata: WaterfallModule | undefined
+  status?: DataLoadStatus
+  error?: RequestError
+} => {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context)
   const waterfallClient = splitsClient.waterfall
@@ -231,6 +236,10 @@ export const useWaterfallMetadata = (
     WaterfallModule | undefined
   >()
   const [isLoading, setIsLoading] = useState(!!waterfallModuleId)
+  const [status, setStatus] = useState<DataLoadStatus | undefined>(
+    waterfallModuleId ? 'loading' : undefined,
+  )
+  const [error, setError] = useState<RequestError>()
 
   useEffect(() => {
     let isActive = true
@@ -242,15 +251,25 @@ export const useWaterfallMetadata = (
         })
         if (!isActive) return
         setWaterfallMetadata(waterfall)
+        setStatus('success')
+      } catch (e) {
+        if (isActive) {
+          setStatus('error')
+          setError(e)
+        }
       } finally {
         if (isActive) setIsLoading(false)
       }
     }
 
+    setError(undefined)
     if (waterfallModuleId) {
+      setStatus('loading')
       setIsLoading(true)
       fetchMetadata()
     } else {
+      setStatus(undefined)
+      setIsLoading(false)
       setWaterfallMetadata(undefined)
     }
 
@@ -262,5 +281,7 @@ export const useWaterfallMetadata = (
   return {
     isLoading,
     waterfallMetadata,
+    status,
+    error,
   }
 }

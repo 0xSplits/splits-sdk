@@ -508,6 +508,7 @@ export const useSplitMetadata = (
       fetchMetadata()
     } else {
       setStatus(undefined)
+      setIsLoading(false)
       setSplitMetadata(undefined)
     }
 
@@ -533,6 +534,8 @@ export const useSplitEarnings = (
   isLoading: boolean
   splitEarnings: SplitEarnings | undefined
   formattedSplitEarnings: FormattedSplitEarnings | undefined
+  status?: DataLoadStatus
+  error?: RequestError
 } => {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context)
@@ -544,6 +547,10 @@ export const useSplitEarnings = (
     FormattedSplitEarnings | undefined
   >()
   const [isLoading, setIsLoading] = useState(!!splitId)
+  const [status, setStatus] = useState<DataLoadStatus | undefined>(
+    splitId ? 'loading' : undefined,
+  )
+  const [error, setError] = useState<RequestError>()
 
   useEffect(() => {
     let isActive = true
@@ -560,6 +567,7 @@ export const useSplitEarnings = (
           if (!isActive) return
           setFormattedSplitEarnings(formattedEarnings)
           setSplitEarnings(undefined)
+          setStatus('success')
         } else {
           const earnings = await splitsClient.getSplitEarnings({
             splitId,
@@ -569,16 +577,26 @@ export const useSplitEarnings = (
           if (!isActive) return
           setSplitEarnings(earnings)
           setFormattedSplitEarnings(undefined)
+          setStatus('success')
+        }
+      } catch (e) {
+        if (isActive) {
+          setStatus('error')
+          setError(e)
         }
       } finally {
         if (isActive) setIsLoading(false)
       }
     }
 
+    setError(undefined)
     if (splitId) {
       setIsLoading(true)
+      setStatus('loading')
       fetchEarnings(formatted)
     } else {
+      setStatus(undefined)
+      setIsLoading(false)
       setSplitEarnings(undefined)
       setFormattedSplitEarnings(undefined)
     }
@@ -592,5 +610,7 @@ export const useSplitEarnings = (
     isLoading,
     splitEarnings,
     formattedSplitEarnings,
+    status,
+    error,
   }
 }

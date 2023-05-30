@@ -9,7 +9,7 @@ import {
 } from '@0xsplits/splits-sdk'
 
 import { SplitsContext } from '../context'
-import { ContractExecutionStatus, RequestError } from '../types'
+import { ContractExecutionStatus, DataLoadStatus, RequestError } from '../types'
 import { getSplitsClient } from '../utils'
 
 export const useCreateLiquidSplit = (): {
@@ -170,7 +170,12 @@ export const useTransferLiquidSplitOwnership = (): {
 
 export const useLiquidSplitMetadata = (
   liquidSplitId: string,
-): { isLoading: boolean; liquidSplitMetadata: LiquidSplit | undefined } => {
+): {
+  isLoading: boolean
+  liquidSplitMetadata: LiquidSplit | undefined
+  status?: DataLoadStatus
+  error?: RequestError
+} => {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context)
   const liquidSplitClient = splitsClient.liquidSplits
@@ -182,6 +187,10 @@ export const useLiquidSplitMetadata = (
     LiquidSplit | undefined
   >()
   const [isLoading, setIsLoading] = useState(!!liquidSplitId)
+  const [status, setStatus] = useState<DataLoadStatus | undefined>(
+    liquidSplitId ? 'loading' : undefined,
+  )
+  const [error, setError] = useState<RequestError>()
 
   useEffect(() => {
     let isActive = true
@@ -193,15 +202,25 @@ export const useLiquidSplitMetadata = (
         })
         if (!isActive) return
         setliquidSplitMetadata(liquidSplit)
+        setStatus('success')
+      } catch (e) {
+        if (isActive) {
+          setStatus('error')
+          setError(e)
+        }
       } finally {
         if (isActive) setIsLoading(false)
       }
     }
 
+    setError(undefined)
     if (liquidSplitId) {
+      setStatus('loading')
       setIsLoading(true)
       fetchMetadata()
     } else {
+      setStatus(undefined)
+      setIsLoading(false)
       setliquidSplitMetadata(undefined)
     }
 
@@ -213,5 +232,7 @@ export const useLiquidSplitMetadata = (
   return {
     isLoading,
     liquidSplitMetadata,
+    status,
+    error,
   }
 }
