@@ -2,7 +2,7 @@ import React, { createContext, useState, useMemo } from 'react'
 import { SplitsClient, SplitsClientConfig } from '@0xsplits/splits-sdk'
 
 export type SplitsReactSdkContext = {
-  splitsClient: SplitsClient | undefined
+  splitsClient: SplitsClient
   initClient: (config: SplitsClientConfig) => void
 }
 
@@ -15,9 +15,12 @@ interface Props {
   children: React.ReactNode
 }
 
-export const SplitsProvider: React.FC<Props> = ({ config, children }) => {
+export const SplitsProvider: React.FC<Props> = ({
+  config = { chainId: 1 },
+  children,
+}) => {
   const [splitsClient, setSplitsClient] = useState<SplitsClient | undefined>(
-    () => (config ? new SplitsClient(config) : undefined),
+    () => new SplitsClient(config),
   )
   const initClient = (config: SplitsClientConfig) => {
     setSplitsClient(new SplitsClient(config))
