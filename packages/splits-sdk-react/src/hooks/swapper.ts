@@ -15,6 +15,7 @@ import {
 
 import { SplitsContext } from '../context'
 import { ContractExecutionStatus, RequestError } from '../types'
+import { getSplitsClient } from '../utils'
 
 export const useCreateSwapper = (): {
   createSwapper: (arg0: CreateSwapperConfig) => Promise<Event[] | undefined>
@@ -23,9 +24,7 @@ export const useCreateSwapper = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
+  const splitsClient = getSplitsClient(context)
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -33,8 +32,7 @@ export const useCreateSwapper = (): {
 
   const createSwapper = useCallback(
     async (argsDict: CreateSwapperConfig) => {
-      if (!context.splitsClient.swapper)
-        throw new Error('Invalid chain id for swapper')
+      if (!splitsClient.swapper) throw new Error('Invalid chain id for swapper')
 
       try {
         setStatus('pendingApproval')
@@ -42,16 +40,14 @@ export const useCreateSwapper = (): {
         setTxHash(undefined)
 
         const { tx } =
-          await context.splitsClient.swapper.submitCreateSwapperTransaction(
-            argsDict,
-          )
+          await splitsClient.swapper.submitCreateSwapperTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(tx.hash)
 
         const events = await getTransactionEvents(
           tx,
-          context.splitsClient.swapper.eventTopics.createSwapper,
+          splitsClient.swapper.eventTopics.createSwapper,
         )
 
         setStatus('complete')
@@ -62,7 +58,7 @@ export const useCreateSwapper = (): {
         setError(e)
       }
     },
-    [context.splitsClient],
+    [splitsClient],
   )
 
   return { createSwapper, status, txHash, error }
@@ -75,9 +71,7 @@ export const useUniV3FlashSwap = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
+  const splitsClient = getSplitsClient(context)
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -85,8 +79,7 @@ export const useUniV3FlashSwap = (): {
 
   const uniV3FlashSwap = useCallback(
     async (argsDict: UniV3FlashSwapConfig) => {
-      if (!context.splitsClient.swapper)
-        throw new Error('Invalid chain id for swapper')
+      if (!splitsClient.swapper) throw new Error('Invalid chain id for swapper')
 
       try {
         setStatus('pendingApproval')
@@ -94,16 +87,14 @@ export const useUniV3FlashSwap = (): {
         setTxHash(undefined)
 
         const { tx } =
-          await context.splitsClient.swapper.submitUniV3FlashSwapTransaction(
-            argsDict,
-          )
+          await splitsClient.swapper.submitUniV3FlashSwapTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(tx.hash)
 
         const events = await getTransactionEvents(
           tx,
-          context.splitsClient.swapper.eventTopics.uniV3FlashSwap,
+          splitsClient.swapper.eventTopics.uniV3FlashSwap,
         )
 
         setStatus('complete')
@@ -114,7 +105,7 @@ export const useUniV3FlashSwap = (): {
         setError(e)
       }
     },
-    [context.splitsClient],
+    [splitsClient],
   )
 
   return { uniV3FlashSwap, status, txHash, error }
@@ -127,9 +118,7 @@ export const useSwapperExecCalls = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
+  const splitsClient = getSplitsClient(context)
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -137,25 +126,23 @@ export const useSwapperExecCalls = (): {
 
   const execCalls = useCallback(
     async (argsDict: SwapperExecCallsConfig) => {
-      if (!context.splitsClient.swapper)
-        throw new Error('Invalid chain id for swapper')
+      if (!splitsClient.swapper) throw new Error('Invalid chain id for swapper')
 
       try {
         setStatus('pendingApproval')
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
-          await context.splitsClient.swapper.submitExecCallsTransaction(
-            argsDict,
-          )
+        const { tx } = await splitsClient.swapper.submitExecCallsTransaction(
+          argsDict,
+        )
 
         setStatus('txInProgress')
         setTxHash(tx.hash)
 
         const events = await getTransactionEvents(
           tx,
-          context.splitsClient.swapper.eventTopics.execCalls,
+          splitsClient.swapper.eventTopics.execCalls,
         )
 
         setStatus('complete')
@@ -166,7 +153,7 @@ export const useSwapperExecCalls = (): {
         setError(e)
       }
     },
-    [context.splitsClient],
+    [splitsClient],
   )
 
   return { execCalls, status, txHash, error }
@@ -179,9 +166,7 @@ export const useSwapperPause = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
+  const splitsClient = getSplitsClient(context)
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -189,25 +174,23 @@ export const useSwapperPause = (): {
 
   const setPaused = useCallback(
     async (argsDict: SwapperPauseConfig) => {
-      if (!context.splitsClient.swapper)
-        throw new Error('Invalid chain id for swapper')
+      if (!splitsClient.swapper) throw new Error('Invalid chain id for swapper')
 
       try {
         setStatus('pendingApproval')
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
-          await context.splitsClient.swapper.submitSetPausedTransaction(
-            argsDict,
-          )
+        const { tx } = await splitsClient.swapper.submitSetPausedTransaction(
+          argsDict,
+        )
 
         setStatus('txInProgress')
         setTxHash(tx.hash)
 
         const events = await getTransactionEvents(
           tx,
-          context.splitsClient.swapper.eventTopics.setPaused,
+          splitsClient.swapper.eventTopics.setPaused,
         )
 
         setStatus('complete')
@@ -218,7 +201,7 @@ export const useSwapperPause = (): {
         setError(e)
       }
     },
-    [context.splitsClient],
+    [splitsClient],
   )
 
   return { setPaused, status, txHash, error }
@@ -233,9 +216,7 @@ export const useSwapperSetBeneficiary = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
+  const splitsClient = getSplitsClient(context)
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -243,8 +224,7 @@ export const useSwapperSetBeneficiary = (): {
 
   const setBeneficiary = useCallback(
     async (argsDict: SwapperSetBeneficiaryConfig) => {
-      if (!context.splitsClient.swapper)
-        throw new Error('Invalid chain id for swapper')
+      if (!splitsClient.swapper) throw new Error('Invalid chain id for swapper')
 
       try {
         setStatus('pendingApproval')
@@ -252,16 +232,14 @@ export const useSwapperSetBeneficiary = (): {
         setTxHash(undefined)
 
         const { tx } =
-          await context.splitsClient.swapper.submitSetBeneficiaryTransaction(
-            argsDict,
-          )
+          await splitsClient.swapper.submitSetBeneficiaryTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(tx.hash)
 
         const events = await getTransactionEvents(
           tx,
-          context.splitsClient.swapper.eventTopics.setBeneficiary,
+          splitsClient.swapper.eventTopics.setBeneficiary,
         )
 
         setStatus('complete')
@@ -272,7 +250,7 @@ export const useSwapperSetBeneficiary = (): {
         setError(e)
       }
     },
-    [context.splitsClient],
+    [splitsClient],
   )
 
   return { setBeneficiary, status, txHash, error }
@@ -287,9 +265,7 @@ export const useSwapperSetTokenToBeneficiary = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
+  const splitsClient = getSplitsClient(context)
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -297,8 +273,7 @@ export const useSwapperSetTokenToBeneficiary = (): {
 
   const setTokenToBeneficiary = useCallback(
     async (argsDict: SwapperSetTokenToBeneficiaryConfig) => {
-      if (!context.splitsClient.swapper)
-        throw new Error('Invalid chain id for swapper')
+      if (!splitsClient.swapper) throw new Error('Invalid chain id for swapper')
 
       try {
         setStatus('pendingApproval')
@@ -306,7 +281,7 @@ export const useSwapperSetTokenToBeneficiary = (): {
         setTxHash(undefined)
 
         const { tx } =
-          await context.splitsClient.swapper.submitSetTokenToBeneficiaryTransaction(
+          await splitsClient.swapper.submitSetTokenToBeneficiaryTransaction(
             argsDict,
           )
 
@@ -315,7 +290,7 @@ export const useSwapperSetTokenToBeneficiary = (): {
 
         const events = await getTransactionEvents(
           tx,
-          context.splitsClient.swapper.eventTopics.setTokenToBeneficiary,
+          splitsClient.swapper.eventTopics.setTokenToBeneficiary,
         )
 
         setStatus('complete')
@@ -326,7 +301,7 @@ export const useSwapperSetTokenToBeneficiary = (): {
         setError(e)
       }
     },
-    [context.splitsClient],
+    [splitsClient],
   )
 
   return { setTokenToBeneficiary, status, txHash, error }
@@ -339,9 +314,7 @@ export const useSwapperSetOracle = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
+  const splitsClient = getSplitsClient(context)
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -349,25 +322,23 @@ export const useSwapperSetOracle = (): {
 
   const setOracle = useCallback(
     async (argsDict: SwapperSetOracleConfig) => {
-      if (!context.splitsClient.swapper)
-        throw new Error('Invalid chain id for swapper')
+      if (!splitsClient.swapper) throw new Error('Invalid chain id for swapper')
 
       try {
         setStatus('pendingApproval')
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
-          await context.splitsClient.swapper.submitSetOracleTransaction(
-            argsDict,
-          )
+        const { tx } = await splitsClient.swapper.submitSetOracleTransaction(
+          argsDict,
+        )
 
         setStatus('txInProgress')
         setTxHash(tx.hash)
 
         const events = await getTransactionEvents(
           tx,
-          context.splitsClient.swapper.eventTopics.setOracle,
+          splitsClient.swapper.eventTopics.setOracle,
         )
 
         setStatus('complete')
@@ -378,7 +349,7 @@ export const useSwapperSetOracle = (): {
         setError(e)
       }
     },
-    [context.splitsClient],
+    [splitsClient],
   )
 
   return { setOracle, status, txHash, error }
@@ -393,9 +364,7 @@ export const useSwapperSetDefaultScaledOfferFactor = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
+  const splitsClient = getSplitsClient(context)
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -403,8 +372,7 @@ export const useSwapperSetDefaultScaledOfferFactor = (): {
 
   const setDefaultScaledOfferFactor = useCallback(
     async (argsDict: SwapperSetDefaultScaledOfferFactorConfig) => {
-      if (!context.splitsClient.swapper)
-        throw new Error('Invalid chain id for swapper')
+      if (!splitsClient.swapper) throw new Error('Invalid chain id for swapper')
 
       try {
         setStatus('pendingApproval')
@@ -412,7 +380,7 @@ export const useSwapperSetDefaultScaledOfferFactor = (): {
         setTxHash(undefined)
 
         const { tx } =
-          await context.splitsClient.swapper.submitSetDefaultScaledOfferFactorTransaction(
+          await splitsClient.swapper.submitSetDefaultScaledOfferFactorTransaction(
             argsDict,
           )
 
@@ -421,7 +389,7 @@ export const useSwapperSetDefaultScaledOfferFactor = (): {
 
         const events = await getTransactionEvents(
           tx,
-          context.splitsClient.swapper.eventTopics.setDefaultScaledOfferFactor,
+          splitsClient.swapper.eventTopics.setDefaultScaledOfferFactor,
         )
 
         setStatus('complete')
@@ -432,7 +400,7 @@ export const useSwapperSetDefaultScaledOfferFactor = (): {
         setError(e)
       }
     },
-    [context.splitsClient],
+    [splitsClient],
   )
 
   return { setDefaultScaledOfferFactor, status, txHash, error }
@@ -442,10 +410,8 @@ export const useSwapperMetadata = (
   swapperId: string,
 ): { isLoading: boolean; swapperMetadata: Swapper | undefined } => {
   const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
-  const swapperClient = context.splitsClient.swapper
+  const splitsClient = getSplitsClient(context)
+  const swapperClient = splitsClient.swapper
   if (!swapperClient) {
     throw new Error('Invalid chain id for swapper')
   }
@@ -476,7 +442,7 @@ export const useSwapperMetadata = (
     return () => {
       isActive = false
     }
-  }, [context.splitsClient, swapperId])
+  }, [splitsClient, swapperId])
 
   return {
     isLoading,
