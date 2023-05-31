@@ -529,7 +529,7 @@ export const useSplitEarnings = (
   splitId: string,
   includeActiveBalances?: boolean,
   erc20TokenList?: string[],
-  formatted?: boolean,
+  formatted = true,
 ): {
   isLoading: boolean
   splitEarnings: SplitEarnings | undefined
