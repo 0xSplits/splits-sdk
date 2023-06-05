@@ -16,6 +16,7 @@ import {
   getRecoupAddress,
   TEMPLATES_CHAIN_IDS,
   getDiversifierFactoryAddress,
+  DIVERSIFIER_CHAIN_IDS,
 } from '../constants'
 import { TransactionFailedError, UnsupportedChainIdError } from '../errors'
 import { applyMixins } from './mixin'
@@ -140,6 +141,9 @@ class TemplatesTransactions extends BaseTransactions {
     recipients,
     transactionOverrides = {},
   }: CreateDiversifierConfig): Promise<TransactionFormat> {
+    if (!DIVERSIFIER_CHAIN_IDS.includes(this._chainId))
+      throw new UnsupportedChainIdError(this._chainId, DIVERSIFIER_CHAIN_IDS)
+
     validateAddress(owner)
     validateOracleParams(oracleParams)
     validateDiversifierRecipients(recipients)
