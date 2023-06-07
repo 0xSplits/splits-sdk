@@ -136,7 +136,7 @@ class SwapperTransactions extends BaseTransactions {
     swapperId,
     excessRecipient,
     inputAssets,
-    transactionTimeLimit = 30,
+    transactionTimeLimit = 300,
     transactionOverrides = {},
   }: UniV3FlashSwapConfig): Promise<TransactionFormat> {
     validateAddress(swapperId)
