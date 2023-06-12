@@ -37,6 +37,7 @@ import type {
   SwapperSetBeneficiaryConfig,
   SwapperSetDefaultScaledOfferFactorConfig,
   SwapperSetOracleConfig,
+  SwapperSetScaledOfferFactorOverridesConfig,
   SwapperSetTokenToBeneficiaryConfig,
   TransactionConfig,
   TransactionFormat,
@@ -283,7 +284,29 @@ class SwapperTransactions extends BaseTransactions {
     return editResult
   }
 
-  // TODO: set scaled offer factor pair overrides
+  protected async _setScaledOfferFactorOverridesTransaction({
+    swapperId,
+    scaledOfferFactorOverrides,
+    transactionOverrides = {},
+  }: SwapperSetScaledOfferFactorOverridesConfig): Promise<TransactionFormat> {
+    validateAddress(swapperId)
+    validateScaledOfferFactorOverrides(scaledOfferFactorOverrides)
+    if (this._shouldRequireSigner) {
+      this._requireSigner()
+      await this._requireOwner(swapperId)
+    }
+
+    const formattedScaledOfferFactorOverrides =
+      getFormattedScaledOfferFactorOverrides(scaledOfferFactorOverrides)
+
+    const swapperContract = this._getSwapperContract(swapperId)
+    const editResult = await swapperContract.setPairScaledOfferFactors(
+      formattedScaledOfferFactorOverrides,
+      transactionOverrides,
+    )
+
+    return editResult
+  }
 
   protected async _execCallsTransaction({
     swapperId,
@@ -436,6 +459,9 @@ export class SwapperClient extends SwapperTransactions {
       setOracle: [swapperInterface.getEventTopic('SetOracle')],
       setDefaultScaledOfferFactor: [
         swapperInterface.getEventTopic('SetDefaultScaledOfferFactor'),
+      ],
+      setScaledOfferFactorOverrides: [
+        swapperInterface.getEventTopic('SetPairScaledOfferFactors'),
       ],
     }
 
@@ -687,6 +713,38 @@ export class SwapperClient extends SwapperTransactions {
     throw new TransactionFailedError()
   }
 
+  async submitSetScaledOfferFactorOverridesTransaction(
+    args: SwapperSetScaledOfferFactorOverridesConfig,
+  ): Promise<{
+    tx: ContractTransaction
+  }> {
+    const tx = await this._setScaledOfferFactorOverridesTransaction(args)
+    if (!this._isContractTransaction(tx)) throw new Error('Invalid reponse')
+
+    return { tx }
+  }
+
+  async setScaledOfferFactorOverrides(
+    args: SwapperSetScaledOfferFactorOverridesConfig,
+  ): Promise<{
+    event: Event
+  }> {
+    const { tx } = await this.submitSetScaledOfferFactorOverridesTransaction(
+      args,
+    )
+    const events = await getTransactionEvents(
+      tx,
+      this.eventTopics.setScaledOfferFactorOverrides,
+    )
+    const event = events.length > 0 ? events[0] : undefined
+    if (event)
+      return {
+        event,
+      }
+
+    throw new TransactionFailedError()
+  }
+
   // Read actions
   async getBeneficiary({ swapperId }: { swapperId: string }): Promise<{
     beneficiary: string
@@ -749,7 +807,37 @@ export class SwapperClient extends SwapperTransactions {
     }
   }
 
-  // TODO: get pair overrides
+  async getScaledOfferFactorOverrides({
+    swapperId,
+    quotePairs,
+  }: {
+    swapperId: string
+    quotePairs: {
+      base: string
+      quote: string
+    }[]
+  }): Promise<{
+    scaledOfferFactorOverrides: BigNumber[]
+  }> {
+    validateAddress(swapperId)
+    quotePairs.map((quotePair) => {
+      validateAddress(quotePair.base)
+      validateAddress(quotePair.quote)
+    })
+    this._requireProvider()
+
+    const formattedQuotePairs = quotePairs.map((quotePair) => {
+      return [quotePair.base, quotePair.quote]
+    })
+
+    const swapperContract = this._getSwapperContract(swapperId)
+    const scaledOfferFactorOverrides =
+      await swapperContract.getPairScaledOfferFactors(formattedQuotePairs)
+
+    return {
+      scaledOfferFactorOverrides,
+    }
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -835,6 +923,17 @@ class SwapperGasEstimates extends SwapperTransactions {
 
     return gasEstimate
   }
+
+  async setScaledOfferFactorOverrides(
+    args: SwapperSetScaledOfferFactorOverridesConfig,
+  ): Promise<BigNumber> {
+    const gasEstimate = await this._setScaledOfferFactorOverridesTransaction(
+      args,
+    )
+    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -916,6 +1015,15 @@ class SwapperCallData extends SwapperTransactions {
     args: SwapperSetDefaultScaledOfferFactorConfig,
   ): Promise<CallData> {
     const callData = await this._setDefaultScaledOfferFactorTransaction(args)
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
+
+    return callData
+  }
+
+  async setScaledOfferFactorOverrides(
+    args: SwapperSetScaledOfferFactorOverridesConfig,
+  ): Promise<CallData> {
+    const callData = await this._setScaledOfferFactorOverridesTransaction(args)
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData

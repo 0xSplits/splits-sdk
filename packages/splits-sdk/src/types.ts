@@ -393,6 +393,11 @@ export type SwapperSetDefaultScaledOfferFactorConfig = {
   defaultScaledOfferFactorPercent: number
 } & TransactionOverrides
 
+export type SwapperSetScaledOfferFactorOverridesConfig = {
+  swapperId: string
+  scaledOfferFactorOverrides: ScaledOfferFactorOverride[]
+} & TransactionOverrides
+
 export type DiversifierRecipient = {
   address?: string
   swapperParams?: SwapperParams

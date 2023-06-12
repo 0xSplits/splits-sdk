@@ -581,6 +581,105 @@ describe('Swapper writes', () => {
     })
   })
 
+  describe('Set scaled offer factor overrides tests', () => {
+    const swapperId = '0xswapper'
+    const scaledOfferFactorOverrides = [
+      {
+        baseToken: '0xtoken1',
+        quoteToken: '0xtoken2',
+        scaledOfferFactorPercent: 1,
+      },
+      {
+        baseToken: '0xtoken3',
+        quoteToken: '0xtoken2',
+        scaledOfferFactorPercent: 0.1,
+      },
+    ]
+    const setScaledOfferFactorOverridesResult = {
+      value: 'set_scaled_offer_factor_overrides_tx',
+      wait: 'wait',
+    }
+
+    beforeEach(() => {
+      moduleWriteActions.setPairScaledOfferFactors.mockClear()
+      moduleWriteActions.setPairScaledOfferFactors.mockReturnValueOnce(
+        setScaledOfferFactorOverridesResult,
+      )
+    })
+
+    test('Set scale factor overrides fails with no provider', async () => {
+      const badClient = new SwapperClient({
+        chainId: 1,
+      })
+
+      await expect(
+        async () =>
+          await badClient.setScaledOfferFactorOverrides({
+            swapperId,
+            scaledOfferFactorOverrides,
+          }),
+      ).rejects.toThrow(MissingProviderError)
+    })
+
+    test('Set scaled factor overrides fails with no signer', async () => {
+      const badClient = new SwapperClient({
+        chainId: 1,
+        provider,
+      })
+
+      await expect(
+        async () =>
+          await badClient.setScaledOfferFactorOverrides({
+            swapperId,
+            scaledOfferFactorOverrides,
+          }),
+      ).rejects.toThrow(MissingSignerError)
+    })
+
+    test('Set scale factor overrides fails from non owner', async () => {
+      const nonOwnerSigner = new mockSignerNonOwner()
+      const badClient = new SwapperClient({
+        chainId: 1,
+        provider,
+        signer: nonOwnerSigner,
+      })
+
+      await expect(
+        async () =>
+          await badClient.setScaledOfferFactorOverrides({
+            swapperId,
+            scaledOfferFactorOverrides,
+          }),
+      ).rejects.toThrow(InvalidAuthError)
+    })
+
+    test('Set scale factor overrides passes', async () => {
+      const { event } = await client.setScaledOfferFactorOverrides({
+        swapperId,
+        scaledOfferFactorOverrides,
+      })
+
+      expect(event.blockNumber).toEqual(1111)
+      expect(validateAddress).toBeCalledWith(swapperId)
+      expect(validateScaledOfferFactorOverrides).toBeCalledWith(
+        scaledOfferFactorOverrides,
+      )
+
+      expect(getFormattedScaledOfferFactorOverridesMock).toBeCalledWith(
+        scaledOfferFactorOverrides,
+      )
+
+      expect(moduleWriteActions.setPairScaledOfferFactors).toBeCalledWith(
+        FORMATTED_SCALED_OFFER_FACTOR_OVERRIDES,
+        {},
+      )
+      expect(getTransactionEventsSpy).toBeCalledWith(
+        setScaledOfferFactorOverridesResult,
+        [client.eventTopics.setScaledOfferFactorOverrides[0]],
+      )
+    })
+  })
+
   describe('Set paused tests', () => {
     const swapperId = '0xswapper'
     const paused = true
@@ -881,6 +980,53 @@ describe('Swapper reads', () => {
       expect(defaultScaledOfferFactor).toEqual(BigNumber.from(990000))
       expect(validateAddress).toBeCalledWith(swapperId)
       expect(readActions.defaultScaledOfferFactor).toBeCalled()
+    })
+  })
+
+  describe('Get scaled offer factor overrides test', () => {
+    const swapperId = '0xscaleOfferFactorOverrides'
+    const quotePairs = [
+      {
+        base: '0xtoken1',
+        quote: '0xtoken2',
+      },
+    ]
+
+    beforeEach(() => {
+      readActions.getPairScaledOfferFactors.mockClear()
+    })
+
+    test('Get default scale fails with no provider', async () => {
+      const badClient = new SwapperClient({
+        chainId: 1,
+      })
+
+      await expect(
+        async () =>
+          await badClient.getScaledOfferFactorOverrides({
+            swapperId,
+            quotePairs,
+          }),
+      ).rejects.toThrow(MissingProviderError)
+    })
+
+    test('Returns scaled offer factor overrides', async () => {
+      readActions.getPairScaledOfferFactors.mockReturnValueOnce([
+        BigNumber.from(990000),
+      ])
+      const { scaledOfferFactorOverrides } =
+        await client.getScaledOfferFactorOverrides({
+          swapperId,
+          quotePairs,
+        })
+
+      expect(scaledOfferFactorOverrides).toEqual([BigNumber.from(990000)])
+      expect(validateAddress).toBeCalledWith(swapperId)
+      expect(validateAddress).toBeCalledWith('0xtoken1')
+      expect(validateAddress).toBeCalledWith('0xtoken2')
+      expect(readActions.getPairScaledOfferFactors).toBeCalledWith([
+        ['0xtoken1', '0xtoken2'],
+      ])
     })
   })
 })
