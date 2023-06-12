@@ -78,6 +78,7 @@ export type {
   SwapperSetTokenToBeneficiaryConfig,
   SwapperSetOracleConfig,
   SwapperSetDefaultScaledOfferFactorConfig,
+  SwapperSetScaledOfferFactorOverridesConfig,
   CreateDiversifierConfig,
   DiversifierRecipient,
   CallData,

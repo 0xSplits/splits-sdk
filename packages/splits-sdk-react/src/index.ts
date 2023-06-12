@@ -52,6 +52,7 @@ export {
   useSwapperSetTokenToBeneficiary,
   useSwapperSetOracle,
   useSwapperSetDefaultScaledOfferFactor,
+  useSwapperSetScaledOfferFactorOverrides,
   useCreateDiversifier,
   useCreatePassThroughWallet,
   usePassThroughTokens,

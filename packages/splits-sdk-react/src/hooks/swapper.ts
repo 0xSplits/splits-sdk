@@ -10,6 +10,7 @@ import {
   SwapperSetTokenToBeneficiaryConfig,
   SwapperSetOracleConfig,
   SwapperSetDefaultScaledOfferFactorConfig,
+  SwapperSetScaledOfferFactorOverridesConfig,
   Swapper,
 } from '@0xsplits/splits-sdk'
 
@@ -404,6 +405,57 @@ export const useSwapperSetDefaultScaledOfferFactor = (): {
   )
 
   return { setDefaultScaledOfferFactor, status, txHash, error }
+}
+
+export const useSwapperSetScaledOfferFactorOverrides = (): {
+  setScaledOfferFactorOverrides: (
+    arg0: SwapperSetScaledOfferFactorOverridesConfig,
+  ) => Promise<Event[] | undefined>
+  status?: ContractExecutionStatus
+  txHash?: string
+  error?: RequestError
+} => {
+  const context = useContext(SplitsContext)
+  const splitsClient = getSplitsClient(context)
+
+  const [status, setStatus] = useState<ContractExecutionStatus>()
+  const [txHash, setTxHash] = useState<string>()
+  const [error, setError] = useState<RequestError>()
+
+  const setScaledOfferFactorOverrides = useCallback(
+    async (argsDict: SwapperSetScaledOfferFactorOverridesConfig) => {
+      if (!splitsClient.swapper) throw new Error('Invalid chain id for swapper')
+
+      try {
+        setStatus('pendingApproval')
+        setError(undefined)
+        setTxHash(undefined)
+
+        const { tx } =
+          await splitsClient.swapper.submitSetScaledOfferFactorOverridesTransaction(
+            argsDict,
+          )
+
+        setStatus('txInProgress')
+        setTxHash(tx.hash)
+
+        const events = await getTransactionEvents(
+          tx,
+          splitsClient.swapper.eventTopics.setScaledOfferFactorOverrides,
+        )
+
+        setStatus('complete')
+
+        return events
+      } catch (e) {
+        setStatus('error')
+        setError(e)
+      }
+    },
+    [splitsClient],
+  )
+
+  return { setScaledOfferFactorOverrides, status, txHash, error }
 }
 
 export const useSwapperMetadata = (
