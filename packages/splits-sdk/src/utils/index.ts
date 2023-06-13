@@ -361,8 +361,9 @@ export const getFormattedOracleParams = (
 
 export const getFormattedScaledOfferFactor = (
   scaledOfferFactorPercent: number,
+  allowMaxPercent?: boolean,
 ): BigNumber => {
-  validateScaledOfferFactor(scaledOfferFactorPercent)
+  validateScaledOfferFactor(scaledOfferFactorPercent, allowMaxPercent)
 
   const formattedScaledOfferFactor =
     1000000 - Math.round(10000 * scaledOfferFactorPercent)
@@ -376,7 +377,7 @@ export const getFormattedScaledOfferFactorOverrides = (
     ({ baseToken, quoteToken, scaledOfferFactorPercent }) => {
       return [
         [baseToken, quoteToken],
-        getFormattedScaledOfferFactor(scaledOfferFactorPercent),
+        getFormattedScaledOfferFactor(scaledOfferFactorPercent, true),
       ]
     },
   )
