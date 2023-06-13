@@ -485,6 +485,11 @@ describe('validate scaled offer factor', () => {
     expect(() => validateScaledOfferFactor(100)).toThrow(InvalidArgumentError)
   })
 
+  test('Max scaled offer factor fails without allow param', () => {
+    expect(() => validateScaledOfferFactor(100)).toThrow(InvalidArgumentError)
+    expect(() => validateScaledOfferFactor(100, true)).not.toThrow()
+  })
+
   test('Valid scaled offer factor passes', () => {
     expect(() => validateScaledOfferFactor(1)).not.toThrow()
 

@@ -274,11 +274,13 @@ export const validateUniV3SwapInputAssets = (
 
 export const validateScaledOfferFactor = (
   scaledOfferFactorPercent: number,
+  allowMaxPercent?: boolean,
 ): void => {
   if (scaledOfferFactorPercent >= 100)
-    throw new InvalidArgumentError(
-      'Cannot set scaled offer factor this high, would allow any input token to get traded for 0 of the output token.',
-    )
+    if (!allowMaxPercent || scaledOfferFactorPercent > 100)
+      throw new InvalidArgumentError(
+        'Cannot set scaled offer factor this high, would allow any input token to get traded for 0 of the output token.',
+      )
 }
 
 export const validateScaledOfferFactorOverrides = (
@@ -288,7 +290,8 @@ export const validateScaledOfferFactorOverrides = (
     ({ baseToken, quoteToken, scaledOfferFactorPercent }) => {
       validateAddress(baseToken)
       validateAddress(quoteToken)
-      validateScaledOfferFactor(scaledOfferFactorPercent)
+      // Allow overrides to have max scaled offer factor (means the default will be used)
+      validateScaledOfferFactor(scaledOfferFactorPercent, true)
     },
   )
 }
