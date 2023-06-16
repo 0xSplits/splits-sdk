@@ -15,7 +15,7 @@ import {
 } from '@0xsplits/splits-sdk'
 
 import { SplitsContext } from '../context'
-import { ContractExecutionStatus, RequestError } from '../types'
+import { ContractExecutionStatus, DataLoadStatus, RequestError } from '../types'
 import { getSplitsClient } from '../utils'
 
 export const useCreateSwapper = (): {
@@ -460,7 +460,12 @@ export const useSwapperSetScaledOfferFactorOverrides = (): {
 
 export const useSwapperMetadata = (
   swapperId: string,
-): { isLoading: boolean; swapperMetadata: Swapper | undefined } => {
+): {
+  isLoading: boolean
+  swapperMetadata: Swapper | undefined
+  status?: DataLoadStatus
+  error?: RequestError
+} => {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context)
   const swapperClient = splitsClient.swapper
@@ -470,6 +475,10 @@ export const useSwapperMetadata = (
 
   const [swapperMetadata, setSwapperMetadata] = useState<Swapper | undefined>()
   const [isLoading, setIsLoading] = useState(!!swapperId)
+  const [status, setStatus] = useState<DataLoadStatus | undefined>(
+    swapperId ? 'loading' : undefined,
+  )
+  const [error, setError] = useState<RequestError>()
 
   useEffect(() => {
     let isActive = true
@@ -479,15 +488,25 @@ export const useSwapperMetadata = (
         const swapper = await swapperClient.getSwapperMetadata({ swapperId })
         if (!isActive) return
         setSwapperMetadata(swapper)
+        setStatus('success')
+      } catch (e) {
+        if (isActive) {
+          setStatus('error')
+          setError(e)
+        }
       } finally {
         if (isActive) setIsLoading(false)
       }
     }
 
+    setError(undefined)
     if (swapperId) {
       setIsLoading(true)
+      setStatus('loading')
       fetchMetadata()
     } else {
+      setStatus(undefined)
+      setIsLoading(false)
       setSwapperMetadata(undefined)
     }
 
@@ -499,5 +518,7 @@ export const useSwapperMetadata = (
   return {
     isLoading,
     swapperMetadata,
+    status,
+    error,
   }
 }
