@@ -24,6 +24,13 @@ export type GqlAccountBalances = {
   internalBalances: GqlTokenBalance[]
 }
 
+export type GqlContractEarnings = {
+  id: Scalars['ID']
+  contract: GqlAccount
+  internalBalances: GqlTokenBalance[]
+  withdrawals: GqlTokenBalance[]
+}
+
 export type GqlRecipient = {
   id: Scalars['ID']
   split: GqlSplit

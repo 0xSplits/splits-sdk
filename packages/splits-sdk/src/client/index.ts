@@ -1,6 +1,6 @@
 import { Interface } from '@ethersproject/abi'
 import { BigNumber } from '@ethersproject/bignumber'
-import { AddressZero } from '@ethersproject/constants'
+import { AddressZero, Zero } from '@ethersproject/constants'
 import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
 
 import SPLIT_MAIN_ARTIFACT_ETHEREUM from '../artifacts/contracts/SplitMain/ethereum/SplitMain.json'
@@ -78,6 +78,9 @@ import type {
   FormattedTokenBalances,
   SplitEarnings,
   FormattedSplitEarnings,
+  FormattedEarningsByContract,
+  UserEarningsByContract,
+  FormattedUserEarningsByContract,
 } from '../types'
 import {
   getRecipientSortedAddressesAndAllocations,
@@ -1175,6 +1178,96 @@ export class SplitsClient extends SplitsTransactions {
     return {
       withdrawn: formattedBalances[0],
       activeBalances: formattedBalances[1],
+    }
+  }
+
+  async getUserEarningsByContract({
+    userId,
+    contractIds,
+  }: {
+    userId: string
+    contractIds?: string[]
+  }): Promise<UserEarningsByContract> {
+    validateAddress(userId)
+    if (contractIds) {
+      contractIds.map((contractId) => validateAddress(contractId))
+    }
+
+    const { contractEarnings } = await this._getUserBalancesByContract({
+      userId,
+      contractIds,
+    })
+    const [withdrawn, activeBalances] = Object.values(contractEarnings).reduce(
+      (
+        acc,
+        {
+          withdrawn: contractWithdrawn,
+          activeBalances: contractActiveBalances,
+        },
+      ) => {
+        Object.keys(contractWithdrawn).map((tokenId) => {
+          acc[0][tokenId] = (acc[0][tokenId] ?? Zero).add(
+            contractWithdrawn[tokenId],
+          )
+        })
+        Object.keys(contractActiveBalances).map((tokenId) => {
+          acc[1][tokenId] = (acc[1][tokenId] ?? Zero).add(
+            contractActiveBalances[tokenId],
+          )
+        })
+
+        return acc
+      },
+      [{} as TokenBalances, {} as TokenBalances],
+    )
+
+    return {
+      withdrawn,
+      activeBalances,
+      earningsByContract: contractEarnings,
+    }
+  }
+
+  async getFormattedUserEarningsByContract({
+    userId,
+    contractIds,
+  }: {
+    userId: string
+    contractIds?: string[]
+  }): Promise<FormattedUserEarningsByContract> {
+    if (!this._provider) {
+      throw new MissingProviderError(
+        'Provider required to get formatted earnings. Please update your call to the SplitsClient contstructor with a valid provider.',
+      )
+    }
+
+    const { withdrawn, activeBalances, earningsByContract } =
+      await this.getUserEarningsByContract({ userId, contractIds })
+    const balancesToFormat = [withdrawn, activeBalances]
+    Object.keys(earningsByContract).map((contractAddress) => {
+      balancesToFormat.push(earningsByContract[contractAddress].withdrawn)
+      balancesToFormat.push(earningsByContract[contractAddress].activeBalances)
+    })
+    const formattedBalances = await this._getFormattedTokenBalances(
+      balancesToFormat,
+    )
+    const formattedContractEarnings = Object.keys(earningsByContract).reduce(
+      (acc, contractAddress, index) => {
+        const contractWithdrawn = formattedBalances[index * 2 + 2]
+        const contractActiveBalances = formattedBalances[index * 2 + 3]
+        acc[contractAddress] = {
+          withdrawn: contractWithdrawn,
+          activeBalances: contractActiveBalances,
+        }
+        return acc
+      },
+      {} as FormattedEarningsByContract,
+    )
+
+    return {
+      withdrawn: formattedBalances[0],
+      activeBalances: formattedBalances[1],
+      earningsByContract: formattedContractEarnings,
     }
   }
 
