@@ -43,6 +43,8 @@ export {
   useLiquidSplitMetadata,
   useVestingMetadata,
   useSwapperMetadata,
+  useUserEarnings,
+  useUserEarningsByContract,
   useCreateRecoup,
   useCreateSwapper,
   useUniV3FlashSwap,

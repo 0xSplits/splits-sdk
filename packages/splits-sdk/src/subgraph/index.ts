@@ -5,6 +5,7 @@ import { GraphQLClient, gql } from 'graphql-request'
 
 import { CHAIN_INFO } from '../constants'
 import type {
+  EarningsByContract,
   LiquidSplit,
   Split,
   SplitRecipient,
@@ -17,6 +18,7 @@ import type {
 } from '../types'
 import { fromBigNumberToPercent } from '../utils'
 import {
+  GqlContractEarnings,
   GqlLiquidSplit,
   GqlSplit,
   GqlSwapper,
@@ -60,6 +62,26 @@ const ACCOUNT_BALANCES_FRAGMENT = gql`
   }
 
   ${TOKEN_BALANCE_FIELDS_FRAGMENT}
+`
+
+const CONTRACT_EARNINGS_FRAGMENT = gql`
+  fragment ContractEarningsFragment on ContractEarnings {
+    contract {
+      id
+    }
+    internalBalances(first: 1000, orderBy: amount, orderDirection: desc) {
+      amount
+      token {
+        id
+      }
+    }
+    withdrawals(first: 1000, orderBy: amount, orderDirection: desc) {
+      amount
+      token {
+        id
+      }
+    }
+  }
 `
 
 const ACCOUNT_FIELDS_FRAGMENT = gql`
@@ -424,6 +446,25 @@ export const formatAccountBalances = (
   }, {} as TokenBalances)
 }
 
+export const formatContractEarnings = (
+  gqlContractEarnings: GqlContractEarnings[],
+): EarningsByContract => {
+  return gqlContractEarnings.reduce((acc, gqlContractEarning) => {
+    const contractId = getAddress(gqlContractEarning.contract.id)
+    const activeBalances = formatAccountBalances(
+      gqlContractEarning.internalBalances,
+    )
+    const withdrawn = formatAccountBalances(gqlContractEarning.withdrawals)
+
+    acc[contractId] = {
+      withdrawn,
+      activeBalances,
+    }
+
+    return acc
+  }, {} as EarningsByContract)
+}
+
 export const SPLIT_QUERY = gql`
   query split($splitId: ID!) {
     split(id: $splitId) {
@@ -520,6 +561,30 @@ export const ACCOUNT_BALANCES_QUERY = gql`
   }
 
   ${ACCOUNT_BALANCES_FRAGMENT}
+`
+
+export const USER_BALANCES_BY_CONTRACT_QUERY = gql`
+  query userBalancesByContract($userId: ID!) {
+    userBalancesByContract: user(id: $userId) {
+      contractEarnings(first: 1000) {
+        ...ContractEarningsFragment
+      }
+    }
+  }
+
+  ${CONTRACT_EARNINGS_FRAGMENT}
+`
+
+export const USER_BALANCES_BY_CONTRACT_FILTERED_QUERY = gql`
+  query userBalancesByContract($userId: ID!, $contractIds: [ID!]!) {
+    userBalancesByContract: user(id: $userId) {
+      contractEarnings(first: 1000, where: { contract_in: $contractIds }) {
+        ...ContractEarningsFragment
+      }
+    }
+  }
+
+  ${CONTRACT_EARNINGS_FRAGMENT}
 `
 
 export const getGraphqlClient = (
