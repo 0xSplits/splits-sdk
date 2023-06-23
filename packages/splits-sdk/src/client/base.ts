@@ -130,7 +130,7 @@ class BaseClient {
         ? { userId: userId.toLowerCase() }
         : {
             userId: userId.toLowerCase(),
-            contactIds: contractIds.map((contractId) =>
+            contractIds: contractIds.map((contractId) =>
               contractId.toLowerCase(),
             ),
           }
