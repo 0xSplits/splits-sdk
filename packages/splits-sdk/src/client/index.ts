@@ -29,6 +29,7 @@ import {
   LIQUID_SPLIT_CHAIN_IDS,
   OPTIMISM_CHAIN_IDS,
   POLYGON_CHAIN_IDS,
+  ZORA_CHAIN_IDS,
   SPLITS_SUPPORTED_CHAIN_IDS,
   getSplitMainAddress,
   TransactionType,
@@ -100,6 +101,7 @@ const polygonInterfaceChainIds = [
   ...AVALANCHE_CHAIN_IDS,
   ...BSC_CHAIN_IDS,
   ...AURORA_CHAIN_IDS,
+  ...ZORA_CHAIN_IDS,
 ]
 
 class SplitsTransactions extends BaseTransactions {

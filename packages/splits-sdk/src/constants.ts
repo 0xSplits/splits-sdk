@@ -91,6 +91,7 @@ enum ChainId {
   AVALANCHE = 43114,
   BSC = 56,
   AURORA = 1313161554,
+  ZORA = 7777777,
 }
 
 export const ETHEREUM_CHAIN_IDS = [ChainId.MAINNET, 3, 4, ChainId.GOERLI, 42]
@@ -102,6 +103,7 @@ export const FANTOM_CHAIN_IDS = [ChainId.FANTOM]
 export const AVALANCHE_CHAIN_IDS = [ChainId.AVALANCHE]
 export const BSC_CHAIN_IDS = [ChainId.BSC]
 export const AURORA_CHAIN_IDS = [ChainId.AURORA]
+export const ZORA_CHAIN_IDS = [ChainId.ZORA]
 
 const ALL_CHAIN_IDS = [
   ChainId.MAINNET,
@@ -114,6 +116,7 @@ const ALL_CHAIN_IDS = [
   ...AVALANCHE_CHAIN_IDS,
   ...BSC_CHAIN_IDS,
   ...AURORA_CHAIN_IDS,
+  ...ZORA_CHAIN_IDS,
 ]
 
 export const SPLITS_SUPPORTED_CHAIN_IDS = [3, 4, 137, ...ALL_CHAIN_IDS]
@@ -122,10 +125,11 @@ export const SPLITS_SUBGRAPH_CHAIN_IDS = ALL_CHAIN_IDS.slice()
 export const WATERFALL_CHAIN_IDS = ALL_CHAIN_IDS.slice()
 export const LIQUID_SPLIT_CHAIN_IDS = ALL_CHAIN_IDS.slice()
 export const VESTING_CHAIN_IDS = ALL_CHAIN_IDS.slice()
-export const PASS_THROUGH_WALLET_CHAIN_IDS = ALL_CHAIN_IDS.slice()
-export const SWAPPER_CHAIN_IDS = [ChainId.MAINNET, ChainId.GOERLI]
-export const ORACLE_CHAIN_IDS = SWAPPER_CHAIN_IDS.slice()
 export const TEMPLATES_CHAIN_IDS = ALL_CHAIN_IDS.slice()
+
+export const SWAPPER_CHAIN_IDS = [ChainId.MAINNET, ChainId.GOERLI]
+export const PASS_THROUGH_WALLET_CHAIN_IDS = SWAPPER_CHAIN_IDS.slice()
+export const ORACLE_CHAIN_IDS = SWAPPER_CHAIN_IDS.slice()
 export const DIVERSIFIER_CHAIN_IDS = SWAPPER_CHAIN_IDS.slice()
 
 export const SPLITS_MAX_PRECISION_DECIMALS = 4
@@ -210,6 +214,11 @@ export const CHAIN_INFO: {
     startBlock: 83401794,
     gqlEndpoint:
       'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-aurora',
+  },
+  [ChainId.ZORA]: {
+    startBlock: 1860322,
+    gqlEndpoint:
+      'https://api.goldsky.com/api/public/project_clhk16b61ay9t49vm6ntn4mkz/subgraphs/splits-zora-mainnet/1.0.0/gn',
   },
 }
 
