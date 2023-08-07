@@ -39,6 +39,7 @@ import {
   ORACLE_CHAIN_IDS,
   SWAPPER_CHAIN_IDS,
   PASS_THROUGH_WALLET_CHAIN_IDS,
+  BASE_CHAIN_IDS,
 } from '../constants'
 import {
   AccountNotFoundError,
@@ -102,6 +103,7 @@ const polygonInterfaceChainIds = [
   ...BSC_CHAIN_IDS,
   ...AURORA_CHAIN_IDS,
   ...ZORA_CHAIN_IDS,
+  ...BASE_CHAIN_IDS,
 ]
 
 class SplitsTransactions extends BaseTransactions {

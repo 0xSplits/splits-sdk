@@ -92,6 +92,7 @@ enum ChainId {
   BSC = 56,
   AURORA = 1313161554,
   ZORA = 7777777,
+  BASE = 8453,
 }
 
 export const ETHEREUM_CHAIN_IDS = [ChainId.MAINNET, 3, 4, ChainId.GOERLI, 42]
@@ -104,6 +105,7 @@ export const AVALANCHE_CHAIN_IDS = [ChainId.AVALANCHE]
 export const BSC_CHAIN_IDS = [ChainId.BSC]
 export const AURORA_CHAIN_IDS = [ChainId.AURORA]
 export const ZORA_CHAIN_IDS = [ChainId.ZORA]
+export const BASE_CHAIN_IDS = [ChainId.BASE]
 
 const ALL_CHAIN_IDS = [
   ChainId.MAINNET,
@@ -117,6 +119,7 @@ const ALL_CHAIN_IDS = [
   ...BSC_CHAIN_IDS,
   ...AURORA_CHAIN_IDS,
   ...ZORA_CHAIN_IDS,
+  ...BASE_CHAIN_IDS,
 ]
 
 export const SPLITS_SUPPORTED_CHAIN_IDS = [3, 4, 42, ...ALL_CHAIN_IDS]
@@ -219,6 +222,11 @@ export const CHAIN_INFO: {
     startBlock: 1860322,
     gqlEndpoint:
       'https://api.goldsky.com/api/public/project_clhk16b61ay9t49vm6ntn4mkz/subgraphs/splits-zora-mainnet/1.0.0/gn',
+  },
+  [ChainId.BASE]: {
+    startBlock: 2293907,
+    gqlEndpoint:
+      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-base',
   },
 }
 
