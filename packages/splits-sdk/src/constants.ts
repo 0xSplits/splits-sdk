@@ -119,7 +119,7 @@ const ALL_CHAIN_IDS = [
   ...ZORA_CHAIN_IDS,
 ]
 
-export const SPLITS_SUPPORTED_CHAIN_IDS = [3, 4, 137, ...ALL_CHAIN_IDS]
+export const SPLITS_SUPPORTED_CHAIN_IDS = [3, 4, 42, ...ALL_CHAIN_IDS]
 
 export const SPLITS_SUBGRAPH_CHAIN_IDS = ALL_CHAIN_IDS.slice()
 export const WATERFALL_CHAIN_IDS = ALL_CHAIN_IDS.slice()

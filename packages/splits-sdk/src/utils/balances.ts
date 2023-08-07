@@ -46,6 +46,8 @@ export const fetchActiveBalances: (
   const multicall = new Multicall({
     ethersProvider: provider,
     tryAggregate: true,
+    multicallCustomContractAddress:
+      '0xcA11bde05977b3631167028862bE2a173976CA11',
   })
 
   const contractCallContexts = getBalanceContractCalls(accountId, fullTokenList)
