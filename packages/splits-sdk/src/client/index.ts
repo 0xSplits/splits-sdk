@@ -419,7 +419,7 @@ class SplitsTransactions extends BaseTransactions {
 
     const signerAddress = await this._signer.getAddress()
 
-    if (controller !== signerAddress)
+    if (controller.toLowerCase() !== signerAddress.toLowerCase())
       throw new InvalidAuthError(
         `Action only available to the split controller. Split id: ${splitId}, split controller: ${controller}, signer: ${signerAddress}`,
       )
@@ -432,7 +432,7 @@ class SplitsTransactions extends BaseTransactions {
     if (!this._signer) throw new Error()
     const signerAddress = await this._signer.getAddress()
 
-    if (newPotentialController !== signerAddress)
+    if (newPotentialController.toLowerCase() !== signerAddress.toLowerCase())
       throw new InvalidAuthError(
         `Action only available to the split's new potential controller. Split new potential controller: ${newPotentialController}. Signer: ${signerAddress}`,
       )
