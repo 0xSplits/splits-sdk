@@ -120,6 +120,7 @@ export const useUserEarningsByContract = (
 
   const fetchFormatted = options?.formatted ?? DEFAULT_OPTIONS.formatted
   const contractIds = options?.contractIds ?? DEFAULT_OPTIONS.contractIds
+  const contractIdsString = JSON.stringify(contractIds)
 
   const [userEarningsByContract, setUserEarningsByContract] = useState<
     UserEarningsByContract | undefined
@@ -182,7 +183,7 @@ export const useUserEarningsByContract = (
     return () => {
       isActive = false
     }
-  }, [splitsClient, userId, fetchFormatted])
+  }, [splitsClient, userId, fetchFormatted, contractIdsString])
 
   return {
     isLoading,
