@@ -17,4 +17,4 @@ npm install @0xsplits/splits-sdk-react
 
 ## Documentation
 
-Detailed documentation for the SDK can be found [here](https://docs.0xsplits.xyz/sdk-info/react)
+Detailed documentation for the SDK can be found [here](https://docs.splits.org/sdk-info/react)
