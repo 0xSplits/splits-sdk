@@ -56,6 +56,23 @@ describe('Client config validation', () => {
     expect(() => new OracleClient({ chainId: 42161 })).toThrow()
     expect(() => new OracleClient({ chainId: 421613 })).toThrow()
   })
+
+  test('Zora chain ids fail', () => {
+    expect(() => new OracleClient({ chainId: 7777777 })).toThrow()
+    expect(() => new OracleClient({ chainId: 999 })).toThrow()
+  })
+
+  test('Base chain ids fail', () => {
+    expect(() => new OracleClient({ chainId: 8453 })).toThrow()
+  })
+
+  test('Other chain ids fail', () => {
+    expect(() => new OracleClient({ chainId: 100 })).toThrow()
+    expect(() => new OracleClient({ chainId: 250 })).toThrow()
+    expect(() => new OracleClient({ chainId: 43114 })).toThrow()
+    expect(() => new OracleClient({ chainId: 56 })).toThrow()
+    expect(() => new OracleClient({ chainId: 1313161554 })).toThrow()
+  })
 })
 
 describe('Oracle reads', () => {

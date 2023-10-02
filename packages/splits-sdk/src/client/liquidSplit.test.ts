@@ -133,6 +133,23 @@ describe('Client config validation', () => {
     expect(() => new LiquidSplitClient({ chainId: 42161 })).not.toThrow()
     expect(() => new LiquidSplitClient({ chainId: 421613 })).not.toThrow()
   })
+
+  test('Zora chain ids pass', () => {
+    expect(() => new LiquidSplitClient({ chainId: 7777777 })).not.toThrow()
+    expect(() => new LiquidSplitClient({ chainId: 999 })).not.toThrow()
+  })
+
+  test('Base chain ids pass', () => {
+    expect(() => new LiquidSplitClient({ chainId: 8453 })).not.toThrow()
+  })
+
+  test('Other chain ids pass', () => {
+    expect(() => new LiquidSplitClient({ chainId: 100 })).not.toThrow()
+    expect(() => new LiquidSplitClient({ chainId: 250 })).not.toThrow()
+    expect(() => new LiquidSplitClient({ chainId: 43114 })).not.toThrow()
+    expect(() => new LiquidSplitClient({ chainId: 56 })).not.toThrow()
+    expect(() => new LiquidSplitClient({ chainId: 1313161554 })).not.toThrow()
+  })
 })
 
 describe('Liquid split writes', () => {

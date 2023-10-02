@@ -128,6 +128,23 @@ describe('Client config validation', () => {
     expect(() => new SwapperClient({ chainId: 42161 })).toThrow()
     expect(() => new SwapperClient({ chainId: 421613 })).toThrow()
   })
+
+  test('Zora chain ids fail', () => {
+    expect(() => new SwapperClient({ chainId: 7777777 })).toThrow()
+    expect(() => new SwapperClient({ chainId: 999 })).toThrow()
+  })
+
+  test('Base chain ids fail', () => {
+    expect(() => new SwapperClient({ chainId: 8453 })).toThrow()
+  })
+
+  test('Other chain ids fail', () => {
+    expect(() => new SwapperClient({ chainId: 100 })).toThrow()
+    expect(() => new SwapperClient({ chainId: 250 })).toThrow()
+    expect(() => new SwapperClient({ chainId: 43114 })).toThrow()
+    expect(() => new SwapperClient({ chainId: 56 })).toThrow()
+    expect(() => new SwapperClient({ chainId: 1313161554 })).toThrow()
+  })
 })
 
 describe('Swapper writes', () => {
