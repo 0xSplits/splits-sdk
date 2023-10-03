@@ -14,7 +14,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rm -rf dist && tsc"
   },
-  "author": "0xSplits (https://0xsplits.com)",
+  "author": "0xSplits (https://splits.org)",
   "publishConfig": {
     "access": "public"
   },
