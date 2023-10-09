@@ -1,6 +1,6 @@
 import { Interface, JsonFragment } from '@ethersproject/abi'
-import { Provider } from '@ethersproject/abstract-provider'
-import { Signer } from '@ethersproject/abstract-signer'
+import { Client, PublicClient, getContract, WalletClient } from 'viem'
+
 import { getAddress } from '@ethersproject/address'
 import { BigNumber } from '@ethersproject/bignumber'
 import { AddressZero, Zero, One } from '@ethersproject/constants'
@@ -51,29 +51,30 @@ const MISSING_SIGNER = ''
 
 class BaseClient {
   readonly _chainId: number
-  protected readonly _ensProvider: Provider | undefined
+  protected readonly _ensProvider: PublicClient | undefined
   // TODO: something better we can do here to handle typescript check for missing signer?
-  readonly _signer: Signer | typeof MISSING_SIGNER
-  readonly _provider: Provider | undefined
+  // Viem should do type checking better here, they invested a lot of time in TS from my understanding
+  readonly _signer: WalletClient | string
+  readonly _provider: PublicClient | undefined
   private readonly _graphqlClient: GraphQLClient | undefined
   protected readonly _includeEnsNames: boolean
 
   constructor({
     chainId,
-    provider,
+    publicClient,
     ensProvider,
-    signer,
+    account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
-    if (includeEnsNames && !provider && !ensProvider)
+    if (includeEnsNames && !publicClient && !ensProvider)
       throw new InvalidConfigError(
         'Must include a mainnet provider if includeEnsNames is set to true',
       )
 
-    this._ensProvider = ensProvider ?? provider
-    this._provider = provider
+    this._ensProvider = ensProvider ?? publicClient
+    this._provider = publicClient
     this._chainId = chainId
-    this._signer = signer ?? MISSING_SIGNER
+    this._signer = account ?? MISSING_SIGNER
     this._graphqlClient = getGraphqlClient(chainId)
     this._includeEnsNames = includeEnsNames
   }
@@ -279,11 +280,13 @@ export class BaseTransactions extends BaseClient {
     if (this._transactionType === TransactionType.CallData)
       return new ContractCallData(contractAddress, contractAbi)
 
-    const contract = new Contract(
-      contractAddress,
-      contractInterface,
-      this._signer || this._provider,
-    ) as T
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore - why is this the case??
+    const contract = getContract({
+      address: contractAddress,
+      abi: contractInterface,
+      walletClient: this._signer || this._provider,
+    })
     if (this._transactionType === TransactionType.GasEstimate)
       return contract.estimateGas as K
 

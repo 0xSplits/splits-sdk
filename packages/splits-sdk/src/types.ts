@@ -1,10 +1,9 @@
 import { JsonFragmentType } from '@ethersproject/abi'
 import type { Provider } from '@ethersproject/abstract-provider'
-import type { Signer } from '@ethersproject/abstract-signer'
 import { BigNumber, BigNumberish } from '@ethersproject/bignumber'
 import { ContractTransaction } from '@ethersproject/contracts'
 import { AccessListish } from '@ethersproject/transactions'
-
+import type { Account as AccountType, PublicClient, WalletClient } from 'viem'
 import { TransactionType } from './constants'
 import type { SplitMain as SplitMainEthereumType } from './typechain/SplitMain/ethereum'
 import type { SplitMain as SplitMainPolygonType } from './typechain/SplitMain/polygon'
@@ -28,12 +27,12 @@ export type SplitMainType = SplitMainEthereumType | SplitMainPolygonType
 
 export type SplitsClientConfig = {
   chainId: number
-  provider?: Provider
-  signer?: Signer
+  publicClient?: PublicClient
+  account?: WalletClient
   includeEnsNames?: boolean
   // ensProvider can be used to fetch ens names when provider is not on mainnet (reverseRecords
   // only works on mainnet).
-  ensProvider?: Provider
+  ensProvider?: PublicClient
 }
 
 export type TransactionConfig = {

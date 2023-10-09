@@ -11,15 +11,16 @@ import {
 import { CHAIN_INFO } from '../constants'
 import { TokenBalances } from '../types'
 import { IERC20_ABI, ierc20Interface } from './ierc20'
+import {PublicClient} from "viem";
 
 export const fetchERC20TransferredTokens = async (
   chainId: number,
-  provider: Provider,
+  publicClient: PublicClient,
   splitId: string,
 ): Promise<string[]> => {
   const tokens = new Set<string>([])
 
-  const transferLogs = await provider.getLogs({
+  const transferLogs = await publicClient.getLogs({
     topics: [
       ierc20Interface.getEventTopic('Transfer'),
       null,

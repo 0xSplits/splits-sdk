@@ -184,7 +184,7 @@ class PassThroughWalletTransactions extends BaseTransactions {
     // TODO: how to get rid of this, needed for typescript check
     if (!this._signer) throw new Error()
 
-    const signerAddress = await this._signer.getAddress()
+    const signerAddress = await this._signer.getAddresses()?.[0]
 
     if (owner !== signerAddress)
       throw new InvalidAuthError(

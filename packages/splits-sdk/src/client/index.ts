@@ -116,17 +116,17 @@ class SplitsTransactions extends BaseTransactions {
   constructor({
     transactionType,
     chainId,
-    provider,
+    publicClient,
     ensProvider,
-    signer,
+    account,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
       transactionType,
       chainId,
-      provider,
+      publicClient,
       ensProvider,
-      signer,
+      account,
       includeEnsNames,
     })
 
@@ -205,7 +205,7 @@ class SplitsTransactions extends BaseTransactions {
     const distributorPayoutAddress = distributorAddress
       ? distributorAddress
       : this._signer
-      ? await this._signer.getAddress()
+      ? await this._signer.getAddresses()?.[0]
       : AddressZero
     validateAddress(distributorPayoutAddress)
 
@@ -261,7 +261,7 @@ class SplitsTransactions extends BaseTransactions {
     const distributorPayoutAddress = distributorAddress
       ? distributorAddress
       : this._signer
-      ? await this._signer.getAddress()
+      ? await this._signer.getAddresses()?.[0]
       : AddressZero
     validateAddress(distributorPayoutAddress)
 
@@ -417,7 +417,7 @@ class SplitsTransactions extends BaseTransactions {
     // TODO: how to get rid of this, needed for typescript check
     if (!this._signer) throw new Error()
 
-    const signerAddress = await this._signer.getAddress()
+    const signerAddress = await this._signer.getAddresses()?.[0]
 
     if (controller.toLowerCase() !== signerAddress.toLowerCase())
       throw new InvalidAuthError(
@@ -430,7 +430,7 @@ class SplitsTransactions extends BaseTransactions {
       await this._splitMain.getNewPotentialController(splitId)
     // TODO: how to get rid of this, needed for typescript check
     if (!this._signer) throw new Error()
-    const signerAddress = await this._signer.getAddress()
+    const signerAddress = await this._signer.getAddresses()?.[0]
 
     if (newPotentialController.toLowerCase() !== signerAddress.toLowerCase())
       throw new InvalidAuthError(
@@ -912,7 +912,7 @@ export class SplitsClient extends SplitsTransactions {
 
     const distributorPayoutAddress = distributorAddress
       ? distributorAddress
-      : await this._signer.getAddress()
+      : await this._signer.getAddresses()?.[0]
     validateAddress(distributorPayoutAddress)
 
     const distributeCalls = await Promise.all(

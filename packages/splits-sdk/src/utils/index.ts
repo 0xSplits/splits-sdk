@@ -1,4 +1,3 @@
-import { Provider } from '@ethersproject/abstract-provider'
 import { BigNumber } from '@ethersproject/bignumber'
 import { AddressZero } from '@ethersproject/constants'
 import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
@@ -33,6 +32,7 @@ import {
   validateOracleParams,
   validateScaledOfferFactor,
 } from './validation'
+import { Chain, Client, getContract, PublicClient, Transport } from 'viem'
 
 export const getRecipientSortedAddressesAndAllocations = (
   recipients: SplitRecipient[],
@@ -105,26 +105,25 @@ export const getTransactionEvents = async (
 }
 
 const fetchEnsNames = async (
-  provider: Provider,
+  publicClient: PublicClient,
   addresses: string[],
 ): Promise<string[]> => {
   // Do nothing if not on mainnet
-  const providerNetwork = await provider.getNetwork()
-  if (providerNetwork.chainId !== 1)
-    return Array(addresses.length).fill(undefined)
+  const providerNetwork = await publicClient.getChainId()
+  if (providerNetwork !== 1) return Array(addresses.length).fill(undefined)
 
-  const reverseRecords = new Contract(
-    REVERSE_RECORDS_ADDRESS,
-    reverseRecordsInterface,
-    provider,
-  )
+  const reverseRecords = getContract({
+    address: REVERSE_RECORDS_ADDRESS,
+    abi: reverseRecordsInterface,
+    publicClient,
+  })
 
-  const allNames: string[] = await reverseRecords.getNames(addresses)
+  const allNames: string[] = await reverseRecords.read.getNames(addresses)
   return allNames
 }
 
 export const addEnsNames = async (
-  provider: Provider,
+  provider: PublicClient,
   recipients: { address: string; ensName?: string }[],
 ): Promise<void> => {
   const addresses = recipients.map((recipient) => recipient.address)
@@ -146,7 +145,7 @@ export const addEnsNames = async (
 }
 
 export const addWaterfallEnsNames = async (
-  provider: Provider,
+  provider: PublicClient,
   tranches: WaterfallTranche[],
 ): Promise<void> => {
   const addresses = tranches.map((tranche) => tranche.recipientAddress)
@@ -168,7 +167,7 @@ export const addWaterfallEnsNames = async (
 }
 
 export const addSwapperEnsNames = async (
-  provider: Provider,
+  provider: PublicClient,
   swapper: Swapper,
 ): Promise<void> => {
   const addresses = [swapper.beneficiary.address]
@@ -198,7 +197,7 @@ export const getTrancheRecipientsAndSizes = async (
   chainId: number,
   token: string,
   tranches: WaterfallTrancheInput[],
-  provider: Provider,
+  provider: PublicClient,
 ): Promise<[string[], BigNumber[]]> => {
   const recipients: string[] = []
   const sizes: BigNumber[] = []
@@ -223,7 +222,7 @@ export const getRecoupTranchesAndSizes = async (
   chainId: number,
   token: string,
   tranches: RecoupTrancheInput[],
-  provider: Provider,
+  provider: PublicClient,
 ): Promise<[ContractRecoupTranche[], BigNumber[]]> => {
   const recoupTranches: ContractRecoupTranche[] = []
   const sizes: BigNumber[] = []
@@ -266,7 +265,7 @@ export const getRecoupTranchesAndSizes = async (
 export const getTokenData = async (
   chainId: number,
   token: string,
-  provider: Provider,
+  provider: PublicClient,
 ): Promise<{
   symbol: string
   decimals: number
@@ -284,12 +283,16 @@ export const getTokenData = async (
     }
   }
 
-  const tokenContract = new Contract(token, ierc20Interface, provider)
+  const tokenContract = getContract({
+    abi: ierc20Interface,
+    address: token,
+    publicClient: provider,
+  })
   // TODO: error handling? For bad erc20...
 
   const [decimals, symbol] = await Promise.all([
-    tokenContract.decimals(),
-    tokenContract.symbol(),
+    tokenContract.read.decimals(),
+    tokenContract.read.symbol(),
   ])
 
   return {
@@ -298,13 +301,16 @@ export const getTokenData = async (
   }
 }
 
-type ProviderWrapper = Provider & {
+type ProviderWrapper = PublicClient & {
   readonly connection: ConnectionInfo
 }
 
 // Return true if the provider supports a large enough logs request to fetch erc20 tranfer history
-export const isLogsProvider = (provider: Provider): boolean => {
-  const castedProvider = provider as ProviderWrapper // Cast so we can access the connection prop.
+export const isLogsProvider = (
+  provider: PublicClient<Transport, Chain | undefined>,
+): boolean => {
+  // TODO - need to figure out what to do here :thinking_face:
+  const castedProvider = provider as unknown as ProviderWrapper // Cast so we can access the connection prop.
   if (castedProvider.connection?.url?.includes('.alchemy.')) return true
   if (castedProvider.connection?.url?.includes('.alchemyapi.')) return true
   if (castedProvider.connection?.url?.includes('.infura.')) return true

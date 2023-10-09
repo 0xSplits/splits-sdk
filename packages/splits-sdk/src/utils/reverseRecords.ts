@@ -1,7 +1,7 @@
-import { Interface } from '@ethersproject/abi'
+import { parseAbi } from 'viem'
 
-const REVERSE_RECORDS_ABI = [
+const signatures = [
   'function getNames(address[]) view returns (string[])',
-]
+] as const
 
-export const reverseRecordsInterface = new Interface(REVERSE_RECORDS_ABI)
+const abi = parseAbi(signatures)
