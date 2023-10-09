@@ -1,4 +1,5 @@
 import { Interface } from '@ethersproject/abi'
+import { utils } from 'ethers'
 
 export const IERC20_ABI = [
   'function name() view returns (string name)',
@@ -11,5 +12,4 @@ export const IERC20_ABI = [
   'event Transfer(address indexed from, address indexed to, uint amount)',
   'event Approval(address indexed owner, address indexed spender, uint256 value)',
 ]
-
-export const ierc20Interface = new Interface(IERC20_ABI)
+export const ierc20Interface = new utils.Interface(IERC20_ABI)

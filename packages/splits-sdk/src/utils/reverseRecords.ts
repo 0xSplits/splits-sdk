@@ -1,7 +1,7 @@
-import { parseAbi } from 'viem'
+import { utils } from 'ethers'
 
-const signatures = [
+const REVERSE_RECORDS_ABI = [
   'function getNames(address[]) view returns (string[])',
 ] as const
 
-const abi = parseAbi(signatures)
+export const reverseRecordsInterface = new utils.Interface(REVERSE_RECORDS_ABI)
