@@ -11,7 +11,7 @@ import {
 import { CHAIN_INFO } from '../constants'
 import { TokenBalances } from '../types'
 import { IERC20_ABI, ierc20Interface } from './ierc20'
-import {PublicClient} from "viem";
+import { PublicClient } from 'viem'
 
 export const fetchERC20TransferredTokens = async (
   chainId: number,
