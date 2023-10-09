@@ -21,17 +21,17 @@ class OracleTransactions extends BaseTransactions {
   constructor({
     transactionType,
     chainId,
-    provider,
+    publicClient,
     ensProvider,
-    signer,
+    account,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
       transactionType,
       chainId,
-      provider,
+      publicClient,
       ensProvider,
-      signer,
+      account,
       includeEnsNames,
     })
   }
@@ -48,17 +48,17 @@ class OracleTransactions extends BaseTransactions {
 export class OracleClient extends OracleTransactions {
   constructor({
     chainId,
-    provider,
+    publicClient,
     ensProvider,
-    signer,
+    account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Transaction,
       chainId,
-      provider,
+      publicClient,
       ensProvider,
-      signer,
+      account,
       includeEnsNames,
     })
 

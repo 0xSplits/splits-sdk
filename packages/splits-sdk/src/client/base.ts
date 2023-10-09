@@ -1,5 +1,5 @@
 import { Interface, JsonFragment } from '@ethersproject/abi'
-import { Client, PublicClient, getContract, WalletClient } from 'viem'
+import { PublicClient, getContract, WalletClient } from 'viem'
 
 import { getAddress } from '@ethersproject/address'
 import { BigNumber } from '@ethersproject/bignumber'
@@ -244,16 +244,16 @@ export class BaseTransactions extends BaseClient {
   constructor({
     transactionType,
     chainId,
-    provider,
+    publicClient,
     ensProvider,
-    signer,
+    account,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
       chainId,
-      provider,
+      publicClient,
       ensProvider,
-      signer,
+      account,
       includeEnsNames,
     })
 

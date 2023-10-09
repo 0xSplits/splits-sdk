@@ -64,17 +64,17 @@ class WaterfallTransactions extends BaseTransactions {
   constructor({
     transactionType,
     chainId,
-    provider,
+    publicClient,
     ensProvider,
-    signer,
+    account,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
       transactionType,
       chainId,
-      provider,
+      publicClient,
       ensProvider,
-      signer,
+      account,
       includeEnsNames,
     })
 
@@ -294,17 +294,17 @@ export class WaterfallClient extends WaterfallTransactions {
 
   constructor({
     chainId,
-    provider,
+    publicClient,
     ensProvider,
-    signer,
+    account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Transaction,
       chainId,
-      provider,
+      publicClient,
       ensProvider,
-      signer,
+      account,
       includeEnsNames,
     })
 
@@ -326,16 +326,16 @@ export class WaterfallClient extends WaterfallTransactions {
 
     this.callData = new WaterfallCallData({
       chainId,
-      provider,
+      publicClient,
       ensProvider,
-      signer,
+      account,
       includeEnsNames,
     })
     this.estimateGas = new WaterfallGasEstimates({
       chainId,
-      provider,
+      publicClient,
       ensProvider,
-      signer,
+      account,
       includeEnsNames,
     })
   }
@@ -597,22 +597,23 @@ export class WaterfallClient extends WaterfallTransactions {
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface WaterfallClient extends BaseClientMixin {}
+
 applyMixins(WaterfallClient, [BaseClientMixin])
 
 class WaterfallGasEstimates extends WaterfallTransactions {
   constructor({
     chainId,
-    provider,
+    publicClient,
     ensProvider,
-    signer,
+    account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
       transactionType: TransactionType.GasEstimate,
       chainId,
-      provider,
+      publicClient,
       ensProvider,
-      signer,
+      account,
       includeEnsNames,
     })
   }
@@ -662,22 +663,23 @@ class WaterfallGasEstimates extends WaterfallTransactions {
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface WaterfallGasEstimates extends BaseGasEstimatesMixin {}
+
 applyMixins(WaterfallGasEstimates, [BaseGasEstimatesMixin])
 
 class WaterfallCallData extends WaterfallTransactions {
   constructor({
     chainId,
-    provider,
+    publicClient,
     ensProvider,
-    signer,
+    account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
       transactionType: TransactionType.CallData,
       chainId,
-      provider,
+      publicClient,
       ensProvider,
-      signer,
+      account,
       includeEnsNames,
     })
   }

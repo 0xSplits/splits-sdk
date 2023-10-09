@@ -72,17 +72,17 @@ class LiquidSplitTransactions extends BaseTransactions {
   constructor({
     transactionType,
     chainId,
-    provider,
+    publicClient,
     ensProvider,
-    signer,
+    account,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
       transactionType,
       chainId,
-      provider,
+      publicClient,
       ensProvider,
-      signer,
+      account,
       includeEnsNames,
     })
 
