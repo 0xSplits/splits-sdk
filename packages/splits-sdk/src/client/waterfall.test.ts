@@ -106,6 +106,23 @@ describe('Client config validation', () => {
     expect(() => new WaterfallClient({ chainId: 42161 })).not.toThrow()
     expect(() => new WaterfallClient({ chainId: 421613 })).not.toThrow()
   })
+
+  test('Zora chain ids pass', () => {
+    expect(() => new WaterfallClient({ chainId: 7777777 })).not.toThrow()
+    expect(() => new WaterfallClient({ chainId: 999 })).not.toThrow()
+  })
+
+  test('Base chain ids pass', () => {
+    expect(() => new WaterfallClient({ chainId: 8453 })).not.toThrow()
+  })
+
+  test('Other chain ids pass', () => {
+    expect(() => new WaterfallClient({ chainId: 100 })).not.toThrow()
+    expect(() => new WaterfallClient({ chainId: 250 })).not.toThrow()
+    expect(() => new WaterfallClient({ chainId: 43114 })).not.toThrow()
+    expect(() => new WaterfallClient({ chainId: 56 })).not.toThrow()
+    expect(() => new WaterfallClient({ chainId: 1313161554 })).not.toThrow()
+  })
 })
 
 describe('Waterfall writes', () => {

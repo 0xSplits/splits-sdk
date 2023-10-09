@@ -86,19 +86,36 @@ describe('Client config validation', () => {
     expect(() => new PassThroughWalletClient({ chainId: 5 })).not.toThrow()
   })
 
-  test('Polygon chain ids pass', () => {
-    expect(() => new PassThroughWalletClient({ chainId: 137 })).not.toThrow()
-    expect(() => new PassThroughWalletClient({ chainId: 80001 })).not.toThrow()
+  test('Polygon chain ids fail', () => {
+    expect(() => new PassThroughWalletClient({ chainId: 137 })).toThrow()
+    expect(() => new PassThroughWalletClient({ chainId: 80001 })).toThrow()
   })
 
-  test('Optimism chain ids pass', () => {
-    expect(() => new PassThroughWalletClient({ chainId: 10 })).not.toThrow()
-    expect(() => new PassThroughWalletClient({ chainId: 420 })).not.toThrow()
+  test('Optimism chain ids fail', () => {
+    expect(() => new PassThroughWalletClient({ chainId: 10 })).toThrow()
+    expect(() => new PassThroughWalletClient({ chainId: 420 })).toThrow()
   })
 
-  test('Arbitrum chain ids pass', () => {
-    expect(() => new PassThroughWalletClient({ chainId: 42161 })).not.toThrow()
-    expect(() => new PassThroughWalletClient({ chainId: 421613 })).not.toThrow()
+  test('Arbitrum chain ids fail', () => {
+    expect(() => new PassThroughWalletClient({ chainId: 42161 })).toThrow()
+    expect(() => new PassThroughWalletClient({ chainId: 421613 })).toThrow()
+  })
+
+  test('Zora chain ids fail', () => {
+    expect(() => new PassThroughWalletClient({ chainId: 7777777 })).toThrow()
+    expect(() => new PassThroughWalletClient({ chainId: 999 })).toThrow()
+  })
+
+  test('Base chain ids fail', () => {
+    expect(() => new PassThroughWalletClient({ chainId: 8453 })).toThrow()
+  })
+
+  test('Other chain ids fail', () => {
+    expect(() => new PassThroughWalletClient({ chainId: 100 })).toThrow()
+    expect(() => new PassThroughWalletClient({ chainId: 250 })).toThrow()
+    expect(() => new PassThroughWalletClient({ chainId: 43114 })).toThrow()
+    expect(() => new PassThroughWalletClient({ chainId: 56 })).toThrow()
+    expect(() => new PassThroughWalletClient({ chainId: 1313161554 })).toThrow()
   })
 })
 

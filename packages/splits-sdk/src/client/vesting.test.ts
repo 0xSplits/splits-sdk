@@ -96,6 +96,23 @@ describe('Client config validation', () => {
     expect(() => new VestingClient({ chainId: 42161 })).not.toThrow()
     expect(() => new VestingClient({ chainId: 421613 })).not.toThrow()
   })
+
+  test('Zora chain ids pass', () => {
+    expect(() => new VestingClient({ chainId: 7777777 })).not.toThrow()
+    expect(() => new VestingClient({ chainId: 999 })).not.toThrow()
+  })
+
+  test('Base chain ids pass', () => {
+    expect(() => new VestingClient({ chainId: 8453 })).not.toThrow()
+  })
+
+  test('Other chain ids pass', () => {
+    expect(() => new VestingClient({ chainId: 100 })).not.toThrow()
+    expect(() => new VestingClient({ chainId: 250 })).not.toThrow()
+    expect(() => new VestingClient({ chainId: 43114 })).not.toThrow()
+    expect(() => new VestingClient({ chainId: 56 })).not.toThrow()
+    expect(() => new VestingClient({ chainId: 1313161554 })).not.toThrow()
+  })
 })
 
 describe('Vesting writes', () => {

@@ -110,6 +110,23 @@ describe('Client config validation', () => {
     expect(() => new TemplatesClient({ chainId: 42161 })).not.toThrow()
     expect(() => new TemplatesClient({ chainId: 421613 })).not.toThrow()
   })
+
+  test('Zora chain ids pass', () => {
+    expect(() => new TemplatesClient({ chainId: 7777777 })).not.toThrow()
+    expect(() => new TemplatesClient({ chainId: 999 })).not.toThrow()
+  })
+
+  test('Base chain ids pass', () => {
+    expect(() => new TemplatesClient({ chainId: 8453 })).not.toThrow()
+  })
+
+  test('Other chain ids pass', () => {
+    expect(() => new TemplatesClient({ chainId: 100 })).not.toThrow()
+    expect(() => new TemplatesClient({ chainId: 250 })).not.toThrow()
+    expect(() => new TemplatesClient({ chainId: 43114 })).not.toThrow()
+    expect(() => new TemplatesClient({ chainId: 56 })).not.toThrow()
+    expect(() => new TemplatesClient({ chainId: 1313161554 })).not.toThrow()
+  })
 })
 
 describe('Template writes', () => {

@@ -18,12 +18,16 @@ import {
 } from '../errors'
 import {
   ACCOUNT_BALANCES_QUERY,
+  USER_BALANCES_BY_CONTRACT_FILTERED_QUERY,
+  USER_BALANCES_BY_CONTRACT_QUERY,
   formatAccountBalances,
+  formatContractEarnings,
   getGraphqlClient,
 } from '../subgraph'
-import { GqlAccountBalances } from '../subgraph/types'
+import { GqlAccountBalances, GqlContractEarnings } from '../subgraph/types'
 import type {
   CallData,
+  EarningsByContract,
   FormattedTokenBalances,
   SplitsClientConfig,
   TokenBalances,
@@ -105,6 +109,51 @@ class BaseClient {
       throw new MissingSignerError(
         'Signer required to perform this action, please update your call to the constructor',
       )
+  }
+
+  protected async _getUserBalancesByContract({
+    userId,
+    contractIds,
+  }: {
+    userId: string
+    contractIds?: string[]
+  }): Promise<{
+    contractEarnings: EarningsByContract
+  }> {
+    const chainId = this._chainId
+
+    const gqlQuery =
+      contractIds === undefined
+        ? USER_BALANCES_BY_CONTRACT_QUERY
+        : USER_BALANCES_BY_CONTRACT_FILTERED_QUERY
+    const gqlArgs =
+      contractIds === undefined
+        ? { userId: userId.toLowerCase() }
+        : {
+            userId: userId.toLowerCase(),
+            contractIds: contractIds.map((contractId) =>
+              contractId.toLowerCase(),
+            ),
+          }
+
+    const response = await this._makeGqlRequest<{
+      userBalancesByContract: {
+        contractEarnings: GqlContractEarnings[]
+      }
+    }>(gqlQuery, gqlArgs)
+
+    if (!response.userBalancesByContract)
+      throw new AccountNotFoundError(
+        `No user found at address ${userId} on chain ${chainId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
+      )
+
+    const contractEarnings = formatContractEarnings(
+      response.userBalancesByContract.contractEarnings,
+    )
+
+    return {
+      contractEarnings,
+    }
   }
 
   protected async _getAccountBalances({
