@@ -271,17 +271,17 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
 
   constructor({
     chainId,
-    provider,
+    publicClient,
     ensProvider,
-    signer,
+    account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Transaction,
       chainId,
-      provider,
+      publicClient,
       ensProvider,
-      signer,
+      account,
       includeEnsNames,
     })
 
@@ -304,16 +304,16 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
 
     this.callData = new LiquidSplitCallData({
       chainId,
-      provider,
+      publicClient,
       ensProvider,
-      signer,
+      account,
       includeEnsNames,
     })
     this.estimateGas = new LiquidSplitGasEstimates({
       chainId,
-      provider,
+      publicClient,
       ensProvider,
-      signer,
+      account,
       includeEnsNames,
     })
   }
@@ -525,22 +525,23 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface LiquidSplitClient extends BaseClientMixin {}
+
 applyMixins(LiquidSplitClient, [BaseClientMixin])
 
 class LiquidSplitGasEstimates extends LiquidSplitTransactions {
   constructor({
     chainId,
-    provider,
+    publicClient,
     ensProvider,
-    signer,
+    account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
       transactionType: TransactionType.GasEstimate,
       chainId,
-      provider,
+      publicClient,
       ensProvider,
-      signer,
+      account,
       includeEnsNames,
     })
   }
@@ -581,22 +582,23 @@ class LiquidSplitGasEstimates extends LiquidSplitTransactions {
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface LiquidSplitGasEstimates extends BaseGasEstimatesMixin {}
+
 applyMixins(LiquidSplitGasEstimates, [BaseGasEstimatesMixin])
 
 class LiquidSplitCallData extends LiquidSplitTransactions {
   constructor({
     chainId,
-    provider,
+    publicClient,
     ensProvider,
-    signer,
+    account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
       transactionType: TransactionType.CallData,
       chainId,
-      provider,
+      publicClient,
       ensProvider,
-      signer,
+      account,
       includeEnsNames,
     })
   }
