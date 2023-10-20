@@ -1,7 +1,4 @@
-import { Provider } from '@ethersproject/abstract-provider'
-import { Signer } from '@ethersproject/abstract-signer'
-import { BigNumber } from '@ethersproject/bignumber'
-import type { Event } from '@ethersproject/contracts'
+import { Log, PublicClient, WalletClient } from 'viem'
 
 import { VestingClient } from './vesting'
 import { getVestingFactoryAddress } from '../constants'
@@ -51,7 +48,7 @@ const getTransactionEventsSpy = jest
       args: {
         vestingModule: '0xvesting',
       },
-    } as unknown as Event
+    } as unknown as Log
     return [event]
   })
 
@@ -61,8 +58,8 @@ const getTokenDataMock = jest
     return GET_TOKEN_DATA
   })
 
-const mockProvider = jest.fn<Provider, unknown[]>()
-const mockSigner = jest.fn<Signer, unknown[]>()
+const mockProvider = jest.fn<PublicClient, unknown[]>()
+const mockSigner = jest.fn<WalletClient, unknown[]>()
 
 describe('Client config validation', () => {
   test('Including ens names with no provider fails', () => {
@@ -116,12 +113,12 @@ describe('Client config validation', () => {
 })
 
 describe('Vesting writes', () => {
-  const provider = new mockProvider()
-  const signer = new mockSigner()
+  const publicClient = new mockProvider()
+  const account = new mockSigner()
   const vestingClient = new VestingClient({
     chainId: 1,
-    provider,
-    signer,
+    publicClient,
+    account,
   })
 
   beforeEach(() => {
@@ -162,7 +159,7 @@ describe('Vesting writes', () => {
     test('Create vesting fails with no signer', async () => {
       const badClient = new VestingClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
@@ -228,7 +225,7 @@ describe('Vesting writes', () => {
     test('Start vest fails with no signer', async () => {
       const badClient = new VestingClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
@@ -289,7 +286,7 @@ describe('Vesting writes', () => {
     test('Release vested funds fails with no signer', async () => {
       const badClient = new VestingClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
@@ -321,10 +318,10 @@ describe('Vesting writes', () => {
 })
 
 describe('Vesting reads', () => {
-  const provider = new mockProvider()
+  const publicClient = new mockProvider()
   const vestingClient = new VestingClient({
     chainId: 1,
-    provider,
+    publicClient,
   })
 
   beforeEach(() => {
@@ -427,12 +424,12 @@ describe('Vesting reads', () => {
     })
 
     test('Returns vesting period', async () => {
-      readActions.vestingPeriod.mockReturnValueOnce(BigNumber.from(20))
+      readActions.vestingPeriod.mockReturnValueOnce(BigInt(20))
       const { vestingPeriod } = await vestingClient.getVestingPeriod({
         vestingModuleId,
       })
 
-      expect(vestingPeriod).toEqual(BigNumber.from(20))
+      expect(vestingPeriod).toEqual(BigInt(20))
       expect(validateAddress).toBeCalledWith(vestingModuleId)
       expect(readActions.vestingPeriod).toBeCalled()
     })
@@ -461,13 +458,13 @@ describe('Vesting reads', () => {
     })
 
     test('Returns vested amount', async () => {
-      readActions.vested.mockReturnValueOnce(BigNumber.from(5))
+      readActions.vested.mockReturnValueOnce(BigInt(5))
       const { amount } = await vestingClient.getVestedAmount({
         vestingModuleId,
         streamId,
       })
 
-      expect(amount).toEqual(BigNumber.from(5))
+      expect(amount).toEqual(BigInt(5))
       expect(validateAddress).toBeCalledWith(vestingModuleId)
       expect(readActions.vested).toBeCalledWith(streamId)
     })
@@ -496,13 +493,13 @@ describe('Vesting reads', () => {
     })
 
     test('Returns vested and unreleased amount', async () => {
-      readActions.vestedAndUnreleased.mockReturnValueOnce(BigNumber.from(3))
+      readActions.vestedAndUnreleased.mockReturnValueOnce(BigInt(3))
       const { amount } = await vestingClient.getVestedAndUnreleasedAmount({
         vestingModuleId,
         streamId,
       })
 
-      expect(amount).toEqual(BigNumber.from(3))
+      expect(amount).toEqual(BigInt(3))
       expect(validateAddress).toBeCalledWith(vestingModuleId)
       expect(readActions.vestedAndUnreleased).toBeCalledWith(streamId)
     })
@@ -535,10 +532,10 @@ describe('Graphql reads', () => {
   }
 
   const vestingModuleId = '0xvesting'
-  const provider = new mockProvider()
+  const publicClient = new mockProvider()
   const vestingClient = new VestingClient({
     chainId: 1,
-    provider,
+    publicClient,
   })
 
   beforeEach(() => {
@@ -590,7 +587,7 @@ describe('Graphql reads', () => {
       expect(getTokenDataMock).toBeCalledWith(
         1,
         mockGqlVesting.streams[0].token.id,
-        provider,
+        publicClient,
       )
       expect(mockFormatVesting).toBeCalledWith(mockGqlVesting, {
         [mockGqlVesting.streams[0].token.id]: {
@@ -606,7 +603,7 @@ describe('Graphql reads', () => {
       const provider = new mockProvider()
       const ensVestingClient = new VestingClient({
         chainId: 1,
-        provider,
+        publicClient,
         includeEnsNames: true,
       })
 

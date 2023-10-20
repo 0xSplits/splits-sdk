@@ -38,7 +38,7 @@ export const getSplitMainAddress = (chainId: number): string => {
   return SPLIT_MAIN_ADDRESS
 }
 
-export const getVestingFactoryAddress = (chainId: number): string => {
+export const getVestingFactoryAddress = (chainId: number): Address => {
   if (chainId === ChainId.BSC) return VESTING_MODULE_FACTORY_ADDRESS_BSC
   return VESTING_MODULE_FACTORY_ADDRESS
 }

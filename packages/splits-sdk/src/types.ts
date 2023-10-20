@@ -253,7 +253,7 @@ export type VestingModule = {
   type: 'VestingModule'
   id: string
   beneficiary: {
-    address: string
+    address: Address
     ensName?: string
   }
   vestingPeriod: number

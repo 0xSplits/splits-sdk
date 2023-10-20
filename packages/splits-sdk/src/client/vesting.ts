@@ -1,10 +1,3 @@
-import { Interface } from '@ethersproject/abi'
-import { BigNumber } from '@ethersproject/bignumber'
-import { ContractTransaction, Event } from '@ethersproject/contracts'
-
-import VESTING_MODULE_FACTORY_ARTIFACT from '../artifacts/contracts/VestingModuleFactory/VestingModuleFactory.json'
-import VESTING_MODULE_ARTIFACT from '../artifacts/contracts/VestingModule/VestingModule.json'
-
 import {
   BaseClientMixin,
   BaseGasEstimatesMixin,
@@ -35,39 +28,35 @@ import type {
 } from '../types'
 import { getTransactionEvents, getTokenData, addEnsNames } from '../utils'
 import { validateAddress, validateVestingPeriod } from '../utils/validation'
-import type { VestingModuleFactory as VestingModuleFactoryType } from '../typechain/VestingModuleFactory'
-import type { VestingModule as VestingModuleType } from '../typechain/VestingModule'
-import { ContractCallData } from '../utils/multicall'
-
-const vestingModuleFactoryInterface = new Interface(
-  VESTING_MODULE_FACTORY_ARTIFACT.abi,
-)
-const vestingModuleInterface = new Interface(VESTING_MODULE_ARTIFACT.abi)
+import { vestingFactoryAbi } from '../constants/abi/vestingFactory'
+import {
+  Hash,
+  Hex,
+  Log,
+  decodeEventLog,
+  encodeEventTopics,
+  getAddress,
+  getContract,
+} from 'viem'
+import { vestingAbi } from '../constants/abi/vesting'
 
 class VestingTransactions extends BaseTransactions {
-  protected readonly _vestingModuleFactoryContract:
-    | ContractCallData
-    | VestingModuleFactoryType
-    | VestingModuleFactoryType['estimateGas']
-
   constructor({
     transactionType,
     chainId,
-    provider,
+    publicClient,
     ensProvider,
-    signer,
+    account,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
       transactionType,
       chainId,
-      provider,
+      publicClient,
       ensProvider,
-      signer,
+      account,
       includeEnsNames,
     })
-
-    this._vestingModuleFactoryContract = this._getVestingFactoryContract()
   }
 
   protected async _createVestingModuleTransaction({
@@ -80,14 +69,15 @@ class VestingTransactions extends BaseTransactions {
 
     if (this._shouldRequireSigner) this._requireSigner()
 
-    const createVestingResult =
-      await this._vestingModuleFactoryContract.createVestingModule(
-        beneficiary,
-        vestingPeriodSeconds,
-        transactionOverrides,
-      )
+    const result = await this._executeContractFunction({
+      contractAddress: getVestingFactoryAddress(this._chainId),
+      contractAbi: vestingFactoryAbi,
+      functionName: 'createVestingModule',
+      functionArgs: [beneficiary, vestingPeriodSeconds],
+      transactionOverrides,
+    })
 
-    return createVestingResult
+    return result
   }
 
   protected async _startVestTransaction({
@@ -99,13 +89,15 @@ class VestingTransactions extends BaseTransactions {
     tokens.map((token) => validateAddress(token))
     if (this._shouldRequireSigner) this._requireSigner()
 
-    const vestingContract = this._getVestingContract(vestingModuleId)
-    const startVestResult = await vestingContract.createVestingStreams(
-      tokens,
+    const result = await this._executeContractFunction({
+      contractAddress: getAddress(vestingModuleId),
+      contractAbi: vestingAbi,
+      functionName: 'createVestingStreams',
+      functionArgs: [tokens],
       transactionOverrides,
-    )
+    })
 
-    return startVestResult
+    return result
   }
 
   protected async _releaseVestedFundsTransaction({
@@ -116,52 +108,52 @@ class VestingTransactions extends BaseTransactions {
     validateAddress(vestingModuleId)
     if (this._shouldRequireSigner) this._requireSigner()
 
-    const vestingContract = this._getVestingContract(vestingModuleId)
-    const releaseFundsResult = await vestingContract.releaseFromVesting(
-      streamIds,
+    const result = await this._executeContractFunction({
+      contractAddress: getAddress(vestingModuleId),
+      contractAbi: vestingAbi,
+      functionName: 'releaseFromVesting',
+      functionArgs: [streamIds],
       transactionOverrides,
-    )
+    })
 
-    return releaseFundsResult
+    return result
   }
 
   protected _getVestingContract(vestingModule: string) {
-    return this._getTransactionContract<
-      VestingModuleType,
-      VestingModuleType['estimateGas']
-    >(vestingModule, VESTING_MODULE_ARTIFACT.abi, vestingModuleInterface)
+    return getContract({
+      address: getAddress(vestingModule),
+      abi: vestingAbi,
+      publicClient: this._provider,
+    })
   }
 
-  private _getVestingFactoryContract() {
-    return this._getTransactionContract<
-      VestingModuleFactoryType,
-      VestingModuleFactoryType['estimateGas']
-    >(
-      getVestingFactoryAddress(this._chainId),
-      VESTING_MODULE_FACTORY_ARTIFACT.abi,
-      vestingModuleFactoryInterface,
-    )
+  protected _getVestingFactoryContract() {
+    return getContract({
+      address: getVestingFactoryAddress(this._chainId),
+      abi: vestingFactoryAbi,
+      publicClient: this._provider,
+    })
   }
 }
 
 export class VestingClient extends VestingTransactions {
-  readonly eventTopics: { [key: string]: string[] }
+  readonly eventTopics: { [key: string]: Hex[] }
   readonly callData: VestingCallData
   readonly estimateGas: VestingGasEstimates
 
   constructor({
     chainId,
-    provider,
+    publicClient,
     ensProvider,
-    signer,
+    account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Transaction,
       chainId,
-      provider,
+      publicClient,
       ensProvider,
-      signer,
+      account,
       includeEnsNames,
     })
 
@@ -170,26 +162,37 @@ export class VestingClient extends VestingTransactions {
 
     this.eventTopics = {
       createVestingModule: [
-        vestingModuleFactoryInterface.getEventTopic('CreateVestingModule'),
+        encodeEventTopics({
+          abi: vestingFactoryAbi,
+          eventName: 'CreateVestingModule',
+        })[0],
       ],
-      startVest: [vestingModuleInterface.getEventTopic('CreateVestingStream')],
+      startVest: [
+        encodeEventTopics({
+          abi: vestingAbi,
+          eventName: 'CreateVestingStream',
+        })[0],
+      ],
       releaseVestedFunds: [
-        vestingModuleInterface.getEventTopic('ReleaseFromVestingStream'),
+        encodeEventTopics({
+          abi: vestingAbi,
+          eventName: 'ReleaseFromVestingStream',
+        })[0],
       ],
     }
 
     this.callData = new VestingCallData({
       chainId,
-      provider,
+      publicClient,
       ensProvider,
-      signer,
+      account,
       includeEnsNames,
     })
     this.estimateGas = new VestingGasEstimates({
       chainId,
-      provider,
+      publicClient,
       ensProvider,
-      signer,
+      account,
       includeEnsNames,
     })
   }
@@ -198,80 +201,95 @@ export class VestingClient extends VestingTransactions {
   async submitCreateVestingModuleTransaction(
     createVestingArgs: CreateVestingConfig,
   ): Promise<{
-    tx: ContractTransaction
+    txHash: Hash
   }> {
-    const createVestingTx = await this._createVestingModuleTransaction(
-      createVestingArgs,
-    )
-    if (!this._isContractTransaction(createVestingTx))
+    const txHash = await this._createVestingModuleTransaction(createVestingArgs)
+    if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
-    return { tx: createVestingTx }
+    return { txHash }
   }
 
   async createVestingModule(createVestingArgs: CreateVestingConfig): Promise<{
     vestingModuleId: string
-    event: Event
+    event: Log
   }> {
-    const { tx } = await this.submitCreateVestingModuleTransaction(
-      createVestingArgs,
-    )
+    this._requireProvider()
+    if (!this._provider) throw new Error()
+
+    const { txHash } =
+      await this.submitCreateVestingModuleTransaction(createVestingArgs)
     const events = await getTransactionEvents(
-      tx,
+      this._provider,
+      txHash,
       this.eventTopics.createVestingModule,
     )
     const event = events.length > 0 ? events[0] : undefined
-    if (event && event.args)
+    if (event) {
+      const log = decodeEventLog({
+        abi: vestingFactoryAbi,
+        data: event.data,
+        topics: event.topics,
+      })
       return {
-        vestingModuleId: event.args.vestingModule,
+        vestingModuleId: log.args.vestingModule,
         event,
       }
+    }
 
     throw new TransactionFailedError()
   }
 
   async submitStartVestTransaction(startVestArgs: StartVestConfig): Promise<{
-    tx: ContractTransaction
+    txHash: Hash
   }> {
-    const startVestTx = await this._startVestTransaction(startVestArgs)
-    if (!this._isContractTransaction(startVestTx))
+    const txHash = await this._startVestTransaction(startVestArgs)
+    if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
-    return { tx: startVestTx }
+    return { txHash }
   }
 
   async startVest(startVestArgs: StartVestConfig): Promise<{
-    events: Event[]
+    events: Log[]
   }> {
-    const { tx } = await this.submitStartVestTransaction(startVestArgs)
-    const events = await getTransactionEvents(tx, this.eventTopics.startVest)
+    this._requireProvider()
+    if (!this._provider) throw new Error()
+
+    const { txHash } = await this.submitStartVestTransaction(startVestArgs)
+    const events = await getTransactionEvents(
+      this._provider,
+      txHash,
+      this.eventTopics.startVest,
+    )
     return { events }
   }
 
   async submitReleaseVestedFundsTransaction(
     releaseFundsArgs: ReleaseVestedFundsConfig,
   ): Promise<{
-    tx: ContractTransaction
+    txHash: Hash
   }> {
-    const releaseFundsTx = await this._releaseVestedFundsTransaction(
-      releaseFundsArgs,
-    )
-    if (!this._isContractTransaction(releaseFundsTx))
+    const txHash = await this._releaseVestedFundsTransaction(releaseFundsArgs)
+    if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
-    return { tx: releaseFundsTx }
+    return { txHash }
   }
 
   async releaseVestedFunds(
     releaseFundsArgs: ReleaseVestedFundsConfig,
   ): Promise<{
-    events: Event[]
+    events: Log[]
   }> {
-    const { tx } = await this.submitReleaseVestedFundsTransaction(
-      releaseFundsArgs,
-    )
+    this._requireProvider()
+    if (!this._provider) throw new Error()
+
+    const { txHash } =
+      await this.submitReleaseVestedFundsTransaction(releaseFundsArgs)
     const events = await getTransactionEvents(
-      tx,
+      this._provider,
+      txHash,
       this.eventTopics.releaseVestedFunds,
     )
     return { events }
@@ -289,11 +307,13 @@ export class VestingClient extends VestingTransactions {
     validateVestingPeriod(vestingPeriodSeconds)
     this._requireProvider()
 
+    const vestingModuleFactoryContract = this._getVestingFactoryContract()
     const [address, exists] =
-      await this._vestingModuleFactoryContract.predictVestingModuleAddress(
-        beneficiary,
-        vestingPeriodSeconds,
-      )
+      await vestingModuleFactoryContract.read.predictVestingModuleAddress([
+        getAddress(beneficiary),
+        BigInt(vestingPeriodSeconds),
+      ])
+
     return {
       address,
       exists,
@@ -311,7 +331,7 @@ export class VestingClient extends VestingTransactions {
     this._requireProvider()
 
     const vestingContract = this._getVestingContract(vestingModuleId)
-    const beneficiary = await vestingContract.beneficiary()
+    const beneficiary = await vestingContract.read.beneficiary()
 
     return { beneficiary }
   }
@@ -321,13 +341,13 @@ export class VestingClient extends VestingTransactions {
   }: {
     vestingModuleId: string
   }): Promise<{
-    vestingPeriod: BigNumber
+    vestingPeriod: bigint
   }> {
     validateAddress(vestingModuleId)
     this._requireProvider()
 
     const vestingContract = this._getVestingContract(vestingModuleId)
-    const vestingPeriod = await vestingContract.vestingPeriod()
+    const vestingPeriod = await vestingContract.read.vestingPeriod()
 
     return { vestingPeriod }
   }
@@ -339,13 +359,13 @@ export class VestingClient extends VestingTransactions {
     vestingModuleId: string
     streamId: string
   }): Promise<{
-    amount: BigNumber
+    amount: bigint
   }> {
     validateAddress(vestingModuleId)
     this._requireProvider()
 
     const vestingContract = this._getVestingContract(vestingModuleId)
-    const amount = await vestingContract.vested(streamId)
+    const amount = await vestingContract.read.vested([BigInt(streamId)])
 
     return { amount }
   }
@@ -357,13 +377,15 @@ export class VestingClient extends VestingTransactions {
     vestingModuleId: string
     streamId: string
   }): Promise<{
-    amount: BigNumber
+    amount: bigint
   }> {
     validateAddress(vestingModuleId)
     this._requireProvider()
 
     const vestingContract = this._getVestingContract(vestingModuleId)
-    const amount = await vestingContract.vestedAndUnreleased(streamId)
+    const amount = await vestingContract.read.vestedAndUnreleased([
+      BigInt(streamId),
+    ])
 
     return { amount }
   }
@@ -405,7 +427,11 @@ export class VestingClient extends VestingTransactions {
       {}
     await Promise.all(
       tokenIds.map(async (token) => {
-        const result = await getTokenData(this._chainId, token, provider)
+        const result = await getTokenData(
+          this._chainId,
+          getAddress(token),
+          provider,
+        )
 
         tokenData[token] = result
       }),
@@ -425,76 +451,70 @@ export class VestingClient extends VestingTransactions {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface VestingClient extends BaseClientMixin {}
 applyMixins(VestingClient, [BaseClientMixin])
 
 class VestingGasEstimates extends VestingTransactions {
   constructor({
     chainId,
-    provider,
+    publicClient,
     ensProvider,
-    signer,
+    account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
       transactionType: TransactionType.GasEstimate,
       chainId,
-      provider,
+      publicClient,
       ensProvider,
-      signer,
+      account,
       includeEnsNames,
     })
   }
 
   async createVestingModule(
     createVestingArgs: CreateVestingConfig,
-  ): Promise<BigNumber> {
-    const gasEstimate = await this._createVestingModuleTransaction(
-      createVestingArgs,
-    )
-    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+  ): Promise<bigint> {
+    const gasEstimate =
+      await this._createVestingModuleTransaction(createVestingArgs)
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
-  async startVest(startVestArgs: StartVestConfig): Promise<BigNumber> {
+  async startVest(startVestArgs: StartVestConfig): Promise<bigint> {
     const gasEstimate = await this._startVestTransaction(startVestArgs)
-    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
   async releaseVestedFunds(
     releaseFundsArgs: ReleaseVestedFundsConfig,
-  ): Promise<BigNumber> {
-    const gasEstimate = await this._releaseVestedFundsTransaction(
-      releaseFundsArgs,
-    )
-    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+  ): Promise<bigint> {
+    const gasEstimate =
+      await this._releaseVestedFundsTransaction(releaseFundsArgs)
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-interface VestingGasEstimates extends BaseGasEstimatesMixin {}
 applyMixins(VestingGasEstimates, [BaseGasEstimatesMixin])
 
 class VestingCallData extends VestingTransactions {
   constructor({
     chainId,
-    provider,
+    publicClient,
     ensProvider,
-    signer,
+    account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
       transactionType: TransactionType.CallData,
       chainId,
-      provider,
+      publicClient,
       ensProvider,
-      signer,
+      account,
       includeEnsNames,
     })
   }
@@ -502,9 +522,8 @@ class VestingCallData extends VestingTransactions {
   async createVestingModule(
     createVestingArgs: CreateVestingConfig,
   ): Promise<CallData> {
-    const callData = await this._createVestingModuleTransaction(
-      createVestingArgs,
-    )
+    const callData =
+      await this._createVestingModuleTransaction(createVestingArgs)
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData
