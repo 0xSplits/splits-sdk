@@ -1,11 +1,5 @@
-import { Provider } from '@ethersproject/abstract-provider'
-import { Signer } from '@ethersproject/abstract-signer'
-import { BigNumber } from '@ethersproject/bignumber'
-import { AddressZero } from '@ethersproject/constants'
-import type { Event } from '@ethersproject/contracts'
-
 import { WaterfallClient } from './waterfall'
-import { getWaterfallFactoryAddress } from '../constants'
+import { ADDRESS_ZERO, getWaterfallFactoryAddress } from '../constants'
 import {
   InvalidArgumentError,
   InvalidConfigError,
@@ -32,6 +26,7 @@ import {
   readActions,
 } from '../testing/mocks/waterfallModule'
 import type { WaterfallModule } from '../types'
+import { Log, PublicClient, WalletClient } from 'viem'
 
 jest.mock('@ethersproject/contracts', () => {
   return {
@@ -56,7 +51,7 @@ const getTransactionEventsSpy = jest
       args: {
         waterfallModule: '0xwaterfall',
       },
-    } as unknown as Event
+    } as unknown as Log
     return [event]
   })
 const getTrancheRecipientsAndSizesMock = jest
@@ -71,8 +66,8 @@ const getTokenDataMock = jest
     return GET_TOKEN_DATA
   })
 
-const mockProvider = jest.fn<Provider, unknown[]>()
-const mockSigner = jest.fn<Signer, unknown[]>()
+const mockProvider = jest.fn<PublicClient, unknown[]>()
+const mockSigner = jest.fn<WalletClient, unknown[]>()
 
 describe('Client config validation', () => {
   test('Including ens names with no provider fails', () => {
@@ -126,12 +121,12 @@ describe('Client config validation', () => {
 })
 
 describe('Waterfall writes', () => {
-  const provider = new mockProvider()
-  const signer = new mockSigner()
+  const publicClient = new mockProvider()
+  const account = new mockSigner()
   const waterfallClient = new WaterfallClient({
     chainId: 1,
-    provider,
-    signer,
+    publicClient,
+    account,
   })
 
   beforeEach(() => {
@@ -181,7 +176,7 @@ describe('Waterfall writes', () => {
     test('Create waterfall fails with no signer', async () => {
       const badClient = new WaterfallClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
@@ -208,11 +203,11 @@ describe('Waterfall writes', () => {
         1,
         token,
         tranches,
-        provider,
+        publicClient,
       )
       expect(factoryWriteActions.createWaterfallModule).toBeCalledWith(
         token,
-        AddressZero,
+        ADDRESS_ZERO,
         TRANCHE_RECIPIENTS,
         TRANCHE_SIZES,
         {},
@@ -238,7 +233,7 @@ describe('Waterfall writes', () => {
         1,
         token,
         tranches,
-        provider,
+        publicClient,
       )
       expect(factoryWriteActions.createWaterfallModule).toBeCalledWith(
         token,
@@ -291,7 +286,7 @@ describe('Waterfall writes', () => {
     test('Waterfall funds fails with no signer', async () => {
       const badClient = new WaterfallClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
@@ -382,7 +377,7 @@ describe('Waterfall writes', () => {
     test('Recover non waterfall funds fails with no signer', async () => {
       const badClient = new WaterfallClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
@@ -529,7 +524,7 @@ describe('Waterfall writes', () => {
     test('Withdraw pull funds fails with no signer', async () => {
       const badClient = new WaterfallClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
@@ -559,10 +554,10 @@ describe('Waterfall writes', () => {
 })
 
 describe('Waterfall reads', () => {
-  const provider = new mockProvider()
+  const publicClient = new mockProvider()
   const waterfallClient = new WaterfallClient({
     chainId: 1,
-    provider,
+    publicClient,
   })
 
   beforeEach(() => {
@@ -590,12 +585,12 @@ describe('Waterfall reads', () => {
     })
 
     test('Returns distributed funds', async () => {
-      readActions.distributedFunds.mockReturnValueOnce(BigNumber.from(12))
+      readActions.distributedFunds.mockReturnValueOnce(BigInt(12))
       const { distributedFunds } = await waterfallClient.getDistributedFunds({
         waterfallModuleId,
       })
 
-      expect(distributedFunds).toEqual(BigNumber.from(12))
+      expect(distributedFunds).toEqual(BigInt(12))
       expect(validateAddress).toBeCalledWith(waterfallModuleId)
       expect(readActions.distributedFunds).toBeCalled()
     })
@@ -622,13 +617,13 @@ describe('Waterfall reads', () => {
     })
 
     test('Returns funds pending withdrawal', async () => {
-      readActions.fundsPendingWithdrawal.mockReturnValueOnce(BigNumber.from(7))
+      readActions.fundsPendingWithdrawal.mockReturnValueOnce(BigInt(7))
       const { fundsPendingWithdrawal } =
         await waterfallClient.getFundsPendingWithdrawal({
           waterfallModuleId,
         })
 
-      expect(fundsPendingWithdrawal).toEqual(BigNumber.from(7))
+      expect(fundsPendingWithdrawal).toEqual(BigInt(7))
       expect(validateAddress).toBeCalledWith(waterfallModuleId)
       expect(readActions.fundsPendingWithdrawal).toBeCalled()
     })
@@ -656,11 +651,11 @@ describe('Waterfall reads', () => {
 
     test('Returns tranches', async () => {
       const mockRecipients = ['0xrecipient1', '0xrecipient2']
-      const mockThresholds = [BigNumber.from(5)]
+      const mockThresholds = [BigInt(5)]
 
       readActions.getTranches.mockReturnValueOnce([
         ['0xrecipient1', '0xrecipient2'],
-        [BigNumber.from(5)],
+        [BigInt(5)],
       ])
       const { recipients, thresholds } = await waterfallClient.getTranches({
         waterfallModuleId,
@@ -763,13 +758,13 @@ describe('Waterfall reads', () => {
     })
 
     test('Returns pull balance', async () => {
-      readActions.getPullBalance.mockReturnValueOnce(BigNumber.from(19))
+      readActions.getPullBalance.mockReturnValueOnce(BigInt(19))
       const { pullBalance } = await waterfallClient.getPullBalance({
         waterfallModuleId,
         address,
       })
 
-      expect(pullBalance).toEqual(BigNumber.from(19))
+      expect(pullBalance).toEqual(BigInt(19))
       expect(validateAddress).toBeCalledWith(waterfallModuleId)
       expect(readActions.getPullBalance).toBeCalledWith(address)
     })
@@ -800,10 +795,10 @@ describe('Graphql reads', () => {
   }
 
   const waterfallModuleId = '0xwaterfall'
-  const provider = new mockProvider()
+  const publicClient = new mockProvider()
   const waterfallClient = new WaterfallClient({
     chainId: 1,
-    provider,
+    publicClient,
   })
 
   beforeEach(() => {
@@ -851,7 +846,7 @@ describe('Graphql reads', () => {
       expect(getTokenDataMock).toBeCalledWith(
         1,
         mockGqlWaterfall.token.id,
-        provider,
+        publicClient,
       )
       expect(mockFormatWaterfall).toBeCalledWith(
         mockGqlWaterfall,
@@ -863,10 +858,10 @@ describe('Graphql reads', () => {
     })
 
     test('Adds ens names', async () => {
-      const provider = new mockProvider()
+      const publicClient = new mockProvider()
       const ensWaterfallClient = new WaterfallClient({
         chainId: 1,
-        provider,
+        publicClient,
         includeEnsNames: true,
       })
 
@@ -884,7 +879,7 @@ describe('Graphql reads', () => {
       expect(getTokenDataMock).toBeCalledWith(
         1,
         mockGqlWaterfall.token.id,
-        provider,
+        publicClient,
       )
       expect(mockFormatWaterfall).toBeCalledWith(
         mockGqlWaterfall,
