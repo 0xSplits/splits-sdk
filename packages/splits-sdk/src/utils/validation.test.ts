@@ -1,7 +1,4 @@
-import { BigNumber } from '@ethersproject/bignumber'
-import { AddressZero } from '@ethersproject/constants'
-
-import { SPLITS_MAX_PRECISION_DECIMALS } from '../constants'
+import { ADDRESS_ZERO, SPLITS_MAX_PRECISION_DECIMALS } from '../constants'
 import {
   InvalidRecipientsError,
   InvalidDistributorFeePercentError,
@@ -209,13 +206,13 @@ describe('Recoup non waterfall recipient validation', () => {
     ).not.toThrow()
 
     expect(() =>
-      validateRecoupNonWaterfallRecipient(3, AddressZero, undefined),
+      validateRecoupNonWaterfallRecipient(3, ADDRESS_ZERO, undefined),
     ).not.toThrow()
   })
 
   test('Valid index passes', () => {
     expect(() =>
-      validateRecoupNonWaterfallRecipient(3, AddressZero, 1),
+      validateRecoupNonWaterfallRecipient(3, ADDRESS_ZERO, 1),
     ).not.toThrow()
   })
 })
@@ -459,8 +456,8 @@ describe('uni v3 swap inputs validation', () => {
         {
           encodedPath: '',
           token: 'bad token',
-          amountIn: BigNumber.from(1),
-          amountOutMin: BigNumber.from(1),
+          amountIn: BigInt(1),
+          amountOutMin: BigInt(1),
         },
       ]),
     )
@@ -472,8 +469,8 @@ describe('uni v3 swap inputs validation', () => {
         {
           encodedPath: '',
           token: '0x0000000000000000000000000000000000000000',
-          amountIn: BigNumber.from(1),
-          amountOutMin: BigNumber.from(1),
+          amountIn: BigInt(1),
+          amountOutMin: BigInt(1),
         },
       ]),
     )

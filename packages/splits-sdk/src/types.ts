@@ -1,29 +1,24 @@
-import { JsonFragmentType } from '@ethersproject/abi'
-import type { Provider } from '@ethersproject/abstract-provider'
-import { BigNumber, BigNumberish } from '@ethersproject/bignumber'
-import { ContractTransaction } from '@ethersproject/contracts'
-import { AccessListish } from '@ethersproject/transactions'
-import type { Account as AccountType, PublicClient, WalletClient } from 'viem'
+import type {
+  Abi,
+  AccessList,
+  Address,
+  Hash,
+  PublicClient,
+  WalletClient,
+} from 'viem'
 import { TransactionType } from './constants'
-import type { SplitMain as SplitMainEthereumType } from './typechain/SplitMain/ethereum'
-import type { SplitMain as SplitMainPolygonType } from './typechain/SplitMain/polygon'
 
-interface TransactionOverrides {
-  transactionOverrides?: {
-    gasLimit?: BigNumberish | Promise<BigNumberish>
-    gasPrice?: BigNumberish | Promise<BigNumberish>
-    maxFeePerGas?: BigNumberish | Promise<BigNumberish>
-    maxPriorityFeePerGas?: BigNumberish | Promise<BigNumberish>
-    nonce?: BigNumberish | Promise<BigNumberish>
-    type?: number
-    accessList?: AccessListish
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    customData?: Record<string, any>
-    ccipReadEnabled?: boolean
-  }
+export type TransactionOverrides = {
+  accessList?: AccessList
+  gas?: bigint
+  maxFeePerGas?: bigint
+  maxPriorityFeePerGas?: bigint
+  nonce?: number
 }
 
-export type SplitMainType = SplitMainEthereumType | SplitMainPolygonType
+interface TransactionOverridesDict {
+  transactionOverrides?: TransactionOverrides
+}
 
 export type SplitsClientConfig = {
   chainId: number
@@ -49,19 +44,19 @@ export type CreateSplitConfig = {
   recipients: SplitRecipient[]
   distributorFeePercent: number
   controller?: string
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type UpdateSplitConfig = {
   splitId: string
   recipients: SplitRecipient[]
   distributorFeePercent: number
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type DistributeTokenConfig = {
   splitId: string
   token: string
   distributorAddress?: string
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type UpdateSplitAndDistributeTokenConfig = {
   splitId: string
@@ -69,29 +64,29 @@ export type UpdateSplitAndDistributeTokenConfig = {
   recipients: SplitRecipient[]
   distributorFeePercent: number
   distributorAddress?: string
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type WithdrawFundsConfig = {
   address: string
   tokens: string[]
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type InititateControlTransferConfig = {
   splitId: string
   newController: string
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type CancelControlTransferConfig = {
   splitId: string
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type AcceptControlTransferConfig = {
   splitId: string
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type MakeSplitImmutableConfig = {
   splitId: string
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type GetSplitBalanceConfig = {
   splitId: string
@@ -99,14 +94,14 @@ export type GetSplitBalanceConfig = {
 }
 
 export type TokenBalances = {
-  [token: string]: BigNumber
+  [token: string]: bigint
 }
 
 export type FormattedTokenBalances = {
   [token: string]: {
     symbol: string
     decimals: number
-    rawAmount: BigNumber
+    rawAmount: bigint
     formattedAmount: string
   }
 }
@@ -161,23 +156,23 @@ export type CreateWaterfallConfig = {
   token: string
   tranches: WaterfallTrancheInput[]
   nonWaterfallRecipient?: string
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type WaterfallFundsConfig = {
   waterfallModuleId: string
   usePull?: boolean
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type RecoverNonWaterfallFundsConfig = {
   waterfallModuleId: string
   token: string
   recipient?: string
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type WithdrawWaterfallPullFundsConfig = {
   waterfallModuleId: string
   address: string
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type WaterfallTrancheInput = {
   recipient: string
@@ -204,17 +199,19 @@ export type WaterfallModule = {
 }
 
 export type Recipient = {
-  address: string
+  address: Address
   ens?: string
 }
 
 export type Token = {
   address: string
+  symbol?: string
+  decimals?: number
 }
 
 export type Swapper = {
   type: 'Swapper'
-  id: string
+  id: Address
   beneficiary: Recipient
   tokenToBeneficiary: Token
   owner: Recipient | null
@@ -226,17 +223,17 @@ export type Swapper = {
 export type CreateVestingConfig = {
   beneficiary: string
   vestingPeriodSeconds: number
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type StartVestConfig = {
   vestingModuleId: string
   tokens: string[]
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type ReleaseVestedFundsConfig = {
   vestingModuleId: string
   streamIds: string[]
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type VestingStream = {
   streamId: number
@@ -271,18 +268,18 @@ export type CreateLiquidSplitConfig = {
   // with it is out there, going to leave it in. But if the invalid value ('false')
   // is passed in, will raise an error.
   createClone?: boolean
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type DistributeLiquidSplitTokenConfig = {
   liquidSplitId: string
   token: string
   distributorAddress?: string
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type TransferLiquidSplitOwnershipConfig = {
   liquidSplitId: string
   newOwner: string
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type LiquidSplit = {
   type: 'LiquidSplit'
@@ -296,68 +293,70 @@ export type LiquidSplit = {
 export type Account = Split | WaterfallModule | LiquidSplit | Swapper
 
 export type CallData = {
-  contract: {
-    address: string
-  }
-  name: string
-  inputs: readonly JsonFragmentType[]
-  outputs: readonly JsonFragmentType[]
+  address: string
+  abi: Abi
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  params: any[]
+  args?: readonly unknown[]
+  functionName: string
+  // name: string
+  // inputs: readonly JsonFragmentType[]
+  // outputs: readonly JsonFragmentType[]
+  // // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // params: any[]
 }
 
-export type TransactionFormat = ContractTransaction | BigNumber | CallData
+export type TransactionFormat = Hash | bigint | CallData
 
 export type RecoupTrancheInput = {
   recipient: string | CreateSplitConfig
   size?: number
 }
 
-export type ContractRecoupTranche = [string[], BigNumber[], string, BigNumber]
+export type ContractRecoupTranche = [string[], bigint[], string, bigint]
 
 export type CreateRecoupConfig = {
   token: string
   tranches: RecoupTrancheInput[]
   nonWaterfallRecipientAddress?: string
   nonWaterfallRecipientTrancheIndex?: number
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type CreatePassThroughWalletConfig = {
   owner: string
   paused?: boolean
   passThrough: string
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type PassThroughTokensConfig = {
   passThroughWalletId: string
   tokens: string[]
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type SetPassThroughConfig = {
   passThroughWalletId: string
   passThrough: string
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type PassThroughWalletPauseConfig = {
   passThroughWalletId: string
   paused: boolean
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type PassThroughWalletExecCallsConfig = {
   passThroughWalletId: string
   calls: {
     to: string
-    value: BigNumber
+    value: bigint
     data: string
   }[]
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type ScaledOfferFactorOverride = {
   baseToken: string
   quoteToken: string
   scaledOfferFactorPercent: number
 }
-export type ContractScaledOfferFactorOverride = [[string, string], BigNumber]
+export type ContractScaledOfferFactorOverride = [[string, string], bigint]
 
 type SwapperParams = {
   beneficiary: string
@@ -370,7 +369,7 @@ export type CreateSwapperConfig = SwapperParams & {
   owner: string
   paused?: boolean
   oracleParams: ParseOracleParams
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type UniV3FlashSwapConfig = {
   swapperId: string
@@ -378,50 +377,50 @@ export type UniV3FlashSwapConfig = {
   inputAssets: {
     encodedPath: string
     token: string
-    amountIn: BigNumber
-    amountOutMin: BigNumber
+    amountIn: bigint
+    amountOutMin: bigint
   }[]
   transactionTimeLimit?: number
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type SwapperExecCallsConfig = {
   swapperId: string
   calls: {
     to: string
-    value: BigNumber
+    value: bigint
     data: string
   }[]
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type SwapperPauseConfig = {
   swapperId: string
   paused: boolean
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type SwapperSetBeneficiaryConfig = {
   swapperId: string
   beneficiary: string
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type SwapperSetTokenToBeneficiaryConfig = {
   swapperId: string
   tokenToBeneficiary: string
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type SwapperSetOracleConfig = {
   swapperId: string
   oracle: string
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type SwapperSetDefaultScaledOfferFactorConfig = {
   swapperId: string
   defaultScaledOfferFactorPercent: number
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type SwapperSetScaledOfferFactorOverridesConfig = {
   swapperId: string
   scaledOfferFactorOverrides: ScaledOfferFactorOverride[]
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type DiversifierRecipient = {
   address?: string
@@ -434,12 +433,12 @@ export type CreateDiversifierConfig = {
   paused?: boolean
   oracleParams: ParseOracleParams
   recipients: DiversifierRecipient[]
-} & TransactionOverrides
+} & TransactionOverridesDict
 
 export type ContractDiversifierRecipient = [
   string,
-  [string, string, BigNumber, ContractScaledOfferFactorOverride[]],
-  BigNumber,
+  [string, string, bigint, ContractScaledOfferFactorOverride[]],
+  bigint,
 ]
 
 export type ParseOracleParams = {
@@ -457,15 +456,15 @@ export type QuoteParams = {
     base: string
     quote: string
   }
-  baseAmount: BigNumber
+  baseAmount: bigint
   data?: string
 }
 
-export type ContractQuoteParams = [[string, string], BigNumber, string]
+export type ContractQuoteParams = [[string, string], bigint, string]
 export type ContractSwapperExactInputParams = [
   string,
   string,
   number,
-  BigNumber,
-  BigNumber,
+  bigint,
+  bigint,
 ]

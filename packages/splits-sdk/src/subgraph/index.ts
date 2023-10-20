@@ -1,9 +1,7 @@
-import { getAddress } from '@ethersproject/address'
-import { BigNumber } from '@ethersproject/bignumber'
-import { AddressZero, One } from '@ethersproject/constants'
+import { getAddress } from 'viem'
 import { GraphQLClient, gql } from 'graphql-request'
 
-import { CHAIN_INFO } from '../constants'
+import { ADDRESS_ZERO, CHAIN_INFO } from '../constants'
 import type {
   EarningsByContract,
   LiquidSplit,
@@ -16,7 +14,7 @@ import type {
   WaterfallModule,
   WaterfallTranche,
 } from '../types'
-import { fromBigNumberToPercent } from '../utils'
+import { fromBigIntToPercent } from '../utils'
 import {
   GqlContractEarnings,
   GqlLiquidSplit,
@@ -272,7 +270,7 @@ const formatRecipient = (gqlRecipient: {
 }): SplitRecipient => {
   return {
     address: getAddress(gqlRecipient.account.id),
-    percentAllocation: fromBigNumberToPercent(gqlRecipient.ownership),
+    percentAllocation: fromBigIntToPercent(gqlRecipient.ownership),
   }
 }
 
@@ -282,14 +280,14 @@ export const protectedFormatSplit = (gqlSplit: GqlSplit): Split => {
     type: 'Split',
     id: getAddress(gqlSplit.id),
     controller:
-      gqlSplit.controller !== AddressZero
+      gqlSplit.controller !== ADDRESS_ZERO
         ? getAddress(gqlSplit.controller)
         : null,
     newPotentialController:
-      gqlSplit.newPotentialController !== AddressZero
+      gqlSplit.newPotentialController !== ADDRESS_ZERO
         ? getAddress(gqlSplit.newPotentialController)
         : null,
-    distributorFeePercent: fromBigNumberToPercent(gqlSplit.distributorFee),
+    distributorFeePercent: fromBigIntToPercent(gqlSplit.distributorFee),
     createdBlock: gqlSplit.createdBlock,
     recipients: gqlSplit.recipients
       .map((gqlRecipient) => formatRecipient(gqlRecipient))
@@ -314,7 +312,7 @@ export const protectedFormatWaterfallModule = (
       decimals: tokenDecimals,
     },
     nonWaterfallRecipient:
-      gqlWaterfallModule.nonWaterfallRecipient !== AddressZero
+      gqlWaterfallModule.nonWaterfallRecipient !== ADDRESS_ZERO
         ? getAddress(gqlWaterfallModule.nonWaterfallRecipient)
         : null,
     tranches: gqlWaterfallModule.tranches.map((tranche) =>
@@ -385,9 +383,7 @@ export const protectedFormatLiquidSplit = (
   return {
     type: 'LiquidSplit',
     id: getAddress(gqlLiquidSplit.id),
-    distributorFeePercent: fromBigNumberToPercent(
-      gqlLiquidSplit.distributorFee,
-    ),
+    distributorFeePercent: fromBigIntToPercent(gqlLiquidSplit.distributorFee),
     payoutSplitId: getAddress(gqlLiquidSplit.split.id),
     isFactoryGenerated: gqlLiquidSplit.isFactoryGenerated,
     holders: gqlLiquidSplit.holders
@@ -409,7 +405,7 @@ export const protectedFormatSwapper = (gqlSwapper: GqlSwapper): Swapper => {
       address: getAddress(gqlSwapper.tokenToBeneficiary.id),
     },
     owner:
-      gqlSwapper.owner.id !== AddressZero
+      gqlSwapper.owner.id !== ADDRESS_ZERO
         ? {
             address: getAddress(gqlSwapper.owner.id),
           }
@@ -439,9 +435,9 @@ export const formatAccountBalances = (
 ): TokenBalances => {
   return gqlTokenBalances.reduce((acc, gqlTokenBalance) => {
     const tokenId = getAddress(gqlTokenBalance.token.id)
-    const amount = BigNumber.from(gqlTokenBalance.amount)
+    const amount = BigInt(gqlTokenBalance.amount)
 
-    if (amount.gt(One)) acc[tokenId] = amount
+    if (amount > BigInt(1)) acc[tokenId] = amount
     return acc
   }, {} as TokenBalances)
 }

@@ -1,11 +1,20 @@
-import { BigNumber } from '@ethersproject/bignumber'
-import { AddressZero } from '@ethersproject/constants'
-import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
-import { nameprep } from '@ethersproject/strings'
-import { formatUnits, parseUnits } from '@ethersproject/units'
-import { ConnectionInfo } from '@ethersproject/web'
+import {
+  Address,
+  Chain,
+  getContract,
+  Hash,
+  Hex,
+  Log,
+  formatUnits,
+  parseUnits,
+  PublicClient,
+  Transport,
+  getAddress,
+} from 'viem'
+import { normalize } from 'viem/ens'
 
 import {
+  ADDRESS_ZERO,
   LIQUID_SPLIT_NFT_COUNT,
   PERCENTAGE_SCALE,
   POLYGON_CHAIN_IDS,
@@ -25,20 +34,19 @@ import type {
   WaterfallTranche,
   WaterfallTrancheInput,
 } from '../types'
-import { ierc20Interface } from './ierc20'
-import { reverseRecordsInterface } from './reverseRecords'
 import {
   validateDiversifierRecipients,
   validateOracleParams,
   validateScaledOfferFactor,
 } from './validation'
-import { Chain, Client, getContract, PublicClient, Transport } from 'viem'
+import { erc20Abi } from '../constants/abi/erc20'
+import { reverseRecordsAbi } from '../constants/abi/reverseRecords'
 
 export const getRecipientSortedAddressesAndAllocations = (
   recipients: SplitRecipient[],
-): [string[], BigNumber[]] => {
+): [string[], bigint[]] => {
   const accounts: string[] = []
-  const percentAllocations: BigNumber[] = []
+  const percentAllocations: bigint[] = []
 
   recipients
     .sort((a, b) => {
@@ -47,58 +55,61 @@ export const getRecipientSortedAddressesAndAllocations = (
     })
     .map((value) => {
       accounts.push(value.address)
-      percentAllocations.push(getBigNumberFromPercent(value.percentAllocation))
+      percentAllocations.push(getBigIntFromPercent(value.percentAllocation))
     })
 
   return [accounts, percentAllocations]
 }
 
 export const getNftCountsFromPercents = (
-  percentAllocations: BigNumber[],
+  percentAllocations: bigint[],
 ): number[] => {
   return percentAllocations.map((p) =>
-    p
-      .mul(BigNumber.from(LIQUID_SPLIT_NFT_COUNT))
-      .div(PERCENTAGE_SCALE)
-      .toNumber(),
+    Number((p * BigInt(LIQUID_SPLIT_NFT_COUNT)) / PERCENTAGE_SCALE),
   )
 }
 
-export const getBigNumberFromPercent = (value: number): BigNumber => {
-  return BigNumber.from(Math.round(PERCENTAGE_SCALE.toNumber() * value) / 100)
+export const getBigIntFromPercent = (value: number): bigint => {
+  return BigInt(Math.round(Number(PERCENTAGE_SCALE) * value) / 100)
 }
 
-export const fromBigNumberToPercent = (value: BigNumber | number): number => {
-  const numberVal = value instanceof BigNumber ? value.toNumber() : value
-  return (numberVal * 100) / PERCENTAGE_SCALE.toNumber()
+export const fromBigIntToPercent = (value: bigint | number): number => {
+  const numberVal = Number(value)
+  return (numberVal * 100) / Number(PERCENTAGE_SCALE)
 }
 
-export const getBigNumberTokenValue = (
+export const getBigIntTokenValue = (
   value: number,
   decimals: number,
-): BigNumber => {
+): bigint => {
   return parseUnits(value.toString(), decimals)
 }
 
-export const fromBigNumberToTokenValue = (
-  amount: BigNumber,
+export const fromBigIntToTokenValue = (
+  amount: bigint,
   decimals: number,
 ): string => {
   return formatUnits(amount, decimals)
 }
 
 export const getTransactionEvents = async (
-  transaction: ContractTransaction,
-  eventTopics: string[],
+  publicClient: PublicClient,
+  txHash: Hash,
+  eventTopics: Hex[],
   includeAll?: boolean,
-): Promise<Event[]> => {
-  const receipt = await transaction.wait()
-  if (receipt.status === 1) {
-    const events = receipt.events?.filter((e) => {
-      return includeAll || eventTopics.includes(e.topics[0])
+): Promise<Log[]> => {
+  const transaction = await publicClient.waitForTransactionReceipt({
+    hash: txHash,
+  })
+  if (transaction.status === 'success') {
+    const events = transaction.logs?.filter((log) => {
+      if (includeAll) return true
+      if (log.topics[0]) return eventTopics.includes(log.topics[0])
+
+      return false
     })
 
-    return events ?? []
+    return events
   }
 
   return []
@@ -106,7 +117,7 @@ export const getTransactionEvents = async (
 
 const fetchEnsNames = async (
   publicClient: PublicClient,
-  addresses: string[],
+  addresses: Address[],
 ): Promise<string[]> => {
   // Do nothing if not on mainnet
   const providerNetwork = await publicClient.getChainId()
@@ -114,17 +125,17 @@ const fetchEnsNames = async (
 
   const reverseRecords = getContract({
     address: REVERSE_RECORDS_ADDRESS,
-    abi: reverseRecordsInterface,
+    abi: reverseRecordsAbi,
     publicClient,
   })
 
-  const allNames: string[] = await reverseRecords.read.getNames(addresses)
-  return allNames
+  const allNames = await reverseRecords.read.getNames([addresses])
+  return allNames.slice()
 }
 
 export const addEnsNames = async (
   provider: PublicClient,
-  recipients: { address: string; ensName?: string }[],
+  recipients: { address: Address; ensName?: string }[],
 ): Promise<void> => {
   const addresses = recipients.map((recipient) => recipient.address)
   const allNames = await fetchEnsNames(provider, addresses)
@@ -132,12 +143,11 @@ export const addEnsNames = async (
   allNames.map((ens, index) => {
     if (ens) {
       try {
-        if (nameprep(ens)) {
+        if (normalize(ens)) {
           recipients[index].ensName = ens
         }
       } catch (e) {
-        // nameprep generates an error for certain characters (like emojis).
-        // Let's just ignore for now and not add the ens
+        // If normalize generates an error let's just ignore for now and not add the ens
         return
       }
     }
@@ -148,18 +158,19 @@ export const addWaterfallEnsNames = async (
   provider: PublicClient,
   tranches: WaterfallTranche[],
 ): Promise<void> => {
-  const addresses = tranches.map((tranche) => tranche.recipientAddress)
+  const addresses = tranches.map((tranche) =>
+    getAddress(tranche.recipientAddress),
+  )
   const allNames = await fetchEnsNames(provider, addresses)
 
   allNames.map((ens, index) => {
     if (ens) {
       try {
-        if (nameprep(ens)) {
+        if (normalize(ens)) {
           tranches[index].recipientEnsName = ens
         }
       } catch (e) {
-        // nameprep generates an error for certain characters (like emojis).
-        // Let's just ignore for now and not add the ens
+        // If normalize generates an error let's just ignore for now and not add the ens
         return
       }
     }
@@ -177,7 +188,7 @@ export const addSwapperEnsNames = async (
   allNames.map((ens, index) => {
     if (ens) {
       try {
-        if (nameprep(ens)) {
+        if (normalize(ens)) {
           if (index === 0) {
             swapper.beneficiary.ens = ens
           } else if (swapper.owner) {
@@ -185,8 +196,7 @@ export const addSwapperEnsNames = async (
           }
         }
       } catch (e) {
-        // nameprep generates an error for certain characters (like emojis).
-        // Let's just ignore for now and not add the ens
+        // If normalize generates an error let's just ignore for now and not add the ens
         return
       }
     }
@@ -195,22 +205,21 @@ export const addSwapperEnsNames = async (
 
 export const getTrancheRecipientsAndSizes = async (
   chainId: number,
-  token: string,
+  token: Address,
   tranches: WaterfallTrancheInput[],
   provider: PublicClient,
-): Promise<[string[], BigNumber[]]> => {
-  const recipients: string[] = []
-  const sizes: BigNumber[] = []
+): Promise<[Address[], bigint[]]> => {
+  const recipients: Address[] = []
+  const sizes: bigint[] = []
 
   const tokenData = await getTokenData(chainId, token, provider)
 
-  let trancheSum = BigNumber.from(0)
+  let trancheSum = BigInt(0)
   tranches.forEach((tranche) => {
-    recipients.push(tranche.recipient)
+    recipients.push(getAddress(tranche.recipient))
     if (tranche.size) {
-      trancheSum = trancheSum.add(
-        getBigNumberTokenValue(tranche.size, tokenData.decimals),
-      )
+      trancheSum =
+        trancheSum + getBigIntTokenValue(tranche.size, tokenData.decimals)
       sizes.push(trancheSum)
     }
   })
@@ -220,41 +229,40 @@ export const getTrancheRecipientsAndSizes = async (
 
 export const getRecoupTranchesAndSizes = async (
   chainId: number,
-  token: string,
+  token: Address,
   tranches: RecoupTrancheInput[],
   provider: PublicClient,
-): Promise<[ContractRecoupTranche[], BigNumber[]]> => {
+): Promise<[ContractRecoupTranche[], bigint[]]> => {
   const recoupTranches: ContractRecoupTranche[] = []
-  const sizes: BigNumber[] = []
+  const sizes: bigint[] = []
 
   const tokenData = await getTokenData(chainId, token, provider)
-  let trancheSum = BigNumber.from(0)
+  let trancheSum = BigInt(0)
   tranches.forEach((tranche) => {
     if (typeof tranche.recipient === 'string') {
       recoupTranches.push([
         [tranche.recipient],
         [PERCENTAGE_SCALE],
-        AddressZero,
-        BigNumber.from(0),
+        ADDRESS_ZERO,
+        BigInt(0),
       ])
     } else {
       const [addresses, percentAllocations] =
         getRecipientSortedAddressesAndAllocations(tranche.recipient.recipients)
-      const distributorFee = getBigNumberFromPercent(
+      const distributorFee = getBigIntFromPercent(
         tranche.recipient.distributorFeePercent,
       )
       recoupTranches.push([
         addresses,
         percentAllocations,
-        tranche.recipient.controller ?? AddressZero,
+        tranche.recipient.controller ?? ADDRESS_ZERO,
         distributorFee,
       ])
     }
 
     if (tranche.size) {
-      trancheSum = trancheSum.add(
-        getBigNumberTokenValue(tranche.size, tokenData.decimals),
-      )
+      trancheSum =
+        trancheSum + getBigIntTokenValue(tranche.size, tokenData.decimals)
       sizes.push(trancheSum)
     }
   })
@@ -264,13 +272,13 @@ export const getRecoupTranchesAndSizes = async (
 
 export const getTokenData = async (
   chainId: number,
-  token: string,
+  token: Address,
   provider: PublicClient,
 ): Promise<{
   symbol: string
   decimals: number
 }> => {
-  if (token === AddressZero) {
+  if (token === ADDRESS_ZERO) {
     if (POLYGON_CHAIN_IDS.includes(chainId))
       return {
         symbol: 'MATIC',
@@ -284,7 +292,7 @@ export const getTokenData = async (
   }
 
   const tokenContract = getContract({
-    abi: ierc20Interface,
+    abi: erc20Abi,
     address: token,
     publicClient: provider,
   })
@@ -301,19 +309,13 @@ export const getTokenData = async (
   }
 }
 
-type ProviderWrapper = PublicClient & {
-  readonly connection: ConnectionInfo
-}
-
 // Return true if the provider supports a large enough logs request to fetch erc20 tranfer history
 export const isLogsProvider = (
   provider: PublicClient<Transport, Chain | undefined>,
 ): boolean => {
-  // TODO - need to figure out what to do here :thinking_face:
-  const castedProvider = provider as unknown as ProviderWrapper // Cast so we can access the connection prop.
-  if (castedProvider.connection?.url?.includes('.alchemy.')) return true
-  if (castedProvider.connection?.url?.includes('.alchemyapi.')) return true
-  if (castedProvider.connection?.url?.includes('.infura.')) return true
+  if (provider.transport?.url?.includes('.alchemy.')) return true
+  if (provider.transport?.url?.includes('.alchemyapi.')) return true
+  if (provider.transport?.url?.includes('.infura.')) return true
 
   return false
 }
@@ -326,13 +328,13 @@ export const getDiversifierRecipients = (
     if (recipientData.address)
       return [
         recipientData.address,
-        [AddressZero, AddressZero, BigNumber.from(0), []],
-        getBigNumberFromPercent(recipientData.percentAllocation),
+        [ADDRESS_ZERO, ADDRESS_ZERO, BigInt(0), []],
+        getBigIntFromPercent(recipientData.percentAllocation),
       ]
 
     if (!recipientData.swapperParams) throw new Error()
     return [
-      AddressZero,
+      ADDRESS_ZERO,
       [
         recipientData.swapperParams.beneficiary,
         recipientData.swapperParams.tokenToBeneficiary,
@@ -343,7 +345,7 @@ export const getDiversifierRecipients = (
           recipientData.swapperParams.scaledOfferFactorOverrides,
         ),
       ],
-      getBigNumberFromPercent(recipientData.percentAllocation),
+      getBigIntFromPercent(recipientData.percentAllocation),
     ]
   })
 }
@@ -353,11 +355,11 @@ export const getFormattedOracleParams = (
 ): ContractOracleParams => {
   validateOracleParams(oracleParams)
   if (oracleParams.address)
-    return [oracleParams.address, [AddressZero, AddressZero]]
+    return [oracleParams.address, [ADDRESS_ZERO, ADDRESS_ZERO]]
 
   if (!oracleParams.createOracleParams) throw new Error()
   return [
-    AddressZero,
+    ADDRESS_ZERO,
     [
       oracleParams.createOracleParams.factory,
       oracleParams.createOracleParams.data,
@@ -368,12 +370,12 @@ export const getFormattedOracleParams = (
 export const getFormattedScaledOfferFactor = (
   scaledOfferFactorPercent: number,
   allowMaxPercent?: boolean,
-): BigNumber => {
+): bigint => {
   validateScaledOfferFactor(scaledOfferFactorPercent, allowMaxPercent)
 
   const formattedScaledOfferFactor =
     1000000 - Math.round(10000 * scaledOfferFactorPercent)
-  return BigNumber.from(formattedScaledOfferFactor)
+  return BigInt(formattedScaledOfferFactor)
 }
 
 export const getFormattedScaledOfferFactorOverrides = (

@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "rm -rf dist && tsc && cp -r src/artifacts src/typechain dist/"
+    "build": "rm -rf dist && tsc"
   },
   "author": "0xSplits (https://splits.org)",
   "publishConfig": {
@@ -28,15 +28,12 @@
   },
   "homepage": "https://docs.splits.org/sdk-info/overview",
   "dependencies": {
-    "abi-coder": "^4.1.1",
     "base-64": "^1.0.0",
-    "ethereum-multicall": "^2.15.0",
-    "ethers": "^5.6.9",
-    "graphql": "^16.5.0",
-    "graphql-request": "^4.3.0",
-    "viem": "^1.16.0"
+    "graphql": "^16.8.1",
+    "graphql-request": "^6.1.0",
+    "viem": "^1.16.6"
   },
   "devDependencies": {
-    "@types/base-64": "^1.0.0"
+    "@types/base-64": "^1.0.1"
   }
 }

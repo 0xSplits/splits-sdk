@@ -1,6 +1,7 @@
-import { BigNumber } from '@ethersproject/bignumber'
+import { Address } from 'viem'
 
-export const PERCENTAGE_SCALE = BigNumber.from(1e6)
+export const PERCENTAGE_SCALE = BigInt(1e6)
+export const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000'
 
 // https://github.com/mds1/multicall
 export const MULTICALL_3_ADDRESS = '0xca11bde05977b3631167028862be2a173976ca11'
@@ -42,7 +43,7 @@ export const getVestingFactoryAddress = (chainId: number): string => {
   return VESTING_MODULE_FACTORY_ADDRESS
 }
 
-export const getWaterfallFactoryAddress = (chainId: number): string => {
+export const getWaterfallFactoryAddress = (chainId: number): Address => {
   if (chainId === ChainId.BSC) return WATERFALL_MODULE_FACTORY_ADDRESS_BSC
   return WATERFALL_MODULE_FACTORY_ADDRESS
 }

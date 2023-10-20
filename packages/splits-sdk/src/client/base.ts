@@ -1,13 +1,22 @@
-import { Interface, JsonFragment } from '@ethersproject/abi'
-import { PublicClient, getContract, WalletClient } from 'viem'
+import {
+  PublicClient,
+  getAddress,
+  WalletClient,
+  Address,
+  Abi,
+  Hash,
+  encodeFunctionData,
+  Log,
+} from 'viem'
 
-import { getAddress } from '@ethersproject/address'
-import { BigNumber } from '@ethersproject/bignumber'
-import { AddressZero, Zero, One } from '@ethersproject/constants'
-import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
 import { GraphQLClient, Variables } from 'graphql-request'
 
-import { MULTICALL_3_ADDRESS, TransactionType } from '../constants'
+import {
+  ADDRESS_ZERO,
+  MULTICALL_3_ADDRESS,
+  TransactionType,
+} from '../constants'
+import { multicallAbi } from '../constants/abi/multicall'
 import {
   AccountNotFoundError,
   InvalidArgumentError,
@@ -33,9 +42,10 @@ import type {
   TokenBalances,
   TransactionConfig,
   TransactionFormat,
+  TransactionOverrides,
 } from '../types'
 import {
-  fromBigNumberToTokenValue,
+  fromBigIntToTokenValue,
   getTokenData,
   getTransactionEvents,
   isLogsProvider,
@@ -44,21 +54,11 @@ import {
   fetchActiveBalances,
   fetchERC20TransferredTokens,
 } from '../utils/balances'
-import {
-  abiEncode,
-  ContractCallData,
-  multicallInterface,
-  multicallAbi,
-} from '../utils/multicall'
-
-const MISSING_SIGNER = ''
 
 class BaseClient {
   readonly _chainId: number
   protected readonly _ensProvider: PublicClient | undefined
-  // TODO: something better we can do here to handle typescript check for missing signer?
-  // Viem should do type checking better here, they invested a lot of time in TS from my understanding
-  readonly _signer: WalletClient | string
+  readonly _signer: WalletClient | undefined
   readonly _provider: PublicClient | undefined
   private readonly _graphqlClient: GraphQLClient | undefined
   protected readonly _includeEnsNames: boolean
@@ -72,13 +72,13 @@ class BaseClient {
   }: SplitsClientConfig) {
     if (includeEnsNames && !publicClient && !ensProvider)
       throw new InvalidConfigError(
-        'Must include a mainnet provider if includeEnsNames is set to true',
+        'Must include a mainnet public client if includeEnsNames is set to true',
       )
 
     this._ensProvider = ensProvider ?? publicClient
     this._provider = publicClient
     this._chainId = chainId
-    this._signer = account ?? MISSING_SIGNER
+    this._signer = account
     this._graphqlClient = getGraphqlClient(chainId)
     this._includeEnsNames = includeEnsNames
   }
@@ -92,7 +92,10 @@ class BaseClient {
     }
 
     // TODO: any error handling? need to add try/catch if so
-    const result = await this._graphqlClient.request(query, variables)
+    const result = await this._graphqlClient.request<ResponseType>(
+      query,
+      variables,
+    )
     return result
   }
 
@@ -161,7 +164,7 @@ class BaseClient {
     includeActiveBalances,
     erc20TokenList,
   }: {
-    accountId: string
+    accountId: Address
     includeActiveBalances: boolean
     erc20TokenList?: string[]
   }): Promise<{
@@ -219,7 +222,7 @@ class BaseClient {
     const customTokens = Object.keys(withdrawn) ?? []
     const fullTokenList = Array.from(
       new Set(
-        [AddressZero, ...tokenList]
+        [ADDRESS_ZERO, ...tokenList]
           .concat(Object.keys(internalBalances ?? {}))
           .concat(customTokens)
           .map((token) => getAddress(token)),
@@ -231,9 +234,10 @@ class BaseClient {
       fullTokenList,
     )
     const filteredBalances = Object.keys(balances).reduce((acc, token) => {
-      const tokenBalance = balances[token].add(internalBalances[token] ?? Zero)
+      const tokenBalance =
+        balances[token] + (internalBalances[token] ?? BigInt(0))
 
-      if (tokenBalance.gt(One)) acc[token] = tokenBalance
+      if (tokenBalance > BigInt(1)) acc[token] = tokenBalance
       return acc
     }, {} as TokenBalances)
 
@@ -253,13 +257,14 @@ class BaseClient {
       tokenBalancesList.map(async (tokenBalances) => {
         const formattedTokenBalances = await Object.keys(tokenBalances).reduce(
           async (acc, token) => {
+            const formattedToken = getAddress(token)
             const awaitedAcc = await acc
 
             const rawAmount = tokenBalances[token]
             if (!tokenData[token]) {
               tokenData[token] = await getTokenData(
                 this._chainId,
-                token,
+                formattedToken,
                 localProvider,
               )
             }
@@ -267,7 +272,7 @@ class BaseClient {
             awaitedAcc[token] = {
               ...tokenData[token],
               rawAmount,
-              formattedAmount: fromBigNumberToTokenValue(
+              formattedAmount: fromBigIntToTokenValue(
                 rawAmount,
                 tokenData[token].decimals,
               ),
@@ -288,7 +293,6 @@ class BaseClient {
 export class BaseTransactions extends BaseClient {
   protected readonly _transactionType: TransactionType
   protected readonly _shouldRequireSigner: boolean
-  private readonly _multicallContract: Contract | Contract['estimateGas']
 
   constructor({
     transactionType,
@@ -311,54 +315,80 @@ export class BaseTransactions extends BaseClient {
       TransactionType.Transaction,
       TransactionType.CallData,
     ].includes(transactionType)
-
-    this._multicallContract = this._getTransactionContract<
-      Contract,
-      Contract['estimateGas']
-    >(MULTICALL_3_ADDRESS, multicallAbi, multicallInterface)
   }
 
-  protected _getTransactionContract<
-    T extends Contract,
-    K extends Contract['estimateGas'],
-  >(
-    contractAddress: string,
-    contractAbi: JsonFragment[],
-    contractInterface: Interface,
-  ) {
-    if (this._transactionType === TransactionType.CallData)
-      return new ContractCallData(contractAddress, contractAbi)
+  protected async _executeContractFunction({
+    contractAddress,
+    contractAbi,
+    functionName,
+    functionArgs,
+    transactionOverrides,
+  }: {
+    contractAddress: Address
+    contractAbi: Abi
+    functionName: string
+    functionArgs?: unknown[]
+    transactionOverrides: TransactionOverrides
+  }) {
+    this._requireProvider()
+    if (!this._provider) throw new Error()
+    this._requireSigner()
+    if (!this._signer?.account) throw new Error()
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore - why is this the case??
-    const contract = getContract({
-      address: contractAddress,
-      abi: contractInterface,
-      walletClient: this._signer || this._provider,
-    })
-    if (this._transactionType === TransactionType.GasEstimate)
-      return contract.estimateGas as K
+    if (this._transactionType === TransactionType.GasEstimate) {
+      const gasEstimate = await this._provider.estimateContractGas({
+        address: contractAddress,
+        abi: contractAbi,
+        functionName,
+        account: this._signer.account,
+        args: functionArgs ? functionArgs : undefined,
+        ...transactionOverrides,
+      })
+      return gasEstimate
+    } else if (this._transactionType === TransactionType.CallData) {
+      const { request } = await this._provider.simulateContract({
+        address: contractAddress,
+        abi: contractAbi,
+        functionName,
+        account: this._signer.account,
+        args: functionArgs ? functionArgs : undefined,
+        ...transactionOverrides,
+      })
 
-    return contract
+      return {
+        ...request,
+        abi: request.abi.filter(
+          (abiVal) =>
+            abiVal.type === 'function' && abiVal.name === functionName,
+        ),
+        account: undefined,
+      }
+    } else if (this._transactionType === TransactionType.Transaction) {
+      const { request } = await this._provider.simulateContract({
+        address: contractAddress,
+        abi: contractAbi,
+        functionName,
+        account: this._signer.account,
+        args: functionArgs ? functionArgs : undefined,
+        ...transactionOverrides,
+      })
+      const txHash = await this._signer.writeContract(request)
+      return txHash
+    } else throw new Error(`Unknown transaction type: ${this._transactionType}`)
   }
 
-  protected _isContractTransaction(
-    tx: TransactionFormat,
-  ): tx is ContractTransaction {
-    if (tx instanceof BigNumber) return false
-    if ('wait' in tx) return true
-    return false
+  protected _isContractTransaction(txHash: TransactionFormat): txHash is Hash {
+    return typeof txHash === 'string'
   }
 
-  protected _isBigNumber(
-    gasEstimate: TransactionFormat,
-  ): gasEstimate is BigNumber {
-    return gasEstimate instanceof BigNumber
+  protected _isBigInt(gasEstimate: TransactionFormat): gasEstimate is bigint {
+    return typeof gasEstimate === 'bigint'
   }
 
   protected _isCallData(callData: TransactionFormat): callData is CallData {
-    if (callData instanceof BigNumber) return false
-    if ('wait' in callData) return false
+    if (callData instanceof BigInt) return false
+    if (typeof callData === 'string') return false
+
     return true
   }
 
@@ -366,53 +396,71 @@ export class BaseTransactions extends BaseClient {
     calls,
   }: {
     calls: CallData[]
-  }): Promise<ContractTransaction | BigNumber> {
+  }): Promise<TransactionFormat> {
     this._requireSigner()
     if (!this._signer) throw new Error()
 
     const callRequests = calls.map((call) => {
-      const callData = abiEncode(call.name, call.inputs, call.params)
+      const callData = encodeFunctionData({
+        abi: call.abi,
+        args: call.args,
+        functionName: call.functionName,
+      })
       return {
-        target: call.contract.address,
+        target: call.address,
         callData,
       }
     })
 
-    const result = await this._multicallContract.aggregate(callRequests)
+    const result = await this._executeContractFunction({
+      contractAddress: MULTICALL_3_ADDRESS,
+      contractAbi: multicallAbi,
+      functionName: 'aggregate',
+      functionArgs: callRequests,
+      transactionOverrides: {},
+    })
     return result
   }
 }
 
 export class BaseClientMixin extends BaseTransactions {
   async submitMulticallTransaction({ calls }: { calls: CallData[] }): Promise<{
-    tx: ContractTransaction
+    txHash: Hash
   }> {
     const multicallResult = await this._multicallTransaction({ calls })
     if (!this._isContractTransaction(multicallResult))
       throw new Error('Invalid response')
 
-    return { tx: multicallResult }
+    return { txHash: multicallResult }
   }
 
   async multicall({
     calls,
   }: {
     calls: CallData[]
-  }): Promise<{ events: Event[] }> {
-    const { tx: multicallTx } = await this.submitMulticallTransaction({
+  }): Promise<{ events: Log[] }> {
+    this._requireProvider()
+    if (!this._provider) throw new Error()
+
+    const { txHash: multicallTx } = await this.submitMulticallTransaction({
       calls,
     })
-    const events = await getTransactionEvents(multicallTx, [], true)
+    const events = await getTransactionEvents(
+      this._provider,
+      multicallTx,
+      [],
+      true,
+    )
     return { events }
   }
 }
 
 export class BaseGasEstimatesMixin extends BaseTransactions {
-  async multicall({ calls }: { calls: CallData[] }): Promise<BigNumber> {
+  async multicall({ calls }: { calls: CallData[] }): Promise<bigint> {
     const gasEstimate = await this._multicallTransaction({
       calls,
     })
-    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
