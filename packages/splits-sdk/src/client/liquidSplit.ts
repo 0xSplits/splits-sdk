@@ -1,12 +1,4 @@
-import { Interface } from '@ethersproject/abi'
-import { BigNumber } from '@ethersproject/bignumber'
-import { AddressZero } from '@ethersproject/constants'
-import { ContractTransaction, Event } from '@ethersproject/contracts'
 import { decode } from 'base-64'
-
-import LIQUID_SPLIT_FACTORY_ARTIFACT from '../artifacts/contracts/LiquidSplitFactory/LiquidSplitFactory.json'
-import LIQUID_SPLIT_ARTIFACT from '../artifacts/contracts/LS1155/LS1155.json'
-import SPLIT_MAIN_ARTIFACT_POLYGON from '../artifacts/contracts/SplitMain/polygon/SplitMain.json'
 
 import {
   BaseClientMixin,
@@ -19,6 +11,7 @@ import {
   getLiquidSplitFactoryAddress,
   LIQUID_SPLIT_URI_BASE_64_HEADER,
   TransactionType,
+  ADDRESS_ZERO,
 } from '../constants'
 import {
   AccountNotFoundError,
@@ -40,7 +33,7 @@ import type {
   TransactionFormat,
 } from '../types'
 import {
-  getBigNumberFromPercent,
+  getBigIntFromPercent,
   getRecipientSortedAddressesAndAllocations,
   getTransactionEvents,
   getNftCountsFromPercents,
@@ -51,24 +44,23 @@ import {
   validateDistributorFeePercent,
   validateRecipients,
 } from '../utils/validation'
-import type { LiquidSplitFactory as LiquidSplitFactoryType } from '../typechain/LiquidSplitFactory'
-import type { LS1155 as LS1155Type } from '../typechain/LS1155'
-import { ContractCallData } from '../utils/multicall'
-
-const liquidSplitFactoryInterface = new Interface(
-  LIQUID_SPLIT_FACTORY_ARTIFACT.abi,
-)
-const liquidSplitInterface = new Interface(LIQUID_SPLIT_ARTIFACT.abi)
-const splitMainInterface = new Interface(SPLIT_MAIN_ARTIFACT_POLYGON.abi)
+import { liquidSplitFactoryAbi } from '../constants/abi/liquidSplitFactory'
+import {
+  Address,
+  Hash,
+  Hex,
+  Log,
+  decodeEventLog,
+  encodeEventTopics,
+  getAddress,
+  getContract,
+} from 'viem'
+import { ls1155CloneAbi } from '../constants/abi/ls1155Clone'
+import { splitMainPolygonAbi } from '../constants/abi/splitMain'
 
 const DEFAULT_CREATE_CLONE = true
 
 class LiquidSplitTransactions extends BaseTransactions {
-  private readonly _liquidSplitFactoryContract:
-    | ContractCallData
-    | LiquidSplitFactoryType
-    | LiquidSplitFactoryType['estimateGas']
-
   constructor({
     transactionType,
     chainId,
@@ -85,8 +77,6 @@ class LiquidSplitTransactions extends BaseTransactions {
       account,
       includeEnsNames,
     })
-
-    this._liquidSplitFactoryContract = this._getLiquidSplitFactoryContract()
   }
 
   protected async _createLiquidSplitTransaction({
@@ -106,26 +96,25 @@ class LiquidSplitTransactions extends BaseTransactions {
     if (this._shouldRequireSigner) this._requireSigner()
     const ownerAddress = owner
       ? owner
-      : this._signer
-      ? await this._signer.getAddresses()?.[0]
-      : AddressZero
+      : this._signer?.account
+      ? this._signer.account.address
+      : ADDRESS_ZERO
     validateAddress(ownerAddress)
 
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
     const nftAmounts = getNftCountsFromPercents(percentAllocations)
-    const distributorFee = getBigNumberFromPercent(distributorFeePercent)
+    const distributorFee = getBigIntFromPercent(distributorFeePercent)
 
-    const createSplitResult =
-      await this._liquidSplitFactoryContract.createLiquidSplitClone(
-        accounts,
-        nftAmounts,
-        distributorFee,
-        ownerAddress,
-        transactionOverrides,
-      )
+    const result = await this._executeContractFunction({
+      contractAddress: getLiquidSplitFactoryAddress(this._chainId),
+      contractAbi: liquidSplitFactoryAbi,
+      functionName: 'createLiquidSplitClone',
+      functionArgs: [accounts, nftAmounts, distributorFee, ownerAddress],
+      transactionOverrides,
+    })
 
-    return createSplitResult
+    return result
   }
 
   protected async _distributeTokenTransaction({
@@ -140,9 +129,9 @@ class LiquidSplitTransactions extends BaseTransactions {
 
     const distributorPayoutAddress = distributorAddress
       ? distributorAddress
-      : this._signer
-      ? await this._signer.getAddresses()?.[0]
-      : AddressZero
+      : this._signer?.account
+      ? this._signer.account.address
+      : ADDRESS_ZERO
     validateAddress(distributorPayoutAddress)
 
     // TO DO: handle bad split id/no metadata found
@@ -156,15 +145,15 @@ class LiquidSplitTransactions extends BaseTransactions {
         return -1
       })
 
-    const liquidSplitContract = this._getLiquidSplitContract(liquidSplitId)
-    const distributeTokenResult = await liquidSplitContract.distributeFunds(
-      token,
-      accounts,
-      distributorPayoutAddress,
+    const result = await this._executeContractFunction({
+      contractAddress: getAddress(liquidSplitId),
+      contractAbi: ls1155CloneAbi,
+      functionName: 'distributeFunds',
+      functionArgs: [token, accounts, distributorPayoutAddress],
       transactionOverrides,
-    )
+    })
 
-    return distributeTokenResult
+    return result
   }
 
   protected async _transferOwnershipTransaction({
@@ -179,13 +168,15 @@ class LiquidSplitTransactions extends BaseTransactions {
       await this._requireOwner(liquidSplitId)
     }
 
-    const liquidSplitContract = this._getLiquidSplitContract(liquidSplitId)
-    const transferOwnershipResult = await liquidSplitContract.transferOwnership(
-      newOwner,
+    const result = await this._executeContractFunction({
+      contractAddress: getAddress(liquidSplitId),
+      contractAbi: ls1155CloneAbi,
+      functionName: 'transferOwnership',
+      functionArgs: [newOwner],
       transactionOverrides,
-    )
+    })
 
-    return transferOwnershipResult
+    return result
   }
 
   // Graphql read actions
@@ -220,7 +211,12 @@ class LiquidSplitTransactions extends BaseTransactions {
     if (this._includeEnsNames) {
       await addEnsNames(
         this._ensProvider ?? this._provider,
-        liquidSplit.holders,
+        liquidSplit.holders.map((holder) => {
+          return {
+            ...holder,
+            address: getAddress(holder.address),
+          }
+        }),
       )
     }
 
@@ -231,12 +227,12 @@ class LiquidSplitTransactions extends BaseTransactions {
     this._requireSigner()
 
     const liquidSplitContract = this._getLiquidSplitContract(liquidSplitId)
-    const owner = await liquidSplitContract.owner()
+    const owner = await liquidSplitContract.read.owner()
 
     // TODO: how to get rid of this, needed for typescript check
-    if (!this._signer) throw new Error()
+    if (!this._signer?.account) throw new Error()
 
-    const signerAddress = await this._signer.getAddresses()?.[0]
+    const signerAddress = this._signer.account.address
 
     if (owner !== signerAddress)
       throw new InvalidAuthError(
@@ -245,27 +241,24 @@ class LiquidSplitTransactions extends BaseTransactions {
   }
 
   protected _getLiquidSplitContract(liquidSplit: string) {
-    return this._getTransactionContract<LS1155Type, LS1155Type['estimateGas']>(
-      liquidSplit,
-      LIQUID_SPLIT_ARTIFACT.abi,
-      liquidSplitInterface,
-    )
+    return getContract({
+      address: getAddress(liquidSplit),
+      abi: ls1155CloneAbi,
+      publicClient: this._provider,
+    })
   }
 
   private _getLiquidSplitFactoryContract() {
-    return this._getTransactionContract<
-      LiquidSplitFactoryType,
-      LiquidSplitFactoryType['estimateGas']
-    >(
-      getLiquidSplitFactoryAddress(this._chainId),
-      LIQUID_SPLIT_FACTORY_ARTIFACT.abi,
-      liquidSplitFactoryInterface,
-    )
+    return getContract({
+      address: getLiquidSplitFactoryAddress(this._chainId),
+      abi: liquidSplitFactoryAbi,
+      publicClient: this._provider,
+    })
   }
 }
 
 export class LiquidSplitClient extends LiquidSplitTransactions {
-  readonly eventTopics: { [key: string]: string[] }
+  readonly eventTopics: { [key: string]: Hex[] }
   readonly callData: LiquidSplitCallData
   readonly estimateGas: LiquidSplitGasEstimates
 
@@ -290,15 +283,30 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
 
     this.eventTopics = {
       createLiquidSplit: [
-        liquidSplitFactoryInterface.getEventTopic('CreateLS1155Clone'),
+        encodeEventTopics({
+          abi: liquidSplitFactoryAbi,
+          eventName: 'CreateLS1155Clone',
+        })[0],
       ],
       distributeToken: [
-        splitMainInterface.getEventTopic('UpdateSplit'),
-        splitMainInterface.getEventTopic('DistributeETH'),
-        splitMainInterface.getEventTopic('DistributeERC20'),
+        encodeEventTopics({
+          abi: splitMainPolygonAbi,
+          eventName: 'UpdateSplit',
+        })[0],
+        encodeEventTopics({
+          abi: splitMainPolygonAbi,
+          eventName: 'DistributeETH',
+        })[0],
+        encodeEventTopics({
+          abi: splitMainPolygonAbi,
+          eventName: 'DistributeERC20',
+        })[0],
       ],
       transferOwnership: [
-        liquidSplitInterface.getEventTopic('OwnershipTransferred'),
+        encodeEventTopics({
+          abi: ls1155CloneAbi,
+          eventName: 'OwnershipTransferred',
+        })[0],
       ],
     }
 
@@ -322,39 +330,47 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
   async submitCreateLiquidSplitTransaction(
     createLiquidSplitArgs: CreateLiquidSplitConfig,
   ): Promise<{
-    tx: ContractTransaction
+    txHash: Hash
   }> {
-    const createSplitTx = await this._createLiquidSplitTransaction(
+    const txHash = await this._createLiquidSplitTransaction(
       createLiquidSplitArgs,
     )
-    if (!this._isContractTransaction(createSplitTx))
+    if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
-    return { tx: createSplitTx }
+    return { txHash }
   }
 
   async createLiquidSplit(
     createLiquidSplitArgs: CreateLiquidSplitConfig,
   ): Promise<{
-    liquidSplitId: string
-    event: Event
+    liquidSplitId: Address
+    event: Log
   }> {
-    const { tx: createSplitTx } = await this.submitCreateLiquidSplitTransaction(
+    this._requireProvider()
+    if (!this._provider) throw new Error()
+
+    const { txHash } = await this.submitCreateLiquidSplitTransaction(
       createLiquidSplitArgs,
     )
 
-    const { createClone } = createLiquidSplitArgs
-    const eventTopic =
-      createClone ?? DEFAULT_CREATE_CLONE
-        ? this.eventTopics.createLiquidSplit[0]
-        : this.eventTopics.createLiquidSplit[1]
-    const events = await getTransactionEvents(createSplitTx, [eventTopic])
+    const events = await getTransactionEvents(
+      this._provider,
+      txHash,
+      this.eventTopics.createLiquidSplit,
+    )
     const event = events.length > 0 ? events[0] : undefined
-    if (event && event.args)
+    if (event) {
+      const log = decodeEventLog({
+        abi: liquidSplitFactoryAbi,
+        data: event.data,
+        topics: event.topics,
+      })
       return {
-        liquidSplitId: event.args.ls,
+        liquidSplitId: log.args.ls,
         event,
       }
+    }
 
     throw new TransactionFailedError()
   }
@@ -362,31 +378,34 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
   async submitDistributeTokenTransaction(
     distributeTokenArgs: DistributeLiquidSplitTokenConfig,
   ): Promise<{
-    tx: ContractTransaction
+    txHash: Hash
   }> {
-    const distributeTokenTx = await this._distributeTokenTransaction(
-      distributeTokenArgs,
-    )
-    if (!this._isContractTransaction(distributeTokenTx))
+    const txHash = await this._distributeTokenTransaction(distributeTokenArgs)
+    if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
-    return { tx: distributeTokenTx }
+    return { txHash }
   }
 
   async distributeToken(
     distributeTokenArgs: DistributeLiquidSplitTokenConfig,
   ): Promise<{
-    event: Event
+    event: Log
   }> {
-    const { tx: distributeTokenTx } =
+    this._requireProvider()
+    if (!this._provider) throw new Error()
+
+    const { txHash } =
       await this.submitDistributeTokenTransaction(distributeTokenArgs)
 
     const { token } = distributeTokenArgs
     const eventTopic =
-      token === AddressZero
+      token === ADDRESS_ZERO
         ? this.eventTopics.distributeToken[1]
         : this.eventTopics.distributeToken[2]
-    const events = await getTransactionEvents(distributeTokenTx, [eventTopic])
+    const events = await getTransactionEvents(this._provider, txHash, [
+      eventTopic,
+    ])
     const event = events.length > 0 ? events[0] : undefined
     if (event) return { event }
 
@@ -396,26 +415,31 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
   async submitTransferOwnershipTransaction(
     transferOwnershipArgs: TransferLiquidSplitOwnershipConfig,
   ): Promise<{
-    tx: ContractTransaction
+    txHash: Hash
   }> {
-    const transferOwnershipTx = await this._transferOwnershipTransaction(
+    const txHash = await this._transferOwnershipTransaction(
       transferOwnershipArgs,
     )
-    if (!this._isContractTransaction(transferOwnershipTx))
+    if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
-    return { tx: transferOwnershipTx }
+    return { txHash }
   }
 
   async transferOwnership(
     transferOwnershipArgs: TransferLiquidSplitOwnershipConfig,
   ): Promise<{
-    event: Event
+    event: Log
   }> {
-    const { tx: transferOwnershipTx } =
-      await this.submitTransferOwnershipTransaction(transferOwnershipArgs)
+    this._requireProvider()
+    if (!this._provider) throw new Error()
+
+    const { txHash } = await this.submitTransferOwnershipTransaction(
+      transferOwnershipArgs,
+    )
     const events = await getTransactionEvents(
-      transferOwnershipTx,
+      this._provider,
+      txHash,
       this.eventTopics.transferOwnership,
     )
     const event = events.length > 0 ? events[0] : undefined
@@ -436,7 +460,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
     this._requireProvider()
 
     const liquidSplitContract = this._getLiquidSplitContract(liquidSplitId)
-    const distributorFee = await liquidSplitContract.distributorFee()
+    const distributorFee = await liquidSplitContract.read.distributorFee()
 
     return {
       distributorFee,
@@ -450,7 +474,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
     this._requireProvider()
 
     const liquidSplitContract = this._getLiquidSplitContract(liquidSplitId)
-    const payoutSplitId = await liquidSplitContract.payoutSplit()
+    const payoutSplitId = await liquidSplitContract.read.payoutSplit()
 
     return {
       payoutSplitId,
@@ -464,7 +488,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
     this._requireProvider()
 
     const liquidSplitContract = this._getLiquidSplitContract(liquidSplitId)
-    const owner = await liquidSplitContract.owner()
+    const owner = await liquidSplitContract.read.owner()
 
     return {
       owner,
@@ -478,7 +502,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
     this._requireProvider()
 
     const liquidSplitContract = this._getLiquidSplitContract(liquidSplitId)
-    const uri = await liquidSplitContract.uri(0) // Expects an argument, but it's not actually used
+    const uri = await liquidSplitContract.read.uri([BigInt(0)]) // Expects an argument, but it's not actually used
 
     return {
       uri,
@@ -500,7 +524,9 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
 
     const liquidSplitContract = this._getLiquidSplitContract(liquidSplitId)
     const scaledPercentBalance =
-      await liquidSplitContract.scaledPercentBalanceOf(address)
+      await liquidSplitContract.read.scaledPercentBalanceOf([
+        getAddress(address),
+      ])
 
     return {
       scaledPercentBalance,
@@ -522,9 +548,6 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
     }
   }
 }
-
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface LiquidSplitClient extends BaseClientMixin {}
 
 applyMixins(LiquidSplitClient, [BaseClientMixin])
 
@@ -548,40 +571,36 @@ class LiquidSplitGasEstimates extends LiquidSplitTransactions {
 
   async createLiquidSplit(
     createLiquidSplitArgs: CreateLiquidSplitConfig,
-  ): Promise<BigNumber> {
+  ): Promise<bigint> {
     const gasEstimate = await this._createLiquidSplitTransaction(
       createLiquidSplitArgs,
     )
-    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
   async distributeToken(
     distributeTokenArgs: DistributeLiquidSplitTokenConfig,
-  ): Promise<BigNumber> {
-    const gasEstimate = await this._distributeTokenTransaction(
-      distributeTokenArgs,
-    )
-    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+  ): Promise<bigint> {
+    const gasEstimate =
+      await this._distributeTokenTransaction(distributeTokenArgs)
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
   async transferOwnership(
     transferOwnershipArgs: TransferLiquidSplitOwnershipConfig,
-  ): Promise<BigNumber> {
+  ): Promise<bigint> {
     const gasEstimate = await this._transferOwnershipTransaction(
       transferOwnershipArgs,
     )
-    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 }
-
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-interface LiquidSplitGasEstimates extends BaseGasEstimatesMixin {}
 
 applyMixins(LiquidSplitGasEstimates, [BaseGasEstimatesMixin])
 

@@ -1,14 +1,12 @@
-import { Provider } from '@ethersproject/abstract-provider'
-import { Signer } from '@ethersproject/abstract-signer'
-import { AddressZero } from '@ethersproject/constants'
-import type { Event } from '@ethersproject/contracts'
 import { encode } from 'base-64'
+import { Log, PublicClient, WalletClient } from 'viem'
 
 import { LiquidSplitClient } from './liquidSplit'
 import {
   LIQUID_SPLITS_MAX_PRECISION_DECIMALS,
   getLiquidSplitFactoryAddress,
   LIQUID_SPLIT_URI_BASE_64_HEADER,
+  ADDRESS_ZERO,
 } from '../constants'
 import {
   InvalidAuthError,
@@ -66,7 +64,7 @@ const getTransactionEventsSpy = jest
       args: {
         ls: '0xliquidSplit',
       },
-    } as unknown as Event
+    } as unknown as Log
     return [event]
   })
 const getSortedRecipientsMock = jest
@@ -74,8 +72,8 @@ const getSortedRecipientsMock = jest
   .mockImplementation(() => {
     return [SORTED_ADDRESSES, SORTED_ALLOCATIONS]
   })
-const getBigNumberMock = jest
-  .spyOn(utils, 'getBigNumberFromPercent')
+const getBigIntMock = jest
+  .spyOn(utils, 'getBigIntFromPercent')
   .mockImplementation(() => {
     return DISTRIBUTOR_FEE
   })
@@ -85,20 +83,20 @@ const getNftCountsMock = jest
     return NFT_COUNTS
   })
 
-const mockProvider = jest.fn<Provider, unknown[]>()
-const mockSigner = jest.fn<Signer, unknown[]>(() => {
+const mockProvider = jest.fn<PublicClient, unknown[]>()
+const mockSigner = jest.fn<WalletClient, unknown[]>(() => {
   return {
     getAddress: () => {
       return CONTROLLER_ADDRESS
     },
-  } as unknown as Signer
+  } as unknown as WalletClient
 })
-const mockSignerNonController = jest.fn<Signer, unknown[]>(() => {
+const mockSignerNonController = jest.fn<WalletClient, unknown[]>(() => {
   return {
     getAddress: () => {
       return '0xnotController'
     },
-  } as unknown as Signer
+  } as unknown as WalletClient
 })
 
 describe('Client config validation', () => {
@@ -153,12 +151,12 @@ describe('Client config validation', () => {
 })
 
 describe('Liquid split writes', () => {
-  const provider = new mockProvider()
-  const signer = new mockSigner()
+  const publicClient = new mockProvider()
+  const account = new mockSigner()
   const liquidSplitClient = new LiquidSplitClient({
     chainId: 1,
-    provider,
-    signer,
+    publicClient,
+    account,
   })
 
   beforeEach(() => {
@@ -168,7 +166,7 @@ describe('Liquid split writes', () => {
     getTransactionEventsSpy.mockClear()
     getSortedRecipientsMock.mockClear()
     getNftCountsMock.mockClear()
-    getBigNumberMock.mockClear()
+    getBigIntMock.mockClear()
   })
 
   describe('Create liquid split tests', () => {
@@ -206,7 +204,7 @@ describe('Liquid split writes', () => {
     test('Create liquid split fails with no signer', async () => {
       const badClient = new LiquidSplitClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
@@ -247,7 +245,7 @@ describe('Liquid split writes', () => {
         distributorFeePercent,
       )
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
-      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
+      expect(getBigIntMock).toBeCalledWith(distributorFeePercent)
       expect(getNftCountsMock).toBeCalledWith(SORTED_ALLOCATIONS)
       expect(factoryWriteActions.createLiquidSplitClone).toBeCalledWith(
         SORTED_ADDRESSES,
@@ -281,7 +279,7 @@ describe('Liquid split writes', () => {
         distributorFeePercent,
       )
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
-      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
+      expect(getBigIntMock).toBeCalledWith(distributorFeePercent)
       expect(getNftCountsMock).toBeCalledWith(SORTED_ALLOCATIONS)
       expect(factoryWriteActions.createLiquidSplitClone).toBeCalledWith(
         SORTED_ADDRESSES,
@@ -340,7 +338,7 @@ describe('Liquid split writes', () => {
     test('Distribute token fails with no signer', async () => {
       const badClient = new LiquidSplitClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
@@ -377,15 +375,15 @@ describe('Liquid split writes', () => {
     test('Distribute token for eth passes', async () => {
       const { event } = await liquidSplitClient.distributeToken({
         liquidSplitId,
-        token: AddressZero,
+        token: ADDRESS_ZERO,
       })
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(liquidSplitId)
-      expect(validateAddress).toBeCalledWith(AddressZero)
+      expect(validateAddress).toBeCalledWith(ADDRESS_ZERO)
       expect(validateAddress).toBeCalledWith(CONTROLLER_ADDRESS)
       expect(moduleWriteActions.distributeFunds).toBeCalledWith(
-        AddressZero,
+        ADDRESS_ZERO,
         holders.map((h) => h.address),
         CONTROLLER_ADDRESS,
         {},
@@ -452,7 +450,7 @@ describe('Liquid split writes', () => {
     test('Transfer ownership fails with no signer', async () => {
       const badClient = new LiquidSplitClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
@@ -468,8 +466,8 @@ describe('Liquid split writes', () => {
       const nonControllerSigner = new mockSignerNonController()
       const badClient = new LiquidSplitClient({
         chainId: 1,
-        provider,
-        signer: nonControllerSigner,
+        publicClient,
+        account: nonControllerSigner,
       })
 
       await expect(
@@ -499,10 +497,10 @@ describe('Liquid split writes', () => {
 })
 
 describe('Liquid split reads', () => {
-  const provider = new mockProvider()
+  const publicClient = new mockProvider()
   const liquidSplitClient = new LiquidSplitClient({
     chainId: 1,
-    provider,
+    publicClient,
   })
 
   beforeEach(() => {
@@ -731,10 +729,10 @@ describe('Graphql reads', () => {
   }
 
   const liquidSplitId = '0xliquidSplit'
-  const provider = new mockProvider()
+  const publicClient = new mockProvider()
   const liquidSplitClient = new LiquidSplitClient({
     chainId: 1,
-    provider,
+    publicClient,
   })
 
   beforeEach(() => {
@@ -785,10 +783,10 @@ describe('Graphql reads', () => {
     })
 
     test('Adds ens names', async () => {
-      const provider = new mockProvider()
+      const publicClient = new mockProvider()
       const ensLiquidSplitClient = new LiquidSplitClient({
         chainId: 1,
-        provider,
+        publicClient,
         includeEnsNames: true,
       })
 

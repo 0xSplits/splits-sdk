@@ -48,7 +48,7 @@ export const getWaterfallFactoryAddress = (chainId: number): Address => {
   return WATERFALL_MODULE_FACTORY_ADDRESS
 }
 
-export const getLiquidSplitFactoryAddress = (chainId: number): string => {
+export const getLiquidSplitFactoryAddress = (chainId: number): Address => {
   if (chainId === ChainId.BSC) return LIQUID_SPLIT_FACTORY_ADDRESS_BSC
   return LIQUID_SPLIT_FACTORY_ADDRESS
 }
