@@ -1,5 +1,4 @@
-import { Provider } from '@ethersproject/abstract-provider'
-import { BigNumber } from '@ethersproject/bignumber'
+import { Hex, PublicClient } from 'viem'
 
 import { OracleClient } from './oracle'
 import {
@@ -22,7 +21,7 @@ jest.mock('@ethersproject/contracts', () => {
 
 jest.mock('../utils/validation')
 
-const mockProvider = jest.fn<Provider, unknown[]>()
+const mockProvider = jest.fn<PublicClient, unknown[]>()
 
 describe('Client config validation', () => {
   test('Including ens names with no provider fails', () => {
@@ -76,10 +75,10 @@ describe('Client config validation', () => {
 })
 
 describe('Oracle reads', () => {
-  const provider = new mockProvider()
+  const publicClient = new mockProvider()
   const client = new OracleClient({
     chainId: 1,
-    provider,
+    publicClient,
   })
 
   beforeEach(() => {
@@ -94,8 +93,8 @@ describe('Oracle reads', () => {
           base: '0xbase',
           quote: '0xquote',
         },
-        baseAmount: BigNumber.from(1),
-        data: '0x0',
+        baseAmount: BigInt(1),
+        data: '0x' as Hex,
       },
     ]
 
@@ -118,16 +117,16 @@ describe('Oracle reads', () => {
     })
 
     test('Returns quote amounts', async () => {
-      readActions.getQuoteAmounts.mockReturnValueOnce([BigNumber.from(12)])
+      readActions.getQuoteAmounts.mockReturnValueOnce([BigInt(12)])
       const { quoteAmounts } = await client.getQuoteAmounts({
         oracleId,
         quoteParams,
       })
 
-      expect(quoteAmounts).toEqual([BigNumber.from(12)])
+      expect(quoteAmounts).toEqual([BigInt(12)])
       expect(validateAddress).toBeCalledWith(oracleId)
       expect(readActions.getQuoteAmounts).toBeCalledWith([
-        [['0xbase', '0xquote'], BigNumber.from(1), '0x0'],
+        [['0xbase', '0xquote'], BigInt(1), '0x'],
       ])
     })
   })

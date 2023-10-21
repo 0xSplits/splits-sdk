@@ -3,6 +3,7 @@ import type {
   AccessList,
   Address,
   Hash,
+  Hex,
   PublicClient,
   WalletClient,
 } from 'viem'
@@ -457,7 +458,7 @@ export type QuoteParams = {
     quote: string
   }
   baseAmount: bigint
-  data?: string
+  data?: Hex
 }
 
 export type ContractQuoteParams = [[string, string], bigint, string]

@@ -1,9 +1,4 @@
-import { Interface } from '@ethersproject/abi'
-import { BigNumber } from '@ethersproject/bignumber'
-import { AddressZero } from '@ethersproject/constants'
-import { Contract } from '@ethersproject/contracts'
-
-import ORACLE_IMPL_ARTIFACT from '../artifacts/contracts/OracleImpl/OracleImpl.json'
+import { getAddress, getContract } from 'viem'
 
 import { BaseTransactions } from './base'
 import { TransactionType, ORACLE_CHAIN_IDS } from '../constants'
@@ -14,8 +9,7 @@ import type {
   TransactionConfig,
 } from '../types'
 import { validateAddress } from '../utils/validation'
-
-const oracleImplInterface = new Interface(ORACLE_IMPL_ARTIFACT.abi)
+import { uniV3OracleAbi } from '../constants/abi/uniV3Oracle'
 
 class OracleTransactions extends BaseTransactions {
   constructor({
@@ -37,11 +31,11 @@ class OracleTransactions extends BaseTransactions {
   }
 
   protected _getOracleContract(oracle: string) {
-    return this._getTransactionContract<Contract, Contract['estimateGas']>(
-      oracle,
-      ORACLE_IMPL_ARTIFACT.abi,
-      oracleImplInterface,
-    )
+    return getContract({
+      address: getAddress(oracle),
+      abi: uniV3OracleAbi,
+      publicClient: this._provider,
+    })
   }
 }
 
@@ -74,24 +68,27 @@ export class OracleClient extends OracleTransactions {
     oracleId: string
     quoteParams: QuoteParams[]
   }): Promise<{
-    quoteAmounts: BigNumber[]
+    quoteAmounts: bigint[]
   }> {
     validateAddress(oracleId)
     this._requireProvider()
 
     const oracleContract = this._getOracleContract(oracleId)
-    const quoteAmounts = await oracleContract.getQuoteAmounts(
+    const quoteAmounts = await oracleContract.read.getQuoteAmounts([
       quoteParams.map((quoteParam) => {
-        return [
-          [quoteParam.quotePair.base, quoteParam.quotePair.quote],
-          quoteParam.baseAmount,
-          quoteParam.data ?? AddressZero,
-        ]
+        return {
+          quotePair: {
+            base: getAddress(quoteParam.quotePair.base),
+            quote: getAddress(quoteParam.quotePair.quote),
+          },
+          baseAmount: quoteParam.baseAmount,
+          data: quoteParam.data ?? '0x',
+        }
       }),
-    )
+    ])
 
     return {
-      quoteAmounts,
+      quoteAmounts: quoteAmounts.slice(),
     }
   }
 }
