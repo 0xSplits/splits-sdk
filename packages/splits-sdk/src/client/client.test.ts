@@ -1,9 +1,6 @@
-import { Provider } from '@ethersproject/abstract-provider'
-import { Signer } from '@ethersproject/abstract-signer'
-import { BigNumber } from '@ethersproject/bignumber'
-import { AddressZero } from '@ethersproject/constants'
-import type { Event } from '@ethersproject/contracts'
+import { Log, PublicClient, WalletClient } from 'viem'
 
+import { ADDRESS_ZERO } from '../constants'
 import { SplitsClient } from './index'
 import {
   InvalidAuthError,
@@ -51,7 +48,7 @@ const getTransactionEventsSpy = jest
       args: {
         split: '0xsplit',
       },
-    } as unknown as Event
+    } as unknown as Log
     return [event]
   })
 const getSortedRecipientsMock = jest
@@ -59,37 +56,37 @@ const getSortedRecipientsMock = jest
   .mockImplementation(() => {
     return [SORTED_ADDRESSES, SORTED_ALLOCATIONS]
   })
-const getBigNumberMock = jest
-  .spyOn(utils, 'getBigNumberFromPercent')
+const getBigIntMock = jest
+  .spyOn(utils, 'getBigIntFromPercent')
   .mockImplementation(() => {
     return DISTRIBUTOR_FEE
   })
 
-const mockProvider = jest.fn<Provider, unknown[]>()
-const mockSigner = jest.fn<Signer, unknown[]>(() => {
+const mockProvider = jest.fn<PublicClient, unknown[]>()
+const mockSigner = jest.fn<WalletClient, unknown[]>(() => {
   return {
     getAddress: () => {
       return CONTROLLER_ADDRESS
     },
-  } as unknown as Signer
+  } as unknown as WalletClient
 })
-const mockSignerNonController = jest.fn<Signer, unknown[]>(() => {
+const mockSignerNonController = jest.fn<WalletClient, unknown[]>(() => {
   return {
     getAddress: () => {
       return '0xnotController'
     },
-  } as unknown as Signer
+  } as unknown as WalletClient
 })
-const mockSignerNewController = jest.fn<Signer, unknown[]>(() => {
+const mockSignerNewController = jest.fn<WalletClient, unknown[]>(() => {
   return {
     getAddress: () => {
       return NEW_CONTROLLER_ADDRESS
     },
-  } as unknown as Signer
+  } as unknown as WalletClient
 })
 
 describe('Client config validation', () => {
-  const provider = new mockProvider()
+  const publicClient = new mockProvider()
 
   test('Including ens names with no provider fails', () => {
     expect(
@@ -103,7 +100,7 @@ describe('Client config validation', () => {
         new SplitsClient({
           chainId: 1,
           includeEnsNames: true,
-          ensProvider: provider,
+          ensProvider: publicClient,
         }),
     ).not.toThrow()
   })
@@ -114,7 +111,7 @@ describe('Client config validation', () => {
         new SplitsClient({
           chainId: 1,
           includeEnsNames: true,
-          provider,
+          publicClient,
         }),
     ).not.toThrow()
   })
@@ -167,12 +164,12 @@ describe('Client config validation', () => {
 })
 
 describe('SplitMain writes', () => {
-  const provider = new mockProvider()
-  const signer = new mockSigner()
+  const publicClient = new mockProvider()
+  const account = new mockSigner()
   const splitsClient = new SplitsClient({
     chainId: 1,
-    provider,
-    signer,
+    publicClient,
+    account,
   })
 
   beforeEach(() => {
@@ -180,7 +177,7 @@ describe('SplitMain writes', () => {
     ;(validateAddress as jest.Mock).mockClear()
     getTransactionEventsSpy.mockClear()
     getSortedRecipientsMock.mockClear()
-    getBigNumberMock.mockClear()
+    getBigIntMock.mockClear()
   })
 
   describe('Create split tests', () => {
@@ -213,7 +210,7 @@ describe('SplitMain writes', () => {
     test('Create split fails with no signer', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
@@ -240,12 +237,12 @@ describe('SplitMain writes', () => {
         }),
       )
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
-      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
+      expect(getBigIntMock).toBeCalledWith(distributorFeePercent)
       expect(writeActions.createSplit).toBeCalledWith(
         SORTED_ADDRESSES,
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
-        AddressZero,
+        ADDRESS_ZERO,
         {},
       )
       expect(getTransactionEventsSpy).toBeCalledWith(createSplitResult, [
@@ -271,7 +268,7 @@ describe('SplitMain writes', () => {
         }),
       )
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
-      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
+      expect(getBigIntMock).toBeCalledWith(distributorFeePercent)
       expect(writeActions.createSplit).toBeCalledWith(
         SORTED_ADDRESSES,
         SORTED_ALLOCATIONS,
@@ -317,7 +314,7 @@ describe('SplitMain writes', () => {
     test('Update split fails with no signer', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
@@ -334,8 +331,8 @@ describe('SplitMain writes', () => {
       const nonControllerSigner = new mockSignerNonController()
       const badSplitsClient = new SplitsClient({
         chainId: 1,
-        provider,
-        signer: nonControllerSigner,
+        publicClient,
+        account: nonControllerSigner,
       })
 
       await expect(
@@ -364,7 +361,7 @@ describe('SplitMain writes', () => {
         }),
       )
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
-      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
+      expect(getBigIntMock).toBeCalledWith(distributorFeePercent)
       expect(writeActions.updateSplit).toBeCalledWith(
         splitId,
         SORTED_ADDRESSES,
@@ -415,7 +412,7 @@ describe('SplitMain writes', () => {
         async () =>
           await badSplitsClient.distributeToken({
             splitId,
-            token: AddressZero,
+            token: ADDRESS_ZERO,
           }),
       ).rejects.toThrow(MissingProviderError)
     })
@@ -423,14 +420,14 @@ describe('SplitMain writes', () => {
     test('Distribute token fails with no signer', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
         async () =>
           await badSplitsClient.distributeToken({
             splitId,
-            token: AddressZero,
+            token: ADDRESS_ZERO,
           }),
       ).rejects.toThrow(MissingSignerError)
     })
@@ -438,15 +435,15 @@ describe('SplitMain writes', () => {
     test('Distribute eth passes', async () => {
       const { event } = await splitsClient.distributeToken({
         splitId,
-        token: AddressZero,
+        token: ADDRESS_ZERO,
       })
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitId)
-      expect(validateAddress).toBeCalledWith(AddressZero)
+      expect(validateAddress).toBeCalledWith(ADDRESS_ZERO)
       expect(validateAddress).toBeCalledWith(CONTROLLER_ADDRESS)
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
-      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
+      expect(getBigIntMock).toBeCalledWith(distributorFeePercent)
       expect(writeActions.distributeETH).toBeCalledWith(
         splitId,
         SORTED_ADDRESSES,
@@ -472,7 +469,7 @@ describe('SplitMain writes', () => {
       expect(validateAddress).toBeCalledWith(token)
       expect(validateAddress).toBeCalledWith(CONTROLLER_ADDRESS)
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
-      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
+      expect(getBigIntMock).toBeCalledWith(distributorFeePercent)
       expect(writeActions.distributeERC20).toBeCalledWith(
         splitId,
         token,
@@ -491,16 +488,16 @@ describe('SplitMain writes', () => {
       const distributorAddress = '0xdistributor'
       const { event } = await splitsClient.distributeToken({
         splitId,
-        token: AddressZero,
+        token: ADDRESS_ZERO,
         distributorAddress,
       })
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitId)
-      expect(validateAddress).toBeCalledWith(AddressZero)
+      expect(validateAddress).toBeCalledWith(ADDRESS_ZERO)
       expect(validateAddress).toBeCalledWith(distributorAddress)
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
-      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
+      expect(getBigIntMock).toBeCalledWith(distributorFeePercent)
       expect(writeActions.distributeETH).toBeCalledWith(
         splitId,
         SORTED_ADDRESSES,
@@ -528,7 +525,7 @@ describe('SplitMain writes', () => {
       expect(validateAddress).toBeCalledWith(token)
       expect(validateAddress).toBeCalledWith(distributorAddress)
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
-      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
+      expect(getBigIntMock).toBeCalledWith(distributorFeePercent)
       expect(writeActions.distributeERC20).toBeCalledWith(
         splitId,
         token,
@@ -579,7 +576,7 @@ describe('SplitMain writes', () => {
             splitId,
             recipients,
             distributorFeePercent,
-            token: AddressZero,
+            token: ADDRESS_ZERO,
           }),
       ).rejects.toThrow(MissingProviderError)
     })
@@ -587,7 +584,7 @@ describe('SplitMain writes', () => {
     test('Update and distribute fails with no signer', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
@@ -596,7 +593,7 @@ describe('SplitMain writes', () => {
             splitId,
             recipients,
             distributorFeePercent,
-            token: AddressZero,
+            token: ADDRESS_ZERO,
           }),
       ).rejects.toThrow(MissingSignerError)
     })
@@ -605,8 +602,8 @@ describe('SplitMain writes', () => {
       const nonControllerSigner = new mockSignerNonController()
       const badSplitsClient = new SplitsClient({
         chainId: 1,
-        provider,
-        signer: nonControllerSigner,
+        publicClient,
+        account: nonControllerSigner,
       })
 
       await expect(
@@ -615,7 +612,7 @@ describe('SplitMain writes', () => {
             splitId,
             recipients,
             distributorFeePercent,
-            token: AddressZero,
+            token: ADDRESS_ZERO,
           }),
       ).rejects.toThrow(InvalidAuthError)
     })
@@ -625,12 +622,12 @@ describe('SplitMain writes', () => {
         splitId,
         recipients,
         distributorFeePercent,
-        token: AddressZero,
+        token: ADDRESS_ZERO,
       })
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitId)
-      expect(validateAddress).toBeCalledWith(AddressZero)
+      expect(validateAddress).toBeCalledWith(ADDRESS_ZERO)
       expect(validateAddress).toBeCalledWith(CONTROLLER_ADDRESS)
       expect(validateSplitInputs).toBeCalledWith(
         expect.objectContaining({
@@ -639,7 +636,7 @@ describe('SplitMain writes', () => {
         }),
       )
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
-      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
+      expect(getBigIntMock).toBeCalledWith(distributorFeePercent)
       expect(writeActions.updateAndDistributeETH).toBeCalledWith(
         splitId,
         SORTED_ADDRESSES,
@@ -672,7 +669,7 @@ describe('SplitMain writes', () => {
         distributorFeePercent,
       })
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
-      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
+      expect(getBigIntMock).toBeCalledWith(distributorFeePercent)
       expect(writeActions.updateAndDistributeERC20).toBeCalledWith(
         splitId,
         token,
@@ -694,20 +691,20 @@ describe('SplitMain writes', () => {
         splitId,
         recipients,
         distributorFeePercent,
-        token: AddressZero,
+        token: ADDRESS_ZERO,
         distributorAddress,
       })
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitId)
-      expect(validateAddress).toBeCalledWith(AddressZero)
+      expect(validateAddress).toBeCalledWith(ADDRESS_ZERO)
       expect(validateAddress).toBeCalledWith(distributorAddress)
       expect(validateSplitInputs).toBeCalledWith({
         recipients,
         distributorFeePercent,
       })
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
-      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
+      expect(getBigIntMock).toBeCalledWith(distributorFeePercent)
       expect(writeActions.updateAndDistributeETH).toBeCalledWith(
         splitId,
         SORTED_ADDRESSES,
@@ -742,7 +739,7 @@ describe('SplitMain writes', () => {
         distributorFeePercent,
       })
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
-      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
+      expect(getBigIntMock).toBeCalledWith(distributorFeePercent)
       expect(writeActions.updateAndDistributeERC20).toBeCalledWith(
         splitId,
         token,
@@ -780,7 +777,7 @@ describe('SplitMain writes', () => {
         async () =>
           await badSplitsClient.withdrawFunds({
             address,
-            tokens: [AddressZero],
+            tokens: [ADDRESS_ZERO],
           }),
       ).rejects.toThrow(MissingProviderError)
     })
@@ -788,20 +785,20 @@ describe('SplitMain writes', () => {
     test('Withdraw fails with no signer', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
         async () =>
           await badSplitsClient.withdrawFunds({
             address,
-            tokens: [AddressZero],
+            tokens: [ADDRESS_ZERO],
           }),
       ).rejects.toThrow(MissingSignerError)
     })
 
     test('Withdraw passes with erc20 and eth', async () => {
-      const tokens = [AddressZero, '0xerc20']
+      const tokens = [ADDRESS_ZERO, '0xerc20']
 
       const { event } = await splitsClient.withdrawFunds({
         address,
@@ -868,7 +865,7 @@ describe('SplitMain writes', () => {
     test('Initate transfer fails with no signer', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
@@ -884,8 +881,8 @@ describe('SplitMain writes', () => {
       const nonControllerSigner = new mockSignerNonController()
       const badSplitsClient = new SplitsClient({
         chainId: 1,
-        provider,
-        signer: nonControllerSigner,
+        publicClient,
+        account: nonControllerSigner,
       })
 
       await expect(
@@ -946,7 +943,7 @@ describe('SplitMain writes', () => {
     test('Cancel transfer fails with no signer', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
@@ -961,8 +958,8 @@ describe('SplitMain writes', () => {
       const nonControllerSigner = new mockSignerNonController()
       const badSplitsClient = new SplitsClient({
         chainId: 1,
-        provider,
-        signer: nonControllerSigner,
+        publicClient,
+        account: nonControllerSigner,
       })
 
       await expect(
@@ -1015,7 +1012,7 @@ describe('SplitMain writes', () => {
     test('Accept transfer fails with no signer', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
@@ -1036,11 +1033,11 @@ describe('SplitMain writes', () => {
     })
 
     test('Accept transfer passes', async () => {
-      const signer = new mockSignerNewController()
+      const account = new mockSignerNewController()
       const splitsClient = new SplitsClient({
         chainId: 1,
-        provider,
-        signer,
+        publicClient,
+        account,
       })
 
       const { event } = await splitsClient.acceptControlTransfer({
@@ -1086,7 +1083,7 @@ describe('SplitMain writes', () => {
     test('Make immutable fails with no signer', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
@@ -1101,8 +1098,8 @@ describe('SplitMain writes', () => {
       const nonControllerSigner = new mockSignerNonController()
       const badSplitsClient = new SplitsClient({
         chainId: 1,
-        provider,
-        signer: nonControllerSigner,
+        publicClient,
+        account: nonControllerSigner,
       })
 
       await expect(
@@ -1129,17 +1126,17 @@ describe('SplitMain writes', () => {
 })
 
 describe('SplitMain reads', () => {
-  const provider = new mockProvider()
+  const publicClient = new mockProvider()
   const splitsClient = new SplitsClient({
     chainId: 1,
-    provider,
+    publicClient,
   })
 
   beforeEach(() => {
     ;(validateSplitInputs as jest.Mock).mockClear()
     ;(validateAddress as jest.Mock).mockClear()
     getSortedRecipientsMock.mockClear()
-    getBigNumberMock.mockClear()
+    getBigIntMock.mockClear()
   })
 
   describe('Get split balance test', () => {
@@ -1163,20 +1160,20 @@ describe('SplitMain reads', () => {
     })
 
     test('Returns eth balance', async () => {
-      readActions.getETHBalance.mockReturnValueOnce(BigNumber.from(12))
+      readActions.getETHBalance.mockReturnValueOnce(BigInt(12))
       const { balance } = await splitsClient.getSplitBalance({ splitId })
 
-      expect(balance).toEqual(BigNumber.from(12))
+      expect(balance).toEqual(BigInt(12))
       expect(validateAddress).toBeCalledWith(splitId)
       expect(readActions.getETHBalance).toBeCalledWith(splitId)
     })
 
     test('Returns ERC20 balance', async () => {
       const token = '0xerc20'
-      readActions.getERC20Balance.mockReturnValueOnce(BigNumber.from(19))
+      readActions.getERC20Balance.mockReturnValueOnce(BigInt(19))
       const { balance } = await splitsClient.getSplitBalance({ splitId, token })
 
-      expect(balance).toEqual(BigNumber.from(19))
+      expect(balance).toEqual(BigInt(19))
       expect(validateAddress).toBeCalledWith(splitId)
       expect(readActions.getERC20Balance).toBeCalledWith(splitId, token)
     })
@@ -1217,7 +1214,7 @@ describe('SplitMain reads', () => {
         distributorFeePercent,
       })
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
-      expect(getBigNumberMock).toBeCalledWith(distributorFeePercent)
+      expect(getBigIntMock).toBeCalledWith(distributorFeePercent)
       expect(readActions.predictImmutableSplitAddress).toBeCalledWith(
         SORTED_ADDRESSES,
         SORTED_ALLOCATIONS,
@@ -1373,10 +1370,10 @@ describe('Graphql reads', () => {
     })
 
     test('Adds ens names', async () => {
-      const provider = new mockProvider()
+      const publicClient = new mockProvider()
       const ensSplitsClient = new SplitsClient({
         chainId: 1,
-        provider,
+        publicClient,
         includeEnsNames: true,
       })
 
@@ -1436,10 +1433,10 @@ describe('Graphql reads', () => {
     })
 
     test('Adds ens names', async () => {
-      const provider = new mockProvider()
+      const publicClient = new mockProvider()
       const ensSplitsClient = new SplitsClient({
         chainId: 1,
-        provider,
+        publicClient,
         includeEnsNames: true,
       })
 
