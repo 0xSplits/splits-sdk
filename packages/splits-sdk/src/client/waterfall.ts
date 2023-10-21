@@ -281,6 +281,7 @@ class WaterfallTransactions extends BaseTransactions {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class WaterfallClient extends WaterfallTransactions {
   readonly eventTopics: { [key: string]: Hex[] }
   readonly callData: WaterfallCallData
@@ -619,6 +620,8 @@ export class WaterfallClient extends WaterfallTransactions {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface WaterfallClient extends BaseClientMixin {}
 applyMixins(WaterfallClient, [BaseClientMixin])
 
 class WaterfallGasEstimates extends WaterfallTransactions {

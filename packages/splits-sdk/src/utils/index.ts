@@ -44,8 +44,8 @@ import { reverseRecordsAbi } from '../constants/abi/reverseRecords'
 
 export const getRecipientSortedAddressesAndAllocations = (
   recipients: SplitRecipient[],
-): [string[], bigint[]] => {
-  const accounts: string[] = []
+): [Address[], bigint[]] => {
+  const accounts: Address[] = []
   const percentAllocations: bigint[] = []
 
   recipients
@@ -54,7 +54,7 @@ export const getRecipientSortedAddressesAndAllocations = (
       return -1
     })
     .map((value) => {
-      accounts.push(value.address)
+      accounts.push(getAddress(value.address))
       percentAllocations.push(getBigIntFromPercent(value.percentAllocation))
     })
 

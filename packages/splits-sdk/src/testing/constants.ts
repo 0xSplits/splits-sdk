@@ -16,7 +16,7 @@ const SAMPLE_ADDRESSES: Address[] = [
 
 export const CONTROLLER_ADDRESS = '0xcontroller'
 export const NEW_CONTROLLER_ADDRESS = '0xnewController'
-export const SORTED_ADDRESSES = ['0xsorted']
+export const SORTED_ADDRESSES: Address[] = ['0xsorted']
 export const SORTED_ALLOCATIONS = [BigInt(50)]
 export const DISTRIBUTOR_FEE = BigInt(9)
 export const NFT_COUNTS = [400, 600]

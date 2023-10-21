@@ -195,6 +195,7 @@ class PassThroughWalletTransactions extends BaseTransactions {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class PassThroughWalletClient extends PassThroughWalletTransactions {
   readonly eventTopics: { [key: string]: Hex[] }
   readonly callData: PassThroughWalletCallData
@@ -482,6 +483,8 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface PassThroughWalletClient extends BaseClientMixin {}
 applyMixins(PassThroughWalletClient, [BaseClientMixin])
 
 class PassThroughWalletGasEstimates extends PassThroughWalletTransactions {

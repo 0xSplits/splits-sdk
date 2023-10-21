@@ -33,7 +33,7 @@ const LIQUID_SPLIT_FACTORY_ADDRESS_BSC =
   '0xCDe071bE119024EdC970B3Da15003ee834ae40D2'
 const RECOUP_ADDRESS_BSC = '0x5ff0C88311F79803B43e9Dc3F2B20F49A6b680fd'
 
-export const getSplitMainAddress = (chainId: number): string => {
+export const getSplitMainAddress = (chainId: number): Address => {
   if (chainId === ChainId.BSC) return SPLIT_MAIN_ADDRESS_BSC
   return SPLIT_MAIN_ADDRESS
 }

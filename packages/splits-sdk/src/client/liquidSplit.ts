@@ -249,6 +249,7 @@ class LiquidSplitTransactions extends BaseTransactions {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class LiquidSplitClient extends LiquidSplitTransactions {
   readonly eventTopics: { [key: string]: Hex[] }
   readonly callData: LiquidSplitCallData
@@ -541,6 +542,8 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface LiquidSplitClient extends BaseClientMixin {}
 applyMixins(LiquidSplitClient, [BaseClientMixin])
 
 class LiquidSplitGasEstimates extends LiquidSplitTransactions {

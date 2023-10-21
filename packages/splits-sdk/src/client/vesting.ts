@@ -136,6 +136,7 @@ class VestingTransactions extends BaseTransactions {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class VestingClient extends VestingTransactions {
   readonly eventTopics: { [key: string]: Hex[] }
   readonly callData: VestingCallData
@@ -451,6 +452,8 @@ export class VestingClient extends VestingTransactions {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface VestingClient extends BaseClientMixin {}
 applyMixins(VestingClient, [BaseClientMixin])
 
 class VestingGasEstimates extends VestingTransactions {

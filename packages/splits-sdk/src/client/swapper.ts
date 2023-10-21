@@ -434,6 +434,7 @@ class SwapperTransactions extends BaseTransactions {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class SwapperClient extends SwapperTransactions {
   readonly eventTopics: { [key: string]: Hex[] }
   readonly callData: SwapperCallData
@@ -934,6 +935,8 @@ export class SwapperClient extends SwapperTransactions {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface SwapperClient extends BaseClientMixin {}
 applyMixins(SwapperClient, [BaseClientMixin])
 
 class SwapperGasEstimates extends SwapperTransactions {
