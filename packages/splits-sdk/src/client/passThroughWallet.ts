@@ -193,14 +193,6 @@ class PassThroughWalletTransactions extends BaseTransactions {
       publicClient: this._provider,
     })
   }
-
-  private _getPassThroughWalletFactoryContract() {
-    return getContract({
-      address: getPassThroughWalletFactoryAddress(this._chainId),
-      abi: passThroughWalletFactoryAbi,
-      publicClient: this._provider,
-    })
-  }
 }
 
 export class PassThroughWalletClient extends PassThroughWalletTransactions {

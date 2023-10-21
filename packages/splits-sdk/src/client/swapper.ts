@@ -1,12 +1,3 @@
-import { Interface } from '@ethersproject/abi'
-import { BigNumber } from '@ethersproject/bignumber'
-import { AddressZero } from '@ethersproject/constants'
-import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
-
-import SWAPPER_FACTORY_ARTIFACT from '../artifacts/contracts/SwapperFactory/SwapperFactory.json'
-import SWAPPER_ARTIFACT from '../artifacts/contracts/Swapper/Swapper.json'
-import UNIV3SWAP_ARTIFACT from '../artifacts/contracts/UniV3Swap/UniV3Swap.json'
-
 import {
   BaseClientMixin,
   BaseGasEstimatesMixin,
@@ -17,6 +8,7 @@ import {
   getSwapperFactoryAddress,
   SWAPPER_CHAIN_IDS,
   getUniV3SwapAddress,
+  ADDRESS_ZERO,
 } from '../constants'
 import {
   AccountNotFoundError,
@@ -57,38 +49,39 @@ import {
   validateScaledOfferFactorOverrides,
   validateUniV3SwapInputAssets,
 } from '../utils/validation'
-import { ContractCallData } from '../utils/multicall'
 import { GqlSwapper } from '../subgraph/types'
 import { SWAPPER_QUERY, protectedFormatSwapper } from '../subgraph'
-
-const swapperFactoryInterface = new Interface(SWAPPER_FACTORY_ARTIFACT.abi)
-const swapperInterface = new Interface(SWAPPER_ARTIFACT.abi)
-const uniV3SwapInterface = new Interface(UNIV3SWAP_ARTIFACT.abi)
+import { swapperFactoryAbi } from '../constants/abi/swapperFactory'
+import { uniV3SwapAbi } from '../constants/abi/uniV3Swap'
+import {
+  Address,
+  Hash,
+  Hex,
+  Log,
+  decodeEventLog,
+  encodeEventTopics,
+  getAddress,
+  getContract,
+} from 'viem'
+import { swapperAbi } from '../constants/abi/swapper'
 
 class SwapperTransactions extends BaseTransactions {
-  private readonly _swapperFactoryContract:
-    | ContractCallData
-    | Contract
-    | Contract['estimateGas']
-
   constructor({
     transactionType,
     chainId,
-    provider,
+    publicClient,
     ensProvider,
-    signer,
+    account,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
       transactionType,
       chainId,
-      provider,
+      publicClient,
       ensProvider,
-      signer,
+      account,
       includeEnsNames,
     })
-
-    this._swapperFactoryContract = this._getSwapperFactoryContract()
   }
 
   protected async _createSwapperTransaction({
@@ -116,21 +109,23 @@ class SwapperTransactions extends BaseTransactions {
     const formattedScaledOfferFactorOverrides =
       getFormattedScaledOfferFactorOverrides(scaledOfferFactorOverrides)
 
-    const createSwapperResult =
-      await this._swapperFactoryContract.createSwapper(
-        [
-          owner,
-          paused,
-          beneficiary,
-          tokenToBeneficiary,
-          formattedOracleParams,
-          formattedDefaultScaledOfferFactor,
-          formattedScaledOfferFactorOverrides,
-        ],
-        transactionOverrides,
-      )
+    const result = await this._executeContractFunction({
+      contractAddress: getSwapperFactoryAddress(this._chainId),
+      contractAbi: swapperFactoryAbi,
+      functionName: 'createSwapper',
+      functionArgs: [
+        owner,
+        paused,
+        beneficiary,
+        tokenToBeneficiary,
+        formattedOracleParams,
+        formattedDefaultScaledOfferFactor,
+        formattedScaledOfferFactorOverrides,
+      ],
+      transactionOverrides,
+    })
 
-    return createSwapperResult
+    return result
   }
 
   protected async _uniV3FlashSwapTransaction({
@@ -149,9 +144,9 @@ class SwapperTransactions extends BaseTransactions {
 
     const excessRecipientAddress = excessRecipient
       ? excessRecipient
-      : this._signer
-      ? await this._signer.getAddresses()?.[0]
-      : AddressZero
+      : this._signer?.account
+      ? this._signer.account.address
+      : ADDRESS_ZERO
     validateAddress(excessRecipientAddress)
 
     // TO DO: handle bad swapper id/no metadata found
@@ -159,7 +154,6 @@ class SwapperTransactions extends BaseTransactions {
       swapperId,
     })
 
-    const uniV3SwapContract = this._getUniV3SwapContract()
     const swapRecipient = getUniV3SwapAddress(this._chainId)
     const deadlineTime = Math.floor(Date.now() / 1000) + transactionTimeLimit
 
@@ -169,7 +163,7 @@ class SwapperTransactions extends BaseTransactions {
       quoteParams.push([
         [inputAsset.token, tokenToBeneficiary.address],
         inputAsset.amountIn,
-        AddressZero,
+        ADDRESS_ZERO,
       ])
       if (inputAsset.encodedPath) {
         exactInputParams.push([
@@ -187,13 +181,15 @@ class SwapperTransactions extends BaseTransactions {
       [exactInputParams, excessRecipientAddress],
     ]
 
-    const flashResult = await uniV3SwapContract.initFlash(
-      swapperId,
-      flashParams,
+    const result = await this._executeContractFunction({
+      contractAddress: getUniV3SwapAddress(this._chainId),
+      contractAbi: uniV3SwapAbi,
+      functionName: 'initFlash',
+      functionArgs: [swapperId, flashParams],
       transactionOverrides,
-    )
+    })
 
-    return flashResult
+    return result
   }
 
   protected async _setBeneficiaryTransaction({
@@ -208,13 +204,15 @@ class SwapperTransactions extends BaseTransactions {
       await this._requireOwner(swapperId)
     }
 
-    const swapperContract = this._getSwapperContract(swapperId)
-    const editResult = await swapperContract.setBeneficiary(
-      beneficiary,
+    const result = await this._executeContractFunction({
+      contractAddress: getAddress(swapperId),
+      contractAbi: swapperAbi,
+      functionName: 'setBeneficiary',
+      functionArgs: [beneficiary],
       transactionOverrides,
-    )
+    })
 
-    return editResult
+    return result
   }
 
   protected async _setTokenToBeneficiaryTransaction({
@@ -229,13 +227,15 @@ class SwapperTransactions extends BaseTransactions {
       await this._requireOwner(swapperId)
     }
 
-    const swapperContract = this._getSwapperContract(swapperId)
-    const editResult = await swapperContract.setTokenToBeneficiary(
-      tokenToBeneficiary,
+    const result = await this._executeContractFunction({
+      contractAddress: getAddress(swapperId),
+      contractAbi: swapperAbi,
+      functionName: 'setTokenToBeneficiary',
+      functionArgs: [tokenToBeneficiary],
       transactionOverrides,
-    )
+    })
 
-    return editResult
+    return result
   }
 
   protected async _setOracleTransaction({
@@ -250,13 +250,15 @@ class SwapperTransactions extends BaseTransactions {
       await this._requireOwner(swapperId)
     }
 
-    const swapperContract = this._getSwapperContract(swapperId)
-    const editResult = await swapperContract.setOracle(
-      oracle,
+    const result = await this._executeContractFunction({
+      contractAddress: getAddress(swapperId),
+      contractAbi: swapperAbi,
+      functionName: 'setOracle',
+      functionArgs: [oracle],
       transactionOverrides,
-    )
+    })
 
-    return editResult
+    return result
   }
 
   protected async _setDefaultScaledOfferFactorTransaction({
@@ -275,13 +277,15 @@ class SwapperTransactions extends BaseTransactions {
       defaultScaledOfferFactorPercent,
     )
 
-    const swapperContract = this._getSwapperContract(swapperId)
-    const editResult = await swapperContract.setDefaultScaledOfferFactor(
-      formattedDefaultScaledOfferFactor,
+    const result = await this._executeContractFunction({
+      contractAddress: getAddress(swapperId),
+      contractAbi: swapperAbi,
+      functionName: 'setDefaultScaledOfferFactor',
+      functionArgs: [formattedDefaultScaledOfferFactor],
       transactionOverrides,
-    )
+    })
 
-    return editResult
+    return result
   }
 
   protected async _setScaledOfferFactorOverridesTransaction({
@@ -299,13 +303,15 @@ class SwapperTransactions extends BaseTransactions {
     const formattedScaledOfferFactorOverrides =
       getFormattedScaledOfferFactorOverrides(scaledOfferFactorOverrides)
 
-    const swapperContract = this._getSwapperContract(swapperId)
-    const editResult = await swapperContract.setPairScaledOfferFactors(
-      formattedScaledOfferFactorOverrides,
+    const result = await this._executeContractFunction({
+      contractAddress: getAddress(swapperId),
+      contractAbi: swapperAbi,
+      functionName: 'setPairScaledOfferFactors',
+      functionArgs: [formattedScaledOfferFactorOverrides],
       transactionOverrides,
-    )
+    })
 
-    return editResult
+    return result
   }
 
   protected async _execCallsTransaction({
@@ -320,16 +326,19 @@ class SwapperTransactions extends BaseTransactions {
       await this._requireOwner(swapperId)
     }
 
-    const swapperContract = this._getSwapperContract(swapperId)
     const formattedCalls = calls.map((callData) => {
       return [callData.to, callData.value, callData.data]
     })
-    const execCallsResult = await swapperContract.execCalls(
-      formattedCalls,
-      transactionOverrides,
-    )
 
-    return execCallsResult
+    const result = await this._executeContractFunction({
+      contractAddress: getAddress(swapperId),
+      contractAbi: swapperAbi,
+      functionName: 'execCalls',
+      functionArgs: [formattedCalls],
+      transactionOverrides,
+    })
+
+    return result
   }
 
   protected async _setPausedTransaction({
@@ -343,13 +352,15 @@ class SwapperTransactions extends BaseTransactions {
       await this._requireOwner(swapperId)
     }
 
-    const swapperContract = this._getSwapperContract(swapperId)
-    const pauseResult = await swapperContract.setPaused(
-      paused,
+    const result = await this._executeContractFunction({
+      contractAddress: getAddress(swapperId),
+      contractAbi: swapperAbi,
+      functionName: 'setPaused',
+      functionArgs: [paused],
       transactionOverrides,
-    )
+    })
 
-    return pauseResult
+    return result
   }
 
   // Graphql read actions
@@ -386,11 +397,11 @@ class SwapperTransactions extends BaseTransactions {
 
   private async _requireOwner(swapperId: string) {
     const swapperContract = this._getSwapperContract(swapperId)
-    const owner = await swapperContract.owner()
+    const owner = await swapperContract.read.owner()
     // TODO: how to get rid of this, needed for typescript check
-    if (!this._signer) throw new Error()
+    if (!this._signer?.account) throw new Error()
 
-    const signerAddress = await this._signer.getAddresses()?.[0]
+    const signerAddress = this._signer.account.address
 
     if (owner !== signerAddress)
       throw new InvalidAuthError(
@@ -399,48 +410,48 @@ class SwapperTransactions extends BaseTransactions {
   }
 
   protected _getUniV3SwapContract() {
-    return this._getTransactionContract<Contract, Contract['estimateGas']>(
-      getUniV3SwapAddress(this._chainId),
-      UNIV3SWAP_ARTIFACT.abi,
-      uniV3SwapInterface,
-    )
+    return getContract({
+      address: getUniV3SwapAddress(this._chainId),
+      abi: uniV3SwapAbi,
+      publicClient: this._provider,
+    })
   }
 
   protected _getSwapperContract(swapper: string) {
-    return this._getTransactionContract<Contract, Contract['estimateGas']>(
-      swapper,
-      SWAPPER_ARTIFACT.abi,
-      swapperInterface,
-    )
+    return getContract({
+      address: getAddress(swapper),
+      abi: swapperAbi,
+      publicClient: this._provider,
+    })
   }
 
   private _getSwapperFactoryContract() {
-    return this._getTransactionContract<Contract, Contract['estimateGas']>(
-      getSwapperFactoryAddress(this._chainId),
-      SWAPPER_FACTORY_ARTIFACT.abi,
-      swapperFactoryInterface,
-    )
+    return getContract({
+      address: getSwapperFactoryAddress(this._chainId),
+      abi: swapperFactoryAbi,
+      publicClient: this._provider,
+    })
   }
 }
 
 export class SwapperClient extends SwapperTransactions {
-  readonly eventTopics: { [key: string]: string[] }
+  readonly eventTopics: { [key: string]: Hex[] }
   readonly callData: SwapperCallData
   readonly estimateGas: SwapperGasEstimates
 
   constructor({
     chainId,
-    provider,
+    publicClient,
     ensProvider,
-    signer,
+    account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Transaction,
       chainId,
-      provider,
+      publicClient,
       ensProvider,
-      signer,
+      account,
       includeEnsNames,
     })
 
@@ -448,35 +459,74 @@ export class SwapperClient extends SwapperTransactions {
       throw new UnsupportedChainIdError(chainId, SWAPPER_CHAIN_IDS)
 
     this.eventTopics = {
-      createSwapper: [swapperFactoryInterface.getEventTopic('CreateSwapper')],
-      uniV3FlashSwap: [swapperInterface.getEventTopic('Flash')],
-      execCalls: [swapperInterface.getEventTopic('ExecCalls')],
-      setPaused: [swapperInterface.getEventTopic('SetPaused')],
-      setBeneficiary: [swapperInterface.getEventTopic('SetBeneficiary')],
-      setTokenToBeneficiary: [
-        swapperInterface.getEventTopic('SetTokenToBeneficiary'),
+      createSwapper: [
+        encodeEventTopics({
+          abi: swapperFactoryAbi,
+          eventName: 'CreateSwapper',
+        })[0],
       ],
-      setOracle: [swapperInterface.getEventTopic('SetOracle')],
+      uniV3FlashSwap: [
+        encodeEventTopics({
+          abi: swapperAbi,
+          eventName: 'Flash',
+        })[0],
+      ],
+      execCalls: [
+        encodeEventTopics({
+          abi: swapperAbi,
+          eventName: 'ExecCalls',
+        })[0],
+      ],
+      setPaused: [
+        encodeEventTopics({
+          abi: swapperAbi,
+          eventName: 'SetPaused',
+        })[0],
+      ],
+      setBeneficiary: [
+        encodeEventTopics({
+          abi: swapperAbi,
+          eventName: 'SetBeneficiary',
+        })[0],
+      ],
+      setTokenToBeneficiary: [
+        encodeEventTopics({
+          abi: swapperAbi,
+          eventName: 'SetTokenToBeneficiary',
+        })[0],
+      ],
+      setOracle: [
+        encodeEventTopics({
+          abi: swapperAbi,
+          eventName: 'SetOracle',
+        })[0],
+      ],
       setDefaultScaledOfferFactor: [
-        swapperInterface.getEventTopic('SetDefaultScaledOfferFactor'),
+        encodeEventTopics({
+          abi: swapperAbi,
+          eventName: 'SetDefaultScaledOfferFactor',
+        })[0],
       ],
       setScaledOfferFactorOverrides: [
-        swapperInterface.getEventTopic('SetPairScaledOfferFactors'),
+        encodeEventTopics({
+          abi: swapperAbi,
+          eventName: 'SetPairScaledOfferFactors',
+        })[0],
       ],
     }
 
     this.callData = new SwapperCallData({
       chainId,
-      provider,
+      publicClient,
       ensProvider,
-      signer,
+      account,
       includeEnsNames,
     })
     this.estimateGas = new SwapperGasEstimates({
       chainId,
-      provider,
+      publicClient,
       ensProvider,
-      signer,
+      account,
       includeEnsNames,
     })
   }
@@ -485,34 +535,41 @@ export class SwapperClient extends SwapperTransactions {
   async submitCreateSwapperTransaction(
     createSwapperArgs: CreateSwapperConfig,
   ): Promise<{
-    tx: ContractTransaction
+    txHash: Hash
   }> {
-    const createSwapperTx = await this._createSwapperTransaction(
-      createSwapperArgs,
-    )
-    if (!this._isContractTransaction(createSwapperTx))
+    const txHash = await this._createSwapperTransaction(createSwapperArgs)
+    if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
-    return { tx: createSwapperTx }
+    return { txHash }
   }
 
   async createSwapper(createSwapperArgs: CreateSwapperConfig): Promise<{
-    swapperId: string
-    event: Event
+    swapperId: Address
+    event: Log
   }> {
-    const { tx: createSwapperTx } = await this.submitCreateSwapperTransaction(
-      createSwapperArgs,
-    )
+    this._requireProvider()
+    if (!this._provider) throw new Error()
+
+    const { txHash } =
+      await this.submitCreateSwapperTransaction(createSwapperArgs)
     const events = await getTransactionEvents(
-      createSwapperTx,
+      this._provider,
+      txHash,
       this.eventTopics.createSwapper,
     )
     const event = events.length > 0 ? events[0] : undefined
-    if (event && event.args)
+    if (event) {
+      const log = decodeEventLog({
+        abi: swapperFactoryAbi,
+        data: event.data,
+        topics: event.topics,
+      })
       return {
-        swapperId: event.args.swapper,
+        swapperId: log.args.swapper,
         event,
       }
+    }
 
     throw new TransactionFailedError()
   }
@@ -520,23 +577,25 @@ export class SwapperClient extends SwapperTransactions {
   async submitUniV3FlashSwapTransaction(
     flashArgs: UniV3FlashSwapConfig,
   ): Promise<{
-    tx: ContractTransaction
+    txHash: Hash
   }> {
-    const flashTx = await this._uniV3FlashSwapTransaction(flashArgs)
-    if (!this._isContractTransaction(flashTx))
+    const txHash = await this._uniV3FlashSwapTransaction(flashArgs)
+    if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
-    return { tx: flashTx }
+    return { txHash }
   }
 
   async uniV3FlashSwap(flashArgs: UniV3FlashSwapConfig): Promise<{
-    event: Event
+    event: Log
   }> {
-    const { tx: flashTx } = await this.submitUniV3FlashSwapTransaction(
-      flashArgs,
-    )
+    this._requireProvider()
+    if (!this._provider) throw new Error()
+
+    const { txHash } = await this.submitUniV3FlashSwapTransaction(flashArgs)
     const events = await getTransactionEvents(
-      flashTx,
+      this._provider,
+      txHash,
       this.eventTopics.uniV3FlashSwap,
     )
     const event = events.length > 0 ? events[0] : undefined
@@ -549,21 +608,25 @@ export class SwapperClient extends SwapperTransactions {
   }
 
   async submitExecCallsTransaction(callArgs: SwapperExecCallsConfig): Promise<{
-    tx: ContractTransaction
+    txHash: Hash
   }> {
-    const execCallsTx = await this._execCallsTransaction(callArgs)
-    if (!this._isContractTransaction(execCallsTx))
+    const txHash = await this._execCallsTransaction(callArgs)
+    if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
-    return { tx: execCallsTx }
+    return { txHash }
   }
 
   async execCalls(callArgs: SwapperExecCallsConfig): Promise<{
-    event: Event
+    event: Log
   }> {
-    const { tx: execCallsTx } = await this.submitExecCallsTransaction(callArgs)
+    this._requireProvider()
+    if (!this._provider) throw new Error()
+
+    const { txHash } = await this.submitExecCallsTransaction(callArgs)
     const events = await getTransactionEvents(
-      execCallsTx,
+      this._provider,
+      txHash,
       this.eventTopics.execCalls,
     )
     const event = events.length > 0 ? events[0] : undefined
@@ -576,21 +639,24 @@ export class SwapperClient extends SwapperTransactions {
   }
 
   async submitSetPausedTransaction(pauseArgs: SwapperPauseConfig): Promise<{
-    tx: ContractTransaction
+    txHash: Hash
   }> {
-    const pauseTx = await this._setPausedTransaction(pauseArgs)
-    if (!this._isContractTransaction(pauseTx))
-      throw new Error('Invalid reponse')
+    const txHash = await this._setPausedTransaction(pauseArgs)
+    if (!this._isContractTransaction(txHash)) throw new Error('Invalid reponse')
 
-    return { tx: pauseTx }
+    return { txHash }
   }
 
   async setPaused(pauseArgs: SwapperPauseConfig): Promise<{
-    event: Event
+    event: Log
   }> {
-    const { tx: pauseTx } = await this.submitSetPausedTransaction(pauseArgs)
+    this._requireProvider()
+    if (!this._provider) throw new Error()
+
+    const { txHash } = await this.submitSetPausedTransaction(pauseArgs)
     const events = await getTransactionEvents(
-      pauseTx,
+      this._provider,
+      txHash,
       this.eventTopics.setPaused,
     )
     const event = events.length > 0 ? events[0] : undefined
@@ -605,20 +671,24 @@ export class SwapperClient extends SwapperTransactions {
   async submitSetBeneficiaryTransaction(
     args: SwapperSetBeneficiaryConfig,
   ): Promise<{
-    tx: ContractTransaction
+    txHash: Hash
   }> {
-    const tx = await this._setBeneficiaryTransaction(args)
-    if (!this._isContractTransaction(tx)) throw new Error('Invalid reponse')
+    const txHash = await this._setBeneficiaryTransaction(args)
+    if (!this._isContractTransaction(txHash)) throw new Error('Invalid reponse')
 
-    return { tx }
+    return { txHash }
   }
 
   async setBeneficiary(args: SwapperSetBeneficiaryConfig): Promise<{
-    event: Event
+    event: Log
   }> {
-    const { tx } = await this.submitSetBeneficiaryTransaction(args)
+    this._requireProvider()
+    if (!this._provider) throw new Error()
+
+    const { txHash } = await this.submitSetBeneficiaryTransaction(args)
     const events = await getTransactionEvents(
-      tx,
+      this._provider,
+      txHash,
       this.eventTopics.setBeneficiary,
     )
     const event = events.length > 0 ? events[0] : undefined
@@ -633,22 +703,26 @@ export class SwapperClient extends SwapperTransactions {
   async submitSetTokenToBeneficiaryTransaction(
     args: SwapperSetTokenToBeneficiaryConfig,
   ): Promise<{
-    tx: ContractTransaction
+    txHash: Hash
   }> {
-    const tx = await this._setTokenToBeneficiaryTransaction(args)
-    if (!this._isContractTransaction(tx)) throw new Error('Invalid reponse')
+    const txHash = await this._setTokenToBeneficiaryTransaction(args)
+    if (!this._isContractTransaction(txHash)) throw new Error('Invalid reponse')
 
-    return { tx }
+    return { txHash }
   }
 
   async setTokenToBeneficiary(
     args: SwapperSetTokenToBeneficiaryConfig,
   ): Promise<{
-    event: Event
+    event: Log
   }> {
-    const { tx } = await this.submitSetTokenToBeneficiaryTransaction(args)
+    this._requireProvider()
+    if (!this._provider) throw new Error()
+
+    const { txHash } = await this.submitSetTokenToBeneficiaryTransaction(args)
     const events = await getTransactionEvents(
-      tx,
+      this._provider,
+      txHash,
       this.eventTopics.setTokenToBeneficiary,
     )
     const event = events.length > 0 ? events[0] : undefined
@@ -661,19 +735,26 @@ export class SwapperClient extends SwapperTransactions {
   }
 
   async submitSetOracleTransaction(args: SwapperSetOracleConfig): Promise<{
-    tx: ContractTransaction
+    txHash: Hash
   }> {
-    const tx = await this._setOracleTransaction(args)
-    if (!this._isContractTransaction(tx)) throw new Error('Invalid reponse')
+    const txHash = await this._setOracleTransaction(args)
+    if (!this._isContractTransaction(txHash)) throw new Error('Invalid reponse')
 
-    return { tx }
+    return { txHash }
   }
 
   async setOracle(args: SwapperSetOracleConfig): Promise<{
-    event: Event
+    event: Log
   }> {
-    const { tx } = await this.submitSetOracleTransaction(args)
-    const events = await getTransactionEvents(tx, this.eventTopics.setOracle)
+    this._requireProvider()
+    if (!this._provider) throw new Error()
+
+    const { txHash } = await this.submitSetOracleTransaction(args)
+    const events = await getTransactionEvents(
+      this._provider,
+      txHash,
+      this.eventTopics.setOracle,
+    )
     const event = events.length > 0 ? events[0] : undefined
     if (event)
       return {
@@ -686,22 +767,27 @@ export class SwapperClient extends SwapperTransactions {
   async submitSetDefaultScaledOfferFactorTransaction(
     args: SwapperSetDefaultScaledOfferFactorConfig,
   ): Promise<{
-    tx: ContractTransaction
+    txHash: Hash
   }> {
-    const tx = await this._setDefaultScaledOfferFactorTransaction(args)
-    if (!this._isContractTransaction(tx)) throw new Error('Invalid reponse')
+    const txHash = await this._setDefaultScaledOfferFactorTransaction(args)
+    if (!this._isContractTransaction(txHash)) throw new Error('Invalid reponse')
 
-    return { tx }
+    return { txHash }
   }
 
   async setDefaultScaledOfferFactor(
     args: SwapperSetDefaultScaledOfferFactorConfig,
   ): Promise<{
-    event: Event
+    event: Log
   }> {
-    const { tx } = await this.submitSetDefaultScaledOfferFactorTransaction(args)
+    this._requireProvider()
+    if (!this._provider) throw new Error()
+
+    const { txHash } =
+      await this.submitSetDefaultScaledOfferFactorTransaction(args)
     const events = await getTransactionEvents(
-      tx,
+      this._provider,
+      txHash,
       this.eventTopics.setDefaultScaledOfferFactor,
     )
     const event = events.length > 0 ? events[0] : undefined
@@ -716,24 +802,27 @@ export class SwapperClient extends SwapperTransactions {
   async submitSetScaledOfferFactorOverridesTransaction(
     args: SwapperSetScaledOfferFactorOverridesConfig,
   ): Promise<{
-    tx: ContractTransaction
+    txHash: Hash
   }> {
-    const tx = await this._setScaledOfferFactorOverridesTransaction(args)
-    if (!this._isContractTransaction(tx)) throw new Error('Invalid reponse')
+    const txHash = await this._setScaledOfferFactorOverridesTransaction(args)
+    if (!this._isContractTransaction(txHash)) throw new Error('Invalid reponse')
 
-    return { tx }
+    return { txHash }
   }
 
   async setScaledOfferFactorOverrides(
     args: SwapperSetScaledOfferFactorOverridesConfig,
   ): Promise<{
-    event: Event
+    event: Log
   }> {
-    const { tx } = await this.submitSetScaledOfferFactorOverridesTransaction(
-      args,
-    )
+    this._requireProvider()
+    if (!this._provider) throw new Error()
+
+    const { txHash } =
+      await this.submitSetScaledOfferFactorOverridesTransaction(args)
     const events = await getTransactionEvents(
-      tx,
+      this._provider,
+      txHash,
       this.eventTopics.setScaledOfferFactorOverrides,
     )
     const event = events.length > 0 ? events[0] : undefined
@@ -753,7 +842,7 @@ export class SwapperClient extends SwapperTransactions {
     this._requireProvider()
 
     const swapperContract = this._getSwapperContract(swapperId)
-    const beneficiary = await swapperContract.beneficiary()
+    const beneficiary = await swapperContract.read.beneficiary()
 
     return {
       beneficiary,
@@ -767,7 +856,7 @@ export class SwapperClient extends SwapperTransactions {
     this._requireProvider()
 
     const swapperContract = this._getSwapperContract(swapperId)
-    const tokenToBeneficiary = await swapperContract.tokenToBeneficiary()
+    const tokenToBeneficiary = await swapperContract.read.tokenToBeneficiary()
 
     return {
       tokenToBeneficiary,
@@ -781,7 +870,7 @@ export class SwapperClient extends SwapperTransactions {
     this._requireProvider()
 
     const swapperContract = this._getSwapperContract(swapperId)
-    const oracle = await swapperContract.oracle()
+    const oracle = await swapperContract.read.oracle()
 
     return {
       oracle,
@@ -793,14 +882,14 @@ export class SwapperClient extends SwapperTransactions {
   }: {
     swapperId: string
   }): Promise<{
-    defaultScaledOfferFactor: BigNumber
+    defaultScaledOfferFactor: number
   }> {
     validateAddress(swapperId)
     this._requireProvider()
 
     const swapperContract = this._getSwapperContract(swapperId)
     const defaultScaledOfferFactor =
-      await swapperContract.defaultScaledOfferFactor()
+      await swapperContract.read.defaultScaledOfferFactor()
 
     return {
       defaultScaledOfferFactor,
@@ -817,7 +906,7 @@ export class SwapperClient extends SwapperTransactions {
       quote: string
     }[]
   }): Promise<{
-    scaledOfferFactorOverrides: BigNumber[]
+    scaledOfferFactorOverrides: number[]
   }> {
     validateAddress(swapperId)
     quotePairs.map((quotePair) => {
@@ -827,133 +916,131 @@ export class SwapperClient extends SwapperTransactions {
     this._requireProvider()
 
     const formattedQuotePairs = quotePairs.map((quotePair) => {
-      return [quotePair.base, quotePair.quote]
+      return {
+        base: getAddress(quotePair.base),
+        quote: getAddress(quotePair.quote),
+      }
     })
 
     const swapperContract = this._getSwapperContract(swapperId)
     const scaledOfferFactorOverrides =
-      await swapperContract.getPairScaledOfferFactors(formattedQuotePairs)
+      await swapperContract.read.getPairScaledOfferFactors([
+        formattedQuotePairs,
+      ])
 
     return {
-      scaledOfferFactorOverrides,
+      scaledOfferFactorOverrides: scaledOfferFactorOverrides.slice(),
     }
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface SwapperClient extends BaseClientMixin {}
 applyMixins(SwapperClient, [BaseClientMixin])
 
 class SwapperGasEstimates extends SwapperTransactions {
   constructor({
     chainId,
-    provider,
+    publicClient,
     ensProvider,
-    signer,
+    account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
       transactionType: TransactionType.GasEstimate,
       chainId,
-      provider,
+      publicClient,
       ensProvider,
-      signer,
+      account,
       includeEnsNames,
     })
   }
 
-  async createSwapper(
-    createSwapperArgs: CreateSwapperConfig,
-  ): Promise<BigNumber> {
+  async createSwapper(createSwapperArgs: CreateSwapperConfig): Promise<bigint> {
     const gasEstimate = await this._createSwapperTransaction(createSwapperArgs)
-    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
-  async uniV3FlashSwap(flashArgs: UniV3FlashSwapConfig): Promise<BigNumber> {
+  async uniV3FlashSwap(flashArgs: UniV3FlashSwapConfig): Promise<bigint> {
     const gasEstimate = await this._uniV3FlashSwapTransaction(flashArgs)
-    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
-  async execCalls(callArgs: SwapperExecCallsConfig): Promise<BigNumber> {
+  async execCalls(callArgs: SwapperExecCallsConfig): Promise<bigint> {
     const gasEstimate = await this._execCallsTransaction(callArgs)
-    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
-  async setPaused(args: SwapperPauseConfig): Promise<BigNumber> {
+  async setPaused(args: SwapperPauseConfig): Promise<bigint> {
     const gasEstimate = await this._setPausedTransaction(args)
-    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
-  async setBeneficiary(args: SwapperSetBeneficiaryConfig): Promise<BigNumber> {
+  async setBeneficiary(args: SwapperSetBeneficiaryConfig): Promise<bigint> {
     const gasEstimate = await this._setBeneficiaryTransaction(args)
-    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
   async setTokenToBeneficiary(
     args: SwapperSetTokenToBeneficiaryConfig,
-  ): Promise<BigNumber> {
+  ): Promise<bigint> {
     const gasEstimate = await this._setTokenToBeneficiaryTransaction(args)
-    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
-  async setOracle(args: SwapperSetOracleConfig): Promise<BigNumber> {
+  async setOracle(args: SwapperSetOracleConfig): Promise<bigint> {
     const gasEstimate = await this._setOracleTransaction(args)
-    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
   async setDefaultScaledOfferFactor(
     args: SwapperSetDefaultScaledOfferFactorConfig,
-  ): Promise<BigNumber> {
+  ): Promise<bigint> {
     const gasEstimate = await this._setDefaultScaledOfferFactorTransaction(args)
-    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
   async setScaledOfferFactorOverrides(
     args: SwapperSetScaledOfferFactorOverridesConfig,
-  ): Promise<BigNumber> {
-    const gasEstimate = await this._setScaledOfferFactorOverridesTransaction(
-      args,
-    )
-    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+  ): Promise<bigint> {
+    const gasEstimate =
+      await this._setScaledOfferFactorOverridesTransaction(args)
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-interface SwapperGasEstimates extends BaseGasEstimatesMixin {}
 applyMixins(SwapperGasEstimates, [BaseGasEstimatesMixin])
 
 class SwapperCallData extends SwapperTransactions {
   constructor({
     chainId,
-    provider,
+    publicClient,
     ensProvider,
-    signer,
+    account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
       transactionType: TransactionType.CallData,
       chainId,
-      provider,
+      publicClient,
       ensProvider,
-      signer,
+      account,
       includeEnsNames,
     })
   }

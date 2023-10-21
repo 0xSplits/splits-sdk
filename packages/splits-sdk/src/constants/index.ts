@@ -65,12 +65,12 @@ export const getPassThroughWalletFactoryAddress = (
   return PASS_THROUGH_WALLET_FACTORY_ADDRESS
 }
 
-export const getSwapperFactoryAddress = (chainId: number): string => {
+export const getSwapperFactoryAddress = (chainId: number): Address => {
   if (chainId === ChainId.BSC) return SWAPPER_FACTORY_ADDRESS
   return SWAPPER_FACTORY_ADDRESS
 }
 
-export const getUniV3SwapAddress = (chainId: number): string => {
+export const getUniV3SwapAddress = (chainId: number): Address => {
   if (chainId === ChainId.BSC) return UNI_V3_SWAP_ADDRESS
   return UNI_V3_SWAP_ADDRESS
 }

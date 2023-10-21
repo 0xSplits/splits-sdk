@@ -247,14 +247,6 @@ class LiquidSplitTransactions extends BaseTransactions {
       publicClient: this._provider,
     })
   }
-
-  private _getLiquidSplitFactoryContract() {
-    return getContract({
-      address: getLiquidSplitFactoryAddress(this._chainId),
-      abi: liquidSplitFactoryAbi,
-      publicClient: this._provider,
-    })
-  }
 }
 
 export class LiquidSplitClient extends LiquidSplitTransactions {
