@@ -2,6 +2,7 @@ import { getAddress, getContract } from 'viem'
 
 import { BaseTransactions } from './base'
 import { TransactionType, ORACLE_CHAIN_IDS } from '../constants'
+import { uniV3OracleAbi } from '../constants/abi/uniV3Oracle'
 import { UnsupportedChainIdError } from '../errors'
 import type {
   QuoteParams,
@@ -9,7 +10,6 @@ import type {
   TransactionConfig,
 } from '../types'
 import { validateAddress } from '../utils/validation'
-import { uniV3OracleAbi } from '../constants/abi/uniV3Oracle'
 
 class OracleTransactions extends BaseTransactions {
   constructor({

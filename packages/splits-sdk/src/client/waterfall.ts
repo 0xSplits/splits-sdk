@@ -624,6 +624,7 @@ export class WaterfallClient extends WaterfallTransactions {
 export interface WaterfallClient extends BaseClientMixin {}
 applyMixins(WaterfallClient, [BaseClientMixin])
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 class WaterfallGasEstimates extends WaterfallTransactions {
   constructor({
     chainId,
@@ -682,6 +683,8 @@ class WaterfallGasEstimates extends WaterfallTransactions {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+interface WaterfallGasEstimates extends BaseGasEstimatesMixin {}
 applyMixins(WaterfallGasEstimates, [BaseGasEstimatesMixin])
 
 class WaterfallCallData extends WaterfallTransactions {

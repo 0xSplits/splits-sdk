@@ -1,4 +1,15 @@
 import {
+  Address,
+  Hash,
+  Hex,
+  Log,
+  decodeEventLog,
+  encodeEventTopics,
+  getAddress,
+  getContract,
+} from 'viem'
+
+import {
   BaseClientMixin,
   BaseGasEstimatesMixin,
   BaseTransactions,
@@ -10,6 +21,9 @@ import {
   getUniV3SwapAddress,
   ADDRESS_ZERO,
 } from '../constants'
+import { swapperFactoryAbi } from '../constants/abi/swapperFactory'
+import { uniV3SwapAbi } from '../constants/abi/uniV3Swap'
+import { swapperAbi } from '../constants/abi/swapper'
 import {
   AccountNotFoundError,
   InvalidAuthError,
@@ -51,19 +65,6 @@ import {
 } from '../utils/validation'
 import { GqlSwapper } from '../subgraph/types'
 import { SWAPPER_QUERY, protectedFormatSwapper } from '../subgraph'
-import { swapperFactoryAbi } from '../constants/abi/swapperFactory'
-import { uniV3SwapAbi } from '../constants/abi/uniV3Swap'
-import {
-  Address,
-  Hash,
-  Hex,
-  Log,
-  decodeEventLog,
-  encodeEventTopics,
-  getAddress,
-  getContract,
-} from 'viem'
-import { swapperAbi } from '../constants/abi/swapper'
 
 class SwapperTransactions extends BaseTransactions {
   constructor({
@@ -939,6 +940,7 @@ export class SwapperClient extends SwapperTransactions {
 export interface SwapperClient extends BaseClientMixin {}
 applyMixins(SwapperClient, [BaseClientMixin])
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 class SwapperGasEstimates extends SwapperTransactions {
   constructor({
     chainId,
@@ -1028,6 +1030,8 @@ class SwapperGasEstimates extends SwapperTransactions {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+interface SwapperGasEstimates extends BaseGasEstimatesMixin {}
 applyMixins(SwapperGasEstimates, [BaseGasEstimatesMixin])
 
 class SwapperCallData extends SwapperTransactions {

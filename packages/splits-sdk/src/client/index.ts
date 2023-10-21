@@ -98,7 +98,7 @@ import {
 } from '../utils'
 import { validateAddress, validateSplitInputs } from '../utils/validation'
 
-const polygonInterfaceChainIds = [
+const polygonAbiChainIds = [
   ...POLYGON_CHAIN_IDS,
   ...OPTIMISM_CHAIN_IDS,
   ...ARBITRUM_CHAIN_IDS,
@@ -139,7 +139,7 @@ class SplitsTransactions extends BaseTransactions {
         abi: splitMainEthereumAbi,
         publicClient: this._provider,
       })
-    } else if (polygonInterfaceChainIds.includes(chainId)) {
+    } else if (polygonAbiChainIds.includes(chainId)) {
       this._splitMainAbi = splitMainPolygonAbi
       this._splitMainContract = getContract({
         address: getSplitMainAddress(chainId),
@@ -1427,6 +1427,7 @@ export class SplitsClient extends SplitsTransactions {
 export interface SplitsClient extends BaseClientMixin {}
 applyMixins(SplitsClient, [BaseClientMixin])
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 class SplitsGasEstimates extends SplitsTransactions {
   constructor({
     chainId,
@@ -1528,6 +1529,8 @@ class SplitsGasEstimates extends SplitsTransactions {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+interface SplitsGasEstimates extends BaseGasEstimatesMixin {}
 applyMixins(SplitsGasEstimates, [BaseGasEstimatesMixin])
 
 class SplitsCallData extends SplitsTransactions {

@@ -1,6 +1,4 @@
-import { Provider } from '@ethersproject/abstract-provider'
-import { Signer } from '@ethersproject/abstract-signer'
-import type { Event } from '@ethersproject/contracts'
+import { Log, PublicClient, WalletClient } from 'viem'
 
 import { getRecoupAddress } from '../constants'
 import {
@@ -69,13 +67,13 @@ const getDiversifierRecipientsMock = jest
   })
 const getTransactionEventsSpy = jest.spyOn(utils, 'getTransactionEvents')
 
-const mockProvider = jest.fn<Provider, unknown[]>()
-const mockSigner = jest.fn<Signer, unknown[]>(() => {
+const mockProvider = jest.fn<PublicClient, unknown[]>()
+const mockSigner = jest.fn<WalletClient, unknown[]>(() => {
   return {
     getAddress: () => {
       return CONTROLLER_ADDRESS
     },
-  } as unknown as Signer
+  } as unknown as WalletClient
 })
 
 describe('Client config validation', () => {
@@ -130,12 +128,12 @@ describe('Client config validation', () => {
 })
 
 describe('Template writes', () => {
-  const provider = new mockProvider()
-  const signer = new mockSigner()
+  const publicClient = new mockProvider()
+  const account = new mockSigner()
   const templatesClient = new TemplatesClient({
     chainId: 1,
-    provider,
-    signer,
+    publicClient,
+    account,
   })
 
   beforeEach(() => {
@@ -169,7 +167,7 @@ describe('Template writes', () => {
           args: {
             waterfallModule: '0xrecoup',
           },
-        } as unknown as Event,
+        } as unknown as Log,
       ])
     })
 
@@ -192,7 +190,7 @@ describe('Template writes', () => {
     test('Create recoup fails with no signer', async () => {
       const badClient = new TemplatesClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
@@ -229,7 +227,7 @@ describe('Template writes', () => {
         1,
         token,
         tranches,
-        provider,
+        publicClient,
       )
 
       expect(recoupWriteActions.createRecoup).toBeCalledWith(
@@ -287,7 +285,7 @@ describe('Template writes', () => {
           args: {
             diversifier: '0xpassthroughwallet',
           },
-        } as unknown as Event,
+        } as unknown as Log,
       ])
     })
 
@@ -310,7 +308,7 @@ describe('Template writes', () => {
     test('Create diversifier fails with no signer', async () => {
       const badClient = new TemplatesClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(

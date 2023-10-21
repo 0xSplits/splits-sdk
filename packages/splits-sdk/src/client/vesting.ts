@@ -1,4 +1,14 @@
 import {
+  Hash,
+  Hex,
+  Log,
+  decodeEventLog,
+  encodeEventTopics,
+  getAddress,
+  getContract,
+} from 'viem'
+
+import {
   BaseClientMixin,
   BaseGasEstimatesMixin,
   BaseTransactions,
@@ -8,6 +18,8 @@ import {
   VESTING_CHAIN_IDS,
   getVestingFactoryAddress,
 } from '../constants'
+import { vestingFactoryAbi } from '../constants/abi/vestingFactory'
+import { vestingAbi } from '../constants/abi/vesting'
 import {
   AccountNotFoundError,
   TransactionFailedError,
@@ -28,17 +40,6 @@ import type {
 } from '../types'
 import { getTransactionEvents, getTokenData, addEnsNames } from '../utils'
 import { validateAddress, validateVestingPeriod } from '../utils/validation'
-import { vestingFactoryAbi } from '../constants/abi/vestingFactory'
-import {
-  Hash,
-  Hex,
-  Log,
-  decodeEventLog,
-  encodeEventTopics,
-  getAddress,
-  getContract,
-} from 'viem'
-import { vestingAbi } from '../constants/abi/vesting'
 
 class VestingTransactions extends BaseTransactions {
   constructor({
@@ -456,6 +457,7 @@ export class VestingClient extends VestingTransactions {
 export interface VestingClient extends BaseClientMixin {}
 applyMixins(VestingClient, [BaseClientMixin])
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 class VestingGasEstimates extends VestingTransactions {
   constructor({
     chainId,
@@ -502,6 +504,8 @@ class VestingGasEstimates extends VestingTransactions {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+interface VestingGasEstimates extends BaseGasEstimatesMixin {}
 applyMixins(VestingGasEstimates, [BaseGasEstimatesMixin])
 
 class VestingCallData extends VestingTransactions {

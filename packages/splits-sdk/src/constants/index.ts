@@ -53,7 +53,7 @@ export const getLiquidSplitFactoryAddress = (chainId: number): Address => {
   return LIQUID_SPLIT_FACTORY_ADDRESS
 }
 
-export const getRecoupAddress = (chainId: number): string => {
+export const getRecoupAddress = (chainId: number): Address => {
   if (chainId === ChainId.BSC) return RECOUP_ADDRESS_BSC
   return RECOUP_ADDRESS
 }
@@ -75,7 +75,7 @@ export const getUniV3SwapAddress = (chainId: number): Address => {
   return UNI_V3_SWAP_ADDRESS
 }
 
-export const getDiversifierFactoryAddress = (chainId: number): string => {
+export const getDiversifierFactoryAddress = (chainId: number): Address => {
   if (chainId === ChainId.BSC) return DIVERSIFIER_FACTORY_ADDRESS
   return DIVERSIFIER_FACTORY_ADDRESS
 }

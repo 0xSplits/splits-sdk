@@ -1,4 +1,14 @@
 import { decode } from 'base-64'
+import {
+  Address,
+  Hash,
+  Hex,
+  Log,
+  decodeEventLog,
+  encodeEventTopics,
+  getAddress,
+  getContract,
+} from 'viem'
 
 import {
   BaseClientMixin,
@@ -13,6 +23,9 @@ import {
   TransactionType,
   ADDRESS_ZERO,
 } from '../constants'
+import { liquidSplitFactoryAbi } from '../constants/abi/liquidSplitFactory'
+import { ls1155CloneAbi } from '../constants/abi/ls1155Clone'
+import { splitMainPolygonAbi } from '../constants/abi/splitMain'
 import {
   AccountNotFoundError,
   InvalidAuthError,
@@ -44,19 +57,6 @@ import {
   validateDistributorFeePercent,
   validateRecipients,
 } from '../utils/validation'
-import { liquidSplitFactoryAbi } from '../constants/abi/liquidSplitFactory'
-import {
-  Address,
-  Hash,
-  Hex,
-  Log,
-  decodeEventLog,
-  encodeEventTopics,
-  getAddress,
-  getContract,
-} from 'viem'
-import { ls1155CloneAbi } from '../constants/abi/ls1155Clone'
-import { splitMainPolygonAbi } from '../constants/abi/splitMain'
 
 const DEFAULT_CREATE_CLONE = true
 
@@ -546,6 +546,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
 export interface LiquidSplitClient extends BaseClientMixin {}
 applyMixins(LiquidSplitClient, [BaseClientMixin])
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 class LiquidSplitGasEstimates extends LiquidSplitTransactions {
   constructor({
     chainId,
@@ -597,6 +598,8 @@ class LiquidSplitGasEstimates extends LiquidSplitTransactions {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+interface LiquidSplitGasEstimates extends BaseGasEstimatesMixin {}
 applyMixins(LiquidSplitGasEstimates, [BaseGasEstimatesMixin])
 
 class LiquidSplitCallData extends LiquidSplitTransactions {

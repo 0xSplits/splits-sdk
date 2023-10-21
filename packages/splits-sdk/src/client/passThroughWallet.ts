@@ -1,4 +1,14 @@
 import {
+  Hash,
+  Hex,
+  Log,
+  decodeEventLog,
+  encodeEventTopics,
+  getAddress,
+  getContract,
+} from 'viem'
+
+import {
   BaseClientMixin,
   BaseGasEstimatesMixin,
   BaseTransactions,
@@ -8,6 +18,8 @@ import {
   PASS_THROUGH_WALLET_CHAIN_IDS,
   getPassThroughWalletFactoryAddress,
 } from '../constants'
+import { passThroughWalletFactoryAbi } from '../constants/abi/passThroughWalletFactory'
+import { passThroughWalletAbi } from '../constants/abi/passThroughWallet'
 import {
   InvalidAuthError,
   TransactionFailedError,
@@ -27,17 +39,6 @@ import type {
 } from '../types'
 import { getTransactionEvents } from '../utils'
 import { validateAddress } from '../utils/validation'
-import { passThroughWalletFactoryAbi } from '../constants/abi/passThroughWalletFactory'
-import {
-  Hash,
-  Hex,
-  Log,
-  decodeEventLog,
-  encodeEventTopics,
-  getAddress,
-  getContract,
-} from 'viem'
-import { passThroughWalletAbi } from '../constants/abi/passThroughWallet'
 
 class PassThroughWalletTransactions extends BaseTransactions {
   constructor({
@@ -487,6 +488,7 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
 export interface PassThroughWalletClient extends BaseClientMixin {}
 applyMixins(PassThroughWalletClient, [BaseClientMixin])
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 class PassThroughWalletGasEstimates extends PassThroughWalletTransactions {
   constructor({
     chainId,
@@ -555,6 +557,8 @@ class PassThroughWalletGasEstimates extends PassThroughWalletTransactions {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+interface PassThroughWalletGasEstimates extends BaseGasEstimatesMixin {}
 applyMixins(PassThroughWalletGasEstimates, [BaseGasEstimatesMixin])
 
 class PassThroughWalletCallData extends PassThroughWalletTransactions {
