@@ -58,7 +58,9 @@ export const getRecoupAddress = (chainId: number): string => {
   return RECOUP_ADDRESS
 }
 
-export const getPassThroughWalletFactoryAddress = (chainId: number): string => {
+export const getPassThroughWalletFactoryAddress = (
+  chainId: number,
+): Address => {
   if (chainId === ChainId.BSC) return PASS_THROUGH_WALLET_FACTORY_ADDRESS
   return PASS_THROUGH_WALLET_FACTORY_ADDRESS
 }

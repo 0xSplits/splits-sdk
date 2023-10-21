@@ -1,8 +1,3 @@
-import { Provider } from '@ethersproject/abstract-provider'
-import { Signer } from '@ethersproject/abstract-signer'
-import { BigNumber } from '@ethersproject/bignumber'
-import type { Event } from '@ethersproject/contracts'
-
 import { PassThroughWalletClient } from './passThroughWallet'
 import { getPassThroughWalletFactoryAddress } from '../constants'
 import {
@@ -24,6 +19,7 @@ import {
   readActions,
 } from '../testing/mocks/passThroughWallet'
 import { OWNER_ADDRESS } from '../testing/constants'
+import { Log, PublicClient, WalletClient } from 'viem'
 
 jest.mock('@ethersproject/contracts', () => {
   return {
@@ -48,24 +44,24 @@ const getTransactionEventsSpy = jest
       args: {
         passThroughWallet: '0xPassThroughWallet',
       },
-    } as unknown as Event
+    } as unknown as Log
     return [event]
   })
 
-const mockProvider = jest.fn<Provider, unknown[]>()
-const mockSigner = jest.fn<Signer, unknown[]>(() => {
+const mockProvider = jest.fn<PublicClient, unknown[]>()
+const mockSigner = jest.fn<WalletClient, unknown[]>(() => {
   return {
     getAddress: () => {
       return OWNER_ADDRESS
     },
-  } as unknown as Signer
+  } as unknown as WalletClient
 })
-const mockSignerNonOwner = jest.fn<Signer, unknown[]>(() => {
+const mockSignerNonOwner = jest.fn<WalletClient, unknown[]>(() => {
   return {
     getAddress: () => {
       return '0xnotOwner'
     },
-  } as unknown as Signer
+  } as unknown as WalletClient
 })
 
 describe('Client config validation', () => {
@@ -120,12 +116,12 @@ describe('Client config validation', () => {
 })
 
 describe('Pass through wallet writes', () => {
-  const provider = new mockProvider()
-  const signer = new mockSigner()
+  const publicClient = new mockProvider()
+  const account = new mockSigner()
   const client = new PassThroughWalletClient({
     chainId: 1,
-    provider,
-    signer,
+    publicClient,
+    account,
   })
 
   beforeEach(() => {
@@ -168,7 +164,7 @@ describe('Pass through wallet writes', () => {
     test('Create pass through wallet fails with no signer', async () => {
       const badClient = new PassThroughWalletClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
@@ -237,7 +233,7 @@ describe('Pass through wallet writes', () => {
     test('Pass through tokens fails with no signer', async () => {
       const badClient = new PassThroughWalletClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
@@ -298,7 +294,7 @@ describe('Pass through wallet writes', () => {
     test('Set pass through fails with no signer', async () => {
       const badClient = new PassThroughWalletClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
@@ -314,8 +310,8 @@ describe('Pass through wallet writes', () => {
       const nonOwnerSigner = new mockSignerNonOwner()
       const badClient = new PassThroughWalletClient({
         chainId: 1,
-        provider,
-        signer: nonOwnerSigner,
+        publicClient,
+        account: nonOwnerSigner,
       })
 
       await expect(
@@ -373,7 +369,7 @@ describe('Pass through wallet writes', () => {
     test('Set paused fails with no signer', async () => {
       const badClient = new PassThroughWalletClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
@@ -389,8 +385,8 @@ describe('Pass through wallet writes', () => {
       const nonOwnerSigner = new mockSignerNonOwner()
       const badClient = new PassThroughWalletClient({
         chainId: 1,
-        provider,
-        signer: nonOwnerSigner,
+        publicClient,
+        account: nonOwnerSigner,
       })
 
       await expect(
@@ -423,7 +419,7 @@ describe('Pass through wallet writes', () => {
     const calls = [
       {
         to: '0xaddress',
-        value: BigNumber.from(1),
+        value: BigInt(1),
         data: '0x0',
       },
     ]
@@ -454,7 +450,7 @@ describe('Pass through wallet writes', () => {
     test('Exec calls fails with no signer', async () => {
       const badClient = new PassThroughWalletClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
@@ -470,8 +466,8 @@ describe('Pass through wallet writes', () => {
       const nonOwnerSigner = new mockSignerNonOwner()
       const badClient = new PassThroughWalletClient({
         chainId: 1,
-        provider,
-        signer: nonOwnerSigner,
+        publicClient,
+        account: nonOwnerSigner,
       })
 
       await expect(
@@ -505,10 +501,10 @@ describe('Pass through wallet writes', () => {
 })
 
 describe('Pass through wallet reads', () => {
-  const provider = new mockProvider()
+  const publicClient = new mockProvider()
   const client = new PassThroughWalletClient({
     chainId: 1,
-    provider,
+    publicClient,
   })
 
   beforeEach(() => {
