@@ -52,7 +52,6 @@ export type {
   ReleaseVestedFundsConfig,
   CreateRecoupConfig,
   RecoupTrancheInput,
-  SplitMainType,
   SplitsClientConfig,
   SplitRecipient,
   Split,
