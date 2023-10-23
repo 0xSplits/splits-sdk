@@ -1,5 +1,4 @@
-import * as viemApi from 'viem'
-import { GetContractReturnType, Hex, PublicClient } from 'viem'
+import { Hex, PublicClient } from 'viem'
 
 import { OracleClient } from './oracle'
 import {
@@ -8,14 +7,18 @@ import {
   UnsupportedChainIdError,
 } from '../errors'
 import { validateAddress } from '../utils/validation'
-import { MockOracle, readActions } from '../testing/mocks/oracle'
+import { readActions } from '../testing/mocks/oracle'
+import { MockViemContract } from '../testing/mocks/viemContract'
 
-jest.spyOn(viemApi, 'getContract').mockImplementation(() => {
-  return new MockOracle() as unknown as GetContractReturnType
-})
-
-jest.spyOn(viemApi, 'getAddress').mockImplementation((address) => {
-  return address as viemApi.Address
+jest.mock('viem', () => {
+  const originalModule = jest.requireActual('viem')
+  return {
+    ...originalModule,
+    getContract: jest.fn(() => {
+      return new MockViemContract(readActions, {})
+    }),
+    getAddress: jest.fn((address) => address),
+  }
 })
 
 jest.mock('../utils/validation')

@@ -1,5 +1,5 @@
 import { encode } from 'base-64'
-import { Log, PublicClient, WalletClient } from 'viem'
+import { Address, Log, PublicClient, WalletClient } from 'viem'
 
 import { LiquidSplitClient } from './liquidSplit'
 import {
@@ -30,27 +30,30 @@ import {
   NFT_COUNTS,
 } from '../testing/constants'
 import { MockGraphqlClient } from '../testing/mocks/graphql'
+import { writeActions as factoryWriteActions } from '../testing/mocks/liquidSplitFactory'
 import {
-  MockLiquidSplitFactory,
-  writeActions as factoryWriteActions,
-} from '../testing/mocks/liquidSplitFactory'
-import {
-  MockLiquidSplit,
   writeActions as moduleWriteActions,
   readActions,
 } from '../testing/mocks/liquidSplit'
 import type { LiquidSplit } from '../types'
+import { MockViemContract } from '../testing/mocks/viemContract'
 
-jest.mock('@ethersproject/contracts', () => {
+jest.mock('viem', () => {
+  const originalModule = jest.requireActual('viem')
   return {
-    Contract: jest
-      .fn()
-      .mockImplementation((contractAddress, _contractInterface, provider) => {
-        if (contractAddress === getLiquidSplitFactoryAddress(1))
-          return new MockLiquidSplitFactory(provider)
-
-        return new MockLiquidSplit(provider)
-      }),
+    ...originalModule,
+    getContract: jest.fn(() => {
+      return new MockViemContract(readActions, moduleWriteActions)
+    }),
+    getAddress: jest.fn((address) => address),
+    decodeEventLog: jest.fn(() => {
+      return {
+        eventName: 'eventName',
+        args: {
+          ls: '0xliquidSplit',
+        },
+      }
+    }),
   }
 })
 
@@ -83,19 +86,50 @@ const getNftCountsMock = jest
     return NFT_COUNTS
   })
 
-const mockProvider = jest.fn<PublicClient, unknown[]>()
-const mockSigner = jest.fn<WalletClient, unknown[]>(() => {
+const mockProvider = jest.fn(() => {
   return {
-    getAddress: () => {
-      return CONTROLLER_ADDRESS
+    simulateContract: jest.fn(
+      async ({
+        address,
+        functionName,
+        args,
+      }: {
+        address: Address
+        functionName: string
+        args: unknown[]
+      }) => {
+        if (address === getLiquidSplitFactoryAddress(1)) {
+          type writeActions = typeof factoryWriteActions
+          type writeKeys = keyof writeActions
+          factoryWriteActions[functionName as writeKeys].call(this, ...args)
+        } else {
+          type writeActions = typeof moduleWriteActions
+          type writeKeys = keyof writeActions
+          moduleWriteActions[functionName as writeKeys].call(this, ...args)
+        }
+        return { request: jest.mock }
+      },
+    ),
+  } as unknown as PublicClient
+})
+const mockSigner = jest.fn(() => {
+  return {
+    account: {
+      address: CONTROLLER_ADDRESS,
     },
+    writeContract: jest.fn(() => {
+      return '0xhash'
+    }),
   } as unknown as WalletClient
 })
-const mockSignerNonController = jest.fn<WalletClient, unknown[]>(() => {
+const mockSignerNonController = jest.fn(() => {
   return {
-    getAddress: () => {
-      return '0xnotController'
+    account: {
+      address: '0xnotController',
     },
+    writeContract: jest.fn(() => {
+      return '0xhash'
+    }),
   } as unknown as WalletClient
 })
 
@@ -252,12 +286,10 @@ describe('Liquid split writes', () => {
         NFT_COUNTS,
         DISTRIBUTOR_FEE,
         CONTROLLER_ADDRESS,
-        {},
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(
-        createLiquidSplitCloneResult,
-        [liquidSplitClient.eventTopics.createLiquidSplit[0]],
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
+        liquidSplitClient.eventTopics.createLiquidSplit[0],
+      ])
     })
 
     test('Create liquid split passes with custom owner', async () => {
@@ -286,12 +318,10 @@ describe('Liquid split writes', () => {
         NFT_COUNTS,
         DISTRIBUTOR_FEE,
         '0xowner',
-        {},
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(
-        createLiquidSplitCloneResult,
-        [liquidSplitClient.eventTopics.createLiquidSplit[0]],
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
+        liquidSplitClient.eventTopics.createLiquidSplit[0],
+      ])
     })
   })
 
@@ -364,10 +394,10 @@ describe('Liquid split writes', () => {
         token,
         holders.map((h) => h.address),
         CONTROLLER_ADDRESS,
-        {},
       )
       expect(getTransactionEventsSpy).toBeCalledWith(
-        distributeFundsResult,
+        publicClient,
+        '0xhash',
         [liquidSplitClient.eventTopics.distributeToken[2]], // Using split main event, not mocked right now
       )
     })
@@ -386,10 +416,10 @@ describe('Liquid split writes', () => {
         ADDRESS_ZERO,
         holders.map((h) => h.address),
         CONTROLLER_ADDRESS,
-        {},
       )
       expect(getTransactionEventsSpy).toBeCalledWith(
-        distributeFundsResult,
+        publicClient,
+        '0xhash',
         [liquidSplitClient.eventTopics.distributeToken[1]], // Using split main event, not mocked right now
       )
     })
@@ -409,10 +439,10 @@ describe('Liquid split writes', () => {
         token,
         holders.map((h) => h.address),
         '0xdistributor',
-        {},
       )
       expect(getTransactionEventsSpy).toBeCalledWith(
-        distributeFundsResult,
+        publicClient,
+        '0xhash',
         [liquidSplitClient.eventTopics.distributeToken[2]], // Using split main event, not mocked right now
       )
     })
@@ -488,8 +518,8 @@ describe('Liquid split writes', () => {
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(liquidSplitId)
       expect(validateAddress).toBeCalledWith(newOwner)
-      expect(moduleWriteActions.transferOwnership).toBeCalledWith(newOwner, {})
-      expect(getTransactionEventsSpy).toBeCalledWith(transferOwnershipResult, [
+      expect(moduleWriteActions.transferOwnership).toBeCalledWith(newOwner)
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         liquidSplitClient.eventTopics.transferOwnership[0],
       ])
     })
@@ -668,7 +698,7 @@ describe('Liquid split reads', () => {
       expect(scaledPercentBalance).toEqual(15)
       expect(validateAddress).toBeCalledWith(liquidSplitId)
       expect(validateAddress).toBeCalledWith(address)
-      expect(readActions.scaledPercentBalanceOf).toBeCalledWith(address)
+      expect(readActions.scaledPercentBalanceOf).toBeCalledWith([address])
     })
   })
 
@@ -718,9 +748,17 @@ jest.mock('graphql-request', () => {
 })
 
 describe('Graphql reads', () => {
+  const SAMPLE_LIQUID_SPLIT = {
+    holders: [
+      {
+        address: '0xholder1',
+      },
+    ],
+  } as LiquidSplit
+
   const mockFormatLiquidSplit = jest
     .spyOn(subgraph, 'protectedFormatLiquidSplit')
-    .mockReturnValue('formatted_liquid_split' as unknown as LiquidSplit)
+    .mockReturnValue(SAMPLE_LIQUID_SPLIT)
   const mockAddEnsNames = jest.spyOn(utils, 'addEnsNames').mockImplementation()
   const mockGqlLiquidSplit = {
     token: {
@@ -778,7 +816,7 @@ describe('Graphql reads', () => {
         },
       )
       expect(mockFormatLiquidSplit).toBeCalledWith(mockGqlLiquidSplit)
-      expect(liquidSplit).toEqual('formatted_liquid_split')
+      expect(liquidSplit).toEqual(SAMPLE_LIQUID_SPLIT)
       expect(mockAddEnsNames).not.toBeCalled()
     })
 
@@ -802,7 +840,7 @@ describe('Graphql reads', () => {
         },
       )
       expect(mockFormatLiquidSplit).toBeCalledWith(mockGqlLiquidSplit)
-      expect(liquidSplit).toEqual('formatted_liquid_split')
+      expect(liquidSplit).toEqual(SAMPLE_LIQUID_SPLIT)
       expect(mockAddEnsNames).toBeCalled()
     })
   })
