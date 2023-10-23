@@ -73,7 +73,7 @@ class PassThroughWalletTransactions extends BaseTransactions {
       contractAddress: getPassThroughWalletFactoryAddress(this._chainId),
       contractAbi: passThroughWalletFactoryAbi,
       functionName: 'createPassThroughWallet',
-      functionArgs: [owner, paused, passThrough],
+      functionArgs: [[owner, paused, passThrough]],
       transactionOverrides,
     })
 

@@ -9,28 +9,31 @@ import {
 } from '../errors'
 import * as utils from '../utils'
 import { validateAddress } from '../utils/validation'
+import { writeActions as factoryWriteActions } from '../testing/mocks/passThroughWalletFactory'
 import {
-  MockPassThroughWalletFactory,
-  writeActions as factoryWriteActions,
-} from '../testing/mocks/passThroughWalletFactory'
-import {
-  MockPassThroughWallet,
   writeActions as moduleWriteActions,
   readActions,
 } from '../testing/mocks/passThroughWallet'
 import { OWNER_ADDRESS } from '../testing/constants'
-import { Log, PublicClient, WalletClient } from 'viem'
+import { Address, Log, PublicClient, WalletClient } from 'viem'
+import { MockViemContract } from '../testing/mocks/viemContract'
 
-jest.mock('@ethersproject/contracts', () => {
+jest.mock('viem', () => {
+  const originalModule = jest.requireActual('viem')
   return {
-    Contract: jest
-      .fn()
-      .mockImplementation((contractAddress, _contractInterface, provider) => {
-        if (contractAddress === getPassThroughWalletFactoryAddress(1))
-          return new MockPassThroughWalletFactory(provider)
-
-        return new MockPassThroughWallet(provider)
-      }),
+    ...originalModule,
+    getContract: jest.fn(() => {
+      return new MockViemContract(readActions, moduleWriteActions)
+    }),
+    getAddress: jest.fn((address) => address),
+    decodeEventLog: jest.fn(() => {
+      return {
+        eventName: 'eventName',
+        args: {
+          passThroughWallet: '0xPassThroughWallet',
+        },
+      }
+    }),
   }
 })
 
@@ -48,19 +51,50 @@ const getTransactionEventsSpy = jest
     return [event]
   })
 
-const mockProvider = jest.fn<PublicClient, unknown[]>()
-const mockSigner = jest.fn<WalletClient, unknown[]>(() => {
+const mockProvider = jest.fn(() => {
   return {
-    getAddress: () => {
-      return OWNER_ADDRESS
+    simulateContract: jest.fn(
+      async ({
+        address,
+        functionName,
+        args,
+      }: {
+        address: Address
+        functionName: string
+        args: unknown[]
+      }) => {
+        if (address === getPassThroughWalletFactoryAddress(1)) {
+          type writeActions = typeof factoryWriteActions
+          type writeKeys = keyof writeActions
+          factoryWriteActions[functionName as writeKeys].call(this, ...args)
+        } else {
+          type writeActions = typeof moduleWriteActions
+          type writeKeys = keyof writeActions
+          moduleWriteActions[functionName as writeKeys].call(this, ...args)
+        }
+        return { request: jest.mock }
+      },
+    ),
+  } as unknown as PublicClient
+})
+const mockSigner = jest.fn(() => {
+  return {
+    account: {
+      address: OWNER_ADDRESS,
     },
+    writeContract: jest.fn(() => {
+      return '0xhash'
+    }),
   } as unknown as WalletClient
 })
-const mockSignerNonOwner = jest.fn<WalletClient, unknown[]>(() => {
+const mockSignerNonOwner = jest.fn(() => {
   return {
-    getAddress: () => {
-      return '0xnotOwner'
+    account: {
+      address: '0xnotOwner',
     },
+    writeContract: jest.fn(() => {
+      return '0xhash'
+    }),
   } as unknown as WalletClient
 })
 
@@ -190,14 +224,14 @@ describe('Pass through wallet writes', () => {
       expect(validateAddress).toBeCalledWith(owner)
       expect(validateAddress).toBeCalledWith(passThrough)
 
-      expect(factoryWriteActions.createPassThroughWallet).toBeCalledWith(
-        [owner, paused, passThrough],
-        {},
-      )
-      expect(getTransactionEventsSpy).toBeCalledWith(
-        createPassThroughWalletResult,
-        [client.eventTopics.createPassThroughWallet[0]],
-      )
+      expect(factoryWriteActions.createPassThroughWallet).toBeCalledWith([
+        owner,
+        paused,
+        passThrough,
+      ])
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
+        client.eventTopics.createPassThroughWallet[0],
+      ])
     })
   })
 
@@ -255,8 +289,8 @@ describe('Pass through wallet writes', () => {
       expect(validateAddress).toBeCalledWith(passThroughWalletId)
       expect(validateAddress).toBeCalledWith('0xtoken1')
       expect(validateAddress).toBeCalledWith('0xtoken2')
-      expect(moduleWriteActions.passThroughTokens).toBeCalledWith(tokens, {})
-      expect(getTransactionEventsSpy).toBeCalledWith(passThroughTokensResult, [
+      expect(moduleWriteActions.passThroughTokens).toBeCalledWith(tokens)
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         client.eventTopics.passThroughTokens[0],
       ])
     })
@@ -332,8 +366,8 @@ describe('Pass through wallet writes', () => {
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(passThroughWalletId)
       expect(validateAddress).toBeCalledWith(passThrough)
-      expect(moduleWriteActions.setPassThrough).toBeCalledWith(passThrough, {})
-      expect(getTransactionEventsSpy).toBeCalledWith(setPassThroughResult, [
+      expect(moduleWriteActions.setPassThrough).toBeCalledWith(passThrough)
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         client.eventTopics.setPassThrough[0],
       ])
     })
@@ -407,8 +441,8 @@ describe('Pass through wallet writes', () => {
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(passThroughWalletId)
 
-      expect(moduleWriteActions.setPaused).toBeCalledWith(paused, {})
-      expect(getTransactionEventsSpy).toBeCalledWith(setPausedResult, [
+      expect(moduleWriteActions.setPaused).toBeCalledWith(paused)
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         client.eventTopics.setPaused[0],
       ])
     })
@@ -489,11 +523,10 @@ describe('Pass through wallet writes', () => {
       expect(validateAddress).toBeCalledWith(passThroughWalletId)
       expect(validateAddress).toBeCalledWith('0xaddress')
 
-      expect(moduleWriteActions.execCalls).toBeCalledWith(
-        [[calls[0].to, calls[0].value, calls[0].data]],
-        {},
-      )
-      expect(getTransactionEventsSpy).toBeCalledWith(execCallsResult, [
+      expect(moduleWriteActions.execCalls).toBeCalledWith([
+        [calls[0].to, calls[0].value, calls[0].data],
+      ])
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         client.eventTopics.execCalls[0],
       ])
     })
