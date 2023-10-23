@@ -1,7 +1,13 @@
+import * as viemApi from 'viem'
+
 import {
   getBigIntFromPercent,
   getRecipientSortedAddressesAndAllocations,
 } from './index'
+
+jest.spyOn(viemApi, 'getAddress').mockImplementation((address) => {
+  return address as viemApi.Address
+})
 
 describe('Test sorting recipients', () => {
   test('Recipients come back sorted by address', () => {
