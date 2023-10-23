@@ -21,20 +21,26 @@ import {
   NEW_CONTROLLER_ADDRESS,
 } from '../testing/constants'
 import { MockGraphqlClient } from '../testing/mocks/graphql'
-import {
-  MockSplitMain,
-  readActions,
-  writeActions,
-} from '../testing/mocks/splitMain'
+import { readActions, writeActions } from '../testing/mocks/splitMain'
 import type { Split } from '../types'
+import { MockViemContract } from '../testing/mocks/viemContract'
 
-jest.mock('@ethersproject/contracts', () => {
+jest.mock('viem', () => {
+  const originalModule = jest.requireActual('viem')
   return {
-    Contract: jest
-      .fn()
-      .mockImplementation((_contractAddress, _contractInterface, provider) => {
-        return new MockSplitMain(provider)
-      }),
+    ...originalModule,
+    getContract: jest.fn(() => {
+      return new MockViemContract(readActions, writeActions)
+    }),
+    getAddress: jest.fn((address) => address),
+    decodeEventLog: jest.fn(() => {
+      return {
+        eventName: 'CreateSplit',
+        args: {
+          split: '0xsplit',
+        },
+      }
+    }),
   }
 })
 
@@ -62,26 +68,53 @@ const getBigIntMock = jest
     return DISTRIBUTOR_FEE
   })
 
-const mockProvider = jest.fn<PublicClient, unknown[]>()
-const mockSigner = jest.fn<WalletClient, unknown[]>(() => {
+const mockProvider = jest.fn(() => {
   return {
-    getAddress: () => {
-      return CONTROLLER_ADDRESS
+    simulateContract: jest.fn(
+      async ({
+        functionName,
+        args,
+      }: {
+        functionName: string
+        args: unknown[]
+      }) => {
+        type writeActionsType = typeof writeActions
+        type writeKeys = keyof writeActionsType
+        writeActions[functionName as writeKeys].call(this, ...args)
+
+        return { request: jest.mock }
+      },
+    ),
+  } as unknown as PublicClient
+})
+const mockSigner = jest.fn(() => {
+  return {
+    account: {
+      address: CONTROLLER_ADDRESS,
     },
+    writeContract: jest.fn(() => {
+      return '0xhash'
+    }),
   } as unknown as WalletClient
 })
-const mockSignerNonController = jest.fn<WalletClient, unknown[]>(() => {
+const mockSignerNonController = jest.fn(() => {
   return {
-    getAddress: () => {
-      return '0xnotController'
+    account: {
+      address: '0xnotController',
     },
+    writeContract: jest.fn(() => {
+      return '0xhash'
+    }),
   } as unknown as WalletClient
 })
-const mockSignerNewController = jest.fn<WalletClient, unknown[]>(() => {
+const mockSignerNewController = jest.fn(() => {
   return {
-    getAddress: () => {
-      return NEW_CONTROLLER_ADDRESS
+    account: {
+      address: NEW_CONTROLLER_ADDRESS,
     },
+    writeContract: jest.fn(() => {
+      return '0xhash'
+    }),
   } as unknown as WalletClient
 })
 
@@ -243,9 +276,8 @@ describe('SplitMain writes', () => {
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
         ADDRESS_ZERO,
-        {},
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(createSplitResult, [
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         splitsClient.eventTopics.createSplit[0],
       ])
     })
@@ -274,9 +306,8 @@ describe('SplitMain writes', () => {
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
         controller,
-        {},
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(createSplitResult, [
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         splitsClient.eventTopics.createSplit[0],
       ])
     })
@@ -367,9 +398,8 @@ describe('SplitMain writes', () => {
         SORTED_ADDRESSES,
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
-        {},
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(updateSplitResult, [
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         splitsClient.eventTopics.updateSplit[0],
       ])
     })
@@ -450,9 +480,8 @@ describe('SplitMain writes', () => {
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
         CONTROLLER_ADDRESS,
-        {},
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(distributeETHResult, [
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         splitsClient.eventTopics.distributeToken[0],
       ])
     })
@@ -477,9 +506,8 @@ describe('SplitMain writes', () => {
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
         CONTROLLER_ADDRESS,
-        {},
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(distributeERC20Result, [
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         splitsClient.eventTopics.distributeToken[1],
       ])
     })
@@ -504,9 +532,8 @@ describe('SplitMain writes', () => {
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
         distributorAddress,
-        {},
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(distributeETHResult, [
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         splitsClient.eventTopics.distributeToken[0],
       ])
     })
@@ -533,9 +560,8 @@ describe('SplitMain writes', () => {
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
         distributorAddress,
-        {},
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(distributeERC20Result, [
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         splitsClient.eventTopics.distributeToken[1],
       ])
     })
@@ -643,12 +669,10 @@ describe('SplitMain writes', () => {
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
         CONTROLLER_ADDRESS,
-        {},
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(
-        updateAndDistributeETHResult,
-        [splitsClient.eventTopics.updateSplitAndDistributeToken[1]],
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
+        splitsClient.eventTopics.updateSplitAndDistributeToken[1],
+      ])
     })
 
     test('Update and distribute erc20 passes', async () => {
@@ -677,12 +701,10 @@ describe('SplitMain writes', () => {
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
         CONTROLLER_ADDRESS,
-        {},
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(
-        updateAndDistributeERC20Result,
-        [splitsClient.eventTopics.updateSplitAndDistributeToken[2]],
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
+        splitsClient.eventTopics.updateSplitAndDistributeToken[2],
+      ])
     })
 
     test('Update and distribute eth to payout address passes', async () => {
@@ -711,12 +733,10 @@ describe('SplitMain writes', () => {
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
         distributorAddress,
-        {},
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(
-        updateAndDistributeETHResult,
-        [splitsClient.eventTopics.updateSplitAndDistributeToken[1]],
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
+        splitsClient.eventTopics.updateSplitAndDistributeToken[1],
+      ])
     })
 
     test('Update and distribute erc20 to payout address passes', async () => {
@@ -747,12 +767,10 @@ describe('SplitMain writes', () => {
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
         distributorAddress,
-        {},
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(
-        updateAndDistributeERC20Result,
-        [splitsClient.eventTopics.updateSplitAndDistributeToken[2]],
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
+        splitsClient.eventTopics.updateSplitAndDistributeToken[2],
+      ])
     })
   })
 
@@ -807,8 +825,8 @@ describe('SplitMain writes', () => {
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(address)
-      expect(writeActions.withdraw).toBeCalledWith(address, 1, ['0xerc20'], {})
-      expect(getTransactionEventsSpy).toBeCalledWith(withdrawResult, [
+      expect(writeActions.withdraw).toBeCalledWith(address, 1, ['0xerc20'])
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         splitsClient.eventTopics.withdrawFunds[0],
       ])
     })
@@ -823,13 +841,11 @@ describe('SplitMain writes', () => {
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(address)
-      expect(writeActions.withdraw).toBeCalledWith(
-        address,
-        0,
-        ['0xerc20', '0xerc202'],
-        {},
-      )
-      expect(getTransactionEventsSpy).toBeCalledWith(withdrawResult, [
+      expect(writeActions.withdraw).toBeCalledWith(address, 0, [
+        '0xerc20',
+        '0xerc202',
+      ])
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         splitsClient.eventTopics.withdrawFunds[0],
       ])
     })
@@ -905,9 +921,8 @@ describe('SplitMain writes', () => {
       expect(writeActions.transferControl).toBeCalledWith(
         splitId,
         newController,
-        {},
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(initiateTransferResult, [
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         splitsClient.eventTopics.initiateControlTransfer[0],
       ])
     })
@@ -977,8 +992,8 @@ describe('SplitMain writes', () => {
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitId)
-      expect(writeActions.cancelControlTransfer).toBeCalledWith(splitId, {})
-      expect(getTransactionEventsSpy).toBeCalledWith(cancelTransferResult, [
+      expect(writeActions.cancelControlTransfer).toBeCalledWith(splitId)
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         splitsClient.eventTopics.cancelControlTransfer[0],
       ])
     })
@@ -1046,8 +1061,8 @@ describe('SplitMain writes', () => {
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitId)
-      expect(writeActions.acceptControl).toBeCalledWith(splitId, {})
-      expect(getTransactionEventsSpy).toBeCalledWith(acceptTransferResult, [
+      expect(writeActions.acceptControl).toBeCalledWith(splitId)
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         splitsClient.eventTopics.acceptControlTransfer[0],
       ])
     })
@@ -1117,8 +1132,8 @@ describe('SplitMain writes', () => {
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitId)
-      expect(writeActions.makeSplitImmutable).toBeCalledWith(splitId, {})
-      expect(getTransactionEventsSpy).toBeCalledWith(makeSplitImmutableResult, [
+      expect(writeActions.makeSplitImmutable).toBeCalledWith(splitId)
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         splitsClient.eventTopics.makeSplitImmutable[0],
       ])
     })
@@ -1165,7 +1180,7 @@ describe('SplitMain reads', () => {
 
       expect(balance).toEqual(BigInt(12))
       expect(validateAddress).toBeCalledWith(splitId)
-      expect(readActions.getETHBalance).toBeCalledWith(splitId)
+      expect(readActions.getETHBalance).toBeCalledWith([splitId])
     })
 
     test('Returns ERC20 balance', async () => {
@@ -1175,7 +1190,7 @@ describe('SplitMain reads', () => {
 
       expect(balance).toEqual(BigInt(19))
       expect(validateAddress).toBeCalledWith(splitId)
-      expect(readActions.getERC20Balance).toBeCalledWith(splitId, token)
+      expect(readActions.getERC20Balance).toBeCalledWith([splitId, token])
     })
   })
 
@@ -1215,11 +1230,11 @@ describe('SplitMain reads', () => {
       })
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigIntMock).toBeCalledWith(distributorFeePercent)
-      expect(readActions.predictImmutableSplitAddress).toBeCalledWith(
+      expect(readActions.predictImmutableSplitAddress).toBeCalledWith([
         SORTED_ADDRESSES,
-        SORTED_ALLOCATIONS,
-        DISTRIBUTOR_FEE,
-      )
+        SORTED_ALLOCATIONS.map((a) => Number(a)),
+        Number(DISTRIBUTOR_FEE),
+      ])
     })
   })
 
@@ -1248,7 +1263,7 @@ describe('SplitMain reads', () => {
 
       expect(controller).toEqual(CONTROLLER_ADDRESS)
       expect(validateAddress).toBeCalledWith(splitId)
-      expect(readActions.getController).toBeCalledWith(splitId)
+      expect(readActions.getController).toBeCalledWith([splitId])
     })
   })
 
@@ -1278,7 +1293,7 @@ describe('SplitMain reads', () => {
 
       expect(newPotentialController).toEqual(NEW_CONTROLLER_ADDRESS)
       expect(validateAddress).toBeCalledWith(splitId)
-      expect(readActions.getNewPotentialController).toBeCalledWith(splitId)
+      expect(readActions.getNewPotentialController).toBeCalledWith([splitId])
     })
   })
 
@@ -1308,7 +1323,7 @@ describe('SplitMain reads', () => {
 
       expect(hash).toEqual('hash')
       expect(validateAddress).toBeCalledWith(splitId)
-      expect(readActions.getHash).toBeCalledWith(splitId)
+      expect(readActions.getHash).toBeCalledWith([splitId])
     })
   })
 })
@@ -1324,9 +1339,17 @@ jest.mock('graphql-request', () => {
 })
 
 describe('Graphql reads', () => {
+  const mockSplit = {
+    recipients: [
+      {
+        address: '0xrecipient',
+      },
+    ],
+  } as Split
+
   const mockFormatSplit = jest
     .spyOn(subgraph, 'protectedFormatSplit')
-    .mockReturnValue('formatted_split' as unknown as Split)
+    .mockReturnValue(mockSplit)
   const mockAddEnsNames = jest.spyOn(utils, 'addEnsNames').mockImplementation()
 
   const splitId = '0xsplit'
@@ -1365,7 +1388,7 @@ describe('Graphql reads', () => {
         splitId,
       })
       expect(mockFormatSplit).toBeCalledWith('gqlSplit')
-      expect(split).toEqual('formatted_split')
+      expect(split).toEqual(mockSplit)
       expect(mockAddEnsNames).not.toBeCalled()
     })
 
@@ -1384,17 +1407,34 @@ describe('Graphql reads', () => {
         splitId,
       })
       expect(mockFormatSplit).toBeCalledWith('gqlSplit')
-      expect(split).toEqual('formatted_split')
+      expect(split).toEqual(mockSplit)
       expect(mockAddEnsNames).toBeCalled()
     })
   })
 
   describe('Get related splits tests', () => {
+    const mockReceivingSplit = {
+      ...mockSplit,
+      address: '0xReceivingSplit',
+    }
+    const mockControllingSplit1 = {
+      ...mockSplit,
+      address: '0xControllingSplit1',
+    }
+    const mockControllingSplit2 = {
+      ...mockSplit,
+      address: '0xControllingSplit2',
+    }
+    const mockPendingControlSplit = {
+      ...mockSplit,
+      address: '0xPendingControlSplit',
+    }
+
     beforeEach(() => {
       mockGqlClient.request.mockReturnValueOnce({
-        receivingFrom: [{ split: 'gqlReceivingSplit' }],
-        controlling: ['gqlControllingSplit1', 'gqlControllingSplit2'],
-        pendingControl: ['gqlPendingControlSplit'],
+        receivingFrom: [{ split: mockReceivingSplit }],
+        controlling: [mockControllingSplit1, mockControllingSplit2],
+        pendingControl: [mockPendingControlSplit],
       })
       mockFormatSplit.mockImplementation((input) => {
         return input as unknown as Split
@@ -1423,12 +1463,12 @@ describe('Graphql reads', () => {
         },
       )
       expect(mockFormatSplit).toBeCalledTimes(4)
-      expect(receivingFrom).toEqual(['gqlReceivingSplit'])
+      expect(receivingFrom).toEqual([mockReceivingSplit])
       expect(controlling).toEqual([
-        'gqlControllingSplit1',
-        'gqlControllingSplit2',
+        mockControllingSplit1,
+        mockControllingSplit2,
       ])
-      expect(pendingControl).toEqual(['gqlPendingControlSplit'])
+      expect(pendingControl).toEqual([mockPendingControlSplit])
       expect(mockAddEnsNames).not.toBeCalled()
     })
 
@@ -1451,12 +1491,12 @@ describe('Graphql reads', () => {
         },
       )
       expect(mockFormatSplit).toBeCalledTimes(4)
-      expect(receivingFrom).toEqual(['gqlReceivingSplit'])
+      expect(receivingFrom).toEqual([mockReceivingSplit])
       expect(controlling).toEqual([
-        'gqlControllingSplit1',
-        'gqlControllingSplit2',
+        mockControllingSplit1,
+        mockControllingSplit2,
       ])
-      expect(pendingControl).toEqual(['gqlPendingControlSplit'])
+      expect(pendingControl).toEqual([mockPendingControlSplit])
       expect(mockAddEnsNames).toBeCalledTimes(4)
     })
   })
