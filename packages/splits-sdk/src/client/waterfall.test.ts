@@ -1,10 +1,4 @@
-import {
-  Address,
-  GetContractReturnType,
-  Log,
-  PublicClient,
-  WalletClient,
-} from 'viem'
+import { Address, Log, PublicClient, WalletClient } from 'viem'
 
 import { WaterfallClient } from './waterfall'
 import { ADDRESS_ZERO, getWaterfallFactoryAddress } from '../constants'
@@ -26,23 +20,23 @@ import {
 import { MockGraphqlClient } from '../testing/mocks/graphql'
 import { writeActions as factoryWriteActions } from '../testing/mocks/waterfallFactory'
 import {
-  MockWaterfallModule,
   writeActions as moduleWriteActions,
   readActions,
 } from '../testing/mocks/waterfallModule'
 import type { WaterfallModule } from '../types'
+import { MockViemContract } from '../testing/mocks/viemContract'
 
 jest.mock('viem', () => {
   const originalModule = jest.requireActual('viem')
   return {
     ...originalModule,
     getContract: jest.fn(() => {
-      return new MockWaterfallModule() as unknown as GetContractReturnType
+      return new MockViemContract(readActions, moduleWriteActions)
     }),
     getAddress: jest.fn((address) => address),
     decodeEventLog: jest.fn(() => {
       return {
-        eventName: 'CreateWaterfallModule',
+        eventName: 'eventName',
         args: {
           waterfallModule: '0xwaterfall',
         },

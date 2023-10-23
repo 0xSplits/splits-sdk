@@ -13,17 +13,3 @@ export const readActions = {
   token: jest.fn(),
   getPullBalance: jest.fn(),
 }
-
-export class MockWaterfallModule {
-  read: {
-    [key: string]: jest.Mock
-  }
-
-  constructor() {
-    this.read = readActions
-  }
-
-  connect() {
-    return writeActions
-  }
-}

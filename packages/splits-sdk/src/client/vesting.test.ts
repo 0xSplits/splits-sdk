@@ -1,4 +1,4 @@
-import { Log, PublicClient, WalletClient } from 'viem'
+import { Address, Log, PublicClient, WalletClient } from 'viem'
 
 import { VestingClient } from './vesting'
 import { getVestingFactoryAddress } from '../constants'
@@ -14,27 +14,34 @@ import { validateAddress, validateVestingPeriod } from '../utils/validation'
 import { GET_TOKEN_DATA } from '../testing/constants'
 import { MockGraphqlClient } from '../testing/mocks/graphql'
 import {
-  MockVestingFactory,
   writeActions as factoryWriteActions,
   readActions as factoryReadActions,
 } from '../testing/mocks/vestingFactory'
 import {
-  MockVestingModule,
   writeActions as moduleWriteActions,
   readActions,
 } from '../testing/mocks/vestingModule'
+import { MockViemContract } from '../testing/mocks/viemContract'
 import type { VestingModule } from '../types'
 
-jest.mock('@ethersproject/contracts', () => {
+jest.mock('viem', () => {
+  const originalModule = jest.requireActual('viem')
   return {
-    Contract: jest
-      .fn()
-      .mockImplementation((contractAddress, _contractInterface, provider) => {
-        if (contractAddress === getVestingFactoryAddress(1))
-          return new MockVestingFactory(provider)
-
-        return new MockVestingModule(provider)
-      }),
+    ...originalModule,
+    getContract: jest.fn(({ address }: { address: Address }) => {
+      if (address === getVestingFactoryAddress(1))
+        return new MockViemContract(factoryReadActions, factoryWriteActions)
+      return new MockViemContract(readActions, moduleWriteActions)
+    }),
+    getAddress: jest.fn((address) => address),
+    decodeEventLog: jest.fn(() => {
+      return {
+        eventName: 'eventName',
+        args: {
+          vestingModule: '0xvesting',
+        },
+      }
+    }),
   }
 })
 
@@ -58,8 +65,42 @@ const getTokenDataMock = jest
     return GET_TOKEN_DATA
   })
 
-const mockProvider = jest.fn<PublicClient, unknown[]>()
-const mockSigner = jest.fn<WalletClient, unknown[]>()
+const mockProvider = jest.fn(() => {
+  return {
+    simulateContract: jest.fn(
+      async ({
+        address,
+        functionName,
+        args,
+      }: {
+        address: Address
+        functionName: string
+        args: unknown[]
+      }) => {
+        if (address === getVestingFactoryAddress(1)) {
+          type writeActions = typeof factoryWriteActions
+          type writeKeys = keyof writeActions
+          factoryWriteActions[functionName as writeKeys].call(this, ...args)
+        } else {
+          type writeActions = typeof moduleWriteActions
+          type writeKeys = keyof writeActions
+          moduleWriteActions[functionName as writeKeys].call(this, ...args)
+        }
+        return { request: jest.mock }
+      },
+    ),
+  } as unknown as PublicClient
+})
+const mockSigner = jest.fn(() => {
+  return {
+    account: {
+      address: '0xsigner',
+    },
+    writeContract: jest.fn(() => {
+      return '0xhash'
+    }),
+  } as unknown as WalletClient
+})
 
 describe('Client config validation', () => {
   test('Including ens names with no provider fails', () => {
@@ -185,9 +226,8 @@ describe('Vesting writes', () => {
       expect(factoryWriteActions.createVestingModule).toBeCalledWith(
         beneficiary,
         vestingPeriodSeconds,
-        {},
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(createVestingResult, [
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         vestingClient.eventTopics.createVestingModule[0],
       ])
     })
@@ -247,8 +287,8 @@ describe('Vesting writes', () => {
       expect(validateAddress).toBeCalledWith(vestingModuleId)
       expect(validateAddress).toBeCalledWith('0xtoken1')
       expect(validateAddress).toBeCalledWith('0xtoken2')
-      expect(moduleWriteActions.createVestingStreams).toBeCalledWith(tokens, {})
-      expect(getTransactionEventsSpy).toBeCalledWith(startVestResult, [
+      expect(moduleWriteActions.createVestingStreams).toBeCalledWith(tokens)
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         vestingClient.eventTopics.startVest[0],
       ])
     })
@@ -306,11 +346,8 @@ describe('Vesting writes', () => {
 
       expect(events[0].blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(vestingModuleId)
-      expect(moduleWriteActions.releaseFromVesting).toBeCalledWith(
-        streamIds,
-        {},
-      )
-      expect(getTransactionEventsSpy).toBeCalledWith(releaseVestedFundsResult, [
+      expect(moduleWriteActions.releaseFromVesting).toBeCalledWith(streamIds)
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         vestingClient.eventTopics.releaseVestedFunds[0],
       ])
     })
@@ -364,10 +401,10 @@ describe('Vesting reads', () => {
       expect(address).toEqual('0xpredictedAddress')
       expect(exists).toEqual(true)
       expect(validateAddress).toBeCalledWith(beneficiary)
-      expect(factoryReadActions.predictVestingModuleAddress).toBeCalledWith(
+      expect(factoryReadActions.predictVestingModuleAddress).toBeCalledWith([
         beneficiary,
-        vestingPeriodSeconds,
-      )
+        BigInt(vestingPeriodSeconds),
+      ])
     })
   })
 
@@ -466,7 +503,7 @@ describe('Vesting reads', () => {
 
       expect(amount).toEqual(BigInt(5))
       expect(validateAddress).toBeCalledWith(vestingModuleId)
-      expect(readActions.vested).toBeCalledWith(streamId)
+      expect(readActions.vested).toBeCalledWith([BigInt(streamId)])
     })
   })
 
@@ -501,7 +538,7 @@ describe('Vesting reads', () => {
 
       expect(amount).toEqual(BigInt(3))
       expect(validateAddress).toBeCalledWith(vestingModuleId)
-      expect(readActions.vestedAndUnreleased).toBeCalledWith(streamId)
+      expect(readActions.vestedAndUnreleased).toBeCalledWith([BigInt(streamId)])
     })
   })
 })
@@ -600,7 +637,7 @@ describe('Graphql reads', () => {
     })
 
     test('Adds ens names', async () => {
-      const provider = new mockProvider()
+      const publicClient = new mockProvider()
       const ensVestingClient = new VestingClient({
         chainId: 1,
         publicClient,
@@ -621,7 +658,7 @@ describe('Graphql reads', () => {
       expect(getTokenDataMock).toBeCalledWith(
         1,
         mockGqlVesting.streams[0].token.id,
-        provider,
+        publicClient,
       )
       expect(mockFormatVesting).toBeCalledWith(mockGqlVesting, {
         [mockGqlVesting.streams[0].token.id]: {
