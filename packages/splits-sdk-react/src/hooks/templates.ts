@@ -1,9 +1,8 @@
+import { Log } from 'viem'
 import { useCallback, useContext, useState } from 'react'
-import type { Event } from '@ethersproject/contracts'
 import {
   CreateRecoupConfig,
   CreateDiversifierConfig,
-  getTransactionEvents,
 } from '@0xsplits/splits-sdk'
 
 import { SplitsContext } from '../context'
@@ -11,7 +10,7 @@ import { ContractExecutionStatus, RequestError } from '../types'
 import { getSplitsClient } from '../utils'
 
 export const useCreateRecoup = (): {
-  createRecoup: (arg0: CreateRecoupConfig) => Promise<Event[] | undefined>
+  createRecoup: (arg0: CreateRecoupConfig) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -33,16 +32,16 @@ export const useCreateRecoup = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
+        const { txHash: hash } =
           await splitsClient.templates.submitCreateRecoupTransaction(argsDict)
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.templates.eventTopics.createRecoup,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.templates.eventTopics.createRecoup,
+        })
 
         setStatus('complete')
 
@@ -61,7 +60,7 @@ export const useCreateRecoup = (): {
 export const useCreateDiversifier = (): {
   createDiversifier: (
     arg0: CreateDiversifierConfig,
-  ) => Promise<Event[] | undefined>
+  ) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -83,18 +82,18 @@ export const useCreateDiversifier = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
+        const { txHash: hash } =
           await splitsClient.templates.submitCreateDiversifierTransaction(
             argsDict,
           )
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.templates.eventTopics.createDiversifier,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.templates.eventTopics.createDiversifier,
+        })
 
         setStatus('complete')
 

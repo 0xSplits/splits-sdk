@@ -1,8 +1,7 @@
+import { Log } from 'viem'
 import { useCallback, useContext, useEffect, useState } from 'react'
-import type { Event } from '@ethersproject/contracts'
 import {
   CreateVestingConfig,
-  getTransactionEvents,
   StartVestConfig,
   ReleaseVestedFundsConfig,
   VestingModule,
@@ -13,9 +12,7 @@ import { ContractExecutionStatus, DataLoadStatus, RequestError } from '../types'
 import { getSplitsClient } from '../utils'
 
 export const useCreateVestingModule = (): {
-  createVestingModule: (
-    arg0: CreateVestingConfig,
-  ) => Promise<Event[] | undefined>
+  createVestingModule: (arg0: CreateVestingConfig) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -36,18 +33,18 @@ export const useCreateVestingModule = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
+        const { txHash: hash } =
           await splitsClient.vesting.submitCreateVestingModuleTransaction(
             argsDict,
           )
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.vesting.eventTopics.createVestingModule,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.vesting.eventTopics.createVestingModule,
+        })
 
         setStatus('complete')
 
@@ -64,7 +61,7 @@ export const useCreateVestingModule = (): {
 }
 
 export const useStartVest = (): {
-  startVest: (arg0: StartVestConfig) => Promise<Event[] | undefined>
+  startVest: (arg0: StartVestConfig) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -85,17 +82,16 @@ export const useStartVest = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } = await splitsClient.vesting.submitStartVestTransaction(
-          argsDict,
-        )
+        const { txHash: hash } =
+          await splitsClient.vesting.submitStartVestTransaction(argsDict)
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.vesting.eventTopics.startVest,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.vesting.eventTopics.startVest,
+        })
 
         setStatus('complete')
 
@@ -114,7 +110,7 @@ export const useStartVest = (): {
 export const useReleaseVestedFunds = (): {
   releaseVestedFunds: (
     arg0: ReleaseVestedFundsConfig,
-  ) => Promise<Event[] | undefined>
+  ) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -135,18 +131,18 @@ export const useReleaseVestedFunds = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
+        const { txHash: hash } =
           await splitsClient.vesting.submitReleaseVestedFundsTransaction(
             argsDict,
           )
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.vesting.eventTopics.releaseVestedFunds,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.vesting.eventTopics.releaseVestedFunds,
+        })
 
         setStatus('complete')
 

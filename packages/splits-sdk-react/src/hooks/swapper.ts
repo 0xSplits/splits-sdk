@@ -1,7 +1,6 @@
+import { Log } from 'viem'
 import { useCallback, useContext, useEffect, useState } from 'react'
-import type { Event } from '@ethersproject/contracts'
 import {
-  getTransactionEvents,
   CreateSwapperConfig,
   UniV3FlashSwapConfig,
   SwapperExecCallsConfig,
@@ -19,7 +18,7 @@ import { ContractExecutionStatus, DataLoadStatus, RequestError } from '../types'
 import { getSplitsClient } from '../utils'
 
 export const useCreateSwapper = (): {
-  createSwapper: (arg0: CreateSwapperConfig) => Promise<Event[] | undefined>
+  createSwapper: (arg0: CreateSwapperConfig) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -40,16 +39,16 @@ export const useCreateSwapper = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
+        const { txHash: hash } =
           await splitsClient.swapper.submitCreateSwapperTransaction(argsDict)
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.swapper.eventTopics.createSwapper,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.swapper.eventTopics.createSwapper,
+        })
 
         setStatus('complete')
 
@@ -66,7 +65,7 @@ export const useCreateSwapper = (): {
 }
 
 export const useUniV3FlashSwap = (): {
-  uniV3FlashSwap: (arg0: UniV3FlashSwapConfig) => Promise<Event[] | undefined>
+  uniV3FlashSwap: (arg0: UniV3FlashSwapConfig) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -87,16 +86,16 @@ export const useUniV3FlashSwap = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
+        const { txHash: hash } =
           await splitsClient.swapper.submitUniV3FlashSwapTransaction(argsDict)
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.swapper.eventTopics.uniV3FlashSwap,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.swapper.eventTopics.uniV3FlashSwap,
+        })
 
         setStatus('complete')
 
@@ -113,7 +112,7 @@ export const useUniV3FlashSwap = (): {
 }
 
 export const useSwapperExecCalls = (): {
-  execCalls: (arg0: SwapperExecCallsConfig) => Promise<Event[] | undefined>
+  execCalls: (arg0: SwapperExecCallsConfig) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -134,17 +133,16 @@ export const useSwapperExecCalls = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } = await splitsClient.swapper.submitExecCallsTransaction(
-          argsDict,
-        )
+        const { txHash: hash } =
+          await splitsClient.swapper.submitExecCallsTransaction(argsDict)
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.swapper.eventTopics.execCalls,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.swapper.eventTopics.execCalls,
+        })
 
         setStatus('complete')
 
@@ -161,7 +159,7 @@ export const useSwapperExecCalls = (): {
 }
 
 export const useSwapperPause = (): {
-  setPaused: (arg0: SwapperPauseConfig) => Promise<Event[] | undefined>
+  setPaused: (arg0: SwapperPauseConfig) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -182,17 +180,16 @@ export const useSwapperPause = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } = await splitsClient.swapper.submitSetPausedTransaction(
-          argsDict,
-        )
+        const { txHash: hash } =
+          await splitsClient.swapper.submitSetPausedTransaction(argsDict)
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.swapper.eventTopics.setPaused,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.swapper.eventTopics.setPaused,
+        })
 
         setStatus('complete')
 
@@ -211,7 +208,7 @@ export const useSwapperPause = (): {
 export const useSwapperSetBeneficiary = (): {
   setBeneficiary: (
     arg0: SwapperSetBeneficiaryConfig,
-  ) => Promise<Event[] | undefined>
+  ) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -232,16 +229,16 @@ export const useSwapperSetBeneficiary = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
+        const { txHash: hash } =
           await splitsClient.swapper.submitSetBeneficiaryTransaction(argsDict)
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.swapper.eventTopics.setBeneficiary,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.swapper.eventTopics.setBeneficiary,
+        })
 
         setStatus('complete')
 
@@ -260,7 +257,7 @@ export const useSwapperSetBeneficiary = (): {
 export const useSwapperSetTokenToBeneficiary = (): {
   setTokenToBeneficiary: (
     arg0: SwapperSetTokenToBeneficiaryConfig,
-  ) => Promise<Event[] | undefined>
+  ) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -281,18 +278,18 @@ export const useSwapperSetTokenToBeneficiary = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
+        const { txHash: hash } =
           await splitsClient.swapper.submitSetTokenToBeneficiaryTransaction(
             argsDict,
           )
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.swapper.eventTopics.setTokenToBeneficiary,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.swapper.eventTopics.setTokenToBeneficiary,
+        })
 
         setStatus('complete')
 
@@ -309,7 +306,7 @@ export const useSwapperSetTokenToBeneficiary = (): {
 }
 
 export const useSwapperSetOracle = (): {
-  setOracle: (arg0: SwapperSetOracleConfig) => Promise<Event[] | undefined>
+  setOracle: (arg0: SwapperSetOracleConfig) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -330,17 +327,16 @@ export const useSwapperSetOracle = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } = await splitsClient.swapper.submitSetOracleTransaction(
-          argsDict,
-        )
+        const { txHash: hash } =
+          await splitsClient.swapper.submitSetOracleTransaction(argsDict)
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.swapper.eventTopics.setOracle,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.swapper.eventTopics.setOracle,
+        })
 
         setStatus('complete')
 
@@ -359,7 +355,7 @@ export const useSwapperSetOracle = (): {
 export const useSwapperSetDefaultScaledOfferFactor = (): {
   setDefaultScaledOfferFactor: (
     arg0: SwapperSetDefaultScaledOfferFactorConfig,
-  ) => Promise<Event[] | undefined>
+  ) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -380,18 +376,19 @@ export const useSwapperSetDefaultScaledOfferFactor = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
+        const { txHash: hash } =
           await splitsClient.swapper.submitSetDefaultScaledOfferFactorTransaction(
             argsDict,
           )
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.swapper.eventTopics.setDefaultScaledOfferFactor,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics:
+            splitsClient.swapper.eventTopics.setDefaultScaledOfferFactor,
+        })
 
         setStatus('complete')
 
@@ -410,7 +407,7 @@ export const useSwapperSetDefaultScaledOfferFactor = (): {
 export const useSwapperSetScaledOfferFactorOverrides = (): {
   setScaledOfferFactorOverrides: (
     arg0: SwapperSetScaledOfferFactorOverridesConfig,
-  ) => Promise<Event[] | undefined>
+  ) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -431,18 +428,19 @@ export const useSwapperSetScaledOfferFactorOverrides = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
+        const { txHash: hash } =
           await splitsClient.swapper.submitSetScaledOfferFactorOverridesTransaction(
             argsDict,
           )
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.swapper.eventTopics.setScaledOfferFactorOverrides,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics:
+            splitsClient.swapper.eventTopics.setScaledOfferFactorOverrides,
+        })
 
         setStatus('complete')
 

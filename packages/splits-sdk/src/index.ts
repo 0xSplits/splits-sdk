@@ -29,7 +29,6 @@ export {
   SPLITS_MAX_PRECISION_DECIMALS,
   LIQUID_SPLITS_MAX_PRECISION_DECIMALS,
 } from './constants'
-export { getTransactionEvents } from './utils'
 export type {
   CreateSplitConfig,
   UpdateSplitConfig,
