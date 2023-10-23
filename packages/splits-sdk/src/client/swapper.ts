@@ -71,7 +71,7 @@ class SwapperTransactions extends BaseTransactions {
     chainId,
     publicClient,
     ensPublicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
@@ -79,7 +79,7 @@ class SwapperTransactions extends BaseTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
   }
@@ -100,7 +100,7 @@ class SwapperTransactions extends BaseTransactions {
     validateOracleParams(oracleParams)
     validateScaledOfferFactor(defaultScaledOfferFactorPercent)
     validateScaledOfferFactorOverrides(scaledOfferFactorOverrides)
-    if (this._shouldRequireSigner) this._requireSigner()
+    if (this._shouldRequreWalletClient) this._requireWalletClient()
 
     const formattedOracleParams = getFormattedOracleParams(oracleParams)
     const formattedDefaultScaledOfferFactor = getFormattedScaledOfferFactor(
@@ -141,13 +141,13 @@ class SwapperTransactions extends BaseTransactions {
     validateUniV3SwapInputAssets(inputAssets)
 
     this._requirePublicClient()
-    if (!this._publicClient) throw new Error('Provider required')
-    if (this._shouldRequireSigner) this._requireSigner()
+    if (!this._publicClient) throw new Error('Public client required')
+    if (this._shouldRequreWalletClient) this._requireWalletClient()
 
     const excessRecipientAddress = excessRecipient
       ? excessRecipient
-      : this._signer?.account
-      ? this._signer.account.address
+      : this._walletClient?.account
+      ? this._walletClient.account.address
       : ADDRESS_ZERO
     validateAddress(excessRecipientAddress)
 
@@ -201,8 +201,8 @@ class SwapperTransactions extends BaseTransactions {
   }: SwapperSetBeneficiaryConfig): Promise<TransactionFormat> {
     validateAddress(swapperId)
     validateAddress(beneficiary)
-    if (this._shouldRequireSigner) {
-      this._requireSigner()
+    if (this._shouldRequreWalletClient) {
+      this._requireWalletClient()
       await this._requireOwner(swapperId)
     }
 
@@ -224,8 +224,8 @@ class SwapperTransactions extends BaseTransactions {
   }: SwapperSetTokenToBeneficiaryConfig): Promise<TransactionFormat> {
     validateAddress(swapperId)
     validateAddress(tokenToBeneficiary)
-    if (this._shouldRequireSigner) {
-      this._requireSigner()
+    if (this._shouldRequreWalletClient) {
+      this._requireWalletClient()
       await this._requireOwner(swapperId)
     }
 
@@ -247,8 +247,8 @@ class SwapperTransactions extends BaseTransactions {
   }: SwapperSetOracleConfig): Promise<TransactionFormat> {
     validateAddress(swapperId)
     validateAddress(oracle)
-    if (this._shouldRequireSigner) {
-      this._requireSigner()
+    if (this._shouldRequreWalletClient) {
+      this._requireWalletClient()
       await this._requireOwner(swapperId)
     }
 
@@ -270,8 +270,8 @@ class SwapperTransactions extends BaseTransactions {
   }: SwapperSetDefaultScaledOfferFactorConfig): Promise<TransactionFormat> {
     validateAddress(swapperId)
     validateScaledOfferFactor(defaultScaledOfferFactorPercent)
-    if (this._shouldRequireSigner) {
-      this._requireSigner()
+    if (this._shouldRequreWalletClient) {
+      this._requireWalletClient()
       await this._requireOwner(swapperId)
     }
 
@@ -297,8 +297,8 @@ class SwapperTransactions extends BaseTransactions {
   }: SwapperSetScaledOfferFactorOverridesConfig): Promise<TransactionFormat> {
     validateAddress(swapperId)
     validateScaledOfferFactorOverrides(scaledOfferFactorOverrides)
-    if (this._shouldRequireSigner) {
-      this._requireSigner()
+    if (this._shouldRequreWalletClient) {
+      this._requireWalletClient()
       await this._requireOwner(swapperId)
     }
 
@@ -323,8 +323,8 @@ class SwapperTransactions extends BaseTransactions {
   }: SwapperExecCallsConfig): Promise<TransactionFormat> {
     validateAddress(swapperId)
     calls.map((callData) => validateAddress(callData.to))
-    if (this._shouldRequireSigner) {
-      this._requireSigner()
+    if (this._shouldRequreWalletClient) {
+      this._requireWalletClient()
       await this._requireOwner(swapperId)
     }
 
@@ -349,8 +349,8 @@ class SwapperTransactions extends BaseTransactions {
     transactionOverrides = {},
   }: SwapperPauseConfig): Promise<TransactionFormat> {
     validateAddress(swapperId)
-    if (this._shouldRequireSigner) {
-      this._requireSigner()
+    if (this._shouldRequreWalletClient) {
+      this._requireWalletClient()
       await this._requireOwner(swapperId)
     }
 
@@ -401,13 +401,13 @@ class SwapperTransactions extends BaseTransactions {
     const swapperContract = this._getSwapperContract(swapperId)
     const owner = await swapperContract.read.owner()
     // TODO: how to get rid of this, needed for typescript check
-    if (!this._signer?.account) throw new Error()
+    if (!this._walletClient?.account) throw new Error()
 
-    const signerAddress = this._signer.account.address
+    const walletAddress = this._walletClient.account.address
 
-    if (owner !== signerAddress)
+    if (owner !== walletAddress)
       throw new InvalidAuthError(
-        `Action only available to the swapper owner. Swapper id: ${swapperId}, owner: ${owner}, signer: ${signerAddress}`,
+        `Action only available to the swapper owner. Swapper id: ${swapperId}, owner: ${owner}, wallet address: ${walletAddress}`,
       )
   }
 
@@ -446,7 +446,7 @@ export class SwapperClient extends SwapperTransactions {
     chainId,
     publicClient,
     ensPublicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -454,7 +454,7 @@ export class SwapperClient extends SwapperTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
 
@@ -522,14 +522,14 @@ export class SwapperClient extends SwapperTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
     this.estimateGas = new SwapperGasEstimates({
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
   }
@@ -938,7 +938,7 @@ class SwapperGasEstimates extends SwapperTransactions {
     chainId,
     publicClient,
     ensPublicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -946,7 +946,7 @@ class SwapperGasEstimates extends SwapperTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
   }
@@ -1031,7 +1031,7 @@ class SwapperCallData extends SwapperTransactions {
     chainId,
     publicClient,
     ensPublicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -1039,7 +1039,7 @@ class SwapperCallData extends SwapperTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
   }

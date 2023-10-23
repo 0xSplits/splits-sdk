@@ -6,7 +6,7 @@ import {
   InvalidArgumentError,
   InvalidConfigError,
   MissingPublicClientError,
-  MissingSignerError,
+  MissingWalletClientError,
   UnsupportedChainIdError,
 } from '../errors'
 import * as subgraph from '../subgraph'
@@ -59,7 +59,7 @@ const getTokenDataMock = jest
 
 jest.mock('../utils/validation')
 
-const mockProvider = jest.fn(() => {
+const mockPublicClient = jest.fn(() => {
   return {
     simulateContract: jest.fn(
       async ({
@@ -85,7 +85,7 @@ const mockProvider = jest.fn(() => {
     ),
   } as unknown as PublicClient
 })
-const mockSigner = jest.fn(() => {
+const mockWalletClient = jest.fn(() => {
   return {
     account: {
       address: '0xsigner',
@@ -148,12 +148,12 @@ describe('Client config validation', () => {
 })
 
 describe('Waterfall writes', () => {
-  const publicClient = new mockProvider()
-  const account = new mockSigner()
+  const publicClient = new mockPublicClient()
+  const walletClient = new mockWalletClient()
   const waterfallClient = new WaterfallClient({
     chainId: 1,
     publicClient,
-    account,
+    walletClient,
   })
   const getTransactionEventsSpy = jest
     .spyOn(waterfallClient, 'getTransactionEvents')
@@ -223,7 +223,7 @@ describe('Waterfall writes', () => {
             token,
             tranches,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Create waterfall passes', async () => {
@@ -332,7 +332,7 @@ describe('Waterfall writes', () => {
           await badClient.waterfallFunds({
             waterfallModuleId,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Waterfall funds passes', async () => {
@@ -427,7 +427,7 @@ describe('Waterfall writes', () => {
             token,
             recipient,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Recover non waterfall funds fails with waterfall token', async () => {
@@ -571,7 +571,7 @@ describe('Waterfall writes', () => {
             waterfallModuleId,
             address,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Withdraw pull funds passes', async () => {
@@ -593,7 +593,7 @@ describe('Waterfall writes', () => {
 })
 
 describe('Waterfall reads', () => {
-  const publicClient = new mockProvider()
+  const publicClient = new mockPublicClient()
   const waterfallClient = new WaterfallClient({
     chainId: 1,
     publicClient,
@@ -834,7 +834,7 @@ describe('Graphql reads', () => {
   }
 
   const waterfallModuleId = '0xwaterfall'
-  const publicClient = new mockProvider()
+  const publicClient = new mockPublicClient()
   const waterfallClient = new WaterfallClient({
     chainId: 1,
     publicClient,
@@ -897,7 +897,7 @@ describe('Graphql reads', () => {
     })
 
     test('Adds ens names', async () => {
-      const publicClient = new mockProvider()
+      const publicClient = new mockPublicClient()
       const ensWaterfallClient = new WaterfallClient({
         chainId: 1,
         publicClient,

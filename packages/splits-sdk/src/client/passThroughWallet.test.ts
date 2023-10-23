@@ -4,7 +4,7 @@ import {
   InvalidAuthError,
   InvalidConfigError,
   MissingPublicClientError,
-  MissingSignerError,
+  MissingWalletClientError,
   UnsupportedChainIdError,
 } from '../errors'
 import { validateAddress } from '../utils/validation'
@@ -38,7 +38,7 @@ jest.mock('viem', () => {
 
 jest.mock('../utils/validation')
 
-const mockProvider = jest.fn(() => {
+const mockPublicClient = jest.fn(() => {
   return {
     simulateContract: jest.fn(
       async ({
@@ -64,7 +64,7 @@ const mockProvider = jest.fn(() => {
     ),
   } as unknown as PublicClient
 })
-const mockSigner = jest.fn(() => {
+const mockWalletClient = jest.fn(() => {
   return {
     account: {
       address: OWNER_ADDRESS,
@@ -74,7 +74,7 @@ const mockSigner = jest.fn(() => {
     }),
   } as unknown as WalletClient
 })
-const mockSignerNonOwner = jest.fn(() => {
+const mockWalletClientNonOwner = jest.fn(() => {
   return {
     account: {
       address: '0xnotOwner',
@@ -137,12 +137,12 @@ describe('Client config validation', () => {
 })
 
 describe('Pass through wallet writes', () => {
-  const publicClient = new mockProvider()
-  const account = new mockSigner()
+  const publicClient = new mockPublicClient()
+  const walletClient = new mockWalletClient()
   const client = new PassThroughWalletClient({
     chainId: 1,
     publicClient,
-    account,
+    walletClient,
   })
   const getTransactionEventsSpy = jest
     .spyOn(client, 'getTransactionEvents')
@@ -206,7 +206,7 @@ describe('Pass through wallet writes', () => {
             paused,
             passThrough,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Create pass through wallet passes', async () => {
@@ -275,7 +275,7 @@ describe('Pass through wallet writes', () => {
             passThroughWalletId,
             tokens,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Pass through tokens passes', async () => {
@@ -337,15 +337,15 @@ describe('Pass through wallet writes', () => {
             passThroughWalletId,
             passThrough,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Set pass through fails from non owner', async () => {
-      const nonOwnerSigner = new mockSignerNonOwner()
+      const nonOwnerSigner = new mockWalletClientNonOwner()
       const badClient = new PassThroughWalletClient({
         chainId: 1,
         publicClient,
-        account: nonOwnerSigner,
+        walletClient: nonOwnerSigner,
       })
 
       await expect(
@@ -413,15 +413,15 @@ describe('Pass through wallet writes', () => {
             passThroughWalletId,
             paused,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Set paused fails from non owner', async () => {
-      const nonOwnerSigner = new mockSignerNonOwner()
+      const nonOwnerSigner = new mockWalletClientNonOwner()
       const badClient = new PassThroughWalletClient({
         chainId: 1,
         publicClient,
-        account: nonOwnerSigner,
+        walletClient: nonOwnerSigner,
       })
 
       await expect(
@@ -495,15 +495,15 @@ describe('Pass through wallet writes', () => {
             passThroughWalletId,
             calls,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Exec calls fails from non owner', async () => {
-      const nonOwnerSigner = new mockSignerNonOwner()
+      const nonOwnerSigner = new mockWalletClientNonOwner()
       const badClient = new PassThroughWalletClient({
         chainId: 1,
         publicClient,
-        account: nonOwnerSigner,
+        walletClient: nonOwnerSigner,
       })
 
       await expect(
@@ -537,7 +537,7 @@ describe('Pass through wallet writes', () => {
 })
 
 describe('Pass through wallet reads', () => {
-  const publicClient = new mockProvider()
+  const publicClient = new mockPublicClient()
   const client = new PassThroughWalletClient({
     chainId: 1,
     publicClient,

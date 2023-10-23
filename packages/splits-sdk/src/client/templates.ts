@@ -52,7 +52,7 @@ class TemplatesTransactions extends BaseTransactions {
     chainId,
     publicClient,
     ensPublicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
@@ -60,7 +60,7 @@ class TemplatesTransactions extends BaseTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
   }
@@ -82,8 +82,8 @@ class TemplatesTransactions extends BaseTransactions {
     )
 
     this._requirePublicClient()
-    if (!this._publicClient) throw new Error('Provider required')
-    if (this._shouldRequireSigner) this._requireSigner()
+    if (!this._publicClient) throw new Error('Public client required')
+    if (this._shouldRequreWalletClient) this._requireWalletClient()
 
     const [recoupTranches, trancheSizes] = await getRecoupTranchesAndSizes(
       this._chainId,
@@ -129,8 +129,8 @@ class TemplatesTransactions extends BaseTransactions {
     validateDiversifierRecipients(recipients)
 
     this._requirePublicClient()
-    if (!this._publicClient) throw new Error('Provider required')
-    if (this._shouldRequireSigner) this._requireSigner()
+    if (!this._publicClient) throw new Error('Public client required')
+    if (this._shouldRequreWalletClient) this._requireWalletClient()
 
     const diversifierRecipients = getDiversifierRecipients(recipients)
     const formattedOracleParams = getFormattedOracleParams(oracleParams)
@@ -159,7 +159,7 @@ export class TemplatesClient extends TemplatesTransactions {
     chainId,
     publicClient,
     ensPublicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -167,7 +167,7 @@ export class TemplatesClient extends TemplatesTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
 
@@ -194,14 +194,14 @@ export class TemplatesClient extends TemplatesTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
     this.estimateGas = new TemplatesGasEstimates({
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
   }
@@ -305,7 +305,7 @@ class TemplatesGasEstimates extends TemplatesTransactions {
     chainId,
     publicClient,
     ensPublicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -313,7 +313,7 @@ class TemplatesGasEstimates extends TemplatesTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
   }
@@ -346,7 +346,7 @@ class TemplatesCallData extends TemplatesTransactions {
     chainId,
     publicClient,
     ensPublicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -354,7 +354,7 @@ class TemplatesCallData extends TemplatesTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
   }

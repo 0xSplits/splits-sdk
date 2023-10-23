@@ -4,7 +4,7 @@ import { getRecoupAddress } from '../constants'
 import {
   InvalidConfigError,
   MissingPublicClientError,
-  MissingSignerError,
+  MissingWalletClientError,
   UnsupportedChainIdError,
 } from '../errors'
 import * as utils from '../utils'
@@ -69,7 +69,7 @@ const getDiversifierRecipientsMock = jest
     return FORMATTED_DIVERSIFIER_RECIPIENTS
   })
 
-const mockProvider = jest.fn(() => {
+const mockPublicClient = jest.fn(() => {
   return {
     simulateContract: jest.fn(
       async ({
@@ -95,7 +95,7 @@ const mockProvider = jest.fn(() => {
     ),
   } as unknown as PublicClient
 })
-const mockSigner = jest.fn(() => {
+const mockWalletClient = jest.fn(() => {
   return {
     account: {
       address: CONTROLLER_ADDRESS,
@@ -158,12 +158,12 @@ describe('Client config validation', () => {
 })
 
 describe('Template writes', () => {
-  const publicClient = new mockProvider()
-  const account = new mockSigner()
+  const publicClient = new mockPublicClient()
+  const walletClient = new mockWalletClient()
   const templatesClient = new TemplatesClient({
     chainId: 1,
     publicClient,
-    account,
+    walletClient,
   })
   const getTransactionEventsSpy = jest.spyOn(
     templatesClient,
@@ -235,7 +235,7 @@ describe('Template writes', () => {
             nonWaterfallRecipientAddress,
             nonWaterfallRecipientTrancheIndex,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Create recoup passes', async () => {
@@ -352,7 +352,7 @@ describe('Template writes', () => {
             oracleParams,
             recipients,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Create diversifier passes', async () => {

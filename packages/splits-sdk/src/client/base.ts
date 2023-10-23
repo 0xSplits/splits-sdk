@@ -23,7 +23,7 @@ import {
   InvalidArgumentError,
   InvalidConfigError,
   MissingPublicClientError,
-  MissingSignerError,
+  MissingWalletClientError,
   UnsupportedSubgraphChainIdError,
 } from '../errors'
 import {
@@ -45,7 +45,11 @@ import type {
   TransactionFormat,
   TransactionOverrides,
 } from '../types'
-import { fromBigIntToTokenValue, getTokenData, isLogsProvider } from '../utils'
+import {
+  fromBigIntToTokenValue,
+  getTokenData,
+  isLogsPublicClient,
+} from '../utils'
 import {
   fetchActiveBalances,
   fetchERC20TransferredTokens,
@@ -54,7 +58,7 @@ import {
 class BaseClient {
   readonly _chainId: number
   protected readonly _ensPublicClient: PublicClient | undefined
-  readonly _signer: WalletClient | undefined
+  readonly _walletClient: WalletClient | undefined
   readonly _publicClient: PublicClient | undefined
   private readonly _graphqlClient: GraphQLClient | undefined
   protected readonly _includeEnsNames: boolean
@@ -63,7 +67,7 @@ class BaseClient {
     chainId,
     publicClient,
     ensPublicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     if (includeEnsNames && !publicClient && !ensPublicClient)
@@ -74,7 +78,7 @@ class BaseClient {
     this._ensPublicClient = ensPublicClient ?? publicClient
     this._publicClient = publicClient
     this._chainId = chainId
-    this._signer = account
+    this._walletClient = walletClient
     this._graphqlClient = getGraphqlClient(chainId)
     this._includeEnsNames = includeEnsNames
   }
@@ -98,15 +102,15 @@ class BaseClient {
   protected _requirePublicClient() {
     if (!this._publicClient)
       throw new MissingPublicClientError(
-        'Provider required to perform this action, please update your call to the constructor',
+        'Public client required to perform this action, please update your call to the constructor',
       )
   }
 
-  protected _requireSigner() {
+  protected _requireWalletClient() {
     this._requirePublicClient()
-    if (!this._signer)
-      throw new MissingSignerError(
-        'Signer required to perform this action, please update your call to the constructor',
+    if (!this._walletClient)
+      throw new MissingWalletClientError(
+        'Wallet client required to perform this action, please update your call to the constructor',
       )
   }
 
@@ -195,16 +199,16 @@ class BaseClient {
       return { withdrawn, activeBalances: internalBalances }
     }
 
-    // Need to fetch current balance. Handle alchemy/infura with logs, and all other providers with token list
+    // Need to fetch current balance. Handle alchemy/infura with logs, and all other rpc's with token list
     if (!this._publicClient)
       throw new MissingPublicClientError(
-        'Provider required to get active balances. Please update your call to the client constructor with a valid provider, or set includeActiveBalances to false',
+        'Public client required to get active balances. Please update your call to the client constructor with a valid public client, or set includeActiveBalances to false',
       )
     const tokenList = erc20TokenList ?? []
     if (erc20TokenList === undefined) {
-      if (!isLogsProvider(this._publicClient))
+      if (!isLogsPublicClient(this._publicClient))
         throw new InvalidArgumentError(
-          'Token list required if provider is not alchemy or infura',
+          'Token list required if public client is not alchemy or infura',
         )
       const transferredErc20Tokens = await fetchERC20TransferredTokens(
         this._chainId,
@@ -243,9 +247,9 @@ class BaseClient {
   protected async _getFormattedTokenBalances(
     tokenBalancesList: TokenBalances[],
   ): Promise<FormattedTokenBalances[]> {
-    const localProvider = this._publicClient
-    if (!localProvider)
-      throw new Error('Provider required to fetch token contract data')
+    const localPublicClient = this._publicClient
+    if (!localPublicClient)
+      throw new Error('Public client required to fetch token contract data')
     const tokenData: { [token: string]: { symbol: string; decimals: number } } =
       {}
 
@@ -261,7 +265,7 @@ class BaseClient {
               tokenData[token] = await getTokenData(
                 this._chainId,
                 formattedToken,
-                localProvider,
+                localPublicClient,
               )
             }
 
@@ -288,26 +292,26 @@ class BaseClient {
 
 export class BaseTransactions extends BaseClient {
   protected readonly _transactionType: TransactionType
-  protected readonly _shouldRequireSigner: boolean
+  protected readonly _shouldRequreWalletClient: boolean
 
   constructor({
     transactionType,
     chainId,
     publicClient,
     ensPublicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
 
     this._transactionType = transactionType
-    this._shouldRequireSigner = [
+    this._shouldRequreWalletClient = [
       TransactionType.Transaction,
       TransactionType.CallData,
     ].includes(transactionType)
@@ -328,15 +332,15 @@ export class BaseTransactions extends BaseClient {
   }) {
     this._requirePublicClient()
     if (!this._publicClient) throw new Error()
-    this._requireSigner()
-    if (!this._signer?.account) throw new Error()
+    this._requireWalletClient()
+    if (!this._walletClient?.account) throw new Error()
 
     if (this._transactionType === TransactionType.GasEstimate) {
       const gasEstimate = await this._publicClient.estimateContractGas({
         address: contractAddress,
         abi: contractAbi,
         functionName,
-        account: this._signer.account,
+        account: this._walletClient.account,
         args: functionArgs ?? [],
         ...transactionOverrides,
       })
@@ -346,7 +350,7 @@ export class BaseTransactions extends BaseClient {
         address: contractAddress,
         abi: contractAbi,
         functionName,
-        account: this._signer.account,
+        account: this._walletClient.account,
         args: functionArgs ?? [],
         ...transactionOverrides,
       })
@@ -364,11 +368,11 @@ export class BaseTransactions extends BaseClient {
         address: contractAddress,
         abi: contractAbi,
         functionName,
-        account: this._signer.account,
+        account: this._walletClient.account,
         args: functionArgs ?? [],
         ...transactionOverrides,
       })
-      const txHash = await this._signer.writeContract(request)
+      const txHash = await this._walletClient.writeContract(request)
       return txHash
     } else throw new Error(`Unknown transaction type: ${this._transactionType}`)
   }
@@ -393,8 +397,8 @@ export class BaseTransactions extends BaseClient {
   }: {
     calls: CallData[]
   }): Promise<TransactionFormat> {
-    this._requireSigner()
-    if (!this._signer) throw new Error()
+    this._requireWalletClient()
+    if (!this._walletClient) throw new Error()
 
     const callRequests = calls.map((call) => {
       const callData = encodeFunctionData({

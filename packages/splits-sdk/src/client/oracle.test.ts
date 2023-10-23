@@ -23,7 +23,7 @@ jest.mock('viem', () => {
 
 jest.mock('../utils/validation')
 
-const mockProvider = jest.fn<PublicClient, unknown[]>()
+const mockPublicClient = jest.fn<PublicClient, unknown[]>()
 
 describe('Client config validation', () => {
   test('Including ens names with no provider fails', () => {
@@ -77,7 +77,7 @@ describe('Client config validation', () => {
 })
 
 describe('Oracle reads', () => {
-  const publicClient = new mockProvider()
+  const publicClient = new mockPublicClient()
   const client = new OracleClient({
     chainId: 1,
     publicClient,

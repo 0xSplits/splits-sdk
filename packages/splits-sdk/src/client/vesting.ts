@@ -47,7 +47,7 @@ class VestingTransactions extends BaseTransactions {
     chainId,
     publicClient,
     ensPublicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
@@ -55,7 +55,7 @@ class VestingTransactions extends BaseTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
   }
@@ -68,7 +68,7 @@ class VestingTransactions extends BaseTransactions {
     validateAddress(beneficiary)
     validateVestingPeriod(vestingPeriodSeconds)
 
-    if (this._shouldRequireSigner) this._requireSigner()
+    if (this._shouldRequreWalletClient) this._requireWalletClient()
 
     const result = await this._executeContractFunction({
       contractAddress: getVestingFactoryAddress(this._chainId),
@@ -88,7 +88,7 @@ class VestingTransactions extends BaseTransactions {
   }: StartVestConfig): Promise<TransactionFormat> {
     validateAddress(vestingModuleId)
     tokens.map((token) => validateAddress(token))
-    if (this._shouldRequireSigner) this._requireSigner()
+    if (this._shouldRequreWalletClient) this._requireWalletClient()
 
     const result = await this._executeContractFunction({
       contractAddress: getAddress(vestingModuleId),
@@ -107,7 +107,7 @@ class VestingTransactions extends BaseTransactions {
     transactionOverrides = {},
   }: ReleaseVestedFundsConfig): Promise<TransactionFormat> {
     validateAddress(vestingModuleId)
-    if (this._shouldRequireSigner) this._requireSigner()
+    if (this._shouldRequreWalletClient) this._requireWalletClient()
 
     const result = await this._executeContractFunction({
       contractAddress: getAddress(vestingModuleId),
@@ -147,7 +147,7 @@ export class VestingClient extends VestingTransactions {
     chainId,
     publicClient,
     ensPublicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -155,7 +155,7 @@ export class VestingClient extends VestingTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
 
@@ -187,14 +187,14 @@ export class VestingClient extends VestingTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
     this.estimateGas = new VestingGasEstimates({
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
   }
@@ -415,8 +415,8 @@ export class VestingClient extends VestingTransactions {
     gqlVestingModule: GqlVestingModule,
   ): Promise<VestingModule> {
     this._requirePublicClient()
-    const provider = this._publicClient
-    if (!provider) throw new Error()
+    const publicClient = this._publicClient
+    if (!publicClient) throw new Error()
 
     const tokenIds = Array.from(
       new Set(gqlVestingModule.streams?.map((stream) => stream.token.id) ?? []),
@@ -429,7 +429,7 @@ export class VestingClient extends VestingTransactions {
         const result = await getTokenData(
           this._chainId,
           getAddress(token),
-          provider,
+          publicClient,
         )
 
         tokenData[token] = result
@@ -441,7 +441,7 @@ export class VestingClient extends VestingTransactions {
       tokenData,
     )
     if (this._includeEnsNames) {
-      await addEnsNames(this._ensPublicClient ?? provider, [
+      await addEnsNames(this._ensPublicClient ?? publicClient, [
         vestingModule.beneficiary,
       ])
     }
@@ -460,7 +460,7 @@ class VestingGasEstimates extends VestingTransactions {
     chainId,
     publicClient,
     ensPublicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -468,7 +468,7 @@ class VestingGasEstimates extends VestingTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
   }
@@ -510,7 +510,7 @@ class VestingCallData extends VestingTransactions {
     chainId,
     publicClient,
     ensPublicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -518,7 +518,7 @@ class VestingCallData extends VestingTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
   }

@@ -58,7 +58,7 @@ class WaterfallTransactions extends BaseTransactions {
     chainId,
     publicClient,
     ensPublicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
@@ -66,7 +66,7 @@ class WaterfallTransactions extends BaseTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
   }
@@ -81,8 +81,8 @@ class WaterfallTransactions extends BaseTransactions {
     validateAddress(nonWaterfallRecipient)
     validateTranches(tranches)
     this._requirePublicClient()
-    if (!this._publicClient) throw new Error('Provider required')
-    if (this._shouldRequireSigner) this._requireSigner()
+    if (!this._publicClient) throw new Error('Public client required')
+    if (this._shouldRequreWalletClient) this._requireWalletClient()
 
     const formattedToken = getAddress(token)
     const formattedNonWaterfallRecipient = getAddress(nonWaterfallRecipient)
@@ -116,7 +116,7 @@ class WaterfallTransactions extends BaseTransactions {
     transactionOverrides = {},
   }: WaterfallFundsConfig): Promise<TransactionFormat> {
     validateAddress(waterfallModuleId)
-    if (this._shouldRequireSigner) this._requireSigner()
+    if (this._shouldRequreWalletClient) this._requireWalletClient()
 
     const result = await this._executeContractFunction({
       contractAddress: getAddress(waterfallModuleId),
@@ -137,7 +137,7 @@ class WaterfallTransactions extends BaseTransactions {
     validateAddress(waterfallModuleId)
     validateAddress(token)
     validateAddress(recipient)
-    this._requireSigner()
+    this._requireWalletClient()
     await this._validateRecoverTokensWaterfallData({
       waterfallModuleId,
       token,
@@ -162,7 +162,7 @@ class WaterfallTransactions extends BaseTransactions {
   }: WithdrawWaterfallPullFundsConfig): Promise<TransactionFormat> {
     validateAddress(waterfallModuleId)
     validateAddress(address)
-    this._requireSigner()
+    this._requireWalletClient()
 
     const result = await this._executeContractFunction({
       contractAddress: getAddress(waterfallModuleId),
@@ -290,7 +290,7 @@ export class WaterfallClient extends WaterfallTransactions {
     chainId,
     publicClient,
     ensPublicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -298,7 +298,7 @@ export class WaterfallClient extends WaterfallTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
 
@@ -336,14 +336,14 @@ export class WaterfallClient extends WaterfallTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
     this.estimateGas = new WaterfallGasEstimates({
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
   }
@@ -625,7 +625,7 @@ class WaterfallGasEstimates extends WaterfallTransactions {
     chainId,
     publicClient,
     ensPublicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -633,7 +633,7 @@ class WaterfallGasEstimates extends WaterfallTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
   }
@@ -687,7 +687,7 @@ class WaterfallCallData extends WaterfallTransactions {
     chainId,
     publicClient,
     ensPublicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -695,7 +695,7 @@ class WaterfallCallData extends WaterfallTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
   }

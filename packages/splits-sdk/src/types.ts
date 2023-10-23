@@ -24,7 +24,7 @@ interface TransactionOverridesDict {
 export type SplitsClientConfig = {
   chainId: number
   publicClient?: PublicClient
-  account?: WalletClient
+  walletClient?: WalletClient
   includeEnsNames?: boolean
   // ensPublicClient can be used to fetch ens names when publicClient is not on mainnet (reverseRecords
   // only works on mainnet).
@@ -374,7 +374,7 @@ export type CreateSwapperConfig = SwapperParams & {
 
 export type UniV3FlashSwapConfig = {
   swapperId: string
-  excessRecipient?: string // defaults to signer
+  excessRecipient?: string // defaults to wallet client account
   inputAssets: {
     encodedPath: string
     token: string

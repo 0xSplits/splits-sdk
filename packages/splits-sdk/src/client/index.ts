@@ -119,7 +119,7 @@ class SplitsTransactions extends BaseTransactions {
     chainId,
     publicClient,
     ensPublicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
@@ -127,7 +127,7 @@ class SplitsTransactions extends BaseTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
 
@@ -156,7 +156,7 @@ class SplitsTransactions extends BaseTransactions {
     transactionOverrides = {},
   }: CreateSplitConfig): Promise<TransactionFormat> {
     validateSplitInputs({ recipients, distributorFeePercent, controller })
-    if (this._shouldRequireSigner) this._requireSigner()
+    if (this._shouldRequreWalletClient) this._requireWalletClient()
 
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
@@ -182,8 +182,8 @@ class SplitsTransactions extends BaseTransactions {
     validateAddress(splitId)
     validateSplitInputs({ recipients, distributorFeePercent })
 
-    if (this._shouldRequireSigner) {
-      this._requireSigner()
+    if (this._shouldRequreWalletClient) {
+      this._requireWalletClient()
       await this._requireController(splitId)
     }
 
@@ -210,12 +210,12 @@ class SplitsTransactions extends BaseTransactions {
   }: DistributeTokenConfig): Promise<TransactionFormat> {
     validateAddress(splitId)
     validateAddress(token)
-    if (this._shouldRequireSigner) this._requireSigner()
+    if (this._shouldRequreWalletClient) this._requireWalletClient()
 
     const distributorPayoutAddress = distributorAddress
       ? distributorAddress
-      : this._signer?.account
-      ? this._signer.account.address
+      : this._walletClient?.account
+      ? this._walletClient.account.address
       : ADDRESS_ZERO
     validateAddress(distributorPayoutAddress)
 
@@ -267,8 +267,8 @@ class SplitsTransactions extends BaseTransactions {
     validateAddress(token)
     validateSplitInputs({ recipients, distributorFeePercent })
 
-    if (this._shouldRequireSigner) {
-      this._requireSigner()
+    if (this._shouldRequreWalletClient) {
+      this._requireWalletClient()
       await this._requireController(splitId)
     }
 
@@ -277,8 +277,8 @@ class SplitsTransactions extends BaseTransactions {
     const distributorFee = getBigIntFromPercent(distributorFeePercent)
     const distributorPayoutAddress = distributorAddress
       ? distributorAddress
-      : this._signer?.account
-      ? this._signer.account.address
+      : this._walletClient?.account
+      ? this._walletClient.account.address
       : ADDRESS_ZERO
     validateAddress(distributorPayoutAddress)
 
@@ -318,7 +318,7 @@ class SplitsTransactions extends BaseTransactions {
     transactionOverrides = {},
   }: WithdrawFundsConfig): Promise<TransactionFormat> {
     validateAddress(address)
-    if (this._shouldRequireSigner) this._requireSigner()
+    if (this._shouldRequreWalletClient) this._requireWalletClient()
 
     const withdrawEth = tokens.includes(ADDRESS_ZERO) ? 1 : 0
     const erc20s = tokens.filter((token) => token !== ADDRESS_ZERO)
@@ -341,8 +341,8 @@ class SplitsTransactions extends BaseTransactions {
   }: InititateControlTransferConfig): Promise<TransactionFormat> {
     validateAddress(splitId)
 
-    if (this._shouldRequireSigner) {
-      this._requireSigner()
+    if (this._shouldRequreWalletClient) {
+      this._requireWalletClient()
       await this._requireController(splitId)
     }
 
@@ -363,8 +363,8 @@ class SplitsTransactions extends BaseTransactions {
   }: CancelControlTransferConfig): Promise<TransactionFormat> {
     validateAddress(splitId)
 
-    if (this._shouldRequireSigner) {
-      this._requireSigner()
+    if (this._shouldRequreWalletClient) {
+      this._requireWalletClient()
       await this._requireController(splitId)
     }
 
@@ -385,8 +385,8 @@ class SplitsTransactions extends BaseTransactions {
   }: AcceptControlTransferConfig): Promise<TransactionFormat> {
     validateAddress(splitId)
 
-    if (this._shouldRequireSigner) {
-      this._requireSigner()
+    if (this._shouldRequreWalletClient) {
+      this._requireWalletClient()
       await this._requireNewPotentialController(splitId)
     }
 
@@ -407,8 +407,8 @@ class SplitsTransactions extends BaseTransactions {
   }: MakeSplitImmutableConfig): Promise<TransactionFormat> {
     validateAddress(splitId)
 
-    if (this._shouldRequireSigner) {
-      this._requireSigner()
+    if (this._shouldRequreWalletClient) {
+      this._requireWalletClient()
       await this._requireController(splitId)
     }
 
@@ -467,13 +467,13 @@ class SplitsTransactions extends BaseTransactions {
       getAddress(splitId),
     ])
     // TODO: how to get rid of this, needed for typescript check
-    if (!this._signer?.account) throw new Error()
+    if (!this._walletClient?.account) throw new Error()
 
-    const signerAddress = this._signer.account.address
+    const walletAddress = this._walletClient.account.address
 
-    if (controller.toLowerCase() !== signerAddress.toLowerCase())
+    if (controller.toLowerCase() !== walletAddress.toLowerCase())
       throw new InvalidAuthError(
-        `Action only available to the split controller. Split id: ${splitId}, split controller: ${controller}, signer: ${signerAddress}`,
+        `Action only available to the split controller. Split id: ${splitId}, split controller: ${controller}, wallet address: ${walletAddress}`,
       )
   }
 
@@ -483,12 +483,12 @@ class SplitsTransactions extends BaseTransactions {
         getAddress(splitId),
       ])
     // TODO: how to get rid of this, needed for typescript check
-    if (!this._signer?.account) throw new Error()
-    const signerAddress = this._signer.account.address
+    if (!this._walletClient?.account) throw new Error()
+    const walletAddress = this._walletClient.account.address
 
-    if (newPotentialController.toLowerCase() !== signerAddress.toLowerCase())
+    if (newPotentialController.toLowerCase() !== walletAddress.toLowerCase())
       throw new InvalidAuthError(
-        `Action only available to the split's new potential controller. Split new potential controller: ${newPotentialController}. Signer: ${signerAddress}`,
+        `Action only available to the split's new potential controller. Split new potential controller: ${newPotentialController}. Wallet address: ${walletAddress}`,
       )
   }
 }
@@ -509,7 +509,7 @@ export class SplitsClient extends SplitsTransactions {
   constructor({
     chainId,
     publicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
     ensPublicClient,
   }: SplitsClientConfig) {
@@ -518,7 +518,7 @@ export class SplitsClient extends SplitsTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
 
@@ -527,7 +527,7 @@ export class SplitsClient extends SplitsTransactions {
         chainId,
         publicClient,
         ensPublicClient,
-        account,
+        walletClient,
         includeEnsNames,
       })
     }
@@ -536,7 +536,7 @@ export class SplitsClient extends SplitsTransactions {
         chainId,
         publicClient,
         ensPublicClient,
-        account,
+        walletClient,
         includeEnsNames,
       })
     }
@@ -545,7 +545,7 @@ export class SplitsClient extends SplitsTransactions {
         chainId,
         publicClient,
         ensPublicClient,
-        account,
+        walletClient,
         includeEnsNames,
       })
     }
@@ -554,7 +554,7 @@ export class SplitsClient extends SplitsTransactions {
         chainId,
         publicClient,
         ensPublicClient,
-        account,
+        walletClient,
         includeEnsNames,
       })
     }
@@ -563,7 +563,7 @@ export class SplitsClient extends SplitsTransactions {
         chainId,
         publicClient,
         ensPublicClient,
-        account,
+        walletClient,
         includeEnsNames,
       })
     }
@@ -572,7 +572,7 @@ export class SplitsClient extends SplitsTransactions {
         chainId,
         publicClient,
         ensPublicClient,
-        account,
+        walletClient,
         includeEnsNames,
       })
     }
@@ -581,7 +581,7 @@ export class SplitsClient extends SplitsTransactions {
         chainId,
         publicClient,
         ensPublicClient,
-        account,
+        walletClient,
         includeEnsNames,
       })
     }
@@ -659,14 +659,14 @@ export class SplitsClient extends SplitsTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
     this.estimateGas = new SplitsGasEstimates({
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
   }
@@ -1000,13 +1000,13 @@ export class SplitsClient extends SplitsTransactions {
     tokens.map((token) => validateAddress(token))
     recipientAddresses.map((address) => validateAddress(address))
 
-    this._requireSigner()
+    this._requireWalletClient()
     // TODO: how to remove this, needed for typescript check right now
-    if (!this._signer?.account) throw new Error()
+    if (!this._walletClient?.account) throw new Error()
 
     const distributorPayoutAddress = distributorAddress
       ? distributorAddress
-      : this._signer.account.address
+      : this._walletClient.account.address
     validateAddress(distributorPayoutAddress)
 
     const distributeCalls = await Promise.all(
@@ -1043,7 +1043,7 @@ export class SplitsClient extends SplitsTransactions {
   }> {
     validateAddress(splitId)
     tokens.map((token) => validateAddress(token))
-    this._requireSigner()
+    this._requireWalletClient()
 
     const { recipients } = await this.getSplitMetadata({ splitId })
     const recipientAddresses = recipients.map((recipient) => recipient.address)
@@ -1198,7 +1198,7 @@ export class SplitsClient extends SplitsTransactions {
     validateAddress(splitId)
     if (includeActiveBalances && !this._publicClient)
       throw new MissingPublicClientError(
-        'Provider required to get split active balances. Please update your call to the SplitsClient constructor with a valid provider, or set includeActiveBalances to false',
+        'Public client required to get split active balances. Please update your call to the SplitsClient constructor with a valid public client, or set includeActiveBalances to false',
       )
 
     const { withdrawn, activeBalances } = await this._getAccountBalances({
@@ -1222,7 +1222,7 @@ export class SplitsClient extends SplitsTransactions {
   }): Promise<FormattedSplitEarnings> {
     if (!this._publicClient)
       throw new MissingPublicClientError(
-        'Provider required to get formatted earnings. Please update your call to the SplitsClient constructor with a valid provider',
+        'Public client required to get formatted earnings. Please update your call to the SplitsClient constructor with a valid public client',
       )
     const { distributed, activeBalances } = await this.getSplitEarnings({
       splitId,
@@ -1269,7 +1269,7 @@ export class SplitsClient extends SplitsTransactions {
   }> {
     if (!this._publicClient)
       throw new MissingPublicClientError(
-        'Provider required to get formatted earnings. Please update your call to the SplitsClient constructor with a valid provider',
+        'Public client required to get formatted earnings. Please update your call to the SplitsClient constructor with a valid public client',
       )
 
     const { withdrawn, activeBalances } = await this.getUserEarnings({ userId })
@@ -1337,7 +1337,7 @@ export class SplitsClient extends SplitsTransactions {
   }): Promise<FormattedUserEarningsByContract> {
     if (!this._publicClient) {
       throw new MissingPublicClientError(
-        'Provider required to get formatted earnings. Please update your call to the SplitsClient contstructor with a valid provider.',
+        'Public client required to get formatted earnings. Please update your call to the SplitsClient contstructor with a valid public client.',
       )
     }
 
@@ -1426,7 +1426,7 @@ class SplitsGasEstimates extends SplitsTransactions {
   constructor({
     chainId,
     publicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
     ensPublicClient,
   }: SplitsClientConfig) {
@@ -1434,7 +1434,7 @@ class SplitsGasEstimates extends SplitsTransactions {
       transactionType: TransactionType.GasEstimate,
       chainId,
       publicClient,
-      account,
+      walletClient,
       includeEnsNames,
       ensPublicClient,
     })
@@ -1531,7 +1531,7 @@ class SplitsCallData extends SplitsTransactions {
   constructor({
     chainId,
     publicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
     ensPublicClient,
   }: SplitsClientConfig) {
@@ -1539,7 +1539,7 @@ class SplitsCallData extends SplitsTransactions {
       transactionType: TransactionType.CallData,
       chainId,
       publicClient,
-      account,
+      walletClient,
       includeEnsNames,
       ensPublicClient,
     })

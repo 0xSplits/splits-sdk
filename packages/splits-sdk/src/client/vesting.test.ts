@@ -5,7 +5,7 @@ import { getVestingFactoryAddress } from '../constants'
 import {
   InvalidConfigError,
   MissingPublicClientError,
-  MissingSignerError,
+  MissingWalletClientError,
   UnsupportedChainIdError,
 } from '../errors'
 import * as subgraph from '../subgraph'
@@ -53,7 +53,7 @@ const getTokenDataMock = jest
     return GET_TOKEN_DATA
   })
 
-const mockProvider = jest.fn(() => {
+const mockPublicClient = jest.fn(() => {
   return {
     simulateContract: jest.fn(
       async ({
@@ -79,7 +79,7 @@ const mockProvider = jest.fn(() => {
     ),
   } as unknown as PublicClient
 })
-const mockSigner = jest.fn(() => {
+const mockWalletClient = jest.fn(() => {
   return {
     account: {
       address: '0xsigner',
@@ -142,12 +142,12 @@ describe('Client config validation', () => {
 })
 
 describe('Vesting writes', () => {
-  const publicClient = new mockProvider()
-  const account = new mockSigner()
+  const publicClient = new mockPublicClient()
+  const walletClient = new mockWalletClient()
   const vestingClient = new VestingClient({
     chainId: 1,
     publicClient,
-    account,
+    walletClient,
   })
   const getTransactionEventsSpy = jest
     .spyOn(vestingClient, 'getTransactionEvents')
@@ -208,7 +208,7 @@ describe('Vesting writes', () => {
             beneficiary,
             vestingPeriodSeconds,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Create vesting passes', async () => {
@@ -274,7 +274,7 @@ describe('Vesting writes', () => {
             vestingModuleId,
             tokens,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Start vest passes', async () => {
@@ -336,7 +336,7 @@ describe('Vesting writes', () => {
             vestingModuleId,
             streamIds,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Release vested funds passes', async () => {
@@ -357,7 +357,7 @@ describe('Vesting writes', () => {
 })
 
 describe('Vesting reads', () => {
-  const publicClient = new mockProvider()
+  const publicClient = new mockPublicClient()
   const vestingClient = new VestingClient({
     chainId: 1,
     publicClient,
@@ -571,7 +571,7 @@ describe('Graphql reads', () => {
   }
 
   const vestingModuleId = '0xvesting'
-  const publicClient = new mockProvider()
+  const publicClient = new mockPublicClient()
   const vestingClient = new VestingClient({
     chainId: 1,
     publicClient,
@@ -639,7 +639,7 @@ describe('Graphql reads', () => {
     })
 
     test('Adds ens names', async () => {
-      const publicClient = new mockProvider()
+      const publicClient = new mockPublicClient()
       const ensVestingClient = new VestingClient({
         chainId: 1,
         publicClient,

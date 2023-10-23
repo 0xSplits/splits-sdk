@@ -4,7 +4,7 @@ import {
   InvalidAuthError,
   InvalidConfigError,
   MissingPublicClientError,
-  MissingSignerError,
+  MissingWalletClientError,
   UnsupportedChainIdError,
 } from '../errors'
 import * as subgraph from '../subgraph'
@@ -68,7 +68,7 @@ const getFormattedScaledOfferFactorOverridesMock = jest
     return FORMATTED_SCALED_OFFER_FACTOR_OVERRIDES
   })
 
-const mockProvider = jest.fn(() => {
+const mockPublicClient = jest.fn(() => {
   return {
     simulateContract: jest.fn(
       async ({
@@ -94,7 +94,7 @@ const mockProvider = jest.fn(() => {
     ),
   } as unknown as PublicClient
 })
-const mockSigner = jest.fn(() => {
+const mockWalletClient = jest.fn(() => {
   return {
     account: {
       address: OWNER_ADDRESS,
@@ -104,7 +104,7 @@ const mockSigner = jest.fn(() => {
     }),
   } as unknown as WalletClient
 })
-const mockSignerNonOwner = jest.fn(() => {
+const mockWalletClientNonOwner = jest.fn(() => {
   return {
     account: {
       address: '0xnotOwner',
@@ -167,12 +167,12 @@ describe('Client config validation', () => {
 })
 
 describe('Swapper writes', () => {
-  const publicClient = new mockProvider()
-  const account = new mockSigner()
+  const publicClient = new mockPublicClient()
+  const walletClient = new mockWalletClient()
   const client = new SwapperClient({
     chainId: 1,
     publicClient,
-    account,
+    walletClient,
   })
   const getTransactionEventsSpy = jest
     .spyOn(client, 'getTransactionEvents')
@@ -254,7 +254,7 @@ describe('Swapper writes', () => {
             defaultScaledOfferFactorPercent,
             scaledOfferFactorOverrides,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Create swapper passes', async () => {
@@ -346,15 +346,15 @@ describe('Swapper writes', () => {
             swapperId,
             beneficiary,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Set beneficiary fails from non owner', async () => {
-      const nonOwnerSigner = new mockSignerNonOwner()
+      const nonOwnerSigner = new mockWalletClientNonOwner()
       const badClient = new SwapperClient({
         chainId: 1,
         publicClient,
-        account: nonOwnerSigner,
+        walletClient: nonOwnerSigner,
       })
 
       await expect(
@@ -424,15 +424,15 @@ describe('Swapper writes', () => {
             swapperId,
             tokenToBeneficiary,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Set token to beneficiary fails from non owner', async () => {
-      const nonOwnerSigner = new mockSignerNonOwner()
+      const nonOwnerSigner = new mockWalletClientNonOwner()
       const badClient = new SwapperClient({
         chainId: 1,
         publicClient,
-        account: nonOwnerSigner,
+        walletClient: nonOwnerSigner,
       })
 
       await expect(
@@ -502,15 +502,15 @@ describe('Swapper writes', () => {
             swapperId,
             oracle,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Set oracle fails from non owner', async () => {
-      const nonOwnerSigner = new mockSignerNonOwner()
+      const nonOwnerSigner = new mockWalletClientNonOwner()
       const badClient = new SwapperClient({
         chainId: 1,
         publicClient,
-        account: nonOwnerSigner,
+        walletClient: nonOwnerSigner,
       })
 
       await expect(
@@ -580,15 +580,15 @@ describe('Swapper writes', () => {
             swapperId,
             defaultScaledOfferFactorPercent,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Set default scale fails from non owner', async () => {
-      const nonOwnerSigner = new mockSignerNonOwner()
+      const nonOwnerSigner = new mockWalletClientNonOwner()
       const badClient = new SwapperClient({
         chainId: 1,
         publicClient,
-        account: nonOwnerSigner,
+        walletClient: nonOwnerSigner,
       })
 
       await expect(
@@ -678,15 +678,15 @@ describe('Swapper writes', () => {
             swapperId,
             scaledOfferFactorOverrides,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Set scale factor overrides fails from non owner', async () => {
-      const nonOwnerSigner = new mockSignerNonOwner()
+      const nonOwnerSigner = new mockWalletClientNonOwner()
       const badClient = new SwapperClient({
         chainId: 1,
         publicClient,
-        account: nonOwnerSigner,
+        walletClient: nonOwnerSigner,
       })
 
       await expect(
@@ -763,15 +763,15 @@ describe('Swapper writes', () => {
             swapperId,
             paused,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Set paused fails from non owner', async () => {
-      const nonOwnerSigner = new mockSignerNonOwner()
+      const nonOwnerSigner = new mockWalletClientNonOwner()
       const badClient = new SwapperClient({
         chainId: 1,
         publicClient,
-        account: nonOwnerSigner,
+        walletClient: nonOwnerSigner,
       })
 
       await expect(
@@ -845,15 +845,15 @@ describe('Swapper writes', () => {
             swapperId,
             calls,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Exec calls fails from non owner', async () => {
-      const nonOwnerSigner = new mockSignerNonOwner()
+      const nonOwnerSigner = new mockWalletClientNonOwner()
       const badClient = new SwapperClient({
         chainId: 1,
         publicClient,
-        account: nonOwnerSigner,
+        walletClient: nonOwnerSigner,
       })
 
       await expect(
@@ -887,7 +887,7 @@ describe('Swapper writes', () => {
 })
 
 describe('Swapper reads', () => {
-  const publicClient = new mockProvider()
+  const publicClient = new mockPublicClient()
   const client = new SwapperClient({
     chainId: 1,
     publicClient,
@@ -1109,7 +1109,7 @@ describe('Graphql reads', () => {
   }
 
   const swapperId = '0xswapper'
-  const publicClient = new mockProvider()
+  const publicClient = new mockPublicClient()
   const client = new SwapperClient({
     chainId: 1,
     publicClient,
@@ -1144,7 +1144,7 @@ describe('Graphql reads', () => {
     })
 
     test('Adds ens names', async () => {
-      const publicClient = new mockProvider()
+      const publicClient = new mockPublicClient()
       const ensClient = new SwapperClient({
         chainId: 1,
         publicClient,

@@ -65,7 +65,7 @@ class LiquidSplitTransactions extends BaseTransactions {
     chainId,
     publicClient,
     ensPublicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
@@ -73,7 +73,7 @@ class LiquidSplitTransactions extends BaseTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
   }
@@ -92,11 +92,11 @@ class LiquidSplitTransactions extends BaseTransactions {
         'Non-clone liquid splits are not available through the SDK. See the splits-liquid-template repository in the 0xSplits github if you would like to create your own custom liquid split',
       )
 
-    if (this._shouldRequireSigner) this._requireSigner()
+    if (this._shouldRequreWalletClient) this._requireWalletClient()
     const ownerAddress = owner
       ? owner
-      : this._signer?.account
-      ? this._signer.account.address
+      : this._walletClient?.account
+      ? this._walletClient.account.address
       : ADDRESS_ZERO
     validateAddress(ownerAddress)
 
@@ -124,12 +124,12 @@ class LiquidSplitTransactions extends BaseTransactions {
   }: DistributeLiquidSplitTokenConfig): Promise<TransactionFormat> {
     validateAddress(liquidSplitId)
     validateAddress(token)
-    if (this._shouldRequireSigner) this._requireSigner()
+    if (this._shouldRequreWalletClient) this._requireWalletClient()
 
     const distributorPayoutAddress = distributorAddress
       ? distributorAddress
-      : this._signer?.account
-      ? this._signer.account.address
+      : this._walletClient?.account
+      ? this._walletClient.account.address
       : ADDRESS_ZERO
     validateAddress(distributorPayoutAddress)
 
@@ -162,8 +162,8 @@ class LiquidSplitTransactions extends BaseTransactions {
   }: TransferLiquidSplitOwnershipConfig): Promise<TransactionFormat> {
     validateAddress(liquidSplitId)
     validateAddress(newOwner)
-    if (this._shouldRequireSigner) {
-      this._requireSigner()
+    if (this._shouldRequreWalletClient) {
+      this._requireWalletClient()
       await this._requireOwner(liquidSplitId)
     }
 
@@ -223,19 +223,19 @@ class LiquidSplitTransactions extends BaseTransactions {
   }
 
   private async _requireOwner(liquidSplitId: string) {
-    this._requireSigner()
+    this._requireWalletClient()
 
     const liquidSplitContract = this._getLiquidSplitContract(liquidSplitId)
     const owner = await liquidSplitContract.read.owner()
 
     // TODO: how to get rid of this, needed for typescript check
-    if (!this._signer?.account) throw new Error()
+    if (!this._walletClient?.account) throw new Error()
 
-    const signerAddress = this._signer.account.address
+    const walletAddress = this._walletClient.account.address
 
-    if (owner !== signerAddress)
+    if (owner !== walletAddress)
       throw new InvalidAuthError(
-        `Action only available to the liquid split owner. Liquid split id: ${liquidSplitId}, owner: ${owner}, signer: ${signerAddress}`,
+        `Action only available to the liquid split owner. Liquid split id: ${liquidSplitId}, owner: ${owner}, wallet address: ${walletAddress}`,
       )
   }
 
@@ -258,7 +258,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
     chainId,
     publicClient,
     ensPublicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -266,7 +266,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
 
@@ -306,14 +306,14 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
     this.estimateGas = new LiquidSplitGasEstimates({
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
   }
@@ -550,7 +550,7 @@ class LiquidSplitGasEstimates extends LiquidSplitTransactions {
     chainId,
     publicClient,
     ensPublicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -558,7 +558,7 @@ class LiquidSplitGasEstimates extends LiquidSplitTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
   }
@@ -605,7 +605,7 @@ class LiquidSplitCallData extends LiquidSplitTransactions {
     chainId,
     publicClient,
     ensPublicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -613,7 +613,7 @@ class LiquidSplitCallData extends LiquidSplitTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
   }

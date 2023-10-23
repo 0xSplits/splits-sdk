@@ -111,11 +111,11 @@ const fetchEnsNames = async (
 }
 
 export const addEnsNames = async (
-  provider: PublicClient,
+  publicClient: PublicClient,
   recipients: { address: Address; ensName?: string }[],
 ): Promise<void> => {
   const addresses = recipients.map((recipient) => recipient.address)
-  const allNames = await fetchEnsNames(provider, addresses)
+  const allNames = await fetchEnsNames(publicClient, addresses)
 
   allNames.map((ens, index) => {
     if (ens) {
@@ -132,13 +132,13 @@ export const addEnsNames = async (
 }
 
 export const addWaterfallEnsNames = async (
-  provider: PublicClient,
+  publicClient: PublicClient,
   tranches: WaterfallTranche[],
 ): Promise<void> => {
   const addresses = tranches.map((tranche) =>
     getAddress(tranche.recipientAddress),
   )
-  const allNames = await fetchEnsNames(provider, addresses)
+  const allNames = await fetchEnsNames(publicClient, addresses)
 
   allNames.map((ens, index) => {
     if (ens) {
@@ -155,12 +155,12 @@ export const addWaterfallEnsNames = async (
 }
 
 export const addSwapperEnsNames = async (
-  provider: PublicClient,
+  publicClient: PublicClient,
   swapper: Swapper,
 ): Promise<void> => {
   const addresses = [swapper.beneficiary.address]
   if (swapper.owner) addresses.push(swapper.owner.address)
-  const allNames = await fetchEnsNames(provider, addresses)
+  const allNames = await fetchEnsNames(publicClient, addresses)
 
   allNames.map((ens, index) => {
     if (ens) {
@@ -184,12 +184,12 @@ export const getTrancheRecipientsAndSizes = async (
   chainId: number,
   token: Address,
   tranches: WaterfallTrancheInput[],
-  provider: PublicClient,
+  publicClient: PublicClient,
 ): Promise<[Address[], bigint[]]> => {
   const recipients: Address[] = []
   const sizes: bigint[] = []
 
-  const tokenData = await getTokenData(chainId, token, provider)
+  const tokenData = await getTokenData(chainId, token, publicClient)
 
   let trancheSum = BigInt(0)
   tranches.forEach((tranche) => {
@@ -208,12 +208,12 @@ export const getRecoupTranchesAndSizes = async (
   chainId: number,
   token: Address,
   tranches: RecoupTrancheInput[],
-  provider: PublicClient,
+  publicClient: PublicClient,
 ): Promise<[ContractRecoupTranche[], bigint[]]> => {
   const recoupTranches: ContractRecoupTranche[] = []
   const sizes: bigint[] = []
 
-  const tokenData = await getTokenData(chainId, token, provider)
+  const tokenData = await getTokenData(chainId, token, publicClient)
   let trancheSum = BigInt(0)
   tranches.forEach((tranche) => {
     if (typeof tranche.recipient === 'string') {
@@ -250,7 +250,7 @@ export const getRecoupTranchesAndSizes = async (
 export const getTokenData = async (
   chainId: number,
   token: Address,
-  provider: PublicClient,
+  publicClient: PublicClient,
 ): Promise<{
   symbol: string
   decimals: number
@@ -271,7 +271,7 @@ export const getTokenData = async (
   const tokenContract = getContract({
     abi: erc20Abi,
     address: token,
-    publicClient: provider,
+    publicClient,
   })
   // TODO: error handling? For bad erc20...
 
@@ -286,13 +286,13 @@ export const getTokenData = async (
   }
 }
 
-// Return true if the provider supports a large enough logs request to fetch erc20 tranfer history
-export const isLogsProvider = (
-  provider: PublicClient<Transport, Chain | undefined>,
+// Return true if the public client supports a large enough logs request to fetch erc20 tranfer history
+export const isLogsPublicClient = (
+  publicClient: PublicClient<Transport, Chain | undefined>,
 ): boolean => {
-  if (provider.transport?.url?.includes('.alchemy.')) return true
-  if (provider.transport?.url?.includes('.alchemyapi.')) return true
-  if (provider.transport?.url?.includes('.infura.')) return true
+  if (publicClient.transport?.url?.includes('.alchemy.')) return true
+  if (publicClient.transport?.url?.includes('.alchemyapi.')) return true
+  if (publicClient.transport?.url?.includes('.infura.')) return true
 
   return false
 }

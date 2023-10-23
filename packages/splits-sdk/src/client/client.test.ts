@@ -6,7 +6,7 @@ import {
   InvalidAuthError,
   InvalidConfigError,
   MissingPublicClientError,
-  MissingSignerError,
+  MissingWalletClientError,
   UnsupportedChainIdError,
   UnsupportedSubgraphChainIdError,
 } from '../errors'
@@ -57,7 +57,7 @@ const getBigIntMock = jest
     return DISTRIBUTOR_FEE
   })
 
-const mockProvider = jest.fn(() => {
+const mockPublicClient = jest.fn(() => {
   return {
     simulateContract: jest.fn(
       async ({
@@ -76,7 +76,7 @@ const mockProvider = jest.fn(() => {
     ),
   } as unknown as PublicClient
 })
-const mockSigner = jest.fn(() => {
+const mockWalletClient = jest.fn(() => {
   return {
     account: {
       address: CONTROLLER_ADDRESS,
@@ -86,7 +86,7 @@ const mockSigner = jest.fn(() => {
     }),
   } as unknown as WalletClient
 })
-const mockSignerNonController = jest.fn(() => {
+const mockWalletClientNonController = jest.fn(() => {
   return {
     account: {
       address: '0xnotController',
@@ -96,7 +96,7 @@ const mockSignerNonController = jest.fn(() => {
     }),
   } as unknown as WalletClient
 })
-const mockSignerNewController = jest.fn(() => {
+const mockWalletClientNewController = jest.fn(() => {
   return {
     account: {
       address: NEW_CONTROLLER_ADDRESS,
@@ -108,7 +108,7 @@ const mockSignerNewController = jest.fn(() => {
 })
 
 describe('Client config validation', () => {
-  const publicClient = new mockProvider()
+  const publicClient = new mockPublicClient()
 
   test('Including ens names with no provider fails', () => {
     expect(
@@ -186,12 +186,12 @@ describe('Client config validation', () => {
 })
 
 describe('SplitMain writes', () => {
-  const publicClient = new mockProvider()
-  const account = new mockSigner()
+  const publicClient = new mockPublicClient()
+  const walletClient = new mockWalletClient()
   const splitsClient = new SplitsClient({
     chainId: 1,
     publicClient,
-    account,
+    walletClient,
   })
   const getTransactionEventsSpy = jest
     .spyOn(splitsClient, 'getTransactionEvents')
@@ -252,7 +252,7 @@ describe('SplitMain writes', () => {
             recipients,
             distributorFeePercent,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Create immutable split passes', async () => {
@@ -357,15 +357,15 @@ describe('SplitMain writes', () => {
             recipients,
             distributorFeePercent,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Update split fails from non controller', async () => {
-      const nonControllerSigner = new mockSignerNonController()
+      const nonControllerSigner = new mockWalletClientNonController()
       const badSplitsClient = new SplitsClient({
         chainId: 1,
         publicClient,
-        account: nonControllerSigner,
+        walletClient: nonControllerSigner,
       })
 
       await expect(
@@ -462,7 +462,7 @@ describe('SplitMain writes', () => {
             splitId,
             token: ADDRESS_ZERO,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Distribute eth passes', async () => {
@@ -628,15 +628,15 @@ describe('SplitMain writes', () => {
             distributorFeePercent,
             token: ADDRESS_ZERO,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Update and distribute fails from non controller', async () => {
-      const nonControllerSigner = new mockSignerNonController()
+      const nonControllerSigner = new mockWalletClientNonController()
       const badSplitsClient = new SplitsClient({
         chainId: 1,
         publicClient,
-        account: nonControllerSigner,
+        walletClient: nonControllerSigner,
       })
 
       await expect(
@@ -831,7 +831,7 @@ describe('SplitMain writes', () => {
             address,
             tokens: [ADDRESS_ZERO],
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Withdraw passes with erc20 and eth', async () => {
@@ -911,15 +911,15 @@ describe('SplitMain writes', () => {
             splitId,
             newController,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Initiate transfer fails from non controller', async () => {
-      const nonControllerSigner = new mockSignerNonController()
+      const nonControllerSigner = new mockWalletClientNonController()
       const badSplitsClient = new SplitsClient({
         chainId: 1,
         publicClient,
-        account: nonControllerSigner,
+        walletClient: nonControllerSigner,
       })
 
       await expect(
@@ -988,15 +988,15 @@ describe('SplitMain writes', () => {
           await badSplitsClient.cancelControlTransfer({
             splitId,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Cancel transfer fails from non controller', async () => {
-      const nonControllerSigner = new mockSignerNonController()
+      const nonControllerSigner = new mockWalletClientNonController()
       const badSplitsClient = new SplitsClient({
         chainId: 1,
         publicClient,
-        account: nonControllerSigner,
+        walletClient: nonControllerSigner,
       })
 
       await expect(
@@ -1058,7 +1058,7 @@ describe('SplitMain writes', () => {
           await badSplitsClient.acceptControlTransfer({
             splitId,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Accept transfer fails from non new controller', async () => {
@@ -1071,11 +1071,11 @@ describe('SplitMain writes', () => {
     })
 
     test('Accept transfer passes', async () => {
-      const account = new mockSignerNewController()
+      const walletClient = new mockWalletClientNewController()
       const splitsClient = new SplitsClient({
         chainId: 1,
         publicClient,
-        account,
+        walletClient,
       })
       const getTransactionEventsSpy = jest
         .spyOn(splitsClient, 'getTransactionEvents')
@@ -1141,15 +1141,15 @@ describe('SplitMain writes', () => {
           await badSplitsClient.makeSplitImmutable({
             splitId,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Make immutable fails from non controller', async () => {
-      const nonControllerSigner = new mockSignerNonController()
+      const nonControllerSigner = new mockWalletClientNonController()
       const badSplitsClient = new SplitsClient({
         chainId: 1,
         publicClient,
-        account: nonControllerSigner,
+        walletClient: nonControllerSigner,
       })
 
       await expect(
@@ -1177,7 +1177,7 @@ describe('SplitMain writes', () => {
 })
 
 describe('SplitMain reads', () => {
-  const publicClient = new mockProvider()
+  const publicClient = new mockPublicClient()
   const splitsClient = new SplitsClient({
     chainId: 1,
     publicClient,
@@ -1429,7 +1429,7 @@ describe('Graphql reads', () => {
     })
 
     test('Adds ens names', async () => {
-      const publicClient = new mockProvider()
+      const publicClient = new mockPublicClient()
       const ensSplitsClient = new SplitsClient({
         chainId: 1,
         publicClient,
@@ -1509,7 +1509,7 @@ describe('Graphql reads', () => {
     })
 
     test('Adds ens names', async () => {
-      const publicClient = new mockProvider()
+      const publicClient = new mockPublicClient()
       const ensSplitsClient = new SplitsClient({
         chainId: 1,
         publicClient,

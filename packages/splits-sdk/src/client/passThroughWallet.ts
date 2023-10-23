@@ -45,7 +45,7 @@ class PassThroughWalletTransactions extends BaseTransactions {
     chainId,
     publicClient,
     ensPublicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
@@ -53,7 +53,7 @@ class PassThroughWalletTransactions extends BaseTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
   }
@@ -66,7 +66,7 @@ class PassThroughWalletTransactions extends BaseTransactions {
   }: CreatePassThroughWalletConfig): Promise<TransactionFormat> {
     validateAddress(owner)
     validateAddress(passThrough)
-    if (this._shouldRequireSigner) this._requireSigner()
+    if (this._shouldRequreWalletClient) this._requireWalletClient()
 
     const result = await this._executeContractFunction({
       contractAddress: getPassThroughWalletFactoryAddress(this._chainId),
@@ -86,7 +86,7 @@ class PassThroughWalletTransactions extends BaseTransactions {
   }: PassThroughTokensConfig): Promise<TransactionFormat> {
     validateAddress(passThroughWalletId)
     tokens.map((token) => validateAddress(token))
-    if (this._shouldRequireSigner) this._requireSigner()
+    if (this._shouldRequreWalletClient) this._requireWalletClient()
 
     const result = await this._executeContractFunction({
       contractAddress: getAddress(passThroughWalletId),
@@ -106,8 +106,8 @@ class PassThroughWalletTransactions extends BaseTransactions {
   }: SetPassThroughConfig): Promise<TransactionFormat> {
     validateAddress(passThroughWalletId)
     validateAddress(passThrough)
-    if (this._shouldRequireSigner) {
-      this._requireSigner()
+    if (this._shouldRequreWalletClient) {
+      this._requireWalletClient()
       await this._requireOwner(passThroughWalletId)
     }
 
@@ -128,8 +128,8 @@ class PassThroughWalletTransactions extends BaseTransactions {
     transactionOverrides = {},
   }: PassThroughWalletPauseConfig): Promise<TransactionFormat> {
     validateAddress(passThroughWalletId)
-    if (this._shouldRequireSigner) {
-      this._requireSigner()
+    if (this._shouldRequreWalletClient) {
+      this._requireWalletClient()
       await this._requireOwner(passThroughWalletId)
     }
 
@@ -151,8 +151,8 @@ class PassThroughWalletTransactions extends BaseTransactions {
   }: PassThroughWalletExecCallsConfig): Promise<TransactionFormat> {
     validateAddress(passThroughWalletId)
     calls.map((callData) => validateAddress(callData.to))
-    if (this._shouldRequireSigner) {
-      this._requireSigner()
+    if (this._shouldRequreWalletClient) {
+      this._requireWalletClient()
       await this._requireOwner(passThroughWalletId)
     }
 
@@ -176,13 +176,13 @@ class PassThroughWalletTransactions extends BaseTransactions {
       this._getPassThroughWalletContract(passThroughWalletId)
     const owner = await passThroughWalletContract.read.owner()
     // TODO: how to get rid of this, needed for typescript check
-    if (!this._signer?.account) throw new Error()
+    if (!this._walletClient?.account) throw new Error()
 
-    const signerAddress = this._signer.account?.address
+    const walletAddress = this._walletClient.account?.address
 
-    if (owner !== signerAddress)
+    if (owner !== walletAddress)
       throw new InvalidAuthError(
-        `Action only available to the pass through wallet owner. Pass through wallet id: ${passThroughWalletId}, owner: ${owner}, signer: ${signerAddress}`,
+        `Action only available to the pass through wallet owner. Pass through wallet id: ${passThroughWalletId}, owner: ${owner}, wallet address: ${walletAddress}`,
       )
   }
 
@@ -205,7 +205,7 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
     chainId,
     publicClient,
     ensPublicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -213,7 +213,7 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
 
@@ -257,14 +257,14 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
     this.estimateGas = new PassThroughWalletGasEstimates({
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
   }
@@ -488,7 +488,7 @@ class PassThroughWalletGasEstimates extends PassThroughWalletTransactions {
     chainId,
     publicClient,
     ensPublicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -496,7 +496,7 @@ class PassThroughWalletGasEstimates extends PassThroughWalletTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
   }
@@ -560,7 +560,7 @@ class PassThroughWalletCallData extends PassThroughWalletTransactions {
     chainId,
     publicClient,
     ensPublicClient,
-    account,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -568,7 +568,7 @@ class PassThroughWalletCallData extends PassThroughWalletTransactions {
       chainId,
       publicClient,
       ensPublicClient,
-      account,
+      walletClient,
       includeEnsNames,
     })
   }

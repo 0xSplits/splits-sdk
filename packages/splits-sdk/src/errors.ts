@@ -79,12 +79,12 @@ export class MissingPublicClientError extends Error {
   }
 }
 
-export class MissingSignerError extends Error {
-  name = 'MissingSignerError'
+export class MissingWalletClientError extends Error {
+  name = 'MissingWalletClientError'
 
   constructor(m?: string) {
     super(m)
-    Object.setPrototypeOf(this, MissingSignerError.prototype)
+    Object.setPrototypeOf(this, MissingWalletClientError.prototype)
   }
 }
 

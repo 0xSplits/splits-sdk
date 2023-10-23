@@ -12,7 +12,7 @@ import {
   InvalidAuthError,
   InvalidConfigError,
   MissingPublicClientError,
-  MissingSignerError,
+  MissingWalletClientError,
   UnsupportedChainIdError,
 } from '../errors'
 import * as subgraph from '../subgraph'
@@ -75,7 +75,7 @@ const getNftCountsMock = jest
     return NFT_COUNTS
   })
 
-const mockProvider = jest.fn(() => {
+const mockPublicClient = jest.fn(() => {
   return {
     simulateContract: jest.fn(
       async ({
@@ -101,7 +101,7 @@ const mockProvider = jest.fn(() => {
     ),
   } as unknown as PublicClient
 })
-const mockSigner = jest.fn(() => {
+const mockWalletClient = jest.fn(() => {
   return {
     account: {
       address: CONTROLLER_ADDRESS,
@@ -111,7 +111,7 @@ const mockSigner = jest.fn(() => {
     }),
   } as unknown as WalletClient
 })
-const mockSignerNonController = jest.fn(() => {
+const mockWalletClientNonController = jest.fn(() => {
   return {
     account: {
       address: '0xnotController',
@@ -174,12 +174,12 @@ describe('Client config validation', () => {
 })
 
 describe('Liquid split writes', () => {
-  const publicClient = new mockProvider()
-  const account = new mockSigner()
+  const publicClient = new mockPublicClient()
+  const walletClient = new mockWalletClient()
   const liquidSplitClient = new LiquidSplitClient({
     chainId: 1,
     publicClient,
-    account,
+    walletClient,
   })
   const getTransactionEventsSpy = jest
     .spyOn(liquidSplitClient, 'getTransactionEvents')
@@ -247,7 +247,7 @@ describe('Liquid split writes', () => {
             recipients,
             distributorFeePercent,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Create liquid split non-clone fails', async () => {
@@ -379,7 +379,7 @@ describe('Liquid split writes', () => {
             liquidSplitId,
             token,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Distribute token passes', async () => {
@@ -488,15 +488,15 @@ describe('Liquid split writes', () => {
             liquidSplitId,
             newOwner,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Transfer ownership fails if signer is not owner', async () => {
-      const nonControllerSigner = new mockSignerNonController()
+      const nonControllerSigner = new mockWalletClientNonController()
       const badClient = new LiquidSplitClient({
         chainId: 1,
         publicClient,
-        account: nonControllerSigner,
+        walletClient: nonControllerSigner,
       })
 
       await expect(
@@ -527,7 +527,7 @@ describe('Liquid split writes', () => {
 })
 
 describe('Liquid split reads', () => {
-  const publicClient = new mockProvider()
+  const publicClient = new mockPublicClient()
   const liquidSplitClient = new LiquidSplitClient({
     chainId: 1,
     publicClient,
@@ -767,7 +767,7 @@ describe('Graphql reads', () => {
   }
 
   const liquidSplitId = '0xliquidSplit'
-  const publicClient = new mockProvider()
+  const publicClient = new mockPublicClient()
   const liquidSplitClient = new LiquidSplitClient({
     chainId: 1,
     publicClient,
@@ -821,7 +821,7 @@ describe('Graphql reads', () => {
     })
 
     test('Adds ens names', async () => {
-      const publicClient = new mockProvider()
+      const publicClient = new mockPublicClient()
       const ensLiquidSplitClient = new LiquidSplitClient({
         chainId: 1,
         publicClient,
