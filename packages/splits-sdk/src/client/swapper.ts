@@ -115,13 +115,15 @@ class SwapperTransactions extends BaseTransactions {
       contractAbi: swapperFactoryAbi,
       functionName: 'createSwapper',
       functionArgs: [
-        owner,
-        paused,
-        beneficiary,
-        tokenToBeneficiary,
-        formattedOracleParams,
-        formattedDefaultScaledOfferFactor,
-        formattedScaledOfferFactorOverrides,
+        [
+          owner,
+          paused,
+          beneficiary,
+          tokenToBeneficiary,
+          formattedOracleParams,
+          formattedDefaultScaledOfferFactor,
+          formattedScaledOfferFactorOverrides,
+        ],
       ],
       transactionOverrides,
     })

@@ -22,28 +22,31 @@ import {
   OWNER_ADDRESS,
 } from '../testing/constants'
 import { MockGraphqlClient } from '../testing/mocks/graphql'
+import { writeActions as factoryWriteActions } from '../testing/mocks/swapperFactory'
 import {
-  MockSwapperFactory,
-  writeActions as factoryWriteActions,
-} from '../testing/mocks/swapperFactory'
-import {
-  MockSwapper,
   writeActions as moduleWriteActions,
   readActions,
 } from '../testing/mocks/swapper'
 import type { ScaledOfferFactorOverride, Swapper } from '../types'
-import { Log, PublicClient, WalletClient } from 'viem'
+import { Address, Log, PublicClient, WalletClient } from 'viem'
+import { MockViemContract } from '../testing/mocks/viemContract'
 
-jest.mock('@ethersproject/contracts', () => {
+jest.mock('viem', () => {
+  const originalModule = jest.requireActual('viem')
   return {
-    Contract: jest
-      .fn()
-      .mockImplementation((contractAddress, _contractInterface, provider) => {
-        if (contractAddress === getSwapperFactoryAddress(1))
-          return new MockSwapperFactory(provider)
-
-        return new MockSwapper(provider)
-      }),
+    ...originalModule,
+    getContract: jest.fn(() => {
+      return new MockViemContract(readActions, moduleWriteActions)
+    }),
+    getAddress: jest.fn((address) => address),
+    decodeEventLog: jest.fn(() => {
+      return {
+        eventName: 'eventName',
+        args: {
+          swapper: '0xswapper',
+        },
+      }
+    }),
   }
 })
 
@@ -76,19 +79,50 @@ const getFormattedScaledOfferFactorOverridesMock = jest
     return FORMATTED_SCALED_OFFER_FACTOR_OVERRIDES
   })
 
-const mockProvider = jest.fn<PublicClient, unknown[]>()
-const mockSigner = jest.fn<WalletClient, unknown[]>(() => {
+const mockProvider = jest.fn(() => {
   return {
-    getAddress: () => {
-      return OWNER_ADDRESS
+    simulateContract: jest.fn(
+      async ({
+        address,
+        functionName,
+        args,
+      }: {
+        address: Address
+        functionName: string
+        args: unknown[]
+      }) => {
+        if (address === getSwapperFactoryAddress(1)) {
+          type writeActions = typeof factoryWriteActions
+          type writeKeys = keyof writeActions
+          factoryWriteActions[functionName as writeKeys].call(this, ...args)
+        } else {
+          type writeActions = typeof moduleWriteActions
+          type writeKeys = keyof writeActions
+          moduleWriteActions[functionName as writeKeys].call(this, ...args)
+        }
+        return { request: jest.mock }
+      },
+    ),
+  } as unknown as PublicClient
+})
+const mockSigner = jest.fn(() => {
+  return {
+    account: {
+      address: OWNER_ADDRESS,
     },
+    writeContract: jest.fn(() => {
+      return '0xhash'
+    }),
   } as unknown as WalletClient
 })
-const mockSignerNonOwner = jest.fn<WalletClient, unknown[]>(() => {
+const mockSignerNonOwner = jest.fn(() => {
   return {
-    getAddress: () => {
-      return '0xnotOwner'
+    account: {
+      address: '0xnotOwner',
     },
+    writeContract: jest.fn(() => {
+      return '0xhash'
+    }),
   } as unknown as WalletClient
 })
 
@@ -255,19 +289,16 @@ describe('Swapper writes', () => {
         scaledOfferFactorOverrides,
       )
 
-      expect(factoryWriteActions.createSwapper).toBeCalledWith(
-        [
-          owner,
-          paused,
-          beneficiary,
-          tokenToBeneficiary,
-          FORMATTED_ORACLE_PARAMS,
-          FORMATTED_SCALED_OFFER_FACTOR,
-          FORMATTED_SCALED_OFFER_FACTOR_OVERRIDES,
-        ],
-        {},
-      )
-      expect(getTransactionEventsSpy).toBeCalledWith(createSwapperResult, [
+      expect(factoryWriteActions.createSwapper).toBeCalledWith([
+        owner,
+        paused,
+        beneficiary,
+        tokenToBeneficiary,
+        FORMATTED_ORACLE_PARAMS,
+        FORMATTED_SCALED_OFFER_FACTOR,
+        FORMATTED_SCALED_OFFER_FACTOR_OVERRIDES,
+      ])
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         client.eventTopics.createSwapper[0],
       ])
     })
@@ -343,8 +374,8 @@ describe('Swapper writes', () => {
       expect(event.blockNumber).toEqual(1111)
       expect(validateAddress).toBeCalledWith(swapperId)
       expect(validateAddress).toBeCalledWith(beneficiary)
-      expect(moduleWriteActions.setBeneficiary).toBeCalledWith(beneficiary, {})
-      expect(getTransactionEventsSpy).toBeCalledWith(setBeneficiaryResult, [
+      expect(moduleWriteActions.setBeneficiary).toBeCalledWith(beneficiary)
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         client.eventTopics.setBeneficiary[0],
       ])
     })
@@ -422,12 +453,10 @@ describe('Swapper writes', () => {
       expect(validateAddress).toBeCalledWith(tokenToBeneficiary)
       expect(moduleWriteActions.setTokenToBeneficiary).toBeCalledWith(
         tokenToBeneficiary,
-        {},
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(
-        setTokenToBeneficiaryResult,
-        [client.eventTopics.setTokenToBeneficiary[0]],
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
+        client.eventTopics.setTokenToBeneficiary[0],
+      ])
     })
   })
 
@@ -499,8 +528,8 @@ describe('Swapper writes', () => {
       expect(event.blockNumber).toEqual(1111)
       expect(validateAddress).toBeCalledWith(swapperId)
       expect(validateAddress).toBeCalledWith(oracle)
-      expect(moduleWriteActions.setOracle).toBeCalledWith(oracle, {})
-      expect(getTransactionEventsSpy).toBeCalledWith(setOracleResult, [
+      expect(moduleWriteActions.setOracle).toBeCalledWith(oracle)
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         client.eventTopics.setOracle[0],
       ])
     })
@@ -585,12 +614,10 @@ describe('Swapper writes', () => {
 
       expect(moduleWriteActions.setDefaultScaledOfferFactor).toBeCalledWith(
         FORMATTED_SCALED_OFFER_FACTOR,
-        {},
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(
-        setDefaultScaledOfferFactorResult,
-        [client.eventTopics.setDefaultScaledOfferFactor[0]],
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
+        client.eventTopics.setDefaultScaledOfferFactor[0],
+      ])
     })
   })
 
@@ -684,12 +711,10 @@ describe('Swapper writes', () => {
 
       expect(moduleWriteActions.setPairScaledOfferFactors).toBeCalledWith(
         FORMATTED_SCALED_OFFER_FACTOR_OVERRIDES,
-        {},
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(
-        setScaledOfferFactorOverridesResult,
-        [client.eventTopics.setScaledOfferFactorOverrides[0]],
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
+        client.eventTopics.setScaledOfferFactorOverrides[0],
+      ])
     })
   })
 
@@ -761,8 +786,8 @@ describe('Swapper writes', () => {
       expect(event.blockNumber).toEqual(1111)
       expect(validateAddress).toBeCalledWith(swapperId)
 
-      expect(moduleWriteActions.setPaused).toBeCalledWith(paused, {})
-      expect(getTransactionEventsSpy).toBeCalledWith(setPausedResult, [
+      expect(moduleWriteActions.setPaused).toBeCalledWith(paused)
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         client.eventTopics.setPaused[0],
       ])
     })
@@ -843,11 +868,10 @@ describe('Swapper writes', () => {
       expect(validateAddress).toBeCalledWith(swapperId)
       expect(validateAddress).toBeCalledWith('0xaddress')
 
-      expect(moduleWriteActions.execCalls).toBeCalledWith(
-        [[calls[0].to, calls[0].value, calls[0].data]],
-        {},
-      )
-      expect(getTransactionEventsSpy).toBeCalledWith(execCallsResult, [
+      expect(moduleWriteActions.execCalls).toBeCalledWith([
+        [calls[0].to, calls[0].value, calls[0].data],
+      ])
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         client.eventTopics.execCalls[0],
       ])
     })
@@ -1036,7 +1060,12 @@ describe('Swapper reads', () => {
       expect(validateAddress).toBeCalledWith('0xtoken1')
       expect(validateAddress).toBeCalledWith('0xtoken2')
       expect(readActions.getPairScaledOfferFactors).toBeCalledWith([
-        ['0xtoken1', '0xtoken2'],
+        [
+          {
+            base: '0xtoken1',
+            quote: '0xtoken2',
+          },
+        ],
       ])
     })
   })
