@@ -1,4 +1,5 @@
-import { Hex, PublicClient } from 'viem'
+import * as viemApi from 'viem'
+import { GetContractReturnType, Hex, PublicClient } from 'viem'
 
 import { OracleClient } from './oracle'
 import {
@@ -9,14 +10,12 @@ import {
 import { validateAddress } from '../utils/validation'
 import { MockOracle, readActions } from '../testing/mocks/oracle'
 
-jest.mock('@ethersproject/contracts', () => {
-  return {
-    Contract: jest
-      .fn()
-      .mockImplementation((_contractAddress, _contractInterface, provider) => {
-        return new MockOracle(provider)
-      }),
-  }
+jest.spyOn(viemApi, 'getContract').mockImplementation(() => {
+  return new MockOracle() as unknown as GetContractReturnType
+})
+
+jest.spyOn(viemApi, 'getAddress').mockImplementation((address) => {
+  return address as viemApi.Address
 })
 
 jest.mock('../utils/validation')
@@ -126,7 +125,16 @@ describe('Oracle reads', () => {
       expect(quoteAmounts).toEqual([BigInt(12)])
       expect(validateAddress).toBeCalledWith(oracleId)
       expect(readActions.getQuoteAmounts).toBeCalledWith([
-        [['0xbase', '0xquote'], BigInt(1), '0x'],
+        [
+          {
+            baseAmount: BigInt(1),
+            data: '0x',
+            quotePair: {
+              base: '0xbase',
+              quote: '0xquote',
+            },
+          },
+        ],
       ])
     })
   })
