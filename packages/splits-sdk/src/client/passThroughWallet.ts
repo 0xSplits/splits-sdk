@@ -37,7 +37,6 @@ import type {
   TransactionConfig,
   TransactionFormat,
 } from '../types'
-import { getTransactionEvents } from '../utils'
 import { validateAddress } from '../utils/validation'
 
 class PassThroughWalletTransactions extends BaseTransactions {
@@ -45,7 +44,7 @@ class PassThroughWalletTransactions extends BaseTransactions {
     transactionType,
     chainId,
     publicClient,
-    ensProvider,
+    ensPublicClient,
     account,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
@@ -53,7 +52,7 @@ class PassThroughWalletTransactions extends BaseTransactions {
       transactionType,
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -191,7 +190,7 @@ class PassThroughWalletTransactions extends BaseTransactions {
     return getContract({
       address: getAddress(passThroughWallet),
       abi: passThroughWalletAbi,
-      publicClient: this._provider,
+      publicClient: this._publicClient,
     })
   }
 }
@@ -205,7 +204,7 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
   constructor({
     chainId,
     publicClient,
-    ensProvider,
+    ensPublicClient,
     account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
@@ -213,7 +212,7 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
       transactionType: TransactionType.Transaction,
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -257,14 +256,14 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
     this.callData = new PassThroughWalletCallData({
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
     this.estimateGas = new PassThroughWalletGasEstimates({
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -297,19 +296,18 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
     passThroughWalletId: string
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } = await this.submitCreatePassThroughWalletTransaction({
       owner,
       paused,
       passThrough,
     })
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.createPassThroughWallet,
-    )
+      eventTopics: this.eventTopics.createPassThroughWallet,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event) {
       const log = decodeEventLog({
@@ -348,18 +346,17 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
   }: PassThroughTokensConfig): Promise<{
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } = await this.submitPassThroughTokensTransaction({
       passThroughWalletId,
       tokens,
     })
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.passThroughTokens,
-    )
+      eventTopics: this.eventTopics.passThroughTokens,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event)
       return {
@@ -380,15 +377,14 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
   }
 
   async setPassThrough(args: SetPassThroughConfig): Promise<{ event: Log }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } = await this.submitSetPassThroughTransaction(args)
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.setPassThrough,
-    )
+      eventTopics: this.eventTopics.setPassThrough,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event)
       return {
@@ -412,15 +408,14 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
   async setPaused(pauseArgs: PassThroughWalletPauseConfig): Promise<{
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } = await this.submitSetPausedTransaction(pauseArgs)
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.setPaused,
-    )
+      eventTopics: this.eventTopics.setPaused,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event)
       return {
@@ -445,15 +440,14 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
   async execCalls(args: PassThroughWalletExecCallsConfig): Promise<{
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } = await this.submitExecCallsTransaction(args)
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.execCalls,
-    )
+      eventTopics: this.eventTopics.execCalls,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event)
       return {
@@ -472,7 +466,7 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
     passThrough: string
   }> {
     validateAddress(passThroughWalletId)
-    this._requireProvider()
+    this._requirePublicClient()
 
     const passThroughWalletContract =
       this._getPassThroughWalletContract(passThroughWalletId)
@@ -493,7 +487,7 @@ class PassThroughWalletGasEstimates extends PassThroughWalletTransactions {
   constructor({
     chainId,
     publicClient,
-    ensProvider,
+    ensPublicClient,
     account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
@@ -501,7 +495,7 @@ class PassThroughWalletGasEstimates extends PassThroughWalletTransactions {
       transactionType: TransactionType.GasEstimate,
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -565,7 +559,7 @@ class PassThroughWalletCallData extends PassThroughWalletTransactions {
   constructor({
     chainId,
     publicClient,
-    ensProvider,
+    ensPublicClient,
     account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
@@ -573,7 +567,7 @@ class PassThroughWalletCallData extends PassThroughWalletTransactions {
       transactionType: TransactionType.CallData,
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })

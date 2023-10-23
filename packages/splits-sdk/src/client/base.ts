@@ -7,6 +7,7 @@ import {
   Hash,
   encodeFunctionData,
   Log,
+  Hex,
 } from 'viem'
 
 import { GraphQLClient, Variables } from 'graphql-request'
@@ -21,7 +22,7 @@ import {
   AccountNotFoundError,
   InvalidArgumentError,
   InvalidConfigError,
-  MissingProviderError,
+  MissingPublicClientError,
   MissingSignerError,
   UnsupportedSubgraphChainIdError,
 } from '../errors'
@@ -44,12 +45,7 @@ import type {
   TransactionFormat,
   TransactionOverrides,
 } from '../types'
-import {
-  fromBigIntToTokenValue,
-  getTokenData,
-  getTransactionEvents,
-  isLogsProvider,
-} from '../utils'
+import { fromBigIntToTokenValue, getTokenData, isLogsProvider } from '../utils'
 import {
   fetchActiveBalances,
   fetchERC20TransferredTokens,
@@ -57,26 +53,26 @@ import {
 
 class BaseClient {
   readonly _chainId: number
-  protected readonly _ensProvider: PublicClient | undefined
+  protected readonly _ensPublicClient: PublicClient | undefined
   readonly _signer: WalletClient | undefined
-  readonly _provider: PublicClient | undefined
+  readonly _publicClient: PublicClient | undefined
   private readonly _graphqlClient: GraphQLClient | undefined
   protected readonly _includeEnsNames: boolean
 
   constructor({
     chainId,
     publicClient,
-    ensProvider,
+    ensPublicClient,
     account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
-    if (includeEnsNames && !publicClient && !ensProvider)
+    if (includeEnsNames && !publicClient && !ensPublicClient)
       throw new InvalidConfigError(
         'Must include a mainnet public client if includeEnsNames is set to true',
       )
 
-    this._ensProvider = ensProvider ?? publicClient
-    this._provider = publicClient
+    this._ensPublicClient = ensPublicClient ?? publicClient
+    this._publicClient = publicClient
     this._chainId = chainId
     this._signer = account
     this._graphqlClient = getGraphqlClient(chainId)
@@ -99,15 +95,15 @@ class BaseClient {
     return result
   }
 
-  protected _requireProvider() {
-    if (!this._provider)
-      throw new MissingProviderError(
+  protected _requirePublicClient() {
+    if (!this._publicClient)
+      throw new MissingPublicClientError(
         'Provider required to perform this action, please update your call to the constructor',
       )
   }
 
   protected _requireSigner() {
-    this._requireProvider()
+    this._requirePublicClient()
     if (!this._signer)
       throw new MissingSignerError(
         'Signer required to perform this action, please update your call to the constructor',
@@ -200,19 +196,19 @@ class BaseClient {
     }
 
     // Need to fetch current balance. Handle alchemy/infura with logs, and all other providers with token list
-    if (!this._provider)
-      throw new MissingProviderError(
+    if (!this._publicClient)
+      throw new MissingPublicClientError(
         'Provider required to get active balances. Please update your call to the client constructor with a valid provider, or set includeActiveBalances to false',
       )
     const tokenList = erc20TokenList ?? []
     if (erc20TokenList === undefined) {
-      if (!isLogsProvider(this._provider))
+      if (!isLogsProvider(this._publicClient))
         throw new InvalidArgumentError(
           'Token list required if provider is not alchemy or infura',
         )
       const transferredErc20Tokens = await fetchERC20TransferredTokens(
         this._chainId,
-        this._provider,
+        this._publicClient,
         accountId,
       )
       tokenList.push(...transferredErc20Tokens)
@@ -230,7 +226,7 @@ class BaseClient {
     )
     const balances = await fetchActiveBalances(
       accountId,
-      this._provider,
+      this._publicClient,
       fullTokenList,
     )
     const filteredBalances = Object.keys(balances).reduce((acc, token) => {
@@ -247,7 +243,7 @@ class BaseClient {
   protected async _getFormattedTokenBalances(
     tokenBalancesList: TokenBalances[],
   ): Promise<FormattedTokenBalances[]> {
-    const localProvider = this._provider
+    const localProvider = this._publicClient
     if (!localProvider)
       throw new Error('Provider required to fetch token contract data')
     const tokenData: { [token: string]: { symbol: string; decimals: number } } =
@@ -298,14 +294,14 @@ export class BaseTransactions extends BaseClient {
     transactionType,
     chainId,
     publicClient,
-    ensProvider,
+    ensPublicClient,
     account,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -330,13 +326,13 @@ export class BaseTransactions extends BaseClient {
     functionArgs?: unknown[]
     transactionOverrides: TransactionOverrides
   }) {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
     this._requireSigner()
     if (!this._signer?.account) throw new Error()
 
     if (this._transactionType === TransactionType.GasEstimate) {
-      const gasEstimate = await this._provider.estimateContractGas({
+      const gasEstimate = await this._publicClient.estimateContractGas({
         address: contractAddress,
         abi: contractAbi,
         functionName,
@@ -346,7 +342,7 @@ export class BaseTransactions extends BaseClient {
       })
       return gasEstimate
     } else if (this._transactionType === TransactionType.CallData) {
-      const { request } = await this._provider.simulateContract({
+      const { request } = await this._publicClient.simulateContract({
         address: contractAddress,
         abi: contractAbi,
         functionName,
@@ -364,7 +360,7 @@ export class BaseTransactions extends BaseClient {
         account: undefined,
       }
     } else if (this._transactionType === TransactionType.Transaction) {
-      const { request } = await this._provider.simulateContract({
+      const { request } = await this._publicClient.simulateContract({
         address: contractAddress,
         abi: contractAbi,
         functionName,
@@ -424,6 +420,35 @@ export class BaseTransactions extends BaseClient {
 }
 
 export class BaseClientMixin extends BaseTransactions {
+  async getTransactionEvents({
+    txHash,
+    eventTopics,
+    includeAll,
+  }: {
+    txHash: Hash
+    eventTopics: Hex[]
+    includeAll?: boolean
+  }): Promise<Log[]> {
+    if (!this._publicClient)
+      throw new Error('Public client required to get transaction events')
+
+    const transaction = await this._publicClient.waitForTransactionReceipt({
+      hash: txHash,
+    })
+    if (transaction.status === 'success') {
+      const events = transaction.logs?.filter((log) => {
+        if (includeAll) return true
+        if (log.topics[0]) return eventTopics.includes(log.topics[0])
+
+        return false
+      })
+
+      return events
+    }
+
+    return []
+  }
+
   async submitMulticallTransaction({ calls }: { calls: CallData[] }): Promise<{
     txHash: Hash
   }> {
@@ -439,18 +464,17 @@ export class BaseClientMixin extends BaseTransactions {
   }: {
     calls: CallData[]
   }): Promise<{ events: Log[] }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
-    const { txHash: multicallTx } = await this.submitMulticallTransaction({
+    const { txHash } = await this.submitMulticallTransaction({
       calls,
     })
-    const events = await getTransactionEvents(
-      this._provider,
-      multicallTx,
-      [],
-      true,
-    )
+    const events = await this.getTransactionEvents({
+      txHash,
+      eventTopics: [],
+      includeAll: true,
+    })
     return { events }
   }
 }

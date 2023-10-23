@@ -5,7 +5,7 @@ import { SplitsClient } from './index'
 import {
   InvalidAuthError,
   InvalidConfigError,
-  MissingProviderError,
+  MissingPublicClientError,
   MissingSignerError,
   UnsupportedChainIdError,
   UnsupportedSubgraphChainIdError,
@@ -46,17 +46,6 @@ jest.mock('viem', () => {
 
 jest.mock('../utils/validation')
 
-const getTransactionEventsSpy = jest
-  .spyOn(utils, 'getTransactionEvents')
-  .mockImplementation(async () => {
-    const event = {
-      blockNumber: 12345,
-      args: {
-        split: '0xsplit',
-      },
-    } as unknown as Log
-    return [event]
-  })
 const getSortedRecipientsMock = jest
   .spyOn(utils, 'getRecipientSortedAddressesAndAllocations')
   .mockImplementation(() => {
@@ -133,7 +122,7 @@ describe('Client config validation', () => {
         new SplitsClient({
           chainId: 1,
           includeEnsNames: true,
-          ensProvider: publicClient,
+          ensPublicClient: publicClient,
         }),
     ).not.toThrow()
   })
@@ -204,6 +193,17 @@ describe('SplitMain writes', () => {
     publicClient,
     account,
   })
+  const getTransactionEventsSpy = jest
+    .spyOn(splitsClient, 'getTransactionEvents')
+    .mockImplementation(async () => {
+      const event = {
+        blockNumber: 12345,
+        args: {
+          split: '0xsplit',
+        },
+      } as unknown as Log
+      return [event]
+    })
 
   beforeEach(() => {
     ;(validateSplitInputs as jest.Mock).mockClear()
@@ -237,7 +237,7 @@ describe('SplitMain writes', () => {
             recipients,
             distributorFeePercent,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Create split fails with no signer', async () => {
@@ -277,9 +277,10 @@ describe('SplitMain writes', () => {
         DISTRIBUTOR_FEE,
         ADDRESS_ZERO,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        splitsClient.eventTopics.createSplit[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [splitsClient.eventTopics.createSplit[0]],
+      })
     })
 
     test('Create mutable split passes', async () => {
@@ -307,9 +308,10 @@ describe('SplitMain writes', () => {
         DISTRIBUTOR_FEE,
         controller,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        splitsClient.eventTopics.createSplit[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [splitsClient.eventTopics.createSplit[0]],
+      })
     })
   })
 
@@ -339,7 +341,7 @@ describe('SplitMain writes', () => {
             recipients,
             distributorFeePercent,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Update split fails with no signer', async () => {
@@ -399,9 +401,10 @@ describe('SplitMain writes', () => {
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        splitsClient.eventTopics.updateSplit[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [splitsClient.eventTopics.updateSplit[0]],
+      })
     })
   })
 
@@ -444,7 +447,7 @@ describe('SplitMain writes', () => {
             splitId,
             token: ADDRESS_ZERO,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Distribute token fails with no signer', async () => {
@@ -481,9 +484,10 @@ describe('SplitMain writes', () => {
         DISTRIBUTOR_FEE,
         CONTROLLER_ADDRESS,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        splitsClient.eventTopics.distributeToken[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [splitsClient.eventTopics.distributeToken[0]],
+      })
     })
 
     test('Distribute erc20 passes', async () => {
@@ -507,9 +511,10 @@ describe('SplitMain writes', () => {
         DISTRIBUTOR_FEE,
         CONTROLLER_ADDRESS,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        splitsClient.eventTopics.distributeToken[1],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [splitsClient.eventTopics.distributeToken[1]],
+      })
     })
 
     test('Distribute eth to payout address passes', async () => {
@@ -533,9 +538,10 @@ describe('SplitMain writes', () => {
         DISTRIBUTOR_FEE,
         distributorAddress,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        splitsClient.eventTopics.distributeToken[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [splitsClient.eventTopics.distributeToken[0]],
+      })
     })
 
     test('Distribute erc20 to payout address passes', async () => {
@@ -561,9 +567,10 @@ describe('SplitMain writes', () => {
         DISTRIBUTOR_FEE,
         distributorAddress,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        splitsClient.eventTopics.distributeToken[1],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [splitsClient.eventTopics.distributeToken[1]],
+      })
     })
   })
 
@@ -604,7 +611,7 @@ describe('SplitMain writes', () => {
             distributorFeePercent,
             token: ADDRESS_ZERO,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Update and distribute fails with no signer', async () => {
@@ -670,9 +677,12 @@ describe('SplitMain writes', () => {
         DISTRIBUTOR_FEE,
         CONTROLLER_ADDRESS,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        splitsClient.eventTopics.updateSplitAndDistributeToken[1],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [
+          splitsClient.eventTopics.updateSplitAndDistributeToken[1],
+        ],
+      })
     })
 
     test('Update and distribute erc20 passes', async () => {
@@ -702,9 +712,12 @@ describe('SplitMain writes', () => {
         DISTRIBUTOR_FEE,
         CONTROLLER_ADDRESS,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        splitsClient.eventTopics.updateSplitAndDistributeToken[2],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [
+          splitsClient.eventTopics.updateSplitAndDistributeToken[2],
+        ],
+      })
     })
 
     test('Update and distribute eth to payout address passes', async () => {
@@ -734,9 +747,12 @@ describe('SplitMain writes', () => {
         DISTRIBUTOR_FEE,
         distributorAddress,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        splitsClient.eventTopics.updateSplitAndDistributeToken[1],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [
+          splitsClient.eventTopics.updateSplitAndDistributeToken[1],
+        ],
+      })
     })
 
     test('Update and distribute erc20 to payout address passes', async () => {
@@ -768,9 +784,12 @@ describe('SplitMain writes', () => {
         DISTRIBUTOR_FEE,
         distributorAddress,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        splitsClient.eventTopics.updateSplitAndDistributeToken[2],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [
+          splitsClient.eventTopics.updateSplitAndDistributeToken[2],
+        ],
+      })
     })
   })
 
@@ -797,7 +816,7 @@ describe('SplitMain writes', () => {
             address,
             tokens: [ADDRESS_ZERO],
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Withdraw fails with no signer', async () => {
@@ -826,9 +845,10 @@ describe('SplitMain writes', () => {
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(address)
       expect(writeActions.withdraw).toBeCalledWith(address, 1, ['0xerc20'])
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        splitsClient.eventTopics.withdrawFunds[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [splitsClient.eventTopics.withdrawFunds[0]],
+      })
     })
 
     test('Withdraw passes with only erc20', async () => {
@@ -845,9 +865,10 @@ describe('SplitMain writes', () => {
         '0xerc20',
         '0xerc202',
       ])
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        splitsClient.eventTopics.withdrawFunds[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [splitsClient.eventTopics.withdrawFunds[0]],
+      })
     })
   })
 
@@ -875,7 +896,7 @@ describe('SplitMain writes', () => {
             splitId,
             newController,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Initate transfer fails with no signer', async () => {
@@ -922,9 +943,10 @@ describe('SplitMain writes', () => {
         splitId,
         newController,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        splitsClient.eventTopics.initiateControlTransfer[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [splitsClient.eventTopics.initiateControlTransfer[0]],
+      })
     })
   })
 
@@ -952,7 +974,7 @@ describe('SplitMain writes', () => {
           await badSplitsClient.cancelControlTransfer({
             splitId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Cancel transfer fails with no signer', async () => {
@@ -993,9 +1015,10 @@ describe('SplitMain writes', () => {
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitId)
       expect(writeActions.cancelControlTransfer).toBeCalledWith(splitId)
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        splitsClient.eventTopics.cancelControlTransfer[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [splitsClient.eventTopics.cancelControlTransfer[0]],
+      })
     })
   })
 
@@ -1021,7 +1044,7 @@ describe('SplitMain writes', () => {
           await badSplitsClient.acceptControlTransfer({
             splitId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Accept transfer fails with no signer', async () => {
@@ -1054,6 +1077,17 @@ describe('SplitMain writes', () => {
         publicClient,
         account,
       })
+      const getTransactionEventsSpy = jest
+        .spyOn(splitsClient, 'getTransactionEvents')
+        .mockImplementation(async () => {
+          const event = {
+            blockNumber: 12345,
+            args: {
+              split: '0xsplit',
+            },
+          } as unknown as Log
+          return [event]
+        })
 
       const { event } = await splitsClient.acceptControlTransfer({
         splitId,
@@ -1062,9 +1096,10 @@ describe('SplitMain writes', () => {
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitId)
       expect(writeActions.acceptControl).toBeCalledWith(splitId)
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        splitsClient.eventTopics.acceptControlTransfer[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [splitsClient.eventTopics.acceptControlTransfer[0]],
+      })
     })
   })
 
@@ -1092,7 +1127,7 @@ describe('SplitMain writes', () => {
           await badSplitsClient.makeSplitImmutable({
             splitId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Make immutable fails with no signer', async () => {
@@ -1133,9 +1168,10 @@ describe('SplitMain writes', () => {
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitId)
       expect(writeActions.makeSplitImmutable).toBeCalledWith(splitId)
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        splitsClient.eventTopics.makeSplitImmutable[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [splitsClient.eventTopics.makeSplitImmutable[0]],
+      })
     })
   })
 })
@@ -1171,7 +1207,7 @@ describe('SplitMain reads', () => {
           await badSplitsClient.getSplitBalance({
             splitId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns eth balance', async () => {
@@ -1213,7 +1249,7 @@ describe('SplitMain reads', () => {
             recipients,
             distributorFeePercent,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Predicts immutable address', async () => {
@@ -1255,7 +1291,7 @@ describe('SplitMain reads', () => {
           await badSplitsClient.getController({
             splitId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Get controller passes', async () => {
@@ -1284,7 +1320,7 @@ describe('SplitMain reads', () => {
           await badSplitsClient.getNewPotentialController({
             splitId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Get potential controller passes', async () => {
@@ -1314,7 +1350,7 @@ describe('SplitMain reads', () => {
           await badSplitsClient.getHash({
             splitId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Get hash passes', async () => {

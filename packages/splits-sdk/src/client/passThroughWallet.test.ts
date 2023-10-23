@@ -3,11 +3,10 @@ import { getPassThroughWalletFactoryAddress } from '../constants'
 import {
   InvalidAuthError,
   InvalidConfigError,
-  MissingProviderError,
+  MissingPublicClientError,
   MissingSignerError,
   UnsupportedChainIdError,
 } from '../errors'
-import * as utils from '../utils'
 import { validateAddress } from '../utils/validation'
 import { writeActions as factoryWriteActions } from '../testing/mocks/passThroughWalletFactory'
 import {
@@ -38,18 +37,6 @@ jest.mock('viem', () => {
 })
 
 jest.mock('../utils/validation')
-
-const getTransactionEventsSpy = jest
-  .spyOn(utils, 'getTransactionEvents')
-  .mockImplementation(async () => {
-    const event = {
-      blockNumber: 12345,
-      args: {
-        passThroughWallet: '0xPassThroughWallet',
-      },
-    } as unknown as Log
-    return [event]
-  })
 
 const mockProvider = jest.fn(() => {
   return {
@@ -157,6 +144,17 @@ describe('Pass through wallet writes', () => {
     publicClient,
     account,
   })
+  const getTransactionEventsSpy = jest
+    .spyOn(client, 'getTransactionEvents')
+    .mockImplementation(async () => {
+      const event = {
+        blockNumber: 12345,
+        args: {
+          passThroughWallet: '0xPassThroughWallet',
+        },
+      } as unknown as Log
+      return [event]
+    })
 
   beforeEach(() => {
     ;(validateAddress as jest.Mock).mockClear()
@@ -192,7 +190,7 @@ describe('Pass through wallet writes', () => {
             paused,
             passThrough,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Create pass through wallet fails with no signer', async () => {
@@ -229,9 +227,10 @@ describe('Pass through wallet writes', () => {
         paused,
         passThrough,
       ])
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        client.eventTopics.createPassThroughWallet[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [client.eventTopics.createPassThroughWallet[0]],
+      })
     })
   })
 
@@ -261,7 +260,7 @@ describe('Pass through wallet writes', () => {
             passThroughWalletId,
             tokens,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Pass through tokens fails with no signer', async () => {
@@ -290,9 +289,10 @@ describe('Pass through wallet writes', () => {
       expect(validateAddress).toBeCalledWith('0xtoken1')
       expect(validateAddress).toBeCalledWith('0xtoken2')
       expect(moduleWriteActions.passThroughTokens).toBeCalledWith(tokens)
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        client.eventTopics.passThroughTokens[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [client.eventTopics.passThroughTokens[0]],
+      })
     })
   })
 
@@ -322,7 +322,7 @@ describe('Pass through wallet writes', () => {
             passThroughWalletId,
             passThrough,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Set pass through fails with no signer', async () => {
@@ -367,9 +367,10 @@ describe('Pass through wallet writes', () => {
       expect(validateAddress).toBeCalledWith(passThroughWalletId)
       expect(validateAddress).toBeCalledWith(passThrough)
       expect(moduleWriteActions.setPassThrough).toBeCalledWith(passThrough)
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        client.eventTopics.setPassThrough[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [client.eventTopics.setPassThrough[0]],
+      })
     })
   })
 
@@ -397,7 +398,7 @@ describe('Pass through wallet writes', () => {
             passThroughWalletId,
             paused,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Set paused fails with no signer', async () => {
@@ -442,9 +443,10 @@ describe('Pass through wallet writes', () => {
       expect(validateAddress).toBeCalledWith(passThroughWalletId)
 
       expect(moduleWriteActions.setPaused).toBeCalledWith(paused)
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        client.eventTopics.setPaused[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [client.eventTopics.setPaused[0]],
+      })
     })
   })
 
@@ -478,7 +480,7 @@ describe('Pass through wallet writes', () => {
             passThroughWalletId,
             calls,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Exec calls fails with no signer', async () => {
@@ -526,9 +528,10 @@ describe('Pass through wallet writes', () => {
       expect(moduleWriteActions.execCalls).toBeCalledWith([
         [calls[0].to, calls[0].value, calls[0].data],
       ])
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        client.eventTopics.execCalls[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [client.eventTopics.execCalls[0]],
+      })
     })
   })
 })
@@ -561,7 +564,7 @@ describe('Pass through wallet reads', () => {
           await badClient.getPassThrough({
             passThroughWalletId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns pass through', async () => {

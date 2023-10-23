@@ -53,7 +53,7 @@ import {
 import {
   AccountNotFoundError,
   InvalidAuthError,
-  MissingProviderError,
+  MissingPublicClientError,
   TransactionFailedError,
   UnsupportedChainIdError,
 } from '../errors'
@@ -92,7 +92,6 @@ import type {
 } from '../types'
 import {
   getRecipientSortedAddressesAndAllocations,
-  getTransactionEvents,
   addEnsNames,
   getBigIntFromPercent,
 } from '../utils'
@@ -119,7 +118,7 @@ class SplitsTransactions extends BaseTransactions {
     transactionType,
     chainId,
     publicClient,
-    ensProvider,
+    ensPublicClient,
     account,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
@@ -127,7 +126,7 @@ class SplitsTransactions extends BaseTransactions {
       transactionType,
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -137,14 +136,14 @@ class SplitsTransactions extends BaseTransactions {
       this._splitMainContract = getContract({
         address: getSplitMainAddress(chainId),
         abi: splitMainEthereumAbi,
-        publicClient: this._provider,
+        publicClient: this._publicClient,
       })
     } else if (polygonAbiChainIds.includes(chainId)) {
       this._splitMainAbi = splitMainPolygonAbi
       this._splitMainContract = getContract({
         address: getSplitMainAddress(chainId),
         abi: splitMainPolygonAbi,
-        publicClient: this._provider,
+        publicClient: this._publicClient,
       })
     } else
       throw new UnsupportedChainIdError(chainId, SPLITS_SUPPORTED_CHAIN_IDS)
@@ -448,9 +447,9 @@ class SplitsTransactions extends BaseTransactions {
     const split = protectedFormatSplit(gqlSplit)
 
     if (this._includeEnsNames) {
-      if (!this._ensProvider) throw new Error()
+      if (!this._ensPublicClient) throw new Error()
       await addEnsNames(
-        this._ensProvider,
+        this._ensPublicClient,
         split.recipients.map((recipient) => {
           return {
             ...recipient,
@@ -512,13 +511,13 @@ export class SplitsClient extends SplitsTransactions {
     publicClient,
     account,
     includeEnsNames = false,
-    ensProvider,
+    ensPublicClient,
   }: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Transaction,
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -527,7 +526,7 @@ export class SplitsClient extends SplitsTransactions {
       this.waterfall = new WaterfallClient({
         chainId,
         publicClient,
-        ensProvider,
+        ensPublicClient,
         account,
         includeEnsNames,
       })
@@ -536,7 +535,7 @@ export class SplitsClient extends SplitsTransactions {
       this.liquidSplits = new LiquidSplitClient({
         chainId,
         publicClient,
-        ensProvider,
+        ensPublicClient,
         account,
         includeEnsNames,
       })
@@ -545,7 +544,7 @@ export class SplitsClient extends SplitsTransactions {
       this.vesting = new VestingClient({
         chainId,
         publicClient,
-        ensProvider,
+        ensPublicClient,
         account,
         includeEnsNames,
       })
@@ -554,7 +553,7 @@ export class SplitsClient extends SplitsTransactions {
       this.templates = new TemplatesClient({
         chainId,
         publicClient,
-        ensProvider,
+        ensPublicClient,
         account,
         includeEnsNames,
       })
@@ -563,7 +562,7 @@ export class SplitsClient extends SplitsTransactions {
       this.oracle = new OracleClient({
         chainId,
         publicClient,
-        ensProvider,
+        ensPublicClient,
         account,
         includeEnsNames,
       })
@@ -572,7 +571,7 @@ export class SplitsClient extends SplitsTransactions {
       this.swapper = new SwapperClient({
         chainId,
         publicClient,
-        ensProvider,
+        ensPublicClient,
         account,
         includeEnsNames,
       })
@@ -581,7 +580,7 @@ export class SplitsClient extends SplitsTransactions {
       this.passThroughWallet = new PassThroughWalletClient({
         chainId,
         publicClient,
-        ensProvider,
+        ensPublicClient,
         account,
         includeEnsNames,
       })
@@ -659,14 +658,14 @@ export class SplitsClient extends SplitsTransactions {
     this.callData = new SplitsCallData({
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
     this.estimateGas = new SplitsGasEstimates({
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -694,15 +693,14 @@ export class SplitsClient extends SplitsTransactions {
     splitId: string
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } = await this.submitCreateSplitTransaction(createSplitArgs)
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.createSplit,
-    )
+      eventTopics: this.eventTopics.createSplit,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event) {
       const log = decodeEventLog({
@@ -735,15 +733,14 @@ export class SplitsClient extends SplitsTransactions {
   async updateSplit(updateSplitArgs: UpdateSplitConfig): Promise<{
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } = await this.submitUpdateSplitTransaction(updateSplitArgs)
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.updateSplit,
-    )
+      eventTopics: this.eventTopics.updateSplit,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event) return { event }
 
@@ -765,8 +762,8 @@ export class SplitsClient extends SplitsTransactions {
   async distributeToken(distributeTokenArgs: DistributeTokenConfig): Promise<{
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } =
       await this.submitDistributeTokenTransaction(distributeTokenArgs)
@@ -775,9 +772,10 @@ export class SplitsClient extends SplitsTransactions {
       token === ADDRESS_ZERO
         ? this.eventTopics.distributeToken[0]
         : this.eventTopics.distributeToken[1]
-    const events = await getTransactionEvents(this._provider, txHash, [
-      eventTopic,
-    ])
+    const events = await this.getTransactionEvents({
+      txHash,
+      eventTopics: [eventTopic],
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event) return { event }
 
@@ -803,8 +801,8 @@ export class SplitsClient extends SplitsTransactions {
   ): Promise<{
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } =
       await this.submitUpdateSplitAndDistributeTokenTransaction(
@@ -815,9 +813,10 @@ export class SplitsClient extends SplitsTransactions {
       token === ADDRESS_ZERO
         ? this.eventTopics.updateSplitAndDistributeToken[1]
         : this.eventTopics.updateSplitAndDistributeToken[2]
-    const events = await getTransactionEvents(this._provider, txHash, [
-      eventTopic,
-    ])
+    const events = await this.getTransactionEvents({
+      txHash,
+      eventTopics: [eventTopic],
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event) return { event }
 
@@ -839,15 +838,14 @@ export class SplitsClient extends SplitsTransactions {
   async withdrawFunds(withdrawArgs: WithdrawFundsConfig): Promise<{
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } = await this.submitWithdrawFundsTransaction(withdrawArgs)
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.withdrawFunds,
-    )
+      eventTopics: this.eventTopics.withdrawFunds,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event) return { event }
 
@@ -872,16 +870,15 @@ export class SplitsClient extends SplitsTransactions {
   ): Promise<{
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } =
       await this.submitInitiateControlTransferTransaction(initiateTransferArgs)
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.initiateControlTransfer,
-    )
+      eventTopics: this.eventTopics.initiateControlTransfer,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event) return { event }
 
@@ -906,16 +903,15 @@ export class SplitsClient extends SplitsTransactions {
   ): Promise<{
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } =
       await this.submitCancelControlTransferTransaction(cancelTransferArgs)
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.cancelControlTransfer,
-    )
+      eventTopics: this.eventTopics.cancelControlTransfer,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event) return { event }
 
@@ -940,16 +936,15 @@ export class SplitsClient extends SplitsTransactions {
   ): Promise<{
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } =
       await this.submitAcceptControlTransferTransaction(acceptTransferArgs)
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.acceptControlTransfer,
-    )
+      eventTopics: this.eventTopics.acceptControlTransfer,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event) return { event }
 
@@ -973,16 +968,15 @@ export class SplitsClient extends SplitsTransactions {
   ): Promise<{
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } =
       await this.submitMakeSplitImmutableTransaction(makeImmutableArgs)
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.makeSplitImmutable,
-    )
+      eventTopics: this.eventTopics.makeSplitImmutable,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event) return { event }
 
@@ -1073,7 +1067,7 @@ export class SplitsClient extends SplitsTransactions {
   }> {
     validateAddress(splitId)
     validateAddress(token)
-    this._requireProvider()
+    this._requirePublicClient()
 
     const balance =
       token === ADDRESS_ZERO
@@ -1098,7 +1092,7 @@ export class SplitsClient extends SplitsTransactions {
     splitId: Address
   }> {
     validateSplitInputs({ recipients, distributorFeePercent })
-    this._requireProvider()
+    this._requirePublicClient()
 
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
@@ -1117,7 +1111,7 @@ export class SplitsClient extends SplitsTransactions {
     controller: Address
   }> {
     validateAddress(splitId)
-    this._requireProvider()
+    this._requirePublicClient()
 
     const controller = await this._splitMainContract.read.getController([
       getAddress(splitId),
@@ -1130,7 +1124,7 @@ export class SplitsClient extends SplitsTransactions {
     newPotentialController: Address
   }> {
     validateAddress(splitId)
-    this._requireProvider()
+    this._requirePublicClient()
 
     const newPotentialController =
       await this._splitMainContract.read.getNewPotentialController([
@@ -1144,7 +1138,7 @@ export class SplitsClient extends SplitsTransactions {
     hash: string
   }> {
     validateAddress(splitId)
-    this._requireProvider()
+    this._requirePublicClient()
 
     const hash = await this._splitMainContract.read.getHash([
       getAddress(splitId),
@@ -1202,8 +1196,8 @@ export class SplitsClient extends SplitsTransactions {
     erc20TokenList?: string[]
   }): Promise<SplitEarnings> {
     validateAddress(splitId)
-    if (includeActiveBalances && !this._provider)
-      throw new MissingProviderError(
+    if (includeActiveBalances && !this._publicClient)
+      throw new MissingPublicClientError(
         'Provider required to get split active balances. Please update your call to the SplitsClient constructor with a valid provider, or set includeActiveBalances to false',
       )
 
@@ -1226,8 +1220,8 @@ export class SplitsClient extends SplitsTransactions {
     includeActiveBalances?: boolean
     erc20TokenList?: string[]
   }): Promise<FormattedSplitEarnings> {
-    if (!this._provider)
-      throw new MissingProviderError(
+    if (!this._publicClient)
+      throw new MissingPublicClientError(
         'Provider required to get formatted earnings. Please update your call to the SplitsClient constructor with a valid provider',
       )
     const { distributed, activeBalances } = await this.getSplitEarnings({
@@ -1273,8 +1267,8 @@ export class SplitsClient extends SplitsTransactions {
     withdrawn: FormattedTokenBalances
     activeBalances: FormattedTokenBalances
   }> {
-    if (!this._provider)
-      throw new MissingProviderError(
+    if (!this._publicClient)
+      throw new MissingPublicClientError(
         'Provider required to get formatted earnings. Please update your call to the SplitsClient constructor with a valid provider',
       )
 
@@ -1341,8 +1335,8 @@ export class SplitsClient extends SplitsTransactions {
     userId: string
     contractIds?: string[]
   }): Promise<FormattedUserEarningsByContract> {
-    if (!this._provider) {
-      throw new MissingProviderError(
+    if (!this._publicClient) {
+      throw new MissingPublicClientError(
         'Provider required to get formatted earnings. Please update your call to the SplitsClient contstructor with a valid provider.',
       )
     }
@@ -1388,7 +1382,7 @@ export class SplitsClient extends SplitsTransactions {
     accountId: string
   }): Promise<Account | undefined> {
     validateAddress(accountId)
-    this._requireProvider()
+    this._requirePublicClient()
 
     const chainId = this._chainId
 
@@ -1434,7 +1428,7 @@ class SplitsGasEstimates extends SplitsTransactions {
     publicClient,
     account,
     includeEnsNames = false,
-    ensProvider,
+    ensPublicClient,
   }: SplitsClientConfig) {
     super({
       transactionType: TransactionType.GasEstimate,
@@ -1442,7 +1436,7 @@ class SplitsGasEstimates extends SplitsTransactions {
       publicClient,
       account,
       includeEnsNames,
-      ensProvider,
+      ensPublicClient,
     })
   }
 
@@ -1539,7 +1533,7 @@ class SplitsCallData extends SplitsTransactions {
     publicClient,
     account,
     includeEnsNames = false,
-    ensProvider,
+    ensPublicClient,
   }: SplitsClientConfig) {
     super({
       transactionType: TransactionType.CallData,
@@ -1547,7 +1541,7 @@ class SplitsCallData extends SplitsTransactions {
       publicClient,
       account,
       includeEnsNames,
-      ensProvider,
+      ensPublicClient,
     })
   }
 

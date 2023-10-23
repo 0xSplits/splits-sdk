@@ -3,7 +3,7 @@ import { Hex, PublicClient } from 'viem'
 import { OracleClient } from './oracle'
 import {
   InvalidConfigError,
-  MissingProviderError,
+  MissingPublicClientError,
   UnsupportedChainIdError,
 } from '../errors'
 import { validateAddress } from '../utils/validation'
@@ -115,7 +115,7 @@ describe('Oracle reads', () => {
             oracleId,
             quoteParams,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns quote amounts', async () => {

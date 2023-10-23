@@ -16,7 +16,7 @@ class OracleTransactions extends BaseTransactions {
     transactionType,
     chainId,
     publicClient,
-    ensProvider,
+    ensPublicClient,
     account,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
@@ -24,7 +24,7 @@ class OracleTransactions extends BaseTransactions {
       transactionType,
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -34,7 +34,7 @@ class OracleTransactions extends BaseTransactions {
     return getContract({
       address: getAddress(oracle),
       abi: uniV3OracleAbi,
-      publicClient: this._provider,
+      publicClient: this._publicClient,
     })
   }
 }
@@ -43,7 +43,7 @@ export class OracleClient extends OracleTransactions {
   constructor({
     chainId,
     publicClient,
-    ensProvider,
+    ensPublicClient,
     account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
@@ -51,7 +51,7 @@ export class OracleClient extends OracleTransactions {
       transactionType: TransactionType.Transaction,
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -71,7 +71,7 @@ export class OracleClient extends OracleTransactions {
     quoteAmounts: bigint[]
   }> {
     validateAddress(oracleId)
-    this._requireProvider()
+    this._requirePublicClient()
 
     const oracleContract = this._getOracleContract(oracleId)
     const quoteAmounts = await oracleContract.read.getQuoteAmounts([

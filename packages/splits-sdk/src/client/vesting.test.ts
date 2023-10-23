@@ -4,7 +4,7 @@ import { VestingClient } from './vesting'
 import { getVestingFactoryAddress } from '../constants'
 import {
   InvalidConfigError,
-  MissingProviderError,
+  MissingPublicClientError,
   MissingSignerError,
   UnsupportedChainIdError,
 } from '../errors'
@@ -46,18 +46,6 @@ jest.mock('viem', () => {
 })
 
 jest.mock('../utils/validation')
-
-const getTransactionEventsSpy = jest
-  .spyOn(utils, 'getTransactionEvents')
-  .mockImplementation(async () => {
-    const event = {
-      blockNumber: 12345,
-      args: {
-        vestingModule: '0xvesting',
-      },
-    } as unknown as Log
-    return [event]
-  })
 
 const getTokenDataMock = jest
   .spyOn(utils, 'getTokenData')
@@ -161,6 +149,17 @@ describe('Vesting writes', () => {
     publicClient,
     account,
   })
+  const getTransactionEventsSpy = jest
+    .spyOn(vestingClient, 'getTransactionEvents')
+    .mockImplementation(async () => {
+      const event = {
+        blockNumber: 12345,
+        args: {
+          vestingModule: '0xvesting',
+        },
+      } as unknown as Log
+      return [event]
+    })
 
   beforeEach(() => {
     ;(validateVestingPeriod as jest.Mock).mockClear()
@@ -194,7 +193,7 @@ describe('Vesting writes', () => {
             beneficiary,
             vestingPeriodSeconds,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Create vesting fails with no signer', async () => {
@@ -227,9 +226,10 @@ describe('Vesting writes', () => {
         beneficiary,
         vestingPeriodSeconds,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        vestingClient.eventTopics.createVestingModule[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [vestingClient.eventTopics.createVestingModule[0]],
+      })
     })
   })
 
@@ -259,7 +259,7 @@ describe('Vesting writes', () => {
             vestingModuleId,
             tokens,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Start vest fails with no signer', async () => {
@@ -288,9 +288,10 @@ describe('Vesting writes', () => {
       expect(validateAddress).toBeCalledWith('0xtoken1')
       expect(validateAddress).toBeCalledWith('0xtoken2')
       expect(moduleWriteActions.createVestingStreams).toBeCalledWith(tokens)
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        vestingClient.eventTopics.startVest[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [vestingClient.eventTopics.startVest[0]],
+      })
     })
   })
 
@@ -320,7 +321,7 @@ describe('Vesting writes', () => {
             vestingModuleId,
             streamIds,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Release vested funds fails with no signer', async () => {
@@ -347,9 +348,10 @@ describe('Vesting writes', () => {
       expect(events[0].blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(vestingModuleId)
       expect(moduleWriteActions.releaseFromVesting).toBeCalledWith(streamIds)
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        vestingClient.eventTopics.releaseVestedFunds[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [vestingClient.eventTopics.releaseVestedFunds[0]],
+      })
     })
   })
 })
@@ -384,7 +386,7 @@ describe('Vesting reads', () => {
             beneficiary,
             vestingPeriodSeconds,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns predicted address', async () => {
@@ -425,7 +427,7 @@ describe('Vesting reads', () => {
           await badClient.getBeneficiary({
             vestingModuleId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns beneficiary', async () => {
@@ -457,7 +459,7 @@ describe('Vesting reads', () => {
           await badClient.getVestingPeriod({
             vestingModuleId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns vesting period', async () => {
@@ -491,7 +493,7 @@ describe('Vesting reads', () => {
             vestingModuleId,
             streamId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns vested amount', async () => {
@@ -526,7 +528,7 @@ describe('Vesting reads', () => {
             vestingModuleId,
             streamId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns vested and unreleased amount', async () => {
@@ -606,7 +608,7 @@ describe('Graphql reads', () => {
           await badClient.getVestingMetadata({
             vestingModuleId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Get vesting metadata passes', async () => {

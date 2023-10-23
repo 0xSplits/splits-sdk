@@ -70,12 +70,12 @@ export class TransactionFailedError extends Error {
   }
 }
 
-export class MissingProviderError extends Error {
-  name = 'MissingProviderError'
+export class MissingPublicClientError extends Error {
+  name = 'MissingPublicClientError'
 
   constructor(m?: string) {
     super(m)
-    Object.setPrototypeOf(this, MissingProviderError.prototype)
+    Object.setPrototypeOf(this, MissingPublicClientError.prototype)
   }
 }
 

@@ -54,7 +54,6 @@ import {
   getFormattedOracleParams,
   getFormattedScaledOfferFactor,
   getFormattedScaledOfferFactorOverrides,
-  getTransactionEvents,
 } from '../utils'
 import {
   validateAddress,
@@ -71,7 +70,7 @@ class SwapperTransactions extends BaseTransactions {
     transactionType,
     chainId,
     publicClient,
-    ensProvider,
+    ensPublicClient,
     account,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
@@ -79,7 +78,7 @@ class SwapperTransactions extends BaseTransactions {
       transactionType,
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -141,8 +140,8 @@ class SwapperTransactions extends BaseTransactions {
     validateAddress(swapperId)
     validateUniV3SwapInputAssets(inputAssets)
 
-    this._requireProvider()
-    if (!this._provider) throw new Error('Provider required')
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error('Provider required')
     if (this._shouldRequireSigner) this._requireSigner()
 
     const excessRecipientAddress = excessRecipient
@@ -391,8 +390,8 @@ class SwapperTransactions extends BaseTransactions {
   async formatSwapper(gqlSwapper: GqlSwapper): Promise<Swapper> {
     const swapper = protectedFormatSwapper(gqlSwapper)
     if (this._includeEnsNames) {
-      if (!this._ensProvider) throw new Error()
-      await addSwapperEnsNames(this._ensProvider, swapper)
+      if (!this._ensPublicClient) throw new Error()
+      await addSwapperEnsNames(this._ensPublicClient, swapper)
     }
 
     return swapper
@@ -416,7 +415,7 @@ class SwapperTransactions extends BaseTransactions {
     return getContract({
       address: getUniV3SwapAddress(this._chainId),
       abi: uniV3SwapAbi,
-      publicClient: this._provider,
+      publicClient: this._publicClient,
     })
   }
 
@@ -424,7 +423,7 @@ class SwapperTransactions extends BaseTransactions {
     return getContract({
       address: getAddress(swapper),
       abi: swapperAbi,
-      publicClient: this._provider,
+      publicClient: this._publicClient,
     })
   }
 
@@ -432,7 +431,7 @@ class SwapperTransactions extends BaseTransactions {
     return getContract({
       address: getSwapperFactoryAddress(this._chainId),
       abi: swapperFactoryAbi,
-      publicClient: this._provider,
+      publicClient: this._publicClient,
     })
   }
 }
@@ -446,7 +445,7 @@ export class SwapperClient extends SwapperTransactions {
   constructor({
     chainId,
     publicClient,
-    ensProvider,
+    ensPublicClient,
     account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
@@ -454,7 +453,7 @@ export class SwapperClient extends SwapperTransactions {
       transactionType: TransactionType.Transaction,
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -522,14 +521,14 @@ export class SwapperClient extends SwapperTransactions {
     this.callData = new SwapperCallData({
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
     this.estimateGas = new SwapperGasEstimates({
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -552,16 +551,15 @@ export class SwapperClient extends SwapperTransactions {
     swapperId: Address
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } =
       await this.submitCreateSwapperTransaction(createSwapperArgs)
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.createSwapper,
-    )
+      eventTopics: this.eventTopics.createSwapper,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event) {
       const log = decodeEventLog({
@@ -593,15 +591,14 @@ export class SwapperClient extends SwapperTransactions {
   async uniV3FlashSwap(flashArgs: UniV3FlashSwapConfig): Promise<{
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } = await this.submitUniV3FlashSwapTransaction(flashArgs)
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.uniV3FlashSwap,
-    )
+      eventTopics: this.eventTopics.uniV3FlashSwap,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event)
       return {
@@ -624,15 +621,14 @@ export class SwapperClient extends SwapperTransactions {
   async execCalls(callArgs: SwapperExecCallsConfig): Promise<{
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } = await this.submitExecCallsTransaction(callArgs)
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.execCalls,
-    )
+      eventTopics: this.eventTopics.execCalls,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event)
       return {
@@ -654,15 +650,14 @@ export class SwapperClient extends SwapperTransactions {
   async setPaused(pauseArgs: SwapperPauseConfig): Promise<{
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } = await this.submitSetPausedTransaction(pauseArgs)
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.setPaused,
-    )
+      eventTopics: this.eventTopics.setPaused,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event)
       return {
@@ -686,15 +681,14 @@ export class SwapperClient extends SwapperTransactions {
   async setBeneficiary(args: SwapperSetBeneficiaryConfig): Promise<{
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } = await this.submitSetBeneficiaryTransaction(args)
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.setBeneficiary,
-    )
+      eventTopics: this.eventTopics.setBeneficiary,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event)
       return {
@@ -720,15 +714,14 @@ export class SwapperClient extends SwapperTransactions {
   ): Promise<{
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } = await this.submitSetTokenToBeneficiaryTransaction(args)
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.setTokenToBeneficiary,
-    )
+      eventTopics: this.eventTopics.setTokenToBeneficiary,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event)
       return {
@@ -750,15 +743,14 @@ export class SwapperClient extends SwapperTransactions {
   async setOracle(args: SwapperSetOracleConfig): Promise<{
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } = await this.submitSetOracleTransaction(args)
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.setOracle,
-    )
+      eventTopics: this.eventTopics.setOracle,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event)
       return {
@@ -784,16 +776,15 @@ export class SwapperClient extends SwapperTransactions {
   ): Promise<{
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } =
       await this.submitSetDefaultScaledOfferFactorTransaction(args)
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.setDefaultScaledOfferFactor,
-    )
+      eventTopics: this.eventTopics.setDefaultScaledOfferFactor,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event)
       return {
@@ -819,16 +810,15 @@ export class SwapperClient extends SwapperTransactions {
   ): Promise<{
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } =
       await this.submitSetScaledOfferFactorOverridesTransaction(args)
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.setScaledOfferFactorOverrides,
-    )
+      eventTopics: this.eventTopics.setScaledOfferFactorOverrides,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event)
       return {
@@ -843,7 +833,7 @@ export class SwapperClient extends SwapperTransactions {
     beneficiary: string
   }> {
     validateAddress(swapperId)
-    this._requireProvider()
+    this._requirePublicClient()
 
     const swapperContract = this._getSwapperContract(swapperId)
     const beneficiary = await swapperContract.read.beneficiary()
@@ -857,7 +847,7 @@ export class SwapperClient extends SwapperTransactions {
     tokenToBeneficiary: string
   }> {
     validateAddress(swapperId)
-    this._requireProvider()
+    this._requirePublicClient()
 
     const swapperContract = this._getSwapperContract(swapperId)
     const tokenToBeneficiary = await swapperContract.read.tokenToBeneficiary()
@@ -871,7 +861,7 @@ export class SwapperClient extends SwapperTransactions {
     oracle: string
   }> {
     validateAddress(swapperId)
-    this._requireProvider()
+    this._requirePublicClient()
 
     const swapperContract = this._getSwapperContract(swapperId)
     const oracle = await swapperContract.read.oracle()
@@ -889,7 +879,7 @@ export class SwapperClient extends SwapperTransactions {
     defaultScaledOfferFactor: number
   }> {
     validateAddress(swapperId)
-    this._requireProvider()
+    this._requirePublicClient()
 
     const swapperContract = this._getSwapperContract(swapperId)
     const defaultScaledOfferFactor =
@@ -917,7 +907,7 @@ export class SwapperClient extends SwapperTransactions {
       validateAddress(quotePair.base)
       validateAddress(quotePair.quote)
     })
-    this._requireProvider()
+    this._requirePublicClient()
 
     const formattedQuotePairs = quotePairs.map((quotePair) => {
       return {
@@ -947,7 +937,7 @@ class SwapperGasEstimates extends SwapperTransactions {
   constructor({
     chainId,
     publicClient,
-    ensProvider,
+    ensPublicClient,
     account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
@@ -955,7 +945,7 @@ class SwapperGasEstimates extends SwapperTransactions {
       transactionType: TransactionType.GasEstimate,
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -1040,7 +1030,7 @@ class SwapperCallData extends SwapperTransactions {
   constructor({
     chainId,
     publicClient,
-    ensProvider,
+    ensPublicClient,
     account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
@@ -1048,7 +1038,7 @@ class SwapperCallData extends SwapperTransactions {
       transactionType: TransactionType.CallData,
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })

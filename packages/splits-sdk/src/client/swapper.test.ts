@@ -3,7 +3,7 @@ import { getSwapperFactoryAddress } from '../constants'
 import {
   InvalidAuthError,
   InvalidConfigError,
-  MissingProviderError,
+  MissingPublicClientError,
   MissingSignerError,
   UnsupportedChainIdError,
 } from '../errors'
@@ -52,17 +52,6 @@ jest.mock('viem', () => {
 
 jest.mock('../utils/validation')
 
-const getTransactionEventsSpy = jest
-  .spyOn(utils, 'getTransactionEvents')
-  .mockImplementation(async () => {
-    const event = {
-      blockNumber: 1111,
-      args: {
-        swapper: '0xswapper',
-      },
-    } as unknown as Log
-    return [event]
-  })
 const getFormattedOracleParamsMock = jest
   .spyOn(utils, 'getFormattedOracleParams')
   .mockImplementation(() => {
@@ -185,6 +174,17 @@ describe('Swapper writes', () => {
     publicClient,
     account,
   })
+  const getTransactionEventsSpy = jest
+    .spyOn(client, 'getTransactionEvents')
+    .mockImplementation(async () => {
+      const event = {
+        blockNumber: 1111,
+        args: {
+          swapper: '0xswapper',
+        },
+      } as unknown as Log
+      return [event]
+    })
 
   beforeEach(() => {
     ;(validateScaledOfferFactorOverrides as jest.Mock).mockClear()
@@ -234,7 +234,7 @@ describe('Swapper writes', () => {
             defaultScaledOfferFactorPercent,
             scaledOfferFactorOverrides,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Create swapper fails with no signer', async () => {
@@ -298,9 +298,10 @@ describe('Swapper writes', () => {
         FORMATTED_SCALED_OFFER_FACTOR,
         FORMATTED_SCALED_OFFER_FACTOR_OVERRIDES,
       ])
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        client.eventTopics.createSwapper[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [client.eventTopics.createSwapper[0]],
+      })
     })
   })
 
@@ -330,7 +331,7 @@ describe('Swapper writes', () => {
             swapperId,
             beneficiary,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Set beneficiary fails with no signer', async () => {
@@ -375,9 +376,10 @@ describe('Swapper writes', () => {
       expect(validateAddress).toBeCalledWith(swapperId)
       expect(validateAddress).toBeCalledWith(beneficiary)
       expect(moduleWriteActions.setBeneficiary).toBeCalledWith(beneficiary)
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        client.eventTopics.setBeneficiary[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [client.eventTopics.setBeneficiary[0]],
+      })
     })
   })
 
@@ -407,7 +409,7 @@ describe('Swapper writes', () => {
             swapperId,
             tokenToBeneficiary,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Set token to beneficiary fails with no signer', async () => {
@@ -454,9 +456,10 @@ describe('Swapper writes', () => {
       expect(moduleWriteActions.setTokenToBeneficiary).toBeCalledWith(
         tokenToBeneficiary,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        client.eventTopics.setTokenToBeneficiary[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [client.eventTopics.setTokenToBeneficiary[0]],
+      })
     })
   })
 
@@ -484,7 +487,7 @@ describe('Swapper writes', () => {
             swapperId,
             oracle,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Set oracle fails with no signer', async () => {
@@ -529,9 +532,10 @@ describe('Swapper writes', () => {
       expect(validateAddress).toBeCalledWith(swapperId)
       expect(validateAddress).toBeCalledWith(oracle)
       expect(moduleWriteActions.setOracle).toBeCalledWith(oracle)
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        client.eventTopics.setOracle[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [client.eventTopics.setOracle[0]],
+      })
     })
   })
 
@@ -561,7 +565,7 @@ describe('Swapper writes', () => {
             swapperId,
             defaultScaledOfferFactorPercent,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Set default scale fails with no signer', async () => {
@@ -615,9 +619,10 @@ describe('Swapper writes', () => {
       expect(moduleWriteActions.setDefaultScaledOfferFactor).toBeCalledWith(
         FORMATTED_SCALED_OFFER_FACTOR,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        client.eventTopics.setDefaultScaledOfferFactor[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [client.eventTopics.setDefaultScaledOfferFactor[0]],
+      })
     })
   })
 
@@ -658,7 +663,7 @@ describe('Swapper writes', () => {
             swapperId,
             scaledOfferFactorOverrides,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Set scaled factor overrides fails with no signer', async () => {
@@ -712,9 +717,10 @@ describe('Swapper writes', () => {
       expect(moduleWriteActions.setPairScaledOfferFactors).toBeCalledWith(
         FORMATTED_SCALED_OFFER_FACTOR_OVERRIDES,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        client.eventTopics.setScaledOfferFactorOverrides[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [client.eventTopics.setScaledOfferFactorOverrides[0]],
+      })
     })
   })
 
@@ -742,7 +748,7 @@ describe('Swapper writes', () => {
             swapperId,
             paused,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Set paused fails with no signer', async () => {
@@ -787,9 +793,10 @@ describe('Swapper writes', () => {
       expect(validateAddress).toBeCalledWith(swapperId)
 
       expect(moduleWriteActions.setPaused).toBeCalledWith(paused)
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        client.eventTopics.setPaused[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [client.eventTopics.setPaused[0]],
+      })
     })
   })
 
@@ -823,7 +830,7 @@ describe('Swapper writes', () => {
             swapperId,
             calls,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Exec calls fails with no signer', async () => {
@@ -871,9 +878,10 @@ describe('Swapper writes', () => {
       expect(moduleWriteActions.execCalls).toBeCalledWith([
         [calls[0].to, calls[0].value, calls[0].data],
       ])
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        client.eventTopics.execCalls[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [client.eventTopics.execCalls[0]],
+      })
     })
   })
 })
@@ -906,7 +914,7 @@ describe('Swapper reads', () => {
           await badClient.getBeneficiary({
             swapperId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns beneficiary', async () => {
@@ -938,7 +946,7 @@ describe('Swapper reads', () => {
           await badClient.getTokenToBeneficiary({
             swapperId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns token to beneficiary', async () => {
@@ -970,7 +978,7 @@ describe('Swapper reads', () => {
           await badClient.getOracle({
             swapperId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns oracle', async () => {
@@ -1002,7 +1010,7 @@ describe('Swapper reads', () => {
           await badClient.getDefaultScaledOfferFactor({
             swapperId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns default scale', async () => {
@@ -1042,7 +1050,7 @@ describe('Swapper reads', () => {
             swapperId,
             quotePairs,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns scaled offer factor overrides', async () => {

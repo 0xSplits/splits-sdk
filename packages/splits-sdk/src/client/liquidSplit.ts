@@ -48,7 +48,6 @@ import type {
 import {
   getBigIntFromPercent,
   getRecipientSortedAddressesAndAllocations,
-  getTransactionEvents,
   getNftCountsFromPercents,
   addEnsNames,
 } from '../utils'
@@ -65,7 +64,7 @@ class LiquidSplitTransactions extends BaseTransactions {
     transactionType,
     chainId,
     publicClient,
-    ensProvider,
+    ensPublicClient,
     account,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
@@ -73,7 +72,7 @@ class LiquidSplitTransactions extends BaseTransactions {
       transactionType,
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -204,13 +203,13 @@ class LiquidSplitTransactions extends BaseTransactions {
   async formatLiquidSplit(
     gqlLiquidSplit: GqlLiquidSplit,
   ): Promise<LiquidSplit> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const liquidSplit = protectedFormatLiquidSplit(gqlLiquidSplit)
     if (this._includeEnsNames) {
       await addEnsNames(
-        this._ensProvider ?? this._provider,
+        this._ensPublicClient ?? this._publicClient,
         liquidSplit.holders.map((holder) => {
           return {
             ...holder,
@@ -244,7 +243,7 @@ class LiquidSplitTransactions extends BaseTransactions {
     return getContract({
       address: getAddress(liquidSplit),
       abi: ls1155CloneAbi,
-      publicClient: this._provider,
+      publicClient: this._publicClient,
     })
   }
 }
@@ -258,7 +257,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
   constructor({
     chainId,
     publicClient,
-    ensProvider,
+    ensPublicClient,
     account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
@@ -266,7 +265,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
       transactionType: TransactionType.Transaction,
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -306,14 +305,14 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
     this.callData = new LiquidSplitCallData({
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
     this.estimateGas = new LiquidSplitGasEstimates({
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -340,18 +339,17 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
     liquidSplitId: Address
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } = await this.submitCreateLiquidSplitTransaction(
       createLiquidSplitArgs,
     )
 
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.createLiquidSplit,
-    )
+      eventTopics: this.eventTopics.createLiquidSplit,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event) {
       const log = decodeEventLog({
@@ -385,8 +383,8 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
   ): Promise<{
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } =
       await this.submitDistributeTokenTransaction(distributeTokenArgs)
@@ -396,9 +394,10 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
       token === ADDRESS_ZERO
         ? this.eventTopics.distributeToken[1]
         : this.eventTopics.distributeToken[2]
-    const events = await getTransactionEvents(this._provider, txHash, [
-      eventTopic,
-    ])
+    const events = await this.getTransactionEvents({
+      txHash,
+      eventTopics: [eventTopic],
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event) return { event }
 
@@ -424,17 +423,16 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
   ): Promise<{
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } = await this.submitTransferOwnershipTransaction(
       transferOwnershipArgs,
     )
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.transferOwnership,
-    )
+      eventTopics: this.eventTopics.transferOwnership,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event) return { event }
 
@@ -450,7 +448,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
     distributorFee: number
   }> {
     validateAddress(liquidSplitId)
-    this._requireProvider()
+    this._requirePublicClient()
 
     const liquidSplitContract = this._getLiquidSplitContract(liquidSplitId)
     const distributorFee = await liquidSplitContract.read.distributorFee()
@@ -464,7 +462,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
     payoutSplitId: string
   }> {
     validateAddress(liquidSplitId)
-    this._requireProvider()
+    this._requirePublicClient()
 
     const liquidSplitContract = this._getLiquidSplitContract(liquidSplitId)
     const payoutSplitId = await liquidSplitContract.read.payoutSplit()
@@ -478,7 +476,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
     owner: string
   }> {
     validateAddress(liquidSplitId)
-    this._requireProvider()
+    this._requirePublicClient()
 
     const liquidSplitContract = this._getLiquidSplitContract(liquidSplitId)
     const owner = await liquidSplitContract.read.owner()
@@ -492,7 +490,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
     uri: string
   }> {
     validateAddress(liquidSplitId)
-    this._requireProvider()
+    this._requirePublicClient()
 
     const liquidSplitContract = this._getLiquidSplitContract(liquidSplitId)
     const uri = await liquidSplitContract.read.uri([BigInt(0)]) // Expects an argument, but it's not actually used
@@ -513,7 +511,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
   }> {
     validateAddress(liquidSplitId)
     validateAddress(address)
-    this._requireProvider()
+    this._requirePublicClient()
 
     const liquidSplitContract = this._getLiquidSplitContract(liquidSplitId)
     const scaledPercentBalance =
@@ -530,7 +528,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
     image: string
   }> {
     validateAddress(liquidSplitId)
-    this._requireProvider()
+    this._requirePublicClient()
 
     const { uri } = await this.getUri({ liquidSplitId })
     const decodedUri = decode(uri.slice(LIQUID_SPLIT_URI_BASE_64_HEADER.length))
@@ -551,7 +549,7 @@ class LiquidSplitGasEstimates extends LiquidSplitTransactions {
   constructor({
     chainId,
     publicClient,
-    ensProvider,
+    ensPublicClient,
     account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
@@ -559,7 +557,7 @@ class LiquidSplitGasEstimates extends LiquidSplitTransactions {
       transactionType: TransactionType.GasEstimate,
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -606,7 +604,7 @@ class LiquidSplitCallData extends LiquidSplitTransactions {
   constructor({
     chainId,
     publicClient,
-    ensProvider,
+    ensPublicClient,
     account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
@@ -614,7 +612,7 @@ class LiquidSplitCallData extends LiquidSplitTransactions {
       transactionType: TransactionType.CallData,
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })

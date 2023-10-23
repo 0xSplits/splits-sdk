@@ -3,7 +3,7 @@ import { Address, Log, PublicClient, WalletClient } from 'viem'
 import { getRecoupAddress } from '../constants'
 import {
   InvalidConfigError,
-  MissingProviderError,
+  MissingPublicClientError,
   MissingSignerError,
   UnsupportedChainIdError,
 } from '../errors'
@@ -68,7 +68,6 @@ const getDiversifierRecipientsMock = jest
   .mockImplementation(() => {
     return FORMATTED_DIVERSIFIER_RECIPIENTS
   })
-const getTransactionEventsSpy = jest.spyOn(utils, 'getTransactionEvents')
 
 const mockProvider = jest.fn(() => {
   return {
@@ -166,6 +165,10 @@ describe('Template writes', () => {
     publicClient,
     account,
   })
+  const getTransactionEventsSpy = jest.spyOn(
+    templatesClient,
+    'getTransactionEvents',
+  )
 
   beforeEach(() => {
     ;(validateRecipients as jest.Mock).mockClear()
@@ -215,7 +218,7 @@ describe('Template writes', () => {
             nonWaterfallRecipientAddress,
             nonWaterfallRecipientTrancheIndex,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Create recoup fails with no signer', async () => {
@@ -269,11 +272,10 @@ describe('Template writes', () => {
         TRANCHE_SIZES,
       )
 
-      expect(getTransactionEventsSpy).toBeCalledWith(
-        publicClient,
-        '0xhash',
-        templatesClient.eventTopics.createRecoup,
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: templatesClient.eventTopics.createRecoup,
+      })
     })
   })
 
@@ -333,7 +335,7 @@ describe('Template writes', () => {
             oracleParams,
             recipients,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Create diversifier fails with no signer', async () => {
@@ -378,11 +380,10 @@ describe('Template writes', () => {
         FORMATTED_DIVERSIFIER_RECIPIENTS,
       ])
 
-      expect(getTransactionEventsSpy).toBeCalledWith(
-        publicClient,
-        '0xhash',
-        templatesClient.eventTopics.createDiversifier,
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: templatesClient.eventTopics.createDiversifier,
+      })
     })
   })
 })

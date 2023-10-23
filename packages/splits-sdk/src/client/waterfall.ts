@@ -46,7 +46,6 @@ import type {
   WithdrawWaterfallPullFundsConfig,
 } from '../types'
 import {
-  getTransactionEvents,
   getTrancheRecipientsAndSizes,
   addWaterfallEnsNames,
   getTokenData,
@@ -58,7 +57,7 @@ class WaterfallTransactions extends BaseTransactions {
     transactionType,
     chainId,
     publicClient,
-    ensProvider,
+    ensPublicClient,
     account,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
@@ -66,7 +65,7 @@ class WaterfallTransactions extends BaseTransactions {
       transactionType,
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -81,8 +80,8 @@ class WaterfallTransactions extends BaseTransactions {
     validateAddress(token)
     validateAddress(nonWaterfallRecipient)
     validateTranches(tranches)
-    this._requireProvider()
-    if (!this._provider) throw new Error('Provider required')
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error('Provider required')
     if (this._shouldRequireSigner) this._requireSigner()
 
     const formattedToken = getAddress(token)
@@ -92,7 +91,7 @@ class WaterfallTransactions extends BaseTransactions {
       this._chainId,
       formattedToken,
       tranches,
-      this._provider,
+      this._publicClient,
     )
 
     const result = await this._executeContractFunction({
@@ -201,13 +200,13 @@ class WaterfallTransactions extends BaseTransactions {
   async formatWaterfallModule(
     gqlWaterfallModule: GqlWaterfallModule,
   ): Promise<WaterfallModule> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const tokenData = await getTokenData(
       this._chainId,
       getAddress(gqlWaterfallModule.token.id),
-      this._provider,
+      this._publicClient,
     )
 
     const waterfallModule = protectedFormatWaterfallModule(
@@ -217,7 +216,7 @@ class WaterfallTransactions extends BaseTransactions {
     )
     if (this._includeEnsNames) {
       await addWaterfallEnsNames(
-        this._ensProvider ?? this._provider,
+        this._ensPublicClient ?? this._publicClient,
         waterfallModule.tranches,
       )
     }
@@ -276,7 +275,7 @@ class WaterfallTransactions extends BaseTransactions {
     return getContract({
       address: getAddress(waterfallModule),
       abi: waterfallAbi,
-      publicClient: this._provider,
+      publicClient: this._publicClient,
     })
   }
 }
@@ -290,7 +289,7 @@ export class WaterfallClient extends WaterfallTransactions {
   constructor({
     chainId,
     publicClient,
-    ensProvider,
+    ensPublicClient,
     account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
@@ -298,7 +297,7 @@ export class WaterfallClient extends WaterfallTransactions {
       transactionType: TransactionType.Transaction,
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -336,14 +335,14 @@ export class WaterfallClient extends WaterfallTransactions {
     this.callData = new WaterfallCallData({
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
     this.estimateGas = new WaterfallGasEstimates({
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -369,16 +368,15 @@ export class WaterfallClient extends WaterfallTransactions {
     waterfallModuleId: string
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } =
       await this.submitCreateWaterfallModuleTransaction(createWaterfallArgs)
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.createWaterfallModule,
-    )
+      eventTopics: this.eventTopics.createWaterfallModule,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event) {
       const log = decodeEventLog({
@@ -410,16 +408,15 @@ export class WaterfallClient extends WaterfallTransactions {
   async waterfallFunds(waterfallFundsArgs: WaterfallFundsConfig): Promise<{
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } =
       await this.submitWaterfallFundsTransaction(waterfallFundsArgs)
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.waterfallFunds,
-    )
+      eventTopics: this.eventTopics.waterfallFunds,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event)
       return {
@@ -447,16 +444,15 @@ export class WaterfallClient extends WaterfallTransactions {
   ): Promise<{
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } =
       await this.submitRecoverNonWaterfallFundsTransaction(recoverFundsArgs)
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.recoverNonWaterfallFunds,
-    )
+      eventTopics: this.eventTopics.recoverNonWaterfallFunds,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event)
       return {
@@ -483,16 +479,15 @@ export class WaterfallClient extends WaterfallTransactions {
   ): Promise<{
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } =
       await this.submitWithdrawPullFundsTransaction(withdrawFundsArgs)
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.withdrawPullFunds,
-    )
+      eventTopics: this.eventTopics.withdrawPullFunds,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event)
       return {
@@ -511,7 +506,7 @@ export class WaterfallClient extends WaterfallTransactions {
     distributedFunds: bigint
   }> {
     validateAddress(waterfallModuleId)
-    this._requireProvider()
+    this._requirePublicClient()
 
     const contract = this._getWaterfallContract(waterfallModuleId)
     const distributedFunds = await contract.read.distributedFunds()
@@ -529,7 +524,7 @@ export class WaterfallClient extends WaterfallTransactions {
     fundsPendingWithdrawal: bigint
   }> {
     validateAddress(waterfallModuleId)
-    this._requireProvider()
+    this._requirePublicClient()
 
     const waterfallContract = this._getWaterfallContract(waterfallModuleId)
     const fundsPendingWithdrawal =
@@ -549,7 +544,7 @@ export class WaterfallClient extends WaterfallTransactions {
     thresholds: bigint[]
   }> {
     validateAddress(waterfallModuleId)
-    this._requireProvider()
+    this._requirePublicClient()
 
     const waterfallContract = this._getWaterfallContract(waterfallModuleId)
     const [recipients, thresholds] = await waterfallContract.read.getTranches()
@@ -568,7 +563,7 @@ export class WaterfallClient extends WaterfallTransactions {
     nonWaterfallRecipient: Address
   }> {
     validateAddress(waterfallModuleId)
-    this._requireProvider()
+    this._requirePublicClient()
 
     const waterfallContract = this._getWaterfallContract(waterfallModuleId)
     const nonWaterfallRecipient =
@@ -587,7 +582,7 @@ export class WaterfallClient extends WaterfallTransactions {
     token: Address
   }> {
     validateAddress(waterfallModuleId)
-    this._requireProvider()
+    this._requirePublicClient()
 
     const waterfallContract = this._getWaterfallContract(waterfallModuleId)
     const token = await waterfallContract.read.token()
@@ -607,7 +602,7 @@ export class WaterfallClient extends WaterfallTransactions {
     pullBalance: bigint
   }> {
     validateAddress(waterfallModuleId)
-    this._requireProvider()
+    this._requirePublicClient()
 
     const waterfallContract = this._getWaterfallContract(waterfallModuleId)
     const pullBalance = await waterfallContract.read.getPullBalance([
@@ -629,7 +624,7 @@ class WaterfallGasEstimates extends WaterfallTransactions {
   constructor({
     chainId,
     publicClient,
-    ensProvider,
+    ensPublicClient,
     account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
@@ -637,7 +632,7 @@ class WaterfallGasEstimates extends WaterfallTransactions {
       transactionType: TransactionType.GasEstimate,
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -691,7 +686,7 @@ class WaterfallCallData extends WaterfallTransactions {
   constructor({
     chainId,
     publicClient,
-    ensProvider,
+    ensPublicClient,
     account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
@@ -699,7 +694,7 @@ class WaterfallCallData extends WaterfallTransactions {
       transactionType: TransactionType.CallData,
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })

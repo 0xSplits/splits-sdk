@@ -11,7 +11,7 @@ import {
 import {
   InvalidAuthError,
   InvalidConfigError,
-  MissingProviderError,
+  MissingPublicClientError,
   MissingSignerError,
   UnsupportedChainIdError,
 } from '../errors'
@@ -59,17 +59,6 @@ jest.mock('viem', () => {
 
 jest.mock('../utils/validation')
 
-const getTransactionEventsSpy = jest
-  .spyOn(utils, 'getTransactionEvents')
-  .mockImplementation(async () => {
-    const event = {
-      blockNumber: 12345,
-      args: {
-        ls: '0xliquidSplit',
-      },
-    } as unknown as Log
-    return [event]
-  })
 const getSortedRecipientsMock = jest
   .spyOn(utils, 'getRecipientSortedAddressesAndAllocations')
   .mockImplementation(() => {
@@ -192,6 +181,17 @@ describe('Liquid split writes', () => {
     publicClient,
     account,
   })
+  const getTransactionEventsSpy = jest
+    .spyOn(liquidSplitClient, 'getTransactionEvents')
+    .mockImplementation(async () => {
+      const event = {
+        blockNumber: 12345,
+        args: {
+          ls: '0xliquidSplit',
+        },
+      } as unknown as Log
+      return [event]
+    })
 
   beforeEach(() => {
     ;(validateRecipients as jest.Mock).mockClear()
@@ -232,7 +232,7 @@ describe('Liquid split writes', () => {
             recipients,
             distributorFeePercent,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Create liquid split fails with no signer', async () => {
@@ -287,9 +287,10 @@ describe('Liquid split writes', () => {
         DISTRIBUTOR_FEE,
         CONTROLLER_ADDRESS,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        liquidSplitClient.eventTopics.createLiquidSplit[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [liquidSplitClient.eventTopics.createLiquidSplit[0]],
+      })
     })
 
     test('Create liquid split passes with custom owner', async () => {
@@ -319,9 +320,10 @@ describe('Liquid split writes', () => {
         DISTRIBUTOR_FEE,
         '0xowner',
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        liquidSplitClient.eventTopics.createLiquidSplit[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [liquidSplitClient.eventTopics.createLiquidSplit[0]],
+      })
     })
   })
 
@@ -362,7 +364,7 @@ describe('Liquid split writes', () => {
             liquidSplitId,
             token,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Distribute token fails with no signer', async () => {
@@ -395,11 +397,10 @@ describe('Liquid split writes', () => {
         holders.map((h) => h.address),
         CONTROLLER_ADDRESS,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(
-        publicClient,
-        '0xhash',
-        [liquidSplitClient.eventTopics.distributeToken[2]], // Using split main event, not mocked right now
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [liquidSplitClient.eventTopics.distributeToken[2]], // Using split main event, not mocked right now
+      })
     })
 
     test('Distribute token for eth passes', async () => {
@@ -417,11 +418,10 @@ describe('Liquid split writes', () => {
         holders.map((h) => h.address),
         CONTROLLER_ADDRESS,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(
-        publicClient,
-        '0xhash',
-        [liquidSplitClient.eventTopics.distributeToken[1]], // Using split main event, not mocked right now
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [liquidSplitClient.eventTopics.distributeToken[1]], // Using split main event, not mocked right now
+      })
     })
 
     test('Distribute token with custom distributor passes', async () => {
@@ -440,11 +440,10 @@ describe('Liquid split writes', () => {
         holders.map((h) => h.address),
         '0xdistributor',
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(
-        publicClient,
-        '0xhash',
-        [liquidSplitClient.eventTopics.distributeToken[2]], // Using split main event, not mocked right now
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [liquidSplitClient.eventTopics.distributeToken[2]], // Using split main event, not mocked right now
+      })
     })
   })
 
@@ -474,7 +473,7 @@ describe('Liquid split writes', () => {
             liquidSplitId,
             newOwner,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Transfer ownership fails with no signer', async () => {
@@ -519,9 +518,10 @@ describe('Liquid split writes', () => {
       expect(validateAddress).toBeCalledWith(liquidSplitId)
       expect(validateAddress).toBeCalledWith(newOwner)
       expect(moduleWriteActions.transferOwnership).toBeCalledWith(newOwner)
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        liquidSplitClient.eventTopics.transferOwnership[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [liquidSplitClient.eventTopics.transferOwnership[0]],
+      })
     })
   })
 })
@@ -554,7 +554,7 @@ describe('Liquid split reads', () => {
           await badClient.getDistributorFee({
             liquidSplitId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns distributor fee', async () => {
@@ -586,7 +586,7 @@ describe('Liquid split reads', () => {
           await badClient.getPayoutSplit({
             liquidSplitId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns payout split', async () => {
@@ -618,7 +618,7 @@ describe('Liquid split reads', () => {
           await badClient.getOwner({
             liquidSplitId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns owner', async () => {
@@ -650,7 +650,7 @@ describe('Liquid split reads', () => {
           await badClient.getUri({
             liquidSplitId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns uri', async () => {
@@ -684,7 +684,7 @@ describe('Liquid split reads', () => {
             liquidSplitId,
             address,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns scaled percent balance', async () => {
@@ -719,7 +719,7 @@ describe('Liquid split reads', () => {
           await badClient.getNftImage({
             liquidSplitId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns image', async () => {
@@ -800,7 +800,7 @@ describe('Graphql reads', () => {
           await badClient.getLiquidSplitMetadata({
             liquidSplitId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Get liquid split metadata passes', async () => {

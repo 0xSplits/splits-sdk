@@ -92,29 +92,6 @@ export const fromBigIntToTokenValue = (
   return formatUnits(amount, decimals)
 }
 
-export const getTransactionEvents = async (
-  publicClient: PublicClient,
-  txHash: Hash,
-  eventTopics: Hex[],
-  includeAll?: boolean,
-): Promise<Log[]> => {
-  const transaction = await publicClient.waitForTransactionReceipt({
-    hash: txHash,
-  })
-  if (transaction.status === 'success') {
-    const events = transaction.logs?.filter((log) => {
-      if (includeAll) return true
-      if (log.topics[0]) return eventTopics.includes(log.topics[0])
-
-      return false
-    })
-
-    return events
-  }
-
-  return []
-}
-
 const fetchEnsNames = async (
   publicClient: PublicClient,
   addresses: Address[],

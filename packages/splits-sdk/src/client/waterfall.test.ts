@@ -5,7 +5,7 @@ import { ADDRESS_ZERO, getWaterfallFactoryAddress } from '../constants'
 import {
   InvalidArgumentError,
   InvalidConfigError,
-  MissingProviderError,
+  MissingPublicClientError,
   MissingSignerError,
   UnsupportedChainIdError,
 } from '../errors'
@@ -45,17 +45,6 @@ jest.mock('viem', () => {
   }
 })
 
-const getTransactionEventsSpy = jest
-  .spyOn(utils, 'getTransactionEvents')
-  .mockImplementation(async () => {
-    const event = {
-      blockNumber: 12345,
-      args: {
-        waterfallModule: '0xwaterfall',
-      },
-    } as unknown as Log
-    return [event]
-  })
 const getTrancheRecipientsAndSizesMock = jest
   .spyOn(utils, 'getTrancheRecipientsAndSizes')
   .mockImplementation(async () => {
@@ -166,6 +155,17 @@ describe('Waterfall writes', () => {
     publicClient,
     account,
   })
+  const getTransactionEventsSpy = jest
+    .spyOn(waterfallClient, 'getTransactionEvents')
+    .mockImplementation(async () => {
+      const event = {
+        blockNumber: 12345,
+        args: {
+          waterfallModule: '0xwaterfall',
+        },
+      } as unknown as Log
+      return [event]
+    })
 
   beforeEach(() => {
     ;(validateTranches as jest.Mock).mockClear()
@@ -208,7 +208,7 @@ describe('Waterfall writes', () => {
             token,
             tranches,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Create waterfall fails with no signer', async () => {
@@ -249,9 +249,10 @@ describe('Waterfall writes', () => {
         TRANCHE_RECIPIENTS,
         TRANCHE_SIZES,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        waterfallClient.eventTopics.createWaterfallModule[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [waterfallClient.eventTopics.createWaterfallModule[0]],
+      })
     })
 
     test('Create waterfall passes with non waterfall recipient', async () => {
@@ -278,9 +279,10 @@ describe('Waterfall writes', () => {
         TRANCHE_RECIPIENTS,
         TRANCHE_SIZES,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        waterfallClient.eventTopics.createWaterfallModule[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [waterfallClient.eventTopics.createWaterfallModule[0]],
+      })
     })
   })
 
@@ -316,7 +318,7 @@ describe('Waterfall writes', () => {
           await badClient.waterfallFunds({
             waterfallModuleId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Waterfall funds fails with no signer', async () => {
@@ -342,9 +344,10 @@ describe('Waterfall writes', () => {
       expect(validateAddress).toBeCalledWith(waterfallModuleId)
       expect(moduleWriteActions.waterfallFunds).toBeCalledWith()
       expect(moduleWriteActions.waterfallFundsPull).not.toBeCalled()
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        waterfallClient.eventTopics.waterfallFunds[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [waterfallClient.eventTopics.waterfallFunds[0]],
+      })
     })
 
     test('Waterfall funds pull passes', async () => {
@@ -357,9 +360,10 @@ describe('Waterfall writes', () => {
       expect(validateAddress).toBeCalledWith(waterfallModuleId)
       expect(moduleWriteActions.waterfallFunds).not.toBeCalled()
       expect(moduleWriteActions.waterfallFundsPull).toBeCalledWith()
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        waterfallClient.eventTopics.waterfallFunds[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [waterfallClient.eventTopics.waterfallFunds[0]],
+      })
     })
   })
 
@@ -407,7 +411,7 @@ describe('Waterfall writes', () => {
             token,
             recipient,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Recover non waterfall funds fails with no signer', async () => {
@@ -487,9 +491,10 @@ describe('Waterfall writes', () => {
         token,
         recipient,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        waterfallClient.eventTopics.recoverNonWaterfallFunds[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [waterfallClient.eventTopics.recoverNonWaterfallFunds[0]],
+      })
     })
 
     test('Recover non waterfall funds passes with non waterfall recipient', async () => {
@@ -520,9 +525,10 @@ describe('Waterfall writes', () => {
         token,
         nonWaterfallRecipient,
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        waterfallClient.eventTopics.recoverNonWaterfallFunds[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [waterfallClient.eventTopics.recoverNonWaterfallFunds[0]],
+      })
     })
   })
 
@@ -550,7 +556,7 @@ describe('Waterfall writes', () => {
             waterfallModuleId,
             address,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Withdraw pull funds fails with no signer', async () => {
@@ -578,9 +584,10 @@ describe('Waterfall writes', () => {
       expect(validateAddress).toBeCalledWith(waterfallModuleId)
       expect(validateAddress).toBeCalledWith(address)
       expect(moduleWriteActions.withdraw).toBeCalledWith(address)
-      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
-        waterfallClient.eventTopics.withdrawPullFunds[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [waterfallClient.eventTopics.withdrawPullFunds[0]],
+      })
     })
   })
 })
@@ -613,7 +620,7 @@ describe('Waterfall reads', () => {
           await badClient.getDistributedFunds({
             waterfallModuleId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns distributed funds', async () => {
@@ -645,7 +652,7 @@ describe('Waterfall reads', () => {
           await badClient.getFundsPendingWithdrawal({
             waterfallModuleId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns funds pending withdrawal', async () => {
@@ -678,7 +685,7 @@ describe('Waterfall reads', () => {
           await badClient.getTranches({
             waterfallModuleId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns tranches', async () => {
@@ -717,7 +724,7 @@ describe('Waterfall reads', () => {
           await badClient.getNonWaterfallRecipient({
             waterfallModuleId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns non waterfall recipient', async () => {
@@ -752,7 +759,7 @@ describe('Waterfall reads', () => {
           await badClient.getToken({
             waterfallModuleId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns token', async () => {
@@ -786,7 +793,7 @@ describe('Waterfall reads', () => {
             waterfallModuleId,
             address,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns pull balance', async () => {
@@ -860,7 +867,7 @@ describe('Graphql reads', () => {
           await badClient.getWaterfallMetadata({
             waterfallModuleId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Get waterfall metadata passes', async () => {

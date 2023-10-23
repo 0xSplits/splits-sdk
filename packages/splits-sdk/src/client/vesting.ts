@@ -38,7 +38,7 @@ import type {
   TransactionFormat,
   VestingModule,
 } from '../types'
-import { getTransactionEvents, getTokenData, addEnsNames } from '../utils'
+import { getTokenData, addEnsNames } from '../utils'
 import { validateAddress, validateVestingPeriod } from '../utils/validation'
 
 class VestingTransactions extends BaseTransactions {
@@ -46,7 +46,7 @@ class VestingTransactions extends BaseTransactions {
     transactionType,
     chainId,
     publicClient,
-    ensProvider,
+    ensPublicClient,
     account,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
@@ -54,7 +54,7 @@ class VestingTransactions extends BaseTransactions {
       transactionType,
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -124,7 +124,7 @@ class VestingTransactions extends BaseTransactions {
     return getContract({
       address: getAddress(vestingModule),
       abi: vestingAbi,
-      publicClient: this._provider,
+      publicClient: this._publicClient,
     })
   }
 
@@ -132,7 +132,7 @@ class VestingTransactions extends BaseTransactions {
     return getContract({
       address: getVestingFactoryAddress(this._chainId),
       abi: vestingFactoryAbi,
-      publicClient: this._provider,
+      publicClient: this._publicClient,
     })
   }
 }
@@ -146,7 +146,7 @@ export class VestingClient extends VestingTransactions {
   constructor({
     chainId,
     publicClient,
-    ensProvider,
+    ensPublicClient,
     account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
@@ -154,7 +154,7 @@ export class VestingClient extends VestingTransactions {
       transactionType: TransactionType.Transaction,
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -186,14 +186,14 @@ export class VestingClient extends VestingTransactions {
     this.callData = new VestingCallData({
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
     this.estimateGas = new VestingGasEstimates({
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -216,16 +216,15 @@ export class VestingClient extends VestingTransactions {
     vestingModuleId: string
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } =
       await this.submitCreateVestingModuleTransaction(createVestingArgs)
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.createVestingModule,
-    )
+      eventTopics: this.eventTopics.createVestingModule,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event) {
       const log = decodeEventLog({
@@ -255,15 +254,14 @@ export class VestingClient extends VestingTransactions {
   async startVest(startVestArgs: StartVestConfig): Promise<{
     events: Log[]
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } = await this.submitStartVestTransaction(startVestArgs)
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.startVest,
-    )
+      eventTopics: this.eventTopics.startVest,
+    })
     return { events }
   }
 
@@ -284,16 +282,15 @@ export class VestingClient extends VestingTransactions {
   ): Promise<{
     events: Log[]
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } =
       await this.submitReleaseVestedFundsTransaction(releaseFundsArgs)
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.releaseVestedFunds,
-    )
+      eventTopics: this.eventTopics.releaseVestedFunds,
+    })
     return { events }
   }
 
@@ -307,7 +304,7 @@ export class VestingClient extends VestingTransactions {
   }> {
     validateAddress(beneficiary)
     validateVestingPeriod(vestingPeriodSeconds)
-    this._requireProvider()
+    this._requirePublicClient()
 
     const vestingModuleFactoryContract = this._getVestingFactoryContract()
     const [address, exists] =
@@ -330,7 +327,7 @@ export class VestingClient extends VestingTransactions {
     beneficiary: string
   }> {
     validateAddress(vestingModuleId)
-    this._requireProvider()
+    this._requirePublicClient()
 
     const vestingContract = this._getVestingContract(vestingModuleId)
     const beneficiary = await vestingContract.read.beneficiary()
@@ -346,7 +343,7 @@ export class VestingClient extends VestingTransactions {
     vestingPeriod: bigint
   }> {
     validateAddress(vestingModuleId)
-    this._requireProvider()
+    this._requirePublicClient()
 
     const vestingContract = this._getVestingContract(vestingModuleId)
     const vestingPeriod = await vestingContract.read.vestingPeriod()
@@ -364,7 +361,7 @@ export class VestingClient extends VestingTransactions {
     amount: bigint
   }> {
     validateAddress(vestingModuleId)
-    this._requireProvider()
+    this._requirePublicClient()
 
     const vestingContract = this._getVestingContract(vestingModuleId)
     const amount = await vestingContract.read.vested([BigInt(streamId)])
@@ -382,7 +379,7 @@ export class VestingClient extends VestingTransactions {
     amount: bigint
   }> {
     validateAddress(vestingModuleId)
-    this._requireProvider()
+    this._requirePublicClient()
 
     const vestingContract = this._getVestingContract(vestingModuleId)
     const amount = await vestingContract.read.vestedAndUnreleased([
@@ -417,8 +414,8 @@ export class VestingClient extends VestingTransactions {
   async formatVestingModule(
     gqlVestingModule: GqlVestingModule,
   ): Promise<VestingModule> {
-    this._requireProvider()
-    const provider = this._provider
+    this._requirePublicClient()
+    const provider = this._publicClient
     if (!provider) throw new Error()
 
     const tokenIds = Array.from(
@@ -444,7 +441,7 @@ export class VestingClient extends VestingTransactions {
       tokenData,
     )
     if (this._includeEnsNames) {
-      await addEnsNames(this._ensProvider ?? provider, [
+      await addEnsNames(this._ensPublicClient ?? provider, [
         vestingModule.beneficiary,
       ])
     }
@@ -462,7 +459,7 @@ class VestingGasEstimates extends VestingTransactions {
   constructor({
     chainId,
     publicClient,
-    ensProvider,
+    ensPublicClient,
     account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
@@ -470,7 +467,7 @@ class VestingGasEstimates extends VestingTransactions {
       transactionType: TransactionType.GasEstimate,
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -512,7 +509,7 @@ class VestingCallData extends VestingTransactions {
   constructor({
     chainId,
     publicClient,
-    ensProvider,
+    ensPublicClient,
     account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
@@ -520,7 +517,7 @@ class VestingCallData extends VestingTransactions {
       transactionType: TransactionType.CallData,
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })

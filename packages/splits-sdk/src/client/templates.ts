@@ -34,7 +34,6 @@ import type {
   TransactionFormat,
 } from '../types'
 import {
-  getTransactionEvents,
   getRecoupTranchesAndSizes,
   getDiversifierRecipients,
   getFormattedOracleParams,
@@ -52,7 +51,7 @@ class TemplatesTransactions extends BaseTransactions {
     transactionType,
     chainId,
     publicClient,
-    ensProvider,
+    ensPublicClient,
     account,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
@@ -60,7 +59,7 @@ class TemplatesTransactions extends BaseTransactions {
       transactionType,
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -82,15 +81,15 @@ class TemplatesTransactions extends BaseTransactions {
       nonWaterfallRecipientTrancheIndex,
     )
 
-    this._requireProvider()
-    if (!this._provider) throw new Error('Provider required')
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error('Provider required')
     if (this._shouldRequireSigner) this._requireSigner()
 
     const [recoupTranches, trancheSizes] = await getRecoupTranchesAndSizes(
       this._chainId,
       getAddress(token),
       tranches,
-      this._provider,
+      this._publicClient,
     )
 
     const formattedNonWaterfallRecipientTrancheIndex =
@@ -129,8 +128,8 @@ class TemplatesTransactions extends BaseTransactions {
     validateOracleParams(oracleParams)
     validateDiversifierRecipients(recipients)
 
-    this._requireProvider()
-    if (!this._provider) throw new Error('Provider required')
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error('Provider required')
     if (this._shouldRequireSigner) this._requireSigner()
 
     const diversifierRecipients = getDiversifierRecipients(recipients)
@@ -159,7 +158,7 @@ export class TemplatesClient extends TemplatesTransactions {
   constructor({
     chainId,
     publicClient,
-    ensProvider,
+    ensPublicClient,
     account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
@@ -167,7 +166,7 @@ export class TemplatesClient extends TemplatesTransactions {
       transactionType: TransactionType.Transaction,
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -194,14 +193,14 @@ export class TemplatesClient extends TemplatesTransactions {
     this.callData = new TemplatesCallData({
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
     this.estimateGas = new TemplatesGasEstimates({
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -224,16 +223,15 @@ export class TemplatesClient extends TemplatesTransactions {
     waterfallModuleId: Address
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } =
       await this.submitCreateRecoupTransaction(createRecoupArgs)
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.createRecoup,
-    )
+      eventTopics: this.eventTopics.createRecoup,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event) {
       const log = decodeEventLog({
@@ -270,17 +268,16 @@ export class TemplatesClient extends TemplatesTransactions {
     passThroughWalletId: Address
     event: Log
   }> {
-    this._requireProvider()
-    if (!this._provider) throw new Error()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
     const { txHash } = await this.submitCreateDiversifierTransaction(
       createDiversifierArgs,
     )
-    const events = await getTransactionEvents(
-      this._provider,
+    const events = await this.getTransactionEvents({
       txHash,
-      this.eventTopics.createDiversifier,
-    )
+      eventTopics: this.eventTopics.createDiversifier,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event) {
       const log = decodeEventLog({
@@ -307,7 +304,7 @@ class TemplatesGasEstimates extends TemplatesTransactions {
   constructor({
     chainId,
     publicClient,
-    ensProvider,
+    ensPublicClient,
     account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
@@ -315,7 +312,7 @@ class TemplatesGasEstimates extends TemplatesTransactions {
       transactionType: TransactionType.GasEstimate,
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
@@ -348,7 +345,7 @@ class TemplatesCallData extends TemplatesTransactions {
   constructor({
     chainId,
     publicClient,
-    ensProvider,
+    ensPublicClient,
     account,
     includeEnsNames = false,
   }: SplitsClientConfig) {
@@ -356,7 +353,7 @@ class TemplatesCallData extends TemplatesTransactions {
       transactionType: TransactionType.CallData,
       chainId,
       publicClient,
-      ensProvider,
+      ensPublicClient,
       account,
       includeEnsNames,
     })
