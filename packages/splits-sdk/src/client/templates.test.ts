@@ -1,4 +1,4 @@
-import { Log, PublicClient, WalletClient } from 'viem'
+import { Address, Log, PublicClient, WalletClient } from 'viem'
 
 import { getRecoupAddress } from '../constants'
 import {
@@ -24,27 +24,30 @@ import {
   FORMATTED_ORACLE_PARAMS,
   FORMATTED_DIVERSIFIER_RECIPIENTS,
 } from '../testing/constants'
-import {
-  MockDiversifierFactory,
-  writeActions as diversifierWriteActions,
-} from '../testing/mocks/diversifierFactory'
-import {
-  MockRecoup,
-  writeActions as recoupWriteActions,
-} from '../testing/mocks/recoup'
+import { writeActions as diversifierWriteActions } from '../testing/mocks/diversifierFactory'
+import { writeActions as recoupWriteActions } from '../testing/mocks/recoup'
 import { TemplatesClient } from './templates'
+import { MockViemContract } from '../testing/mocks/viemContract'
 
-jest.mock('@ethersproject/contracts', () => {
+jest.mock('viem', () => {
+  const originalModule = jest.requireActual('viem')
   return {
-    Contract: jest
-      .fn()
-      .mockImplementation((contractAddress, _contractInterface, provider) => {
-        if (contractAddress === getRecoupAddress(1)) {
-          return new MockRecoup(provider)
-        }
-
-        return new MockDiversifierFactory(provider)
-      }),
+    ...originalModule,
+    getContract: jest.fn(({ address }: { address: Address }) => {
+      if (address === getRecoupAddress(1))
+        return new MockViemContract({}, recoupWriteActions)
+      return new MockViemContract({}, diversifierWriteActions)
+    }),
+    getAddress: jest.fn((address) => address),
+    decodeEventLog: jest.fn(() => {
+      return {
+        eventName: 'eventName',
+        args: {
+          waterfallModule: '0xrecoup',
+          diversifier: '0xpassthroughwallet',
+        },
+      }
+    }),
   }
 })
 
@@ -67,12 +70,40 @@ const getDiversifierRecipientsMock = jest
   })
 const getTransactionEventsSpy = jest.spyOn(utils, 'getTransactionEvents')
 
-const mockProvider = jest.fn<PublicClient, unknown[]>()
-const mockSigner = jest.fn<WalletClient, unknown[]>(() => {
+const mockProvider = jest.fn(() => {
   return {
-    getAddress: () => {
-      return CONTROLLER_ADDRESS
+    simulateContract: jest.fn(
+      async ({
+        address,
+        functionName,
+        args,
+      }: {
+        address: Address
+        functionName: string
+        args: unknown[]
+      }) => {
+        if (address === getRecoupAddress(1)) {
+          type writeActions = typeof recoupWriteActions
+          type writeKeys = keyof writeActions
+          recoupWriteActions[functionName as writeKeys].call(this, ...args)
+        } else {
+          type writeActions = typeof diversifierWriteActions
+          type writeKeys = keyof writeActions
+          diversifierWriteActions[functionName as writeKeys].call(this, ...args)
+        }
+        return { request: jest.mock }
+      },
+    ),
+  } as unknown as PublicClient
+})
+const mockSigner = jest.fn(() => {
+  return {
+    account: {
+      address: CONTROLLER_ADDRESS,
     },
+    writeContract: jest.fn(() => {
+      return '0xhash'
+    }),
   } as unknown as WalletClient
 })
 
@@ -236,11 +267,11 @@ describe('Template writes', () => {
         tranches.length,
         RECOUP_TRANCHE_RECIPIENTS,
         TRANCHE_SIZES,
-        {},
       )
 
       expect(getTransactionEventsSpy).toBeCalledWith(
-        createRecoupResult,
+        publicClient,
+        '0xhash',
         templatesClient.eventTopics.createRecoup,
       )
     })
@@ -340,18 +371,16 @@ describe('Template writes', () => {
       expect(getDiversifierRecipientsMock).toBeCalledWith(recipients)
       expect(getFormattedOracleParamsMock).toBeCalledWith(oracleParams)
 
-      expect(diversifierWriteActions.createDiversifier).toBeCalledWith(
-        [
-          owner,
-          paused,
-          FORMATTED_ORACLE_PARAMS,
-          FORMATTED_DIVERSIFIER_RECIPIENTS,
-        ],
-        {},
-      )
+      expect(diversifierWriteActions.createDiversifier).toBeCalledWith([
+        owner,
+        paused,
+        FORMATTED_ORACLE_PARAMS,
+        FORMATTED_DIVERSIFIER_RECIPIENTS,
+      ])
 
       expect(getTransactionEventsSpy).toBeCalledWith(
-        createDiversifierResult,
+        publicClient,
+        '0xhash',
         templatesClient.eventTopics.createDiversifier,
       )
     })
