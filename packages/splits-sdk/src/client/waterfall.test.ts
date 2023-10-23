@@ -1,3 +1,11 @@
+import {
+  Address,
+  GetContractReturnType,
+  Log,
+  PublicClient,
+  WalletClient,
+} from 'viem'
+
 import { WaterfallClient } from './waterfall'
 import { ADDRESS_ZERO, getWaterfallFactoryAddress } from '../constants'
 import {
@@ -16,32 +24,32 @@ import {
   GET_TOKEN_DATA,
 } from '../testing/constants'
 import { MockGraphqlClient } from '../testing/mocks/graphql'
-import {
-  MockWaterfallFactory,
-  writeActions as factoryWriteActions,
-} from '../testing/mocks/waterfallFactory'
+import { writeActions as factoryWriteActions } from '../testing/mocks/waterfallFactory'
 import {
   MockWaterfallModule,
   writeActions as moduleWriteActions,
   readActions,
 } from '../testing/mocks/waterfallModule'
 import type { WaterfallModule } from '../types'
-import { Log, PublicClient, WalletClient } from 'viem'
 
-jest.mock('@ethersproject/contracts', () => {
+jest.mock('viem', () => {
+  const originalModule = jest.requireActual('viem')
   return {
-    Contract: jest
-      .fn()
-      .mockImplementation((contractAddress, _contractInterface, provider) => {
-        if (contractAddress === getWaterfallFactoryAddress(1))
-          return new MockWaterfallFactory(provider)
-
-        return new MockWaterfallModule(provider)
-      }),
+    ...originalModule,
+    getContract: jest.fn(() => {
+      return new MockWaterfallModule() as unknown as GetContractReturnType
+    }),
+    getAddress: jest.fn((address) => address),
+    decodeEventLog: jest.fn(() => {
+      return {
+        eventName: 'CreateWaterfallModule',
+        args: {
+          waterfallModule: '0xwaterfall',
+        },
+      }
+    }),
   }
 })
-
-jest.mock('../utils/validation')
 
 const getTransactionEventsSpy = jest
   .spyOn(utils, 'getTransactionEvents')
@@ -66,8 +74,44 @@ const getTokenDataMock = jest
     return GET_TOKEN_DATA
   })
 
-const mockProvider = jest.fn<PublicClient, unknown[]>()
-const mockSigner = jest.fn<WalletClient, unknown[]>()
+jest.mock('../utils/validation')
+
+const mockProvider = jest.fn(() => {
+  return {
+    simulateContract: jest.fn(
+      async ({
+        address,
+        functionName,
+        args,
+      }: {
+        address: Address
+        functionName: string
+        args: unknown[]
+      }) => {
+        if (address === getWaterfallFactoryAddress(1)) {
+          type writeActions = typeof factoryWriteActions
+          type writeKeys = keyof writeActions
+          factoryWriteActions[functionName as writeKeys].call(this, ...args)
+        } else {
+          type writeActions = typeof moduleWriteActions
+          type writeKeys = keyof writeActions
+          moduleWriteActions[functionName as writeKeys].call(this, ...args)
+        }
+        return { request: jest.mock }
+      },
+    ),
+  } as unknown as PublicClient
+})
+const mockSigner = jest.fn(() => {
+  return {
+    account: {
+      address: '0xsigner',
+    },
+    writeContract: jest.fn(() => {
+      return '0xhash'
+    }),
+  } as unknown as WalletClient
+})
 
 describe('Client config validation', () => {
   test('Including ens names with no provider fails', () => {
@@ -210,9 +254,8 @@ describe('Waterfall writes', () => {
         ADDRESS_ZERO,
         TRANCHE_RECIPIENTS,
         TRANCHE_SIZES,
-        {},
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(createWaterfallResult, [
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         waterfallClient.eventTopics.createWaterfallModule[0],
       ])
     })
@@ -240,9 +283,8 @@ describe('Waterfall writes', () => {
         '0xnonWaterfallRecipient',
         TRANCHE_RECIPIENTS,
         TRANCHE_SIZES,
-        {},
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(createWaterfallResult, [
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         waterfallClient.eventTopics.createWaterfallModule[0],
       ])
     })
@@ -304,9 +346,9 @@ describe('Waterfall writes', () => {
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(waterfallModuleId)
-      expect(moduleWriteActions.waterfallFunds).toBeCalledWith({})
+      expect(moduleWriteActions.waterfallFunds).toBeCalledWith()
       expect(moduleWriteActions.waterfallFundsPull).not.toBeCalled()
-      expect(getTransactionEventsSpy).toBeCalledWith(waterfallFundsResult, [
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         waterfallClient.eventTopics.waterfallFunds[0],
       ])
     })
@@ -320,8 +362,8 @@ describe('Waterfall writes', () => {
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(waterfallModuleId)
       expect(moduleWriteActions.waterfallFunds).not.toBeCalled()
-      expect(moduleWriteActions.waterfallFundsPull).toBeCalledWith({})
-      expect(getTransactionEventsSpy).toBeCalledWith(waterfallFundsPullResult, [
+      expect(moduleWriteActions.waterfallFundsPull).toBeCalledWith()
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         waterfallClient.eventTopics.waterfallFunds[0],
       ])
     })
@@ -450,12 +492,10 @@ describe('Waterfall writes', () => {
       expect(moduleWriteActions.recoverNonWaterfallFunds).toBeCalledWith(
         token,
         recipient,
-        {},
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(
-        recoverNonWaterfallFundsResult,
-        [waterfallClient.eventTopics.recoverNonWaterfallFunds[0]],
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
+        waterfallClient.eventTopics.recoverNonWaterfallFunds[0],
+      ])
     })
 
     test('Recover non waterfall funds passes with non waterfall recipient', async () => {
@@ -485,12 +525,10 @@ describe('Waterfall writes', () => {
       expect(moduleWriteActions.recoverNonWaterfallFunds).toBeCalledWith(
         token,
         nonWaterfallRecipient,
-        {},
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(
-        recoverNonWaterfallFundsResult,
-        [waterfallClient.eventTopics.recoverNonWaterfallFunds[0]],
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
+        waterfallClient.eventTopics.recoverNonWaterfallFunds[0],
+      ])
     })
   })
 
@@ -545,8 +583,8 @@ describe('Waterfall writes', () => {
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(waterfallModuleId)
       expect(validateAddress).toBeCalledWith(address)
-      expect(moduleWriteActions.withdraw).toBeCalledWith(address, {})
-      expect(getTransactionEventsSpy).toBeCalledWith(withdrawResult, [
+      expect(moduleWriteActions.withdraw).toBeCalledWith(address)
+      expect(getTransactionEventsSpy).toBeCalledWith(publicClient, '0xhash', [
         waterfallClient.eventTopics.withdrawPullFunds[0],
       ])
     })
@@ -766,7 +804,7 @@ describe('Waterfall reads', () => {
 
       expect(pullBalance).toEqual(BigInt(19))
       expect(validateAddress).toBeCalledWith(waterfallModuleId)
-      expect(readActions.getPullBalance).toBeCalledWith(address)
+      expect(readActions.getPullBalance).toBeCalledWith([address])
     })
   })
 })
@@ -840,7 +878,7 @@ describe('Graphql reads', () => {
       expect(mockGqlClient.request).toBeCalledWith(
         subgraph.WATERFALL_MODULE_QUERY,
         {
-          waterfallModuleId,
+          waterfallModuleId: waterfallModuleId.toLowerCase(),
         },
       )
       expect(getTokenDataMock).toBeCalledWith(
@@ -873,7 +911,7 @@ describe('Graphql reads', () => {
       expect(mockGqlClient.request).toBeCalledWith(
         subgraph.WATERFALL_MODULE_QUERY,
         {
-          waterfallModuleId,
+          waterfallModuleId: waterfallModuleId.toLowerCase(),
         },
       )
       expect(getTokenDataMock).toBeCalledWith(

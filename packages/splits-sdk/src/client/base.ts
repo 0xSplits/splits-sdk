@@ -341,7 +341,7 @@ export class BaseTransactions extends BaseClient {
         abi: contractAbi,
         functionName,
         account: this._signer.account,
-        args: functionArgs ? functionArgs : undefined,
+        args: functionArgs ?? [],
         ...transactionOverrides,
       })
       return gasEstimate
@@ -351,7 +351,7 @@ export class BaseTransactions extends BaseClient {
         abi: contractAbi,
         functionName,
         account: this._signer.account,
-        args: functionArgs ? functionArgs : undefined,
+        args: functionArgs ?? [],
         ...transactionOverrides,
       })
 
@@ -369,7 +369,7 @@ export class BaseTransactions extends BaseClient {
         abi: contractAbi,
         functionName,
         account: this._signer.account,
-        args: functionArgs ? functionArgs : undefined,
+        args: functionArgs ?? [],
         ...transactionOverrides,
       })
       const txHash = await this._signer.writeContract(request)
