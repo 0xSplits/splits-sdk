@@ -416,7 +416,7 @@ export class BaseTransactions extends BaseClient {
       contractAddress: MULTICALL_3_ADDRESS,
       contractAbi: multicallAbi,
       functionName: 'aggregate',
-      functionArgs: callRequests,
+      functionArgs: [callRequests],
       transactionOverrides: {},
     })
     return result
