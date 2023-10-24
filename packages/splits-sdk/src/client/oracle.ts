@@ -62,18 +62,18 @@ export class OracleClient extends OracleTransactions {
 
   // Read actions
   async getQuoteAmounts({
-    oracleId,
+    oracleAddress,
     quoteParams,
   }: {
-    oracleId: string
+    oracleAddress: string
     quoteParams: QuoteParams[]
   }): Promise<{
     quoteAmounts: bigint[]
   }> {
-    validateAddress(oracleId)
+    validateAddress(oracleAddress)
     this._requirePublicClient()
 
-    const oracleContract = this._getOracleContract(oracleId)
+    const oracleContract = this._getOracleContract(oracleAddress)
     const quoteAmounts = await oracleContract.read.getQuoteAmounts([
       quoteParams.map((quoteParam) => {
         return {

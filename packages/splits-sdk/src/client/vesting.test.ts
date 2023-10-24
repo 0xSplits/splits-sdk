@@ -212,14 +212,14 @@ describe('Vesting writes', () => {
     })
 
     test('Create vesting passes', async () => {
-      const { event, vestingModuleId } =
+      const { event, vestingModuleAddress } =
         await vestingClient.createVestingModule({
           beneficiary,
           vestingPeriodSeconds,
         })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(vestingModuleId).toEqual('0xvesting')
+      expect(vestingModuleAddress).toEqual('0xvesting')
       expect(validateAddress).toBeCalledWith(beneficiary)
       expect(validateVestingPeriod).toBeCalledWith(vestingPeriodSeconds)
       expect(factoryWriteActions.createVestingModule).toBeCalledWith(
@@ -234,7 +234,7 @@ describe('Vesting writes', () => {
   })
 
   describe('Create vesting streams tests', () => {
-    const vestingModuleId = '0xvesting'
+    const vestingModuleAddress = '0xvesting'
     const tokens = ['0xtoken1', '0xtoken2']
     const startVestResult = {
       value: 'start_vest_tx',
@@ -256,7 +256,7 @@ describe('Vesting writes', () => {
       await expect(
         async () =>
           await badClient.startVest({
-            vestingModuleId,
+            vestingModuleAddress,
             tokens,
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -271,7 +271,7 @@ describe('Vesting writes', () => {
       await expect(
         async () =>
           await badClient.startVest({
-            vestingModuleId,
+            vestingModuleAddress,
             tokens,
           }),
       ).rejects.toThrow(MissingWalletClientError)
@@ -279,12 +279,12 @@ describe('Vesting writes', () => {
 
     test('Start vest passes', async () => {
       const { events } = await vestingClient.startVest({
-        vestingModuleId,
+        vestingModuleAddress,
         tokens,
       })
 
       expect(events[0].blockNumber).toEqual(12345)
-      expect(validateAddress).toBeCalledWith(vestingModuleId)
+      expect(validateAddress).toBeCalledWith(vestingModuleAddress)
       expect(validateAddress).toBeCalledWith('0xtoken1')
       expect(validateAddress).toBeCalledWith('0xtoken2')
       expect(moduleWriteActions.createVestingStreams).toBeCalledWith(tokens)
@@ -296,7 +296,7 @@ describe('Vesting writes', () => {
   })
 
   describe('Release vested funds tests', () => {
-    const vestingModuleId = '0xvesting'
+    const vestingModuleAddress = '0xvesting'
     const streamIds = ['1', '2']
     const releaseVestedFundsResult = {
       value: 'release_vested_funds_tx',
@@ -318,7 +318,7 @@ describe('Vesting writes', () => {
       await expect(
         async () =>
           await badClient.releaseVestedFunds({
-            vestingModuleId,
+            vestingModuleAddress,
             streamIds,
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -333,7 +333,7 @@ describe('Vesting writes', () => {
       await expect(
         async () =>
           await badClient.releaseVestedFunds({
-            vestingModuleId,
+            vestingModuleAddress,
             streamIds,
           }),
       ).rejects.toThrow(MissingWalletClientError)
@@ -341,12 +341,12 @@ describe('Vesting writes', () => {
 
     test('Release vested funds passes', async () => {
       const { events } = await vestingClient.releaseVestedFunds({
-        vestingModuleId,
+        vestingModuleAddress,
         streamIds,
       })
 
       expect(events[0].blockNumber).toEqual(12345)
-      expect(validateAddress).toBeCalledWith(vestingModuleId)
+      expect(validateAddress).toBeCalledWith(vestingModuleAddress)
       expect(moduleWriteActions.releaseFromVesting).toBeCalledWith(streamIds)
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
@@ -411,7 +411,7 @@ describe('Vesting reads', () => {
   })
 
   describe('Get beneficiary test', () => {
-    const vestingModuleId = '0xgetBeneficiary'
+    const vestingModuleAddress = '0xgetBeneficiary'
 
     beforeEach(() => {
       readActions.beneficiary.mockClear()
@@ -425,7 +425,7 @@ describe('Vesting reads', () => {
       await expect(
         async () =>
           await badClient.getBeneficiary({
-            vestingModuleId,
+            vestingModuleAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
@@ -433,17 +433,17 @@ describe('Vesting reads', () => {
     test('Returns beneficiary', async () => {
       readActions.beneficiary.mockReturnValueOnce('0xbeneficiary')
       const { beneficiary } = await vestingClient.getBeneficiary({
-        vestingModuleId,
+        vestingModuleAddress,
       })
 
       expect(beneficiary).toEqual('0xbeneficiary')
-      expect(validateAddress).toBeCalledWith(vestingModuleId)
+      expect(validateAddress).toBeCalledWith(vestingModuleAddress)
       expect(readActions.beneficiary).toBeCalled()
     })
   })
 
   describe('Get vesting period test', () => {
-    const vestingModuleId = '0xgetVestingPeriod'
+    const vestingModuleAddress = '0xgetVestingPeriod'
 
     beforeEach(() => {
       readActions.vestingPeriod.mockClear()
@@ -457,7 +457,7 @@ describe('Vesting reads', () => {
       await expect(
         async () =>
           await badClient.getVestingPeriod({
-            vestingModuleId,
+            vestingModuleAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
@@ -465,17 +465,17 @@ describe('Vesting reads', () => {
     test('Returns vesting period', async () => {
       readActions.vestingPeriod.mockReturnValueOnce(BigInt(20))
       const { vestingPeriod } = await vestingClient.getVestingPeriod({
-        vestingModuleId,
+        vestingModuleAddress,
       })
 
       expect(vestingPeriod).toEqual(BigInt(20))
-      expect(validateAddress).toBeCalledWith(vestingModuleId)
+      expect(validateAddress).toBeCalledWith(vestingModuleAddress)
       expect(readActions.vestingPeriod).toBeCalled()
     })
   })
 
   describe('Get vested amount test', () => {
-    const vestingModuleId = '0xgetVestedAmount'
+    const vestingModuleAddress = '0xgetVestedAmount'
     const streamId = '1'
 
     beforeEach(() => {
@@ -490,7 +490,7 @@ describe('Vesting reads', () => {
       await expect(
         async () =>
           await badClient.getVestedAmount({
-            vestingModuleId,
+            vestingModuleAddress,
             streamId,
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -499,18 +499,18 @@ describe('Vesting reads', () => {
     test('Returns vested amount', async () => {
       readActions.vested.mockReturnValueOnce(BigInt(5))
       const { amount } = await vestingClient.getVestedAmount({
-        vestingModuleId,
+        vestingModuleAddress,
         streamId,
       })
 
       expect(amount).toEqual(BigInt(5))
-      expect(validateAddress).toBeCalledWith(vestingModuleId)
+      expect(validateAddress).toBeCalledWith(vestingModuleAddress)
       expect(readActions.vested).toBeCalledWith([BigInt(streamId)])
     })
   })
 
   describe('Get vested and unreleased amount test', () => {
-    const vestingModuleId = '0xgetVestedAndUnreleasedAmount'
+    const vestingModuleAddress = '0xgetVestedAndUnreleasedAmount'
     const streamId = '1'
 
     beforeEach(() => {
@@ -525,7 +525,7 @@ describe('Vesting reads', () => {
       await expect(
         async () =>
           await badClient.getVestedAndUnreleasedAmount({
-            vestingModuleId,
+            vestingModuleAddress,
             streamId,
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -534,12 +534,12 @@ describe('Vesting reads', () => {
     test('Returns vested and unreleased amount', async () => {
       readActions.vestedAndUnreleased.mockReturnValueOnce(BigInt(3))
       const { amount } = await vestingClient.getVestedAndUnreleasedAmount({
-        vestingModuleId,
+        vestingModuleAddress,
         streamId,
       })
 
       expect(amount).toEqual(BigInt(3))
-      expect(validateAddress).toBeCalledWith(vestingModuleId)
+      expect(validateAddress).toBeCalledWith(vestingModuleAddress)
       expect(readActions.vestedAndUnreleased).toBeCalledWith([BigInt(streamId)])
     })
   })
@@ -570,7 +570,7 @@ describe('Graphql reads', () => {
     ],
   }
 
-  const vestingModuleId = '0xvesting'
+  const vestingModuleAddress = '0xvesting'
   const publicClient = new mockPublicClient()
   const vestingClient = new VestingClient({
     chainId: 1,
@@ -606,21 +606,21 @@ describe('Graphql reads', () => {
       await expect(
         async () =>
           await badClient.getVestingMetadata({
-            vestingModuleId,
+            vestingModuleAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Get vesting metadata passes', async () => {
       const vestingModule = await vestingClient.getVestingMetadata({
-        vestingModuleId,
+        vestingModuleAddress,
       })
 
-      expect(validateAddress).toBeCalledWith(vestingModuleId)
+      expect(validateAddress).toBeCalledWith(vestingModuleAddress)
       expect(mockGqlClient.request).toBeCalledWith(
         subgraph.VESTING_MODULE_QUERY,
         {
-          vestingModuleId,
+          vestingModuleAddress,
         },
       )
       expect(getTokenDataMock).toBeCalledWith(
@@ -647,14 +647,14 @@ describe('Graphql reads', () => {
       })
 
       const vestingModule = await ensVestingClient.getVestingMetadata({
-        vestingModuleId,
+        vestingModuleAddress,
       })
 
-      expect(validateAddress).toBeCalledWith(vestingModuleId)
+      expect(validateAddress).toBeCalledWith(vestingModuleAddress)
       expect(mockGqlClient.request).toBeCalledWith(
         subgraph.VESTING_MODULE_QUERY,
         {
-          vestingModuleId,
+          vestingModuleAddress,
         },
       )
       expect(getTokenDataMock).toBeCalledWith(

@@ -258,7 +258,7 @@ describe('Swapper writes', () => {
     })
 
     test('Create swapper passes', async () => {
-      const { event, swapperId } = await client.createSwapper({
+      const { event, swapperAddress } = await client.createSwapper({
         owner,
         paused,
         beneficiary,
@@ -269,7 +269,7 @@ describe('Swapper writes', () => {
       })
 
       expect(event.blockNumber).toEqual(1111)
-      expect(swapperId).toEqual('0xswapper')
+      expect(swapperAddress).toEqual('0xswapper')
       expect(validateAddress).toBeCalledWith(owner)
       expect(validateAddress).toBeCalledWith(beneficiary)
       expect(validateAddress).toBeCalledWith(tokenToBeneficiary)
@@ -306,7 +306,7 @@ describe('Swapper writes', () => {
   })
 
   describe('Set beneficiary tests', () => {
-    const swapperId = '0xswapper'
+    const swapperAddress = '0xswapper'
     const beneficiary = '0xbeneficiary'
     const setBeneficiaryResult = {
       value: 'set_beneficiary_tx',
@@ -328,7 +328,7 @@ describe('Swapper writes', () => {
       await expect(
         async () =>
           await badClient.setBeneficiary({
-            swapperId,
+            swapperAddress,
             beneficiary,
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -343,7 +343,7 @@ describe('Swapper writes', () => {
       await expect(
         async () =>
           await badClient.setBeneficiary({
-            swapperId,
+            swapperAddress,
             beneficiary,
           }),
       ).rejects.toThrow(MissingWalletClientError)
@@ -360,7 +360,7 @@ describe('Swapper writes', () => {
       await expect(
         async () =>
           await badClient.setBeneficiary({
-            swapperId,
+            swapperAddress,
             beneficiary,
           }),
       ).rejects.toThrow(InvalidAuthError)
@@ -368,12 +368,12 @@ describe('Swapper writes', () => {
 
     test('Set beneficiary passes', async () => {
       const { event } = await client.setBeneficiary({
-        swapperId,
+        swapperAddress,
         beneficiary,
       })
 
       expect(event.blockNumber).toEqual(1111)
-      expect(validateAddress).toBeCalledWith(swapperId)
+      expect(validateAddress).toBeCalledWith(swapperAddress)
       expect(validateAddress).toBeCalledWith(beneficiary)
       expect(moduleWriteActions.setBeneficiary).toBeCalledWith(beneficiary)
       expect(getTransactionEventsSpy).toBeCalledWith({
@@ -384,7 +384,7 @@ describe('Swapper writes', () => {
   })
 
   describe('Set token to beneficiary tests', () => {
-    const swapperId = '0xswapper'
+    const swapperAddress = '0xswapper'
     const tokenToBeneficiary = '0xtoken'
     const setTokenToBeneficiaryResult = {
       value: 'set_token_to_beneficiary_tx',
@@ -406,7 +406,7 @@ describe('Swapper writes', () => {
       await expect(
         async () =>
           await badClient.setTokenToBeneficiary({
-            swapperId,
+            swapperAddress,
             tokenToBeneficiary,
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -421,7 +421,7 @@ describe('Swapper writes', () => {
       await expect(
         async () =>
           await badClient.setTokenToBeneficiary({
-            swapperId,
+            swapperAddress,
             tokenToBeneficiary,
           }),
       ).rejects.toThrow(MissingWalletClientError)
@@ -438,7 +438,7 @@ describe('Swapper writes', () => {
       await expect(
         async () =>
           await badClient.setTokenToBeneficiary({
-            swapperId,
+            swapperAddress,
             tokenToBeneficiary,
           }),
       ).rejects.toThrow(InvalidAuthError)
@@ -446,12 +446,12 @@ describe('Swapper writes', () => {
 
     test('Set token to beneficiary passes', async () => {
       const { event } = await client.setTokenToBeneficiary({
-        swapperId,
+        swapperAddress,
         tokenToBeneficiary,
       })
 
       expect(event.blockNumber).toEqual(1111)
-      expect(validateAddress).toBeCalledWith(swapperId)
+      expect(validateAddress).toBeCalledWith(swapperAddress)
       expect(validateAddress).toBeCalledWith(tokenToBeneficiary)
       expect(moduleWriteActions.setTokenToBeneficiary).toBeCalledWith(
         tokenToBeneficiary,
@@ -464,7 +464,7 @@ describe('Swapper writes', () => {
   })
 
   describe('Set oracle tests', () => {
-    const swapperId = '0xswapper'
+    const swapperAddress = '0xswapper'
     const oracle = '0xoracle'
     const setOracleResult = {
       value: 'set_oracle_tx',
@@ -484,7 +484,7 @@ describe('Swapper writes', () => {
       await expect(
         async () =>
           await badClient.setOracle({
-            swapperId,
+            swapperAddress,
             oracle,
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -499,7 +499,7 @@ describe('Swapper writes', () => {
       await expect(
         async () =>
           await badClient.setOracle({
-            swapperId,
+            swapperAddress,
             oracle,
           }),
       ).rejects.toThrow(MissingWalletClientError)
@@ -516,7 +516,7 @@ describe('Swapper writes', () => {
       await expect(
         async () =>
           await badClient.setOracle({
-            swapperId,
+            swapperAddress,
             oracle,
           }),
       ).rejects.toThrow(InvalidAuthError)
@@ -524,12 +524,12 @@ describe('Swapper writes', () => {
 
     test('Set oracle passes', async () => {
       const { event } = await client.setOracle({
-        swapperId,
+        swapperAddress,
         oracle,
       })
 
       expect(event.blockNumber).toEqual(1111)
-      expect(validateAddress).toBeCalledWith(swapperId)
+      expect(validateAddress).toBeCalledWith(swapperAddress)
       expect(validateAddress).toBeCalledWith(oracle)
       expect(moduleWriteActions.setOracle).toBeCalledWith(oracle)
       expect(getTransactionEventsSpy).toBeCalledWith({
@@ -540,7 +540,7 @@ describe('Swapper writes', () => {
   })
 
   describe('Set default scaled offer factor tests', () => {
-    const swapperId = '0xswapper'
+    const swapperAddress = '0xswapper'
     const defaultScaledOfferFactorPercent = 1
     const setDefaultScaledOfferFactorResult = {
       value: 'set_default_scaled_offer_factor_tx',
@@ -562,7 +562,7 @@ describe('Swapper writes', () => {
       await expect(
         async () =>
           await badClient.setDefaultScaledOfferFactor({
-            swapperId,
+            swapperAddress,
             defaultScaledOfferFactorPercent,
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -577,7 +577,7 @@ describe('Swapper writes', () => {
       await expect(
         async () =>
           await badClient.setDefaultScaledOfferFactor({
-            swapperId,
+            swapperAddress,
             defaultScaledOfferFactorPercent,
           }),
       ).rejects.toThrow(MissingWalletClientError)
@@ -594,7 +594,7 @@ describe('Swapper writes', () => {
       await expect(
         async () =>
           await badClient.setDefaultScaledOfferFactor({
-            swapperId,
+            swapperAddress,
             defaultScaledOfferFactorPercent,
           }),
       ).rejects.toThrow(InvalidAuthError)
@@ -602,12 +602,12 @@ describe('Swapper writes', () => {
 
     test('Set default scale passes', async () => {
       const { event } = await client.setDefaultScaledOfferFactor({
-        swapperId,
+        swapperAddress,
         defaultScaledOfferFactorPercent,
       })
 
       expect(event.blockNumber).toEqual(1111)
-      expect(validateAddress).toBeCalledWith(swapperId)
+      expect(validateAddress).toBeCalledWith(swapperAddress)
       expect(validateScaledOfferFactor).toBeCalledWith(
         defaultScaledOfferFactorPercent,
       )
@@ -627,7 +627,7 @@ describe('Swapper writes', () => {
   })
 
   describe('Set scaled offer factor overrides tests', () => {
-    const swapperId = '0xswapper'
+    const swapperAddress = '0xswapper'
     const scaledOfferFactorOverrides = [
       {
         baseToken: '0xtoken1',
@@ -660,7 +660,7 @@ describe('Swapper writes', () => {
       await expect(
         async () =>
           await badClient.setScaledOfferFactorOverrides({
-            swapperId,
+            swapperAddress,
             scaledOfferFactorOverrides,
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -675,7 +675,7 @@ describe('Swapper writes', () => {
       await expect(
         async () =>
           await badClient.setScaledOfferFactorOverrides({
-            swapperId,
+            swapperAddress,
             scaledOfferFactorOverrides,
           }),
       ).rejects.toThrow(MissingWalletClientError)
@@ -692,7 +692,7 @@ describe('Swapper writes', () => {
       await expect(
         async () =>
           await badClient.setScaledOfferFactorOverrides({
-            swapperId,
+            swapperAddress,
             scaledOfferFactorOverrides,
           }),
       ).rejects.toThrow(InvalidAuthError)
@@ -700,12 +700,12 @@ describe('Swapper writes', () => {
 
     test('Set scale factor overrides passes', async () => {
       const { event } = await client.setScaledOfferFactorOverrides({
-        swapperId,
+        swapperAddress,
         scaledOfferFactorOverrides,
       })
 
       expect(event.blockNumber).toEqual(1111)
-      expect(validateAddress).toBeCalledWith(swapperId)
+      expect(validateAddress).toBeCalledWith(swapperAddress)
       expect(validateScaledOfferFactorOverrides).toBeCalledWith(
         scaledOfferFactorOverrides,
       )
@@ -725,7 +725,7 @@ describe('Swapper writes', () => {
   })
 
   describe('Set paused tests', () => {
-    const swapperId = '0xswapper'
+    const swapperAddress = '0xswapper'
     const paused = true
     const setPausedResult = {
       value: 'set_paused_tx',
@@ -745,7 +745,7 @@ describe('Swapper writes', () => {
       await expect(
         async () =>
           await badClient.setPaused({
-            swapperId,
+            swapperAddress,
             paused,
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -760,7 +760,7 @@ describe('Swapper writes', () => {
       await expect(
         async () =>
           await badClient.setPaused({
-            swapperId,
+            swapperAddress,
             paused,
           }),
       ).rejects.toThrow(MissingWalletClientError)
@@ -777,7 +777,7 @@ describe('Swapper writes', () => {
       await expect(
         async () =>
           await badClient.setPaused({
-            swapperId,
+            swapperAddress,
             paused,
           }),
       ).rejects.toThrow(InvalidAuthError)
@@ -785,12 +785,12 @@ describe('Swapper writes', () => {
 
     test('Set paused passes', async () => {
       const { event } = await client.setPaused({
-        swapperId,
+        swapperAddress,
         paused,
       })
 
       expect(event.blockNumber).toEqual(1111)
-      expect(validateAddress).toBeCalledWith(swapperId)
+      expect(validateAddress).toBeCalledWith(swapperAddress)
 
       expect(moduleWriteActions.setPaused).toBeCalledWith(paused)
       expect(getTransactionEventsSpy).toBeCalledWith({
@@ -801,7 +801,7 @@ describe('Swapper writes', () => {
   })
 
   describe('Exec calls tests', () => {
-    const swapperId = '0xswapper'
+    const swapperAddress = '0xswapper'
     const calls = [
       {
         to: '0xaddress',
@@ -827,7 +827,7 @@ describe('Swapper writes', () => {
       await expect(
         async () =>
           await badClient.execCalls({
-            swapperId,
+            swapperAddress,
             calls,
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -842,7 +842,7 @@ describe('Swapper writes', () => {
       await expect(
         async () =>
           await badClient.execCalls({
-            swapperId,
+            swapperAddress,
             calls,
           }),
       ).rejects.toThrow(MissingWalletClientError)
@@ -859,7 +859,7 @@ describe('Swapper writes', () => {
       await expect(
         async () =>
           await badClient.execCalls({
-            swapperId,
+            swapperAddress,
             calls,
           }),
       ).rejects.toThrow(InvalidAuthError)
@@ -867,12 +867,12 @@ describe('Swapper writes', () => {
 
     test('Exec calls passes', async () => {
       const { event } = await client.execCalls({
-        swapperId,
+        swapperAddress,
         calls,
       })
 
       expect(event.blockNumber).toEqual(1111)
-      expect(validateAddress).toBeCalledWith(swapperId)
+      expect(validateAddress).toBeCalledWith(swapperAddress)
       expect(validateAddress).toBeCalledWith('0xaddress')
 
       expect(moduleWriteActions.execCalls).toBeCalledWith([
@@ -898,7 +898,7 @@ describe('Swapper reads', () => {
   })
 
   describe('Get beneficiary test', () => {
-    const swapperId = '0xbeneficiary'
+    const swapperAddress = '0xbeneficiary'
 
     beforeEach(() => {
       readActions.beneficiary.mockClear()
@@ -912,7 +912,7 @@ describe('Swapper reads', () => {
       await expect(
         async () =>
           await badClient.getBeneficiary({
-            swapperId,
+            swapperAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
@@ -920,17 +920,17 @@ describe('Swapper reads', () => {
     test('Returns beneficiary', async () => {
       readActions.beneficiary.mockReturnValueOnce('0xbeneficiary')
       const { beneficiary } = await client.getBeneficiary({
-        swapperId,
+        swapperAddress,
       })
 
       expect(beneficiary).toEqual('0xbeneficiary')
-      expect(validateAddress).toBeCalledWith(swapperId)
+      expect(validateAddress).toBeCalledWith(swapperAddress)
       expect(readActions.beneficiary).toBeCalled()
     })
   })
 
   describe('Get token to beneficiary test', () => {
-    const swapperId = '0xbeneficiary'
+    const swapperAddress = '0xbeneficiary'
 
     beforeEach(() => {
       readActions.tokenToBeneficiary.mockClear()
@@ -944,7 +944,7 @@ describe('Swapper reads', () => {
       await expect(
         async () =>
           await badClient.getTokenToBeneficiary({
-            swapperId,
+            swapperAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
@@ -952,17 +952,17 @@ describe('Swapper reads', () => {
     test('Returns token to beneficiary', async () => {
       readActions.tokenToBeneficiary.mockReturnValueOnce('0xtoken')
       const { tokenToBeneficiary } = await client.getTokenToBeneficiary({
-        swapperId,
+        swapperAddress,
       })
 
       expect(tokenToBeneficiary).toEqual('0xtoken')
-      expect(validateAddress).toBeCalledWith(swapperId)
+      expect(validateAddress).toBeCalledWith(swapperAddress)
       expect(readActions.tokenToBeneficiary).toBeCalled()
     })
   })
 
   describe('Get oracle test', () => {
-    const swapperId = '0xbeneficiary'
+    const swapperAddress = '0xbeneficiary'
 
     beforeEach(() => {
       readActions.oracle.mockClear()
@@ -976,7 +976,7 @@ describe('Swapper reads', () => {
       await expect(
         async () =>
           await badClient.getOracle({
-            swapperId,
+            swapperAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
@@ -984,17 +984,17 @@ describe('Swapper reads', () => {
     test('Returns oracle', async () => {
       readActions.oracle.mockReturnValueOnce('0xoracle')
       const { oracle } = await client.getOracle({
-        swapperId,
+        swapperAddress,
       })
 
       expect(oracle).toEqual('0xoracle')
-      expect(validateAddress).toBeCalledWith(swapperId)
+      expect(validateAddress).toBeCalledWith(swapperAddress)
       expect(readActions.oracle).toBeCalled()
     })
   })
 
   describe('Get default scale test', () => {
-    const swapperId = '0xbeneficiary'
+    const swapperAddress = '0xbeneficiary'
 
     beforeEach(() => {
       readActions.defaultScaledOfferFactor.mockClear()
@@ -1008,7 +1008,7 @@ describe('Swapper reads', () => {
       await expect(
         async () =>
           await badClient.getDefaultScaledOfferFactor({
-            swapperId,
+            swapperAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
@@ -1017,17 +1017,17 @@ describe('Swapper reads', () => {
       readActions.defaultScaledOfferFactor.mockReturnValueOnce(BigInt(990000))
       const { defaultScaledOfferFactor } =
         await client.getDefaultScaledOfferFactor({
-          swapperId,
+          swapperAddress,
         })
 
       expect(defaultScaledOfferFactor).toEqual(BigInt(990000))
-      expect(validateAddress).toBeCalledWith(swapperId)
+      expect(validateAddress).toBeCalledWith(swapperAddress)
       expect(readActions.defaultScaledOfferFactor).toBeCalled()
     })
   })
 
   describe('Get scaled offer factor overrides test', () => {
-    const swapperId = '0xscaleOfferFactorOverrides'
+    const swapperAddress = '0xscaleOfferFactorOverrides'
     const quotePairs = [
       {
         base: '0xtoken1',
@@ -1047,7 +1047,7 @@ describe('Swapper reads', () => {
       await expect(
         async () =>
           await badClient.getScaledOfferFactorOverrides({
-            swapperId,
+            swapperAddress,
             quotePairs,
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -1059,12 +1059,12 @@ describe('Swapper reads', () => {
       ])
       const { scaledOfferFactorOverrides } =
         await client.getScaledOfferFactorOverrides({
-          swapperId,
+          swapperAddress,
           quotePairs,
         })
 
       expect(scaledOfferFactorOverrides).toEqual([BigInt(990000)])
-      expect(validateAddress).toBeCalledWith(swapperId)
+      expect(validateAddress).toBeCalledWith(swapperAddress)
       expect(validateAddress).toBeCalledWith('0xtoken1')
       expect(validateAddress).toBeCalledWith('0xtoken2')
       expect(readActions.getPairScaledOfferFactors).toBeCalledWith([
@@ -1108,7 +1108,7 @@ describe('Graphql reads', () => {
     },
   }
 
-  const swapperId = '0xswapper'
+  const swapperAddress = '0xswapper'
   const publicClient = new mockPublicClient()
   const client = new SwapperClient({
     chainId: 1,
@@ -1131,12 +1131,12 @@ describe('Graphql reads', () => {
 
     test('Get swapper metadata passes', async () => {
       const swapper = await client.getSwapperMetadata({
-        swapperId,
+        swapperAddress,
       })
 
-      expect(validateAddress).toBeCalledWith(swapperId)
+      expect(validateAddress).toBeCalledWith(swapperAddress)
       expect(mockGqlClient.request).toBeCalledWith(subgraph.SWAPPER_QUERY, {
-        swapperId,
+        swapperAddress,
       })
       expect(mockFormatSwapper).toBeCalledWith(mockGqlSwapper)
       expect(swapper).toEqual('formatted_swapper')
@@ -1152,12 +1152,12 @@ describe('Graphql reads', () => {
       })
 
       const swapper = await ensClient.getSwapperMetadata({
-        swapperId,
+        swapperAddress,
       })
 
-      expect(validateAddress).toBeCalledWith(swapperId)
+      expect(validateAddress).toBeCalledWith(swapperAddress)
       expect(mockGqlClient.request).toBeCalledWith(subgraph.SWAPPER_QUERY, {
-        swapperId,
+        swapperAddress,
       })
       expect(mockFormatSwapper).toBeCalledWith(mockGqlSwapper)
       expect(swapper).toEqual('formatted_swapper')

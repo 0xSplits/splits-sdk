@@ -115,27 +115,27 @@ class BaseClient {
   }
 
   protected async _getUserBalancesByContract({
-    userId,
-    contractIds,
+    userAddress,
+    contractAddresses,
   }: {
-    userId: string
-    contractIds?: string[]
+    userAddress: string
+    contractAddresses?: string[]
   }): Promise<{
     contractEarnings: EarningsByContract
   }> {
     const chainId = this._chainId
 
     const gqlQuery =
-      contractIds === undefined
+      contractAddresses === undefined
         ? USER_BALANCES_BY_CONTRACT_QUERY
         : USER_BALANCES_BY_CONTRACT_FILTERED_QUERY
     const gqlArgs =
-      contractIds === undefined
-        ? { userId: userId.toLowerCase() }
+      contractAddresses === undefined
+        ? { userId: userAddress.toLowerCase() }
         : {
-            userId: userId.toLowerCase(),
-            contractIds: contractIds.map((contractId) =>
-              contractId.toLowerCase(),
+            userId: userAddress.toLowerCase(),
+            contractIds: contractAddresses.map((contractAddress) =>
+              contractAddress.toLowerCase(),
             ),
           }
 
@@ -147,7 +147,7 @@ class BaseClient {
 
     if (!response.userBalancesByContract)
       throw new AccountNotFoundError(
-        `No user found at address ${userId} on chain ${chainId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
+        `No user found at address ${userAddress} on chain ${chainId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
       )
 
     const contractEarnings = formatContractEarnings(
@@ -160,11 +160,11 @@ class BaseClient {
   }
 
   protected async _getAccountBalances({
-    accountId,
+    accountAddress,
     includeActiveBalances,
     erc20TokenList,
   }: {
-    accountId: Address
+    accountAddress: Address
     includeActiveBalances: boolean
     erc20TokenList?: string[]
   }): Promise<{
@@ -176,12 +176,12 @@ class BaseClient {
     const response = await this._makeGqlRequest<{
       accountBalances: GqlAccountBalances
     }>(ACCOUNT_BALANCES_QUERY, {
-      accountId: accountId.toLowerCase(),
+      accountId: accountAddress.toLowerCase(),
     })
 
     if (!response.accountBalances)
       throw new AccountNotFoundError(
-        `No account found at address ${accountId} on chain ${chainId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
+        `No account found at address ${accountAddress} on chain ${chainId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
       )
 
     const withdrawn = formatAccountBalances(
@@ -213,7 +213,7 @@ class BaseClient {
       const transferredErc20Tokens = await fetchERC20TransferredTokens(
         this._chainId,
         this._publicClient,
-        accountId,
+        accountAddress,
       )
       tokenList.push(...transferredErc20Tokens)
     }
@@ -229,7 +229,7 @@ class BaseClient {
       ),
     )
     const balances = await fetchActiveBalances(
-      accountId,
+      accountAddress,
       this._publicClient,
       fullTokenList,
     )

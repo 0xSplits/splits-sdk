@@ -250,26 +250,15 @@ describe('Liquid split writes', () => {
       ).rejects.toThrow(MissingWalletClientError)
     })
 
-    test('Create liquid split non-clone fails', async () => {
-      await expect(
-        async () =>
-          await liquidSplitClient.createLiquidSplit({
-            recipients,
-            distributorFeePercent,
-            createClone: false,
-          }),
-      ).rejects.toThrow(Error)
-    })
-
-    test('Create liquid split clone passes', async () => {
-      const { event, liquidSplitId } =
+    test('Create liquid split passes', async () => {
+      const { event, liquidSplitAddress } =
         await liquidSplitClient.createLiquidSplit({
           recipients,
           distributorFeePercent,
         })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(liquidSplitId).toEqual('0xliquidSplit')
+      expect(liquidSplitAddress).toEqual('0xliquidSplit')
       expect(validateAddress).toBeCalledWith(CONTROLLER_ADDRESS)
       expect(validateRecipients).toBeCalledWith(
         recipients,
@@ -294,7 +283,7 @@ describe('Liquid split writes', () => {
     })
 
     test('Create liquid split passes with custom owner', async () => {
-      const { event, liquidSplitId } =
+      const { event, liquidSplitAddress } =
         await liquidSplitClient.createLiquidSplit({
           recipients,
           distributorFeePercent,
@@ -302,7 +291,7 @@ describe('Liquid split writes', () => {
         })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(liquidSplitId).toEqual('0xliquidSplit')
+      expect(liquidSplitAddress).toEqual('0xliquidSplit')
       expect(validateAddress).toBeCalledWith('0xowner')
       expect(validateRecipients).toBeCalledWith(
         recipients,
@@ -328,11 +317,11 @@ describe('Liquid split writes', () => {
   })
 
   describe('Distribute token tests', () => {
-    const liquidSplitId = '0xliquidSplit'
+    const liquidSplitAddress = '0xliquidSplit'
     const token = '0xtoken'
     const holders = [
-      { address: '0xd', percentAllocation: 25 },
-      { address: '0xe', percentAllocation: 75 },
+      { recipient: { address: '0xd' }, percentAllocation: 25 },
+      { recipient: { address: '0xe' }, percentAllocation: 75 },
     ]
     const distributeFundsResult = {
       value: 'distribute_funds_tx',
@@ -361,7 +350,7 @@ describe('Liquid split writes', () => {
       await expect(
         async () =>
           await badClient.distributeToken({
-            liquidSplitId,
+            liquidSplitAddress,
             token,
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -376,7 +365,7 @@ describe('Liquid split writes', () => {
       await expect(
         async () =>
           await badClient.distributeToken({
-            liquidSplitId,
+            liquidSplitAddress,
             token,
           }),
       ).rejects.toThrow(MissingWalletClientError)
@@ -384,17 +373,17 @@ describe('Liquid split writes', () => {
 
     test('Distribute token passes', async () => {
       const { event } = await liquidSplitClient.distributeToken({
-        liquidSplitId,
+        liquidSplitAddress,
         token,
       })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(validateAddress).toBeCalledWith(liquidSplitId)
+      expect(validateAddress).toBeCalledWith(liquidSplitAddress)
       expect(validateAddress).toBeCalledWith(token)
       expect(validateAddress).toBeCalledWith(CONTROLLER_ADDRESS)
       expect(moduleWriteActions.distributeFunds).toBeCalledWith(
         token,
-        holders.map((h) => h.address),
+        holders.map((h) => h.recipient.address),
         CONTROLLER_ADDRESS,
       )
       expect(getTransactionEventsSpy).toBeCalledWith({
@@ -405,17 +394,17 @@ describe('Liquid split writes', () => {
 
     test('Distribute token for eth passes', async () => {
       const { event } = await liquidSplitClient.distributeToken({
-        liquidSplitId,
+        liquidSplitAddress,
         token: ADDRESS_ZERO,
       })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(validateAddress).toBeCalledWith(liquidSplitId)
+      expect(validateAddress).toBeCalledWith(liquidSplitAddress)
       expect(validateAddress).toBeCalledWith(ADDRESS_ZERO)
       expect(validateAddress).toBeCalledWith(CONTROLLER_ADDRESS)
       expect(moduleWriteActions.distributeFunds).toBeCalledWith(
         ADDRESS_ZERO,
-        holders.map((h) => h.address),
+        holders.map((h) => h.recipient.address),
         CONTROLLER_ADDRESS,
       )
       expect(getTransactionEventsSpy).toBeCalledWith({
@@ -426,18 +415,18 @@ describe('Liquid split writes', () => {
 
     test('Distribute token with custom distributor passes', async () => {
       const { event } = await liquidSplitClient.distributeToken({
-        liquidSplitId,
+        liquidSplitAddress,
         token,
         distributorAddress: '0xdistributor',
       })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(validateAddress).toBeCalledWith(liquidSplitId)
+      expect(validateAddress).toBeCalledWith(liquidSplitAddress)
       expect(validateAddress).toBeCalledWith(token)
       expect(validateAddress).toBeCalledWith('0xdistributor')
       expect(moduleWriteActions.distributeFunds).toBeCalledWith(
         token,
-        holders.map((h) => h.address),
+        holders.map((h) => h.recipient.address),
         '0xdistributor',
       )
       expect(getTransactionEventsSpy).toBeCalledWith({
@@ -448,7 +437,7 @@ describe('Liquid split writes', () => {
   })
 
   describe('Transfer ownership tests', () => {
-    const liquidSplitId = '0xliquidSplit'
+    const liquidSplitAddress = '0xliquidSplit'
     const newOwner = '0xnewOwner'
     const transferOwnershipResult = {
       value: 'transfer_ownership_tx',
@@ -470,7 +459,7 @@ describe('Liquid split writes', () => {
       await expect(
         async () =>
           await badClient.transferOwnership({
-            liquidSplitId,
+            liquidSplitAddress,
             newOwner,
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -485,7 +474,7 @@ describe('Liquid split writes', () => {
       await expect(
         async () =>
           await badClient.transferOwnership({
-            liquidSplitId,
+            liquidSplitAddress,
             newOwner,
           }),
       ).rejects.toThrow(MissingWalletClientError)
@@ -502,7 +491,7 @@ describe('Liquid split writes', () => {
       await expect(
         async () =>
           await badClient.transferOwnership({
-            liquidSplitId,
+            liquidSplitAddress,
             newOwner,
           }),
       ).rejects.toThrow(InvalidAuthError)
@@ -510,12 +499,12 @@ describe('Liquid split writes', () => {
 
     test('Transfer ownership passes', async () => {
       const { event } = await liquidSplitClient.transferOwnership({
-        liquidSplitId,
+        liquidSplitAddress,
         newOwner,
       })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(validateAddress).toBeCalledWith(liquidSplitId)
+      expect(validateAddress).toBeCalledWith(liquidSplitAddress)
       expect(validateAddress).toBeCalledWith(newOwner)
       expect(moduleWriteActions.transferOwnership).toBeCalledWith(newOwner)
       expect(getTransactionEventsSpy).toBeCalledWith({
@@ -538,7 +527,7 @@ describe('Liquid split reads', () => {
   })
 
   describe('Get distributor fee test', () => {
-    const liquidSplitId = '0xgetDistributorFee'
+    const liquidSplitAddress = '0xgetDistributorFee'
 
     beforeEach(() => {
       readActions.distributorFee.mockClear()
@@ -552,7 +541,7 @@ describe('Liquid split reads', () => {
       await expect(
         async () =>
           await badClient.getDistributorFee({
-            liquidSplitId,
+            liquidSplitAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
@@ -560,17 +549,17 @@ describe('Liquid split reads', () => {
     test('Returns distributor fee', async () => {
       readActions.distributorFee.mockReturnValueOnce(10)
       const { distributorFee } = await liquidSplitClient.getDistributorFee({
-        liquidSplitId,
+        liquidSplitAddress,
       })
 
       expect(distributorFee).toEqual(10)
-      expect(validateAddress).toBeCalledWith(liquidSplitId)
+      expect(validateAddress).toBeCalledWith(liquidSplitAddress)
       expect(readActions.distributorFee).toBeCalled()
     })
   })
 
   describe('Get payout split test', () => {
-    const liquidSplitId = '0xgetPayoutSplit'
+    const liquidSplitAddress = '0xgetPayoutSplit'
 
     beforeEach(() => {
       readActions.payoutSplit.mockClear()
@@ -584,25 +573,25 @@ describe('Liquid split reads', () => {
       await expect(
         async () =>
           await badClient.getPayoutSplit({
-            liquidSplitId,
+            liquidSplitAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns payout split', async () => {
       readActions.payoutSplit.mockReturnValueOnce('0xsplit')
-      const { payoutSplitId } = await liquidSplitClient.getPayoutSplit({
-        liquidSplitId,
+      const { payoutSplitAddress } = await liquidSplitClient.getPayoutSplit({
+        liquidSplitAddress,
       })
 
-      expect(payoutSplitId).toEqual('0xsplit')
-      expect(validateAddress).toBeCalledWith(liquidSplitId)
+      expect(payoutSplitAddress).toEqual('0xsplit')
+      expect(validateAddress).toBeCalledWith(liquidSplitAddress)
       expect(readActions.payoutSplit).toBeCalled()
     })
   })
 
   describe('Get owner test', () => {
-    const liquidSplitId = '0xgetOwner'
+    const liquidSplitAddress = '0xgetOwner'
 
     beforeEach(() => {
       readActions.owner.mockClear()
@@ -616,7 +605,7 @@ describe('Liquid split reads', () => {
       await expect(
         async () =>
           await badClient.getOwner({
-            liquidSplitId,
+            liquidSplitAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
@@ -624,17 +613,17 @@ describe('Liquid split reads', () => {
     test('Returns owner', async () => {
       readActions.owner.mockReturnValueOnce('0xowner')
       const { owner } = await liquidSplitClient.getOwner({
-        liquidSplitId,
+        liquidSplitAddress,
       })
 
       expect(owner).toEqual('0xowner')
-      expect(validateAddress).toBeCalledWith(liquidSplitId)
+      expect(validateAddress).toBeCalledWith(liquidSplitAddress)
       expect(readActions.owner).toBeCalled()
     })
   })
 
   describe('Get uri test', () => {
-    const liquidSplitId = '0xgetUri'
+    const liquidSplitAddress = '0xgetUri'
 
     beforeEach(() => {
       readActions.uri.mockClear()
@@ -648,7 +637,7 @@ describe('Liquid split reads', () => {
       await expect(
         async () =>
           await badClient.getUri({
-            liquidSplitId,
+            liquidSplitAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
@@ -656,17 +645,17 @@ describe('Liquid split reads', () => {
     test('Returns uri', async () => {
       readActions.uri.mockReturnValueOnce('uri')
       const { uri } = await liquidSplitClient.getUri({
-        liquidSplitId,
+        liquidSplitAddress,
       })
 
       expect(uri).toEqual('uri')
-      expect(validateAddress).toBeCalledWith(liquidSplitId)
+      expect(validateAddress).toBeCalledWith(liquidSplitAddress)
       expect(readActions.uri).toBeCalled()
     })
   })
 
   describe('Get scaled percent balance test', () => {
-    const liquidSplitId = '0xgetScaledPercentBalance'
+    const liquidSplitAddress = '0xgetScaledPercentBalance'
     const address = '0xaddress'
 
     beforeEach(() => {
@@ -681,7 +670,7 @@ describe('Liquid split reads', () => {
       await expect(
         async () =>
           await badClient.getScaledPercentBalanceOf({
-            liquidSplitId,
+            liquidSplitAddress,
             address,
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -691,19 +680,19 @@ describe('Liquid split reads', () => {
       readActions.scaledPercentBalanceOf.mockReturnValueOnce(15)
       const { scaledPercentBalance } =
         await liquidSplitClient.getScaledPercentBalanceOf({
-          liquidSplitId,
+          liquidSplitAddress,
           address,
         })
 
       expect(scaledPercentBalance).toEqual(15)
-      expect(validateAddress).toBeCalledWith(liquidSplitId)
+      expect(validateAddress).toBeCalledWith(liquidSplitAddress)
       expect(validateAddress).toBeCalledWith(address)
       expect(readActions.scaledPercentBalanceOf).toBeCalledWith([address])
     })
   })
 
   describe('Get nft image test', () => {
-    const liquidSplitId = '0xgetImage'
+    const liquidSplitAddress = '0xgetImage'
 
     beforeEach(() => {
       readActions.uri.mockClear()
@@ -717,7 +706,7 @@ describe('Liquid split reads', () => {
       await expect(
         async () =>
           await badClient.getNftImage({
-            liquidSplitId,
+            liquidSplitAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
@@ -727,11 +716,11 @@ describe('Liquid split reads', () => {
         `${LIQUID_SPLIT_URI_BASE_64_HEADER}${encode('{"image": "testImage"}')}`,
       )
       const { image } = await liquidSplitClient.getNftImage({
-        liquidSplitId,
+        liquidSplitAddress,
       })
 
       expect(image).toEqual('testImage')
-      expect(validateAddress).toBeCalledWith(liquidSplitId)
+      expect(validateAddress).toBeCalledWith(liquidSplitAddress)
       expect(readActions.uri).toBeCalled()
     })
   })
@@ -751,10 +740,12 @@ describe('Graphql reads', () => {
   const SAMPLE_LIQUID_SPLIT = {
     holders: [
       {
-        address: '0xholder1',
+        recipient: {
+          address: '0xholder1',
+        },
       },
     ],
-  } as LiquidSplit
+  } as unknown as LiquidSplit
 
   const mockFormatLiquidSplit = jest
     .spyOn(subgraph, 'protectedFormatLiquidSplit')
@@ -766,7 +757,7 @@ describe('Graphql reads', () => {
     },
   }
 
-  const liquidSplitId = '0xliquidSplit'
+  const liquidSplitAddress = '0xliquidSplit'
   const publicClient = new mockPublicClient()
   const liquidSplitClient = new LiquidSplitClient({
     chainId: 1,
@@ -798,21 +789,21 @@ describe('Graphql reads', () => {
       await expect(
         async () =>
           await badClient.getLiquidSplitMetadata({
-            liquidSplitId,
+            liquidSplitAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Get liquid split metadata passes', async () => {
       const liquidSplit = await liquidSplitClient.getLiquidSplitMetadata({
-        liquidSplitId,
+        liquidSplitAddress,
       })
 
-      expect(validateAddress).toBeCalledWith(liquidSplitId)
+      expect(validateAddress).toBeCalledWith(liquidSplitAddress)
       expect(mockGqlClient.request).toBeCalledWith(
         subgraph.LIQUID_SPLIT_QUERY,
         {
-          liquidSplitId: liquidSplitId.toLowerCase(),
+          liquidSplitAddress: liquidSplitAddress.toLowerCase(),
         },
       )
       expect(mockFormatLiquidSplit).toBeCalledWith(mockGqlLiquidSplit)
@@ -829,14 +820,14 @@ describe('Graphql reads', () => {
       })
 
       const liquidSplit = await ensLiquidSplitClient.getLiquidSplitMetadata({
-        liquidSplitId,
+        liquidSplitAddress,
       })
 
-      expect(validateAddress).toBeCalledWith(liquidSplitId)
+      expect(validateAddress).toBeCalledWith(liquidSplitAddress)
       expect(mockGqlClient.request).toBeCalledWith(
         subgraph.LIQUID_SPLIT_QUERY,
         {
-          liquidSplitId: liquidSplitId.toLowerCase(),
+          liquidSplitAddress: liquidSplitAddress.toLowerCase(),
         },
       )
       expect(mockFormatLiquidSplit).toBeCalledWith(mockGqlLiquidSplit)

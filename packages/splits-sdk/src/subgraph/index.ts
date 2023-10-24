@@ -6,7 +6,6 @@ import type {
   EarningsByContract,
   LiquidSplit,
   Split,
-  SplitRecipient,
   Swapper,
   TokenBalances,
   VestingModule,
@@ -267,9 +266,11 @@ const FULL_SWAPPER_FIELDS_FRAGMENT = gql`
 const formatRecipient = (gqlRecipient: {
   account: { id: string }
   ownership: number
-}): SplitRecipient => {
+}) => {
   return {
-    address: getAddress(gqlRecipient.account.id),
+    recipient: {
+      address: getAddress(gqlRecipient.account.id),
+    },
     percentAllocation: fromBigIntToPercent(gqlRecipient.ownership),
   }
 }
@@ -278,14 +279,18 @@ const formatRecipient = (gqlRecipient: {
 export const protectedFormatSplit = (gqlSplit: GqlSplit): Split => {
   return {
     type: 'Split',
-    id: getAddress(gqlSplit.id),
+    address: getAddress(gqlSplit.id),
     controller:
       gqlSplit.controller !== ADDRESS_ZERO
-        ? getAddress(gqlSplit.controller)
+        ? {
+            address: getAddress(gqlSplit.controller),
+          }
         : null,
     newPotentialController:
       gqlSplit.newPotentialController !== ADDRESS_ZERO
-        ? getAddress(gqlSplit.newPotentialController)
+        ? {
+            address: getAddress(gqlSplit.newPotentialController),
+          }
         : null,
     distributorFeePercent: fromBigIntToPercent(gqlSplit.distributorFee),
     createdBlock: gqlSplit.createdBlock,
@@ -305,7 +310,7 @@ export const protectedFormatWaterfallModule = (
 ): WaterfallModule => {
   return {
     type: 'WaterfallModule',
-    id: getAddress(gqlWaterfallModule.id),
+    address: getAddress(gqlWaterfallModule.id),
     token: {
       address: getAddress(gqlWaterfallModule.token.id),
       symbol: tokenSymbol,
@@ -313,7 +318,9 @@ export const protectedFormatWaterfallModule = (
     },
     nonWaterfallRecipient:
       gqlWaterfallModule.nonWaterfallRecipient !== ADDRESS_ZERO
-        ? getAddress(gqlWaterfallModule.nonWaterfallRecipient)
+        ? {
+            address: getAddress(gqlWaterfallModule.nonWaterfallRecipient),
+          }
         : null,
     tranches: gqlWaterfallModule.tranches.map((tranche) =>
       formatWaterfallModuleTranche(tranche, tokenDecimals),
@@ -326,7 +333,9 @@ const formatWaterfallModuleTranche = (
   tokenDecimals: number,
 ): WaterfallTranche => {
   return {
-    recipientAddress: getAddress(gqlWaterfallTranche.recipient.id),
+    recipient: {
+      address: getAddress(gqlWaterfallTranche.recipient.id),
+    },
     startAmount: gqlWaterfallTranche.startAmount / Math.pow(10, tokenDecimals),
     size: gqlWaterfallTranche.size
       ? gqlWaterfallTranche.size / Math.pow(10, tokenDecimals)
@@ -341,7 +350,7 @@ export const protectedFormatVestingModule = (
 ): VestingModule => {
   return {
     type: 'VestingModule',
-    id: getAddress(gqlVestingModule.id),
+    address: getAddress(gqlVestingModule.id),
     beneficiary: {
       address: getAddress(gqlVestingModule.beneficiary.id),
     },
@@ -382,9 +391,9 @@ export const protectedFormatLiquidSplit = (
 ): LiquidSplit => {
   return {
     type: 'LiquidSplit',
-    id: getAddress(gqlLiquidSplit.id),
+    address: getAddress(gqlLiquidSplit.id),
     distributorFeePercent: fromBigIntToPercent(gqlLiquidSplit.distributorFee),
-    payoutSplitId: getAddress(gqlLiquidSplit.split.id),
+    payoutSplitAddress: getAddress(gqlLiquidSplit.split.id),
     isFactoryGenerated: gqlLiquidSplit.isFactoryGenerated,
     holders: gqlLiquidSplit.holders
       .map((gqlHolder) => formatRecipient(gqlHolder))
@@ -397,7 +406,7 @@ export const protectedFormatLiquidSplit = (
 export const protectedFormatSwapper = (gqlSwapper: GqlSwapper): Swapper => {
   return {
     type: 'Swapper',
-    id: getAddress(gqlSwapper.id),
+    address: getAddress(gqlSwapper.id),
     beneficiary: {
       address: getAddress(gqlSwapper.beneficiary.id),
     },
@@ -462,8 +471,8 @@ export const formatContractEarnings = (
 }
 
 export const SPLIT_QUERY = gql`
-  query split($splitId: ID!) {
-    split(id: $splitId) {
+  query split($splitAddress: ID!) {
+    split(id: $splitAddress) {
       ...FullSplitFieldsFragment
     }
   }
@@ -472,8 +481,8 @@ export const SPLIT_QUERY = gql`
 `
 
 export const WATERFALL_MODULE_QUERY = gql`
-  query waterfallModule($waterfallModuleId: ID!) {
-    waterfallModule(id: $waterfallModuleId) {
+  query waterfallModule($waterfallModuleAddress: ID!) {
+    waterfallModule(id: $waterfallModuleAddress) {
       ...FullWaterfallModuleFieldsFragment
     }
   }
@@ -482,8 +491,8 @@ export const WATERFALL_MODULE_QUERY = gql`
 `
 
 export const VESTING_MODULE_QUERY = gql`
-  query vestingModule($vestingModuleId: ID!) {
-    vestingModule(id: $vestingModuleId) {
+  query vestingModule($vestingModuleAddress: ID!) {
+    vestingModule(id: $vestingModuleAddress) {
       ...FullVestingModuleFieldsFragment
     }
   }
@@ -492,8 +501,8 @@ export const VESTING_MODULE_QUERY = gql`
 `
 
 export const LIQUID_SPLIT_QUERY = gql`
-  query liquidSplit($liquidSplitId: ID!) {
-    liquidSplit(id: $liquidSplitId) {
+  query liquidSplit($liquidSplitAddress: ID!) {
+    liquidSplit(id: $liquidSplitAddress) {
       ...FullLiquidSplitFieldsFragment
     }
   }
@@ -502,8 +511,8 @@ export const LIQUID_SPLIT_QUERY = gql`
 `
 
 export const SWAPPER_QUERY = gql`
-  query swapper($swapperId: ID!) {
-    swapper(id: $swapperId) {
+  query swapper($swapperAddress: ID!) {
+    swapper(id: $swapperAddress) {
       ...FullSwapperFieldsFragment
     }
   }
@@ -512,8 +521,8 @@ export const SWAPPER_QUERY = gql`
 `
 
 export const ACCOUNT_QUERY = gql`
-  query account($accountId: ID!) {
-    account(id: $accountId) {
+  query account($accountAddress: ID!) {
+    account(id: $accountAddress) {
       __typename
       ...AccountFieldsFragment
       ...SplitFieldsFragment
@@ -531,16 +540,16 @@ export const ACCOUNT_QUERY = gql`
 `
 
 export const RELATED_SPLITS_QUERY = gql`
-  query relatedSplits($accountId: String!) {
-    receivingFrom: recipients(where: { account: $accountId }) {
+  query relatedSplits($accountAddress: String!) {
+    receivingFrom: recipients(where: { account: $accountAddress }) {
       split {
         ...FullSplitFieldsFragment
       }
     }
-    controlling: splits(where: { controller: $accountId }) {
+    controlling: splits(where: { controller: $accountAddress }) {
       ...FullSplitFieldsFragment
     }
-    pendingControl: splits(where: { newPotentialController: $accountId }) {
+    pendingControl: splits(where: { newPotentialController: $accountAddress }) {
       ...FullSplitFieldsFragment
     }
   }

@@ -7,7 +7,7 @@ import { Token, TokenBalances } from '../types'
 export const fetchERC20TransferredTokens = async (
   chainId: number,
   publicClient: PublicClient,
-  splitId: Address,
+  splitAddress: Address,
 ): Promise<string[]> => {
   const tokens = new Set<string>([])
 
@@ -22,7 +22,7 @@ export const fetchERC20TransferredTokens = async (
       type: 'event',
     },
     args: {
-      to: splitId,
+      to: splitAddress,
     },
     fromBlock: BigInt(CHAIN_INFO[chainId].startBlock),
     toBlock: 'latest',
@@ -43,14 +43,14 @@ export const fetchActiveBalances: (
   arg1: PublicClient,
   arg2: Address[],
 ) => Promise<TokenBalances> = async (
-  accountId,
+  accountAddress,
   publicClient,
   fullTokenList,
 ) => {
   const balances: TokenBalances = {}
 
   const erc20Tokens = fullTokenList.filter((token) => token !== ADDRESS_ZERO)
-  const contractCalls = getTokenBalanceCalls(accountId, fullTokenList)
+  const contractCalls = getTokenBalanceCalls(accountAddress, fullTokenList)
 
   const [tokenData, multicallResponse] = await Promise.all([
     fetchTokenData(erc20Tokens, publicClient),

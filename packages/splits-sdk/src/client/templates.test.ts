@@ -239,15 +239,16 @@ describe('Template writes', () => {
     })
 
     test('Create recoup passes', async () => {
-      const { event, waterfallModuleId } = await templatesClient.createRecoup({
-        token,
-        tranches,
-        nonWaterfallRecipientAddress,
-        nonWaterfallRecipientTrancheIndex,
-      })
+      const { event, waterfallModuleAddress } =
+        await templatesClient.createRecoup({
+          token,
+          tranches,
+          nonWaterfallRecipientAddress,
+          nonWaterfallRecipientTrancheIndex,
+        })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(waterfallModuleId).toEqual('0xrecoup')
+      expect(waterfallModuleAddress).toEqual('0xrecoup')
       expect(validateAddress).toBeCalledWith(token)
       expect(validateAddress).toBeCalledWith(nonWaterfallRecipientAddress)
       expect(validateRecoupTranches).toBeCalledWith(tranches)
@@ -356,7 +357,7 @@ describe('Template writes', () => {
     })
 
     test('Create diversifier passes', async () => {
-      const { event, passThroughWalletId } =
+      const { event, passThroughWalletAddress } =
         await templatesClient.createDiversifier({
           owner,
           paused,
@@ -365,7 +366,7 @@ describe('Template writes', () => {
         })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(passThroughWalletId).toEqual('0xpassthroughwallet')
+      expect(passThroughWalletAddress).toEqual('0xpassthroughwallet')
       expect(validateAddress).toBeCalledWith(owner)
       expect(validateOracleParams).toBeCalledWith(oracleParams)
       expect(validateDiversifierRecipients).toBeCalledWith(recipients)

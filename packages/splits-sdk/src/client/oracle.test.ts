@@ -88,7 +88,7 @@ describe('Oracle reads', () => {
   })
 
   describe('Get quote amounts test', () => {
-    const oracleId = '0xoracle'
+    const oracleAddress = '0xoracle'
     const quoteParams = [
       {
         quotePair: {
@@ -112,7 +112,7 @@ describe('Oracle reads', () => {
       await expect(
         async () =>
           await badClient.getQuoteAmounts({
-            oracleId,
+            oracleAddress,
             quoteParams,
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -121,12 +121,12 @@ describe('Oracle reads', () => {
     test('Returns quote amounts', async () => {
       readActions.getQuoteAmounts.mockReturnValueOnce([BigInt(12)])
       const { quoteAmounts } = await client.getQuoteAmounts({
-        oracleId,
+        oracleAddress,
         quoteParams,
       })
 
       expect(quoteAmounts).toEqual([BigInt(12)])
-      expect(validateAddress).toBeCalledWith(oracleId)
+      expect(validateAddress).toBeCalledWith(oracleAddress)
       expect(readActions.getQuoteAmounts).toBeCalledWith([
         [
           {

@@ -256,13 +256,13 @@ describe('SplitMain writes', () => {
     })
 
     test('Create immutable split passes', async () => {
-      const { event, splitId } = await splitsClient.createSplit({
+      const { event, splitAddress } = await splitsClient.createSplit({
         recipients,
         distributorFeePercent,
       })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(splitId).toEqual('0xsplit')
+      expect(splitAddress).toEqual('0xsplit')
       expect(validateSplitInputs).toBeCalledWith(
         expect.objectContaining({
           recipients,
@@ -285,14 +285,14 @@ describe('SplitMain writes', () => {
 
     test('Create mutable split passes', async () => {
       const controller = '0xSplitController'
-      const { event, splitId } = await splitsClient.createSplit({
+      const { event, splitAddress } = await splitsClient.createSplit({
         recipients,
         distributorFeePercent,
         controller,
       })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(splitId).toEqual('0xsplit')
+      expect(splitAddress).toEqual('0xsplit')
       expect(validateSplitInputs).toBeCalledWith(
         expect.objectContaining({
           recipients,
@@ -318,7 +318,7 @@ describe('SplitMain writes', () => {
   describe('Update split tests', () => {
     const recipients = [{ address: '0xhey', percentAllocation: 12 }]
     const distributorFeePercent = 9
-    const splitId = '0xupdate'
+    const splitAddress = '0xupdate'
     const updateSplitResult = {
       value: 'update_split_tx',
       wait: 'wait',
@@ -337,7 +337,7 @@ describe('SplitMain writes', () => {
       await expect(
         async () =>
           await badSplitsClient.updateSplit({
-            splitId,
+            splitAddress,
             recipients,
             distributorFeePercent,
           }),
@@ -353,7 +353,7 @@ describe('SplitMain writes', () => {
       await expect(
         async () =>
           await badSplitsClient.updateSplit({
-            splitId,
+            splitAddress,
             recipients,
             distributorFeePercent,
           }),
@@ -371,7 +371,7 @@ describe('SplitMain writes', () => {
       await expect(
         async () =>
           await badSplitsClient.updateSplit({
-            splitId,
+            splitAddress,
             recipients,
             distributorFeePercent,
           }),
@@ -380,13 +380,13 @@ describe('SplitMain writes', () => {
 
     test('Update split passes', async () => {
       const { event } = await splitsClient.updateSplit({
-        splitId,
+        splitAddress,
         recipients,
         distributorFeePercent,
       })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(validateAddress).toBeCalledWith(splitId)
+      expect(validateAddress).toBeCalledWith(splitAddress)
       expect(validateSplitInputs).toBeCalledWith(
         expect.objectContaining({
           recipients,
@@ -396,7 +396,7 @@ describe('SplitMain writes', () => {
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigIntMock).toBeCalledWith(distributorFeePercent)
       expect(writeActions.updateSplit).toBeCalledWith(
-        splitId,
+        splitAddress,
         SORTED_ADDRESSES,
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
@@ -409,7 +409,7 @@ describe('SplitMain writes', () => {
   })
 
   describe('Distribute token tests', () => {
-    const splitId = '0xdistribute'
+    const splitAddress = '0xdistribute'
     const recipients = [{ address: '0xd', percentAllocation: 78 }]
     const distributorFeePercent = 3
     const distributeETHResult = {
@@ -426,9 +426,16 @@ describe('SplitMain writes', () => {
         .spyOn(splitsClient, 'getSplitMetadata')
         .mockImplementationOnce(async () => {
           return {
-            recipients,
+            recipients: recipients.map((r) => {
+              return {
+                percentAllocation: r.percentAllocation,
+                recipient: {
+                  address: r.address,
+                },
+              }
+            }),
             distributorFeePercent,
-          } as Split
+          } as unknown as Split
         })
       writeActions.distributeETH.mockClear()
       writeActions.distributeERC20.mockClear()
@@ -444,7 +451,7 @@ describe('SplitMain writes', () => {
       await expect(
         async () =>
           await badSplitsClient.distributeToken({
-            splitId,
+            splitAddress,
             token: ADDRESS_ZERO,
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -459,7 +466,7 @@ describe('SplitMain writes', () => {
       await expect(
         async () =>
           await badSplitsClient.distributeToken({
-            splitId,
+            splitAddress,
             token: ADDRESS_ZERO,
           }),
       ).rejects.toThrow(MissingWalletClientError)
@@ -467,18 +474,18 @@ describe('SplitMain writes', () => {
 
     test('Distribute eth passes', async () => {
       const { event } = await splitsClient.distributeToken({
-        splitId,
+        splitAddress,
         token: ADDRESS_ZERO,
       })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(validateAddress).toBeCalledWith(splitId)
+      expect(validateAddress).toBeCalledWith(splitAddress)
       expect(validateAddress).toBeCalledWith(ADDRESS_ZERO)
       expect(validateAddress).toBeCalledWith(CONTROLLER_ADDRESS)
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigIntMock).toBeCalledWith(distributorFeePercent)
       expect(writeActions.distributeETH).toBeCalledWith(
-        splitId,
+        splitAddress,
         SORTED_ADDRESSES,
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
@@ -493,18 +500,18 @@ describe('SplitMain writes', () => {
     test('Distribute erc20 passes', async () => {
       const token = '0xtoken'
       const { event } = await splitsClient.distributeToken({
-        splitId,
+        splitAddress,
         token,
       })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(validateAddress).toBeCalledWith(splitId)
+      expect(validateAddress).toBeCalledWith(splitAddress)
       expect(validateAddress).toBeCalledWith(token)
       expect(validateAddress).toBeCalledWith(CONTROLLER_ADDRESS)
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigIntMock).toBeCalledWith(distributorFeePercent)
       expect(writeActions.distributeERC20).toBeCalledWith(
-        splitId,
+        splitAddress,
         token,
         SORTED_ADDRESSES,
         SORTED_ALLOCATIONS,
@@ -520,19 +527,19 @@ describe('SplitMain writes', () => {
     test('Distribute eth to payout address passes', async () => {
       const distributorAddress = '0xdistributor'
       const { event } = await splitsClient.distributeToken({
-        splitId,
+        splitAddress,
         token: ADDRESS_ZERO,
         distributorAddress,
       })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(validateAddress).toBeCalledWith(splitId)
+      expect(validateAddress).toBeCalledWith(splitAddress)
       expect(validateAddress).toBeCalledWith(ADDRESS_ZERO)
       expect(validateAddress).toBeCalledWith(distributorAddress)
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigIntMock).toBeCalledWith(distributorFeePercent)
       expect(writeActions.distributeETH).toBeCalledWith(
-        splitId,
+        splitAddress,
         SORTED_ADDRESSES,
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
@@ -548,19 +555,19 @@ describe('SplitMain writes', () => {
       const token = '0xtoken'
       const distributorAddress = '0xdistributor'
       const { event } = await splitsClient.distributeToken({
-        splitId,
+        splitAddress,
         token,
         distributorAddress,
       })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(validateAddress).toBeCalledWith(splitId)
+      expect(validateAddress).toBeCalledWith(splitAddress)
       expect(validateAddress).toBeCalledWith(token)
       expect(validateAddress).toBeCalledWith(distributorAddress)
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigIntMock).toBeCalledWith(distributorFeePercent)
       expect(writeActions.distributeERC20).toBeCalledWith(
-        splitId,
+        splitAddress,
         token,
         SORTED_ADDRESSES,
         SORTED_ALLOCATIONS,
@@ -575,7 +582,7 @@ describe('SplitMain writes', () => {
   })
 
   describe('Update and distribute tests', () => {
-    const splitId = '0xupdateanddisribute'
+    const splitAddress = '0xupdateanddisribute'
     const recipients = [{ address: '0x829', percentAllocation: 71 }]
     const distributorFeePercent = 4
     const updateAndDistributeETHResult = {
@@ -606,7 +613,7 @@ describe('SplitMain writes', () => {
       await expect(
         async () =>
           await badSplitsClient.updateSplitAndDistributeToken({
-            splitId,
+            splitAddress,
             recipients,
             distributorFeePercent,
             token: ADDRESS_ZERO,
@@ -623,7 +630,7 @@ describe('SplitMain writes', () => {
       await expect(
         async () =>
           await badSplitsClient.updateSplitAndDistributeToken({
-            splitId,
+            splitAddress,
             recipients,
             distributorFeePercent,
             token: ADDRESS_ZERO,
@@ -642,7 +649,7 @@ describe('SplitMain writes', () => {
       await expect(
         async () =>
           await badSplitsClient.updateSplitAndDistributeToken({
-            splitId,
+            splitAddress,
             recipients,
             distributorFeePercent,
             token: ADDRESS_ZERO,
@@ -652,14 +659,14 @@ describe('SplitMain writes', () => {
 
     test('Update and distribute eth passes', async () => {
       const { event } = await splitsClient.updateSplitAndDistributeToken({
-        splitId,
+        splitAddress,
         recipients,
         distributorFeePercent,
         token: ADDRESS_ZERO,
       })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(validateAddress).toBeCalledWith(splitId)
+      expect(validateAddress).toBeCalledWith(splitAddress)
       expect(validateAddress).toBeCalledWith(ADDRESS_ZERO)
       expect(validateAddress).toBeCalledWith(CONTROLLER_ADDRESS)
       expect(validateSplitInputs).toBeCalledWith(
@@ -671,7 +678,7 @@ describe('SplitMain writes', () => {
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigIntMock).toBeCalledWith(distributorFeePercent)
       expect(writeActions.updateAndDistributeETH).toBeCalledWith(
-        splitId,
+        splitAddress,
         SORTED_ADDRESSES,
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
@@ -688,14 +695,14 @@ describe('SplitMain writes', () => {
     test('Update and distribute erc20 passes', async () => {
       const token = '0xtoken'
       const { event } = await splitsClient.updateSplitAndDistributeToken({
-        splitId,
+        splitAddress,
         recipients,
         distributorFeePercent,
         token,
       })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(validateAddress).toBeCalledWith(splitId)
+      expect(validateAddress).toBeCalledWith(splitAddress)
       expect(validateAddress).toBeCalledWith(token)
       expect(validateAddress).toBeCalledWith(CONTROLLER_ADDRESS)
       expect(validateSplitInputs).toBeCalledWith({
@@ -705,7 +712,7 @@ describe('SplitMain writes', () => {
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigIntMock).toBeCalledWith(distributorFeePercent)
       expect(writeActions.updateAndDistributeERC20).toBeCalledWith(
-        splitId,
+        splitAddress,
         token,
         SORTED_ADDRESSES,
         SORTED_ALLOCATIONS,
@@ -723,7 +730,7 @@ describe('SplitMain writes', () => {
     test('Update and distribute eth to payout address passes', async () => {
       const distributorAddress = '0xupdateDistributor'
       const { event } = await splitsClient.updateSplitAndDistributeToken({
-        splitId,
+        splitAddress,
         recipients,
         distributorFeePercent,
         token: ADDRESS_ZERO,
@@ -731,7 +738,7 @@ describe('SplitMain writes', () => {
       })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(validateAddress).toBeCalledWith(splitId)
+      expect(validateAddress).toBeCalledWith(splitAddress)
       expect(validateAddress).toBeCalledWith(ADDRESS_ZERO)
       expect(validateAddress).toBeCalledWith(distributorAddress)
       expect(validateSplitInputs).toBeCalledWith({
@@ -741,7 +748,7 @@ describe('SplitMain writes', () => {
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigIntMock).toBeCalledWith(distributorFeePercent)
       expect(writeActions.updateAndDistributeETH).toBeCalledWith(
-        splitId,
+        splitAddress,
         SORTED_ADDRESSES,
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
@@ -759,7 +766,7 @@ describe('SplitMain writes', () => {
       const token = '0xtoken'
       const distributorAddress = '0xupdateDistributor'
       const { event } = await splitsClient.updateSplitAndDistributeToken({
-        splitId,
+        splitAddress,
         recipients,
         distributorFeePercent,
         token,
@@ -767,7 +774,7 @@ describe('SplitMain writes', () => {
       })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(validateAddress).toBeCalledWith(splitId)
+      expect(validateAddress).toBeCalledWith(splitAddress)
       expect(validateAddress).toBeCalledWith(token)
       expect(validateAddress).toBeCalledWith(distributorAddress)
       expect(validateSplitInputs).toBeCalledWith({
@@ -777,7 +784,7 @@ describe('SplitMain writes', () => {
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigIntMock).toBeCalledWith(distributorFeePercent)
       expect(writeActions.updateAndDistributeERC20).toBeCalledWith(
-        splitId,
+        splitAddress,
         token,
         SORTED_ADDRESSES,
         SORTED_ALLOCATIONS,
@@ -873,7 +880,7 @@ describe('SplitMain writes', () => {
   })
 
   describe('Initiate control transfer tests', () => {
-    const splitId = '0xitransfer'
+    const splitAddress = '0xitransfer'
     const newController = '0xnewController'
     const initiateTransferResult = {
       value: 'initiate_transfer_tx',
@@ -893,7 +900,7 @@ describe('SplitMain writes', () => {
       await expect(
         async () =>
           await badSplitsClient.initiateControlTransfer({
-            splitId,
+            splitAddress,
             newController,
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -908,7 +915,7 @@ describe('SplitMain writes', () => {
       await expect(
         async () =>
           await badSplitsClient.initiateControlTransfer({
-            splitId,
+            splitAddress,
             newController,
           }),
       ).rejects.toThrow(MissingWalletClientError)
@@ -925,7 +932,7 @@ describe('SplitMain writes', () => {
       await expect(
         async () =>
           await badSplitsClient.initiateControlTransfer({
-            splitId,
+            splitAddress,
             newController,
           }),
       ).rejects.toThrow(InvalidAuthError)
@@ -933,14 +940,14 @@ describe('SplitMain writes', () => {
 
     test('Initate transfer passes', async () => {
       const { event } = await splitsClient.initiateControlTransfer({
-        splitId,
+        splitAddress,
         newController,
       })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(validateAddress).toBeCalledWith(splitId)
+      expect(validateAddress).toBeCalledWith(splitAddress)
       expect(writeActions.transferControl).toBeCalledWith(
-        splitId,
+        splitAddress,
         newController,
       )
       expect(getTransactionEventsSpy).toBeCalledWith({
@@ -951,7 +958,7 @@ describe('SplitMain writes', () => {
   })
 
   describe('Cancel control transfer tests', () => {
-    const splitId = '0xcancelTransfer'
+    const splitAddress = '0xcancelTransfer'
     const cancelTransferResult = {
       value: 'cancel_transfer_tx',
       wait: 'wait',
@@ -972,7 +979,7 @@ describe('SplitMain writes', () => {
       await expect(
         async () =>
           await badSplitsClient.cancelControlTransfer({
-            splitId,
+            splitAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
@@ -986,7 +993,7 @@ describe('SplitMain writes', () => {
       await expect(
         async () =>
           await badSplitsClient.cancelControlTransfer({
-            splitId,
+            splitAddress,
           }),
       ).rejects.toThrow(MissingWalletClientError)
     })
@@ -1002,19 +1009,19 @@ describe('SplitMain writes', () => {
       await expect(
         async () =>
           await badSplitsClient.cancelControlTransfer({
-            splitId,
+            splitAddress,
           }),
       ).rejects.toThrow(InvalidAuthError)
     })
 
     test('Cancel transfer passes', async () => {
       const { event } = await splitsClient.cancelControlTransfer({
-        splitId,
+        splitAddress,
       })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(validateAddress).toBeCalledWith(splitId)
-      expect(writeActions.cancelControlTransfer).toBeCalledWith(splitId)
+      expect(validateAddress).toBeCalledWith(splitAddress)
+      expect(writeActions.cancelControlTransfer).toBeCalledWith(splitAddress)
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
         eventTopics: [splitsClient.eventTopics.cancelControlTransfer[0]],
@@ -1023,7 +1030,7 @@ describe('SplitMain writes', () => {
   })
 
   describe('Accept control transfer tests', () => {
-    const splitId = '0xacceptTransfer'
+    const splitAddress = '0xacceptTransfer'
     const acceptTransferResult = {
       value: 'accept_transfer_tx',
       wait: 'wait',
@@ -1042,7 +1049,7 @@ describe('SplitMain writes', () => {
       await expect(
         async () =>
           await badSplitsClient.acceptControlTransfer({
-            splitId,
+            splitAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
@@ -1056,7 +1063,7 @@ describe('SplitMain writes', () => {
       await expect(
         async () =>
           await badSplitsClient.acceptControlTransfer({
-            splitId,
+            splitAddress,
           }),
       ).rejects.toThrow(MissingWalletClientError)
     })
@@ -1065,7 +1072,7 @@ describe('SplitMain writes', () => {
       await expect(
         async () =>
           await splitsClient.acceptControlTransfer({
-            splitId,
+            splitAddress,
           }),
       ).rejects.toThrow(InvalidAuthError)
     })
@@ -1090,12 +1097,12 @@ describe('SplitMain writes', () => {
         })
 
       const { event } = await splitsClient.acceptControlTransfer({
-        splitId,
+        splitAddress,
       })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(validateAddress).toBeCalledWith(splitId)
-      expect(writeActions.acceptControl).toBeCalledWith(splitId)
+      expect(validateAddress).toBeCalledWith(splitAddress)
+      expect(writeActions.acceptControl).toBeCalledWith(splitAddress)
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
         eventTopics: [splitsClient.eventTopics.acceptControlTransfer[0]],
@@ -1104,7 +1111,7 @@ describe('SplitMain writes', () => {
   })
 
   describe('Make split immutable tests', () => {
-    const splitId = '0xmakeImmutable'
+    const splitAddress = '0xmakeImmutable'
     const makeSplitImmutableResult = {
       value: 'make_split_immutable_tx',
       wait: 'wait',
@@ -1125,7 +1132,7 @@ describe('SplitMain writes', () => {
       await expect(
         async () =>
           await badSplitsClient.makeSplitImmutable({
-            splitId,
+            splitAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
@@ -1139,7 +1146,7 @@ describe('SplitMain writes', () => {
       await expect(
         async () =>
           await badSplitsClient.makeSplitImmutable({
-            splitId,
+            splitAddress,
           }),
       ).rejects.toThrow(MissingWalletClientError)
     })
@@ -1155,19 +1162,19 @@ describe('SplitMain writes', () => {
       await expect(
         async () =>
           await badSplitsClient.makeSplitImmutable({
-            splitId,
+            splitAddress,
           }),
       ).rejects.toThrow(InvalidAuthError)
     })
 
     test('Make immutable passes', async () => {
       const { event } = await splitsClient.makeSplitImmutable({
-        splitId,
+        splitAddress,
       })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(validateAddress).toBeCalledWith(splitId)
-      expect(writeActions.makeSplitImmutable).toBeCalledWith(splitId)
+      expect(validateAddress).toBeCalledWith(splitAddress)
+      expect(writeActions.makeSplitImmutable).toBeCalledWith(splitAddress)
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
         eventTopics: [splitsClient.eventTopics.makeSplitImmutable[0]],
@@ -1191,7 +1198,7 @@ describe('SplitMain reads', () => {
   })
 
   describe('Get split balance test', () => {
-    const splitId = '0xgetbalance'
+    const splitAddress = '0xgetbalance'
 
     beforeEach(() => {
       readActions.getETHBalance.mockClear()
@@ -1205,28 +1212,31 @@ describe('SplitMain reads', () => {
       await expect(
         async () =>
           await badSplitsClient.getSplitBalance({
-            splitId,
+            splitAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns eth balance', async () => {
       readActions.getETHBalance.mockReturnValueOnce(BigInt(12))
-      const { balance } = await splitsClient.getSplitBalance({ splitId })
+      const { balance } = await splitsClient.getSplitBalance({ splitAddress })
 
       expect(balance).toEqual(BigInt(12))
-      expect(validateAddress).toBeCalledWith(splitId)
-      expect(readActions.getETHBalance).toBeCalledWith([splitId])
+      expect(validateAddress).toBeCalledWith(splitAddress)
+      expect(readActions.getETHBalance).toBeCalledWith([splitAddress])
     })
 
     test('Returns ERC20 balance', async () => {
       const token = '0xerc20'
       readActions.getERC20Balance.mockReturnValueOnce(BigInt(19))
-      const { balance } = await splitsClient.getSplitBalance({ splitId, token })
+      const { balance } = await splitsClient.getSplitBalance({
+        splitAddress,
+        token,
+      })
 
       expect(balance).toEqual(BigInt(19))
-      expect(validateAddress).toBeCalledWith(splitId)
-      expect(readActions.getERC20Balance).toBeCalledWith([splitId, token])
+      expect(validateAddress).toBeCalledWith(splitAddress)
+      expect(readActions.getERC20Balance).toBeCalledWith([splitAddress, token])
     })
   })
 
@@ -1254,12 +1264,12 @@ describe('SplitMain reads', () => {
 
     test('Predicts immutable address', async () => {
       readActions.predictImmutableSplitAddress.mockReturnValueOnce('0xpredict')
-      const { splitId } = await splitsClient.predictImmutableSplitAddress({
+      const { splitAddress } = await splitsClient.predictImmutableSplitAddress({
         recipients,
         distributorFeePercent,
       })
 
-      expect(splitId).toEqual('0xpredict')
+      expect(splitAddress).toEqual('0xpredict')
       expect(validateSplitInputs).toBeCalledWith({
         recipients,
         distributorFeePercent,
@@ -1275,7 +1285,7 @@ describe('SplitMain reads', () => {
   })
 
   describe('Get controller tests', () => {
-    const splitId = '0xgetController'
+    const splitAddress = '0xgetController'
 
     beforeEach(() => {
       readActions.getController.mockClear()
@@ -1289,22 +1299,22 @@ describe('SplitMain reads', () => {
       await expect(
         async () =>
           await badSplitsClient.getController({
-            splitId,
+            splitAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Get controller passes', async () => {
-      const { controller } = await splitsClient.getController({ splitId })
+      const { controller } = await splitsClient.getController({ splitAddress })
 
       expect(controller).toEqual(CONTROLLER_ADDRESS)
-      expect(validateAddress).toBeCalledWith(splitId)
-      expect(readActions.getController).toBeCalledWith([splitId])
+      expect(validateAddress).toBeCalledWith(splitAddress)
+      expect(readActions.getController).toBeCalledWith([splitAddress])
     })
   })
 
   describe('Get new potential controller tests', () => {
-    const splitId = '0xgetPotentialController'
+    const splitAddress = '0xgetPotentialController'
 
     beforeEach(() => {
       readActions.getNewPotentialController.mockClear()
@@ -1318,23 +1328,25 @@ describe('SplitMain reads', () => {
       await expect(
         async () =>
           await badSplitsClient.getNewPotentialController({
-            splitId,
+            splitAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Get potential controller passes', async () => {
       const { newPotentialController } =
-        await splitsClient.getNewPotentialController({ splitId })
+        await splitsClient.getNewPotentialController({ splitAddress })
 
       expect(newPotentialController).toEqual(NEW_CONTROLLER_ADDRESS)
-      expect(validateAddress).toBeCalledWith(splitId)
-      expect(readActions.getNewPotentialController).toBeCalledWith([splitId])
+      expect(validateAddress).toBeCalledWith(splitAddress)
+      expect(readActions.getNewPotentialController).toBeCalledWith([
+        splitAddress,
+      ])
     })
   })
 
   describe('Get hash tests', () => {
-    const splitId = '0xhash'
+    const splitAddress = '0xhash'
 
     beforeEach(() => {
       readActions.getHash.mockClear()
@@ -1348,18 +1360,18 @@ describe('SplitMain reads', () => {
       await expect(
         async () =>
           await badSplitsClient.getHash({
-            splitId,
+            splitAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Get hash passes', async () => {
       readActions.getHash.mockReturnValueOnce('hash')
-      const { hash } = await splitsClient.getHash({ splitId })
+      const { hash } = await splitsClient.getHash({ splitAddress })
 
       expect(hash).toEqual('hash')
-      expect(validateAddress).toBeCalledWith(splitId)
-      expect(readActions.getHash).toBeCalledWith([splitId])
+      expect(validateAddress).toBeCalledWith(splitAddress)
+      expect(readActions.getHash).toBeCalledWith([splitAddress])
     })
   })
 })
@@ -1378,17 +1390,19 @@ describe('Graphql reads', () => {
   const mockSplit = {
     recipients: [
       {
-        address: '0xrecipient',
+        recipient: {
+          address: '0xrecipient',
+        },
       },
     ],
-  } as Split
+  } as unknown as Split
 
   const mockFormatSplit = jest
     .spyOn(subgraph, 'protectedFormatSplit')
     .mockReturnValue(mockSplit)
   const mockAddEnsNames = jest.spyOn(utils, 'addEnsNames').mockImplementation()
 
-  const splitId = '0xsplit'
+  const splitAddress = '0xsplit'
   const userId = '0xuser'
   const splitsClient = new SplitsClient({
     chainId: 1,
@@ -1412,16 +1426,16 @@ describe('Graphql reads', () => {
       })
 
       expect(
-        async () => await badSplitsClient.getSplitMetadata({ splitId }),
+        async () => await badSplitsClient.getSplitMetadata({ splitAddress }),
       ).rejects.toThrow(UnsupportedSubgraphChainIdError)
     })
 
     test('Get split metadata passes', async () => {
-      const split = await splitsClient.getSplitMetadata({ splitId })
+      const split = await splitsClient.getSplitMetadata({ splitAddress })
 
-      expect(validateAddress).toBeCalledWith(splitId)
+      expect(validateAddress).toBeCalledWith(splitAddress)
       expect(mockGqlClient.request).toBeCalledWith(subgraph.SPLIT_QUERY, {
-        splitId,
+        splitAddress,
       })
       expect(mockFormatSplit).toBeCalledWith('gqlSplit')
       expect(split).toEqual(mockSplit)
@@ -1436,11 +1450,11 @@ describe('Graphql reads', () => {
         includeEnsNames: true,
       })
 
-      const split = await ensSplitsClient.getSplitMetadata({ splitId })
+      const split = await ensSplitsClient.getSplitMetadata({ splitAddress })
 
-      expect(validateAddress).toBeCalledWith(splitId)
+      expect(validateAddress).toBeCalledWith(splitAddress)
       expect(mockGqlClient.request).toBeCalledWith(subgraph.SPLIT_QUERY, {
-        splitId,
+        splitAddress,
       })
       expect(mockFormatSplit).toBeCalledWith('gqlSplit')
       expect(split).toEqual(mockSplit)

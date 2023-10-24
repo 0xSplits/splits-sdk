@@ -210,7 +210,7 @@ describe('Pass through wallet writes', () => {
     })
 
     test('Create pass through wallet passes', async () => {
-      const { event, passThroughWalletId } =
+      const { event, passThroughWalletAddress } =
         await client.createPassThroughWallet({
           owner,
           paused,
@@ -218,7 +218,7 @@ describe('Pass through wallet writes', () => {
         })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(passThroughWalletId).toEqual('0xPassThroughWallet')
+      expect(passThroughWalletAddress).toEqual('0xPassThroughWallet')
       expect(validateAddress).toBeCalledWith(owner)
       expect(validateAddress).toBeCalledWith(passThrough)
 
@@ -235,7 +235,7 @@ describe('Pass through wallet writes', () => {
   })
 
   describe('Pass through tokens tests', () => {
-    const passThroughWalletId = '0xpassthroughwallet'
+    const passThroughWalletAddress = '0xpassthroughwallet'
     const tokens = ['0xtoken1', '0xtoken2']
     const passThroughTokensResult = {
       value: 'pass_through_tokens_tx',
@@ -257,7 +257,7 @@ describe('Pass through wallet writes', () => {
       await expect(
         async () =>
           await badClient.passThroughTokens({
-            passThroughWalletId,
+            passThroughWalletAddress,
             tokens,
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -272,7 +272,7 @@ describe('Pass through wallet writes', () => {
       await expect(
         async () =>
           await badClient.passThroughTokens({
-            passThroughWalletId,
+            passThroughWalletAddress,
             tokens,
           }),
       ).rejects.toThrow(MissingWalletClientError)
@@ -280,12 +280,12 @@ describe('Pass through wallet writes', () => {
 
     test('Pass through tokens passes', async () => {
       const { event } = await client.passThroughTokens({
-        passThroughWalletId,
+        passThroughWalletAddress,
         tokens,
       })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(validateAddress).toBeCalledWith(passThroughWalletId)
+      expect(validateAddress).toBeCalledWith(passThroughWalletAddress)
       expect(validateAddress).toBeCalledWith('0xtoken1')
       expect(validateAddress).toBeCalledWith('0xtoken2')
       expect(moduleWriteActions.passThroughTokens).toBeCalledWith(tokens)
@@ -297,7 +297,7 @@ describe('Pass through wallet writes', () => {
   })
 
   describe('Set pass through tests', () => {
-    const passThroughWalletId = '0xpassthroughwallet'
+    const passThroughWalletAddress = '0xpassthroughwallet'
     const passThrough = '0xuser'
     const setPassThroughResult = {
       value: 'set_pass_through_tx',
@@ -319,7 +319,7 @@ describe('Pass through wallet writes', () => {
       await expect(
         async () =>
           await badClient.setPassThrough({
-            passThroughWalletId,
+            passThroughWalletAddress,
             passThrough,
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -334,7 +334,7 @@ describe('Pass through wallet writes', () => {
       await expect(
         async () =>
           await badClient.setPassThrough({
-            passThroughWalletId,
+            passThroughWalletAddress,
             passThrough,
           }),
       ).rejects.toThrow(MissingWalletClientError)
@@ -351,7 +351,7 @@ describe('Pass through wallet writes', () => {
       await expect(
         async () =>
           await badClient.setPassThrough({
-            passThroughWalletId,
+            passThroughWalletAddress,
             passThrough,
           }),
       ).rejects.toThrow(InvalidAuthError)
@@ -359,12 +359,12 @@ describe('Pass through wallet writes', () => {
 
     test('Set pass through passes', async () => {
       const { event } = await client.setPassThrough({
-        passThroughWalletId,
+        passThroughWalletAddress,
         passThrough,
       })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(validateAddress).toBeCalledWith(passThroughWalletId)
+      expect(validateAddress).toBeCalledWith(passThroughWalletAddress)
       expect(validateAddress).toBeCalledWith(passThrough)
       expect(moduleWriteActions.setPassThrough).toBeCalledWith(passThrough)
       expect(getTransactionEventsSpy).toBeCalledWith({
@@ -375,7 +375,7 @@ describe('Pass through wallet writes', () => {
   })
 
   describe('Set paused tests', () => {
-    const passThroughWalletId = '0xpassThroughWallet'
+    const passThroughWalletAddress = '0xpassThroughWallet'
     const paused = true
     const setPausedResult = {
       value: 'set_paused_tx',
@@ -395,7 +395,7 @@ describe('Pass through wallet writes', () => {
       await expect(
         async () =>
           await badClient.setPaused({
-            passThroughWalletId,
+            passThroughWalletAddress,
             paused,
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -410,7 +410,7 @@ describe('Pass through wallet writes', () => {
       await expect(
         async () =>
           await badClient.setPaused({
-            passThroughWalletId,
+            passThroughWalletAddress,
             paused,
           }),
       ).rejects.toThrow(MissingWalletClientError)
@@ -427,7 +427,7 @@ describe('Pass through wallet writes', () => {
       await expect(
         async () =>
           await badClient.setPaused({
-            passThroughWalletId,
+            passThroughWalletAddress,
             paused,
           }),
       ).rejects.toThrow(InvalidAuthError)
@@ -435,12 +435,12 @@ describe('Pass through wallet writes', () => {
 
     test('Set paused passes', async () => {
       const { event } = await client.setPaused({
-        passThroughWalletId,
+        passThroughWalletAddress,
         paused,
       })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(validateAddress).toBeCalledWith(passThroughWalletId)
+      expect(validateAddress).toBeCalledWith(passThroughWalletAddress)
 
       expect(moduleWriteActions.setPaused).toBeCalledWith(paused)
       expect(getTransactionEventsSpy).toBeCalledWith({
@@ -451,7 +451,7 @@ describe('Pass through wallet writes', () => {
   })
 
   describe('Exec calls tests', () => {
-    const passThroughWalletId = '0xpassthroughwallet'
+    const passThroughWalletAddress = '0xpassthroughwallet'
     const calls = [
       {
         to: '0xaddress',
@@ -477,7 +477,7 @@ describe('Pass through wallet writes', () => {
       await expect(
         async () =>
           await badClient.execCalls({
-            passThroughWalletId,
+            passThroughWalletAddress,
             calls,
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -492,7 +492,7 @@ describe('Pass through wallet writes', () => {
       await expect(
         async () =>
           await badClient.execCalls({
-            passThroughWalletId,
+            passThroughWalletAddress,
             calls,
           }),
       ).rejects.toThrow(MissingWalletClientError)
@@ -509,7 +509,7 @@ describe('Pass through wallet writes', () => {
       await expect(
         async () =>
           await badClient.execCalls({
-            passThroughWalletId,
+            passThroughWalletAddress,
             calls,
           }),
       ).rejects.toThrow(InvalidAuthError)
@@ -517,12 +517,12 @@ describe('Pass through wallet writes', () => {
 
     test('Exec calls passes', async () => {
       const { event } = await client.execCalls({
-        passThroughWalletId,
+        passThroughWalletAddress,
         calls,
       })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(validateAddress).toBeCalledWith(passThroughWalletId)
+      expect(validateAddress).toBeCalledWith(passThroughWalletAddress)
       expect(validateAddress).toBeCalledWith('0xaddress')
 
       expect(moduleWriteActions.execCalls).toBeCalledWith([
@@ -548,7 +548,7 @@ describe('Pass through wallet reads', () => {
   })
 
   describe('Get pass through test', () => {
-    const passThroughWalletId = '0xpassthroughwallet'
+    const passThroughWalletAddress = '0xpassthroughwallet'
 
     beforeEach(() => {
       readActions.passThrough.mockClear()
@@ -562,7 +562,7 @@ describe('Pass through wallet reads', () => {
       await expect(
         async () =>
           await badClient.getPassThrough({
-            passThroughWalletId,
+            passThroughWalletAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
@@ -570,11 +570,11 @@ describe('Pass through wallet reads', () => {
     test('Returns pass through', async () => {
       readActions.passThrough.mockReturnValueOnce('0xpassthrough')
       const { passThrough } = await client.getPassThrough({
-        passThroughWalletId,
+        passThroughWalletAddress,
       })
 
       expect(passThrough).toEqual('0xpassthrough')
-      expect(validateAddress).toBeCalledWith(passThroughWalletId)
+      expect(validateAddress).toBeCalledWith(passThroughWalletAddress)
       expect(readActions.passThrough).toBeCalled()
     })
   })

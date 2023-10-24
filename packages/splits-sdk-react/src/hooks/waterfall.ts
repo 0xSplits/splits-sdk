@@ -220,7 +220,7 @@ export const useWithdrawWaterfallPullFunds = (): {
 }
 
 export const useWaterfallMetadata = (
-  waterfallModuleId: string,
+  waterfallModuleAddress: string,
 ): {
   isLoading: boolean
   waterfallMetadata: WaterfallModule | undefined
@@ -237,9 +237,9 @@ export const useWaterfallMetadata = (
   const [waterfallMetadata, setWaterfallMetadata] = useState<
     WaterfallModule | undefined
   >()
-  const [isLoading, setIsLoading] = useState(!!waterfallModuleId)
+  const [isLoading, setIsLoading] = useState(!!waterfallModuleAddress)
   const [status, setStatus] = useState<DataLoadStatus | undefined>(
-    waterfallModuleId ? 'loading' : undefined,
+    waterfallModuleAddress ? 'loading' : undefined,
   )
   const [error, setError] = useState<RequestError>()
 
@@ -249,7 +249,7 @@ export const useWaterfallMetadata = (
     const fetchMetadata = async () => {
       try {
         const waterfall = await waterfallClient.getWaterfallMetadata({
-          waterfallModuleId,
+          waterfallModuleAddress,
         })
         if (!isActive) return
         setWaterfallMetadata(waterfall)
@@ -265,7 +265,7 @@ export const useWaterfallMetadata = (
     }
 
     setError(undefined)
-    if (waterfallModuleId) {
+    if (waterfallModuleAddress) {
       setStatus('loading')
       setIsLoading(true)
       fetchMetadata()
@@ -278,7 +278,7 @@ export const useWaterfallMetadata = (
     return () => {
       isActive = false
     }
-  }, [waterfallClient, waterfallModuleId])
+  }, [waterfallClient, waterfallModuleAddress])
 
   return {
     isLoading,

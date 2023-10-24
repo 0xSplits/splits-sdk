@@ -463,7 +463,7 @@ export const useMakeSplitImmutable = (): {
 }
 
 export const useSplitMetadata = (
-  splitId: string,
+  splitAddress: string,
 ): {
   isLoading: boolean
   splitMetadata: Split | undefined
@@ -474,9 +474,9 @@ export const useSplitMetadata = (
   const splitsClient = getSplitsClient(context)
 
   const [splitMetadata, setSplitMetadata] = useState<Split | undefined>()
-  const [isLoading, setIsLoading] = useState(!!splitId)
+  const [isLoading, setIsLoading] = useState(!!splitAddress)
   const [status, setStatus] = useState<DataLoadStatus | undefined>(
-    splitId ? 'loading' : undefined,
+    splitAddress ? 'loading' : undefined,
   )
   const [error, setError] = useState<RequestError>()
 
@@ -485,7 +485,7 @@ export const useSplitMetadata = (
 
     const fetchMetadata = async () => {
       try {
-        const split = await splitsClient.getSplitMetadata({ splitId })
+        const split = await splitsClient.getSplitMetadata({ splitAddress })
         if (!isActive) return
         setSplitMetadata(split)
         setStatus('success')
@@ -500,7 +500,7 @@ export const useSplitMetadata = (
     }
 
     setError(undefined)
-    if (splitId) {
+    if (splitAddress) {
       setIsLoading(true)
       setStatus('loading')
       fetchMetadata()
@@ -513,7 +513,7 @@ export const useSplitMetadata = (
     return () => {
       isActive = false
     }
-  }, [splitsClient, splitId])
+  }, [splitsClient, splitAddress])
 
   return {
     isLoading,
@@ -524,7 +524,7 @@ export const useSplitMetadata = (
 }
 
 export const useSplitEarnings = (
-  splitId: string,
+  splitAddress: string,
   includeActiveBalances?: boolean,
   erc20TokenList?: string[],
   formatted = true,
@@ -544,9 +544,9 @@ export const useSplitEarnings = (
   const [formattedSplitEarnings, setFormattedSplitEarnings] = useState<
     FormattedSplitEarnings | undefined
   >()
-  const [isLoading, setIsLoading] = useState(!!splitId)
+  const [isLoading, setIsLoading] = useState(!!splitAddress)
   const [status, setStatus] = useState<DataLoadStatus | undefined>(
-    splitId ? 'loading' : undefined,
+    splitAddress ? 'loading' : undefined,
   )
   const [error, setError] = useState<RequestError>()
 
@@ -558,7 +558,7 @@ export const useSplitEarnings = (
         if (fetchFormattedEarnings) {
           const formattedEarnings =
             await splitsClient.getFormattedSplitEarnings({
-              splitId,
+              splitAddress,
               includeActiveBalances,
               erc20TokenList,
             })
@@ -568,7 +568,7 @@ export const useSplitEarnings = (
           setStatus('success')
         } else {
           const earnings = await splitsClient.getSplitEarnings({
-            splitId,
+            splitAddress,
             includeActiveBalances,
             erc20TokenList,
           })
@@ -588,7 +588,7 @@ export const useSplitEarnings = (
     }
 
     setError(undefined)
-    if (splitId) {
+    if (splitAddress) {
       setIsLoading(true)
       setStatus('loading')
       fetchEarnings(formatted)
@@ -602,7 +602,13 @@ export const useSplitEarnings = (
     return () => {
       isActive = false
     }
-  }, [splitsClient, splitId, formatted, includeActiveBalances, erc20TokenList])
+  }, [
+    splitsClient,
+    splitAddress,
+    formatted,
+    includeActiveBalances,
+    erc20TokenList,
+  ])
 
   return {
     isLoading,

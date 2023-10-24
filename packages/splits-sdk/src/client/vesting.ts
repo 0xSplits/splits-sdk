@@ -1,4 +1,5 @@
 import {
+  Address,
   Hash,
   Hex,
   Log,
@@ -82,16 +83,16 @@ class VestingTransactions extends BaseTransactions {
   }
 
   protected async _startVestTransaction({
-    vestingModuleId,
+    vestingModuleAddress,
     tokens,
     transactionOverrides = {},
   }: StartVestConfig): Promise<TransactionFormat> {
-    validateAddress(vestingModuleId)
+    validateAddress(vestingModuleAddress)
     tokens.map((token) => validateAddress(token))
     if (this._shouldRequreWalletClient) this._requireWalletClient()
 
     const result = await this._executeContractFunction({
-      contractAddress: getAddress(vestingModuleId),
+      contractAddress: getAddress(vestingModuleAddress),
       contractAbi: vestingAbi,
       functionName: 'createVestingStreams',
       functionArgs: [tokens],
@@ -102,15 +103,15 @@ class VestingTransactions extends BaseTransactions {
   }
 
   protected async _releaseVestedFundsTransaction({
-    vestingModuleId,
+    vestingModuleAddress,
     streamIds,
     transactionOverrides = {},
   }: ReleaseVestedFundsConfig): Promise<TransactionFormat> {
-    validateAddress(vestingModuleId)
+    validateAddress(vestingModuleAddress)
     if (this._shouldRequreWalletClient) this._requireWalletClient()
 
     const result = await this._executeContractFunction({
-      contractAddress: getAddress(vestingModuleId),
+      contractAddress: getAddress(vestingModuleAddress),
       contractAbi: vestingAbi,
       functionName: 'releaseFromVesting',
       functionArgs: [streamIds],
@@ -213,7 +214,7 @@ export class VestingClient extends VestingTransactions {
   }
 
   async createVestingModule(createVestingArgs: CreateVestingConfig): Promise<{
-    vestingModuleId: string
+    vestingModuleAddress: string
     event: Log
   }> {
     this._requirePublicClient()
@@ -233,7 +234,7 @@ export class VestingClient extends VestingTransactions {
         topics: event.topics,
       })
       return {
-        vestingModuleId: log.args.vestingModule,
+        vestingModuleAddress: log.args.vestingModule,
         event,
       }
     }
@@ -299,7 +300,7 @@ export class VestingClient extends VestingTransactions {
     beneficiary,
     vestingPeriodSeconds,
   }: CreateVestingConfig): Promise<{
-    address: string
+    address: Address
     exists: boolean
   }> {
     validateAddress(beneficiary)
@@ -320,68 +321,68 @@ export class VestingClient extends VestingTransactions {
   }
 
   async getBeneficiary({
-    vestingModuleId,
+    vestingModuleAddress,
   }: {
-    vestingModuleId: string
+    vestingModuleAddress: string
   }): Promise<{
-    beneficiary: string
+    beneficiary: Address
   }> {
-    validateAddress(vestingModuleId)
+    validateAddress(vestingModuleAddress)
     this._requirePublicClient()
 
-    const vestingContract = this._getVestingContract(vestingModuleId)
+    const vestingContract = this._getVestingContract(vestingModuleAddress)
     const beneficiary = await vestingContract.read.beneficiary()
 
     return { beneficiary }
   }
 
   async getVestingPeriod({
-    vestingModuleId,
+    vestingModuleAddress,
   }: {
-    vestingModuleId: string
+    vestingModuleAddress: string
   }): Promise<{
     vestingPeriod: bigint
   }> {
-    validateAddress(vestingModuleId)
+    validateAddress(vestingModuleAddress)
     this._requirePublicClient()
 
-    const vestingContract = this._getVestingContract(vestingModuleId)
+    const vestingContract = this._getVestingContract(vestingModuleAddress)
     const vestingPeriod = await vestingContract.read.vestingPeriod()
 
     return { vestingPeriod }
   }
 
   async getVestedAmount({
-    vestingModuleId,
+    vestingModuleAddress,
     streamId,
   }: {
-    vestingModuleId: string
+    vestingModuleAddress: string
     streamId: string
   }): Promise<{
     amount: bigint
   }> {
-    validateAddress(vestingModuleId)
+    validateAddress(vestingModuleAddress)
     this._requirePublicClient()
 
-    const vestingContract = this._getVestingContract(vestingModuleId)
+    const vestingContract = this._getVestingContract(vestingModuleAddress)
     const amount = await vestingContract.read.vested([BigInt(streamId)])
 
     return { amount }
   }
 
   async getVestedAndUnreleasedAmount({
-    vestingModuleId,
+    vestingModuleAddress,
     streamId,
   }: {
-    vestingModuleId: string
+    vestingModuleAddress: string
     streamId: string
   }): Promise<{
     amount: bigint
   }> {
-    validateAddress(vestingModuleId)
+    validateAddress(vestingModuleAddress)
     this._requirePublicClient()
 
-    const vestingContract = this._getVestingContract(vestingModuleId)
+    const vestingContract = this._getVestingContract(vestingModuleAddress)
     const amount = await vestingContract.read.vestedAndUnreleased([
       BigInt(streamId),
     ])
@@ -391,21 +392,21 @@ export class VestingClient extends VestingTransactions {
 
   // Graphql read actions
   async getVestingMetadata({
-    vestingModuleId,
+    vestingModuleAddress,
   }: {
-    vestingModuleId: string
+    vestingModuleAddress: string
   }): Promise<VestingModule> {
-    validateAddress(vestingModuleId)
+    validateAddress(vestingModuleAddress)
 
     const response = await this._makeGqlRequest<{
       vestingModule: GqlVestingModule
     }>(VESTING_MODULE_QUERY, {
-      vestingModuleId: vestingModuleId.toLowerCase(),
+      vestingModuleAddress: vestingModuleAddress.toLowerCase(),
     })
 
     if (!response.vestingModule)
       throw new AccountNotFoundError(
-        `No vesting module found at address ${vestingModuleId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
+        `No vesting module found at address ${vestingModuleAddress}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
       )
 
     return await this.formatVestingModule(response.vestingModule)

@@ -220,7 +220,7 @@ export class TemplatesClient extends TemplatesTransactions {
   }
 
   async createRecoup(createRecoupArgs: CreateRecoupConfig): Promise<{
-    waterfallModuleId: Address
+    waterfallModuleAddress: Address
     event: Log
   }> {
     this._requirePublicClient()
@@ -240,7 +240,7 @@ export class TemplatesClient extends TemplatesTransactions {
         topics: event.topics,
       })
       return {
-        waterfallModuleId: log.args.waterfallModule,
+        waterfallModuleAddress: log.args.waterfallModule,
         event,
       }
     }
@@ -265,7 +265,7 @@ export class TemplatesClient extends TemplatesTransactions {
   async createDiversifier(
     createDiversifierArgs: CreateDiversifierConfig,
   ): Promise<{
-    passThroughWalletId: Address
+    passThroughWalletAddress: Address
     event: Log
   }> {
     this._requirePublicClient()
@@ -286,7 +286,7 @@ export class TemplatesClient extends TemplatesTransactions {
         topics: event.topics,
       })
       return {
-        passThroughWalletId: log.args.diversifier,
+        passThroughWalletAddress: log.args.diversifier,
         event,
       }
     }

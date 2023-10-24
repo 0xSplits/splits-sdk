@@ -57,8 +57,6 @@ import {
   validateRecipients,
 } from '../utils/validation'
 
-const DEFAULT_CREATE_CLONE = true
-
 class LiquidSplitTransactions extends BaseTransactions {
   constructor({
     transactionType,
@@ -82,15 +80,10 @@ class LiquidSplitTransactions extends BaseTransactions {
     recipients,
     distributorFeePercent,
     owner = undefined,
-    createClone = DEFAULT_CREATE_CLONE,
     transactionOverrides = {},
   }: CreateLiquidSplitConfig): Promise<TransactionFormat> {
     validateRecipients(recipients, LIQUID_SPLITS_MAX_PRECISION_DECIMALS)
     validateDistributorFeePercent(distributorFeePercent)
-    if (createClone === false)
-      throw new Error(
-        'Non-clone liquid splits are not available through the SDK. See the splits-liquid-template repository in the 0xSplits github if you would like to create your own custom liquid split',
-      )
 
     if (this._shouldRequreWalletClient) this._requireWalletClient()
     const ownerAddress = owner
@@ -117,12 +110,12 @@ class LiquidSplitTransactions extends BaseTransactions {
   }
 
   protected async _distributeTokenTransaction({
-    liquidSplitId,
+    liquidSplitAddress,
     token,
     distributorAddress,
     transactionOverrides = {},
   }: DistributeLiquidSplitTokenConfig): Promise<TransactionFormat> {
-    validateAddress(liquidSplitId)
+    validateAddress(liquidSplitAddress)
     validateAddress(token)
     if (this._shouldRequreWalletClient) this._requireWalletClient()
 
@@ -135,17 +128,17 @@ class LiquidSplitTransactions extends BaseTransactions {
 
     // TO DO: handle bad split id/no metadata found
     const { holders } = await this.getLiquidSplitMetadata({
-      liquidSplitId,
+      liquidSplitAddress,
     })
     const accounts = holders
-      .map((h) => h.address)
+      .map((h) => h.recipient.address)
       .sort((a, b) => {
         if (a.toLowerCase() > b.toLowerCase()) return 1
         return -1
       })
 
     const result = await this._executeContractFunction({
-      contractAddress: getAddress(liquidSplitId),
+      contractAddress: getAddress(liquidSplitAddress),
       contractAbi: ls1155CloneAbi,
       functionName: 'distributeFunds',
       functionArgs: [token, accounts, distributorPayoutAddress],
@@ -156,19 +149,19 @@ class LiquidSplitTransactions extends BaseTransactions {
   }
 
   protected async _transferOwnershipTransaction({
-    liquidSplitId,
+    liquidSplitAddress,
     newOwner,
     transactionOverrides = {},
   }: TransferLiquidSplitOwnershipConfig): Promise<TransactionFormat> {
-    validateAddress(liquidSplitId)
+    validateAddress(liquidSplitAddress)
     validateAddress(newOwner)
     if (this._shouldRequreWalletClient) {
       this._requireWalletClient()
-      await this._requireOwner(liquidSplitId)
+      await this._requireOwner(liquidSplitAddress)
     }
 
     const result = await this._executeContractFunction({
-      contractAddress: getAddress(liquidSplitId),
+      contractAddress: getAddress(liquidSplitAddress),
       contractAbi: ls1155CloneAbi,
       functionName: 'transferOwnership',
       functionArgs: [newOwner],
@@ -180,21 +173,21 @@ class LiquidSplitTransactions extends BaseTransactions {
 
   // Graphql read actions
   async getLiquidSplitMetadata({
-    liquidSplitId,
+    liquidSplitAddress,
   }: {
-    liquidSplitId: string
+    liquidSplitAddress: string
   }): Promise<LiquidSplit> {
-    validateAddress(liquidSplitId)
+    validateAddress(liquidSplitAddress)
 
     const response = await this._makeGqlRequest<{
       liquidSplit: GqlLiquidSplit
     }>(LIQUID_SPLIT_QUERY, {
-      liquidSplitId: liquidSplitId.toLowerCase(),
+      liquidSplitAddress: liquidSplitAddress.toLowerCase(),
     })
 
     if (!response.liquidSplit)
       throw new AccountNotFoundError(
-        `No liquid split found at address ${liquidSplitId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
+        `No liquid split found at address ${liquidSplitAddress}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
       )
 
     return await this.formatLiquidSplit(response.liquidSplit)
@@ -213,7 +206,7 @@ class LiquidSplitTransactions extends BaseTransactions {
         liquidSplit.holders.map((holder) => {
           return {
             ...holder,
-            address: getAddress(holder.address),
+            address: getAddress(holder.recipient.address),
           }
         }),
       )
@@ -222,10 +215,10 @@ class LiquidSplitTransactions extends BaseTransactions {
     return liquidSplit
   }
 
-  private async _requireOwner(liquidSplitId: string) {
+  private async _requireOwner(liquidSplitAddress: string) {
     this._requireWalletClient()
 
-    const liquidSplitContract = this._getLiquidSplitContract(liquidSplitId)
+    const liquidSplitContract = this._getLiquidSplitContract(liquidSplitAddress)
     const owner = await liquidSplitContract.read.owner()
 
     // TODO: how to get rid of this, needed for typescript check
@@ -235,7 +228,7 @@ class LiquidSplitTransactions extends BaseTransactions {
 
     if (owner !== walletAddress)
       throw new InvalidAuthError(
-        `Action only available to the liquid split owner. Liquid split id: ${liquidSplitId}, owner: ${owner}, wallet address: ${walletAddress}`,
+        `Action only available to the liquid split owner. Liquid split address: ${liquidSplitAddress}, owner: ${owner}, wallet address: ${walletAddress}`,
       )
   }
 
@@ -336,7 +329,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
   async createLiquidSplit(
     createLiquidSplitArgs: CreateLiquidSplitConfig,
   ): Promise<{
-    liquidSplitId: Address
+    liquidSplitAddress: Address
     event: Log
   }> {
     this._requirePublicClient()
@@ -358,7 +351,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
         topics: event.topics,
       })
       return {
-        liquidSplitId: log.args.ls,
+        liquidSplitAddress: log.args.ls,
         event,
       }
     }
@@ -441,16 +434,16 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
 
   // Read actions
   async getDistributorFee({
-    liquidSplitId,
+    liquidSplitAddress,
   }: {
-    liquidSplitId: string
+    liquidSplitAddress: string
   }): Promise<{
     distributorFee: number
   }> {
-    validateAddress(liquidSplitId)
+    validateAddress(liquidSplitAddress)
     this._requirePublicClient()
 
-    const liquidSplitContract = this._getLiquidSplitContract(liquidSplitId)
+    const liquidSplitContract = this._getLiquidSplitContract(liquidSplitAddress)
     const distributorFee = await liquidSplitContract.read.distributorFee()
 
     return {
@@ -458,27 +451,35 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
     }
   }
 
-  async getPayoutSplit({ liquidSplitId }: { liquidSplitId: string }): Promise<{
-    payoutSplitId: string
+  async getPayoutSplit({
+    liquidSplitAddress,
+  }: {
+    liquidSplitAddress: string
+  }): Promise<{
+    payoutSplitAddress: Address
   }> {
-    validateAddress(liquidSplitId)
+    validateAddress(liquidSplitAddress)
     this._requirePublicClient()
 
-    const liquidSplitContract = this._getLiquidSplitContract(liquidSplitId)
-    const payoutSplitId = await liquidSplitContract.read.payoutSplit()
+    const liquidSplitContract = this._getLiquidSplitContract(liquidSplitAddress)
+    const payoutSplitAddress = await liquidSplitContract.read.payoutSplit()
 
     return {
-      payoutSplitId,
+      payoutSplitAddress,
     }
   }
 
-  async getOwner({ liquidSplitId }: { liquidSplitId: string }): Promise<{
-    owner: string
+  async getOwner({
+    liquidSplitAddress,
+  }: {
+    liquidSplitAddress: string
+  }): Promise<{
+    owner: Address
   }> {
-    validateAddress(liquidSplitId)
+    validateAddress(liquidSplitAddress)
     this._requirePublicClient()
 
-    const liquidSplitContract = this._getLiquidSplitContract(liquidSplitId)
+    const liquidSplitContract = this._getLiquidSplitContract(liquidSplitAddress)
     const owner = await liquidSplitContract.read.owner()
 
     return {
@@ -486,13 +487,17 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
     }
   }
 
-  async getUri({ liquidSplitId }: { liquidSplitId: string }): Promise<{
+  async getUri({
+    liquidSplitAddress,
+  }: {
+    liquidSplitAddress: string
+  }): Promise<{
     uri: string
   }> {
-    validateAddress(liquidSplitId)
+    validateAddress(liquidSplitAddress)
     this._requirePublicClient()
 
-    const liquidSplitContract = this._getLiquidSplitContract(liquidSplitId)
+    const liquidSplitContract = this._getLiquidSplitContract(liquidSplitAddress)
     const uri = await liquidSplitContract.read.uri([BigInt(0)]) // Expects an argument, but it's not actually used
 
     return {
@@ -501,19 +506,19 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
   }
 
   async getScaledPercentBalanceOf({
-    liquidSplitId,
+    liquidSplitAddress,
     address,
   }: {
-    liquidSplitId: string
+    liquidSplitAddress: string
     address: string
   }): Promise<{
     scaledPercentBalance: number
   }> {
-    validateAddress(liquidSplitId)
+    validateAddress(liquidSplitAddress)
     validateAddress(address)
     this._requirePublicClient()
 
-    const liquidSplitContract = this._getLiquidSplitContract(liquidSplitId)
+    const liquidSplitContract = this._getLiquidSplitContract(liquidSplitAddress)
     const scaledPercentBalance =
       await liquidSplitContract.read.scaledPercentBalanceOf([
         getAddress(address),
@@ -524,13 +529,19 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
     }
   }
 
-  async getNftImage({ liquidSplitId }: { liquidSplitId: string }): Promise<{
+  async getNftImage({
+    liquidSplitAddress,
+  }: {
+    liquidSplitAddress: string
+  }): Promise<{
     image: string
   }> {
-    validateAddress(liquidSplitId)
+    validateAddress(liquidSplitAddress)
     this._requirePublicClient()
 
-    const { uri } = await this.getUri({ liquidSplitId })
+    const { uri } = await this.getUri({
+      liquidSplitAddress,
+    })
     const decodedUri = decode(uri.slice(LIQUID_SPLIT_URI_BASE_64_HEADER.length))
     const uriJson = JSON.parse(decodedUri)
 

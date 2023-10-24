@@ -111,15 +111,15 @@ class WaterfallTransactions extends BaseTransactions {
   }
 
   protected async _waterfallFundsTransaction({
-    waterfallModuleId,
+    waterfallModuleAddress,
     usePull = false,
     transactionOverrides = {},
   }: WaterfallFundsConfig): Promise<TransactionFormat> {
-    validateAddress(waterfallModuleId)
+    validateAddress(waterfallModuleAddress)
     if (this._shouldRequreWalletClient) this._requireWalletClient()
 
     const result = await this._executeContractFunction({
-      contractAddress: getAddress(waterfallModuleId),
+      contractAddress: getAddress(waterfallModuleAddress),
       contractAbi: waterfallAbi,
       functionName: usePull ? 'waterfallFundsPull' : 'waterfallFunds',
       transactionOverrides,
@@ -129,23 +129,23 @@ class WaterfallTransactions extends BaseTransactions {
   }
 
   protected async _recoverNonWaterfallFundsTransaction({
-    waterfallModuleId,
+    waterfallModuleAddress,
     token,
     recipient = ADDRESS_ZERO,
     transactionOverrides = {},
   }: RecoverNonWaterfallFundsConfig): Promise<TransactionFormat> {
-    validateAddress(waterfallModuleId)
+    validateAddress(waterfallModuleAddress)
     validateAddress(token)
     validateAddress(recipient)
     this._requireWalletClient()
     await this._validateRecoverTokensWaterfallData({
-      waterfallModuleId,
+      waterfallModuleAddress,
       token,
       recipient,
     })
 
     const result = await this._executeContractFunction({
-      contractAddress: getAddress(waterfallModuleId),
+      contractAddress: getAddress(waterfallModuleAddress),
       contractAbi: waterfallAbi,
       functionName: 'recoverNonWaterfallFunds',
       functionArgs: [token, recipient],
@@ -156,16 +156,16 @@ class WaterfallTransactions extends BaseTransactions {
   }
 
   protected async _withdrawPullFundsTransaction({
-    waterfallModuleId,
+    waterfallModuleAddress,
     address,
     transactionOverrides = {},
   }: WithdrawWaterfallPullFundsConfig): Promise<TransactionFormat> {
-    validateAddress(waterfallModuleId)
+    validateAddress(waterfallModuleAddress)
     validateAddress(address)
     this._requireWalletClient()
 
     const result = await this._executeContractFunction({
-      contractAddress: getAddress(waterfallModuleId),
+      contractAddress: getAddress(waterfallModuleAddress),
       contractAbi: waterfallAbi,
       functionName: 'withdraw',
       functionArgs: [address],
@@ -177,21 +177,21 @@ class WaterfallTransactions extends BaseTransactions {
 
   // Graphql read actions
   async getWaterfallMetadata({
-    waterfallModuleId,
+    waterfallModuleAddress,
   }: {
-    waterfallModuleId: string
+    waterfallModuleAddress: string
   }): Promise<WaterfallModule> {
-    validateAddress(waterfallModuleId)
+    validateAddress(waterfallModuleAddress)
 
     const response = await this._makeGqlRequest<{
       waterfallModule: GqlWaterfallModule
     }>(WATERFALL_MODULE_QUERY, {
-      waterfallModuleId: waterfallModuleId.toLowerCase(),
+      waterfallModuleAddress: waterfallModuleAddress.toLowerCase(),
     })
 
     if (!response.waterfallModule)
       throw new AccountNotFoundError(
-        `No waterfall module found at address ${waterfallModuleId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
+        `No waterfall module found at address ${waterfallModuleAddress}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
       )
 
     return await this.formatWaterfallModule(response.waterfallModule)
@@ -225,16 +225,16 @@ class WaterfallTransactions extends BaseTransactions {
   }
 
   private async _validateRecoverTokensWaterfallData({
-    waterfallModuleId,
+    waterfallModuleAddress,
     token,
     recipient,
   }: {
-    waterfallModuleId: string
+    waterfallModuleAddress: string
     token: string
     recipient: string
   }) {
     const waterfallMetadata = await this.getWaterfallMetadata({
-      waterfallModuleId,
+      waterfallModuleAddress,
     })
 
     if (token.toLowerCase() === waterfallMetadata.token.address.toLowerCase())
@@ -244,11 +244,11 @@ class WaterfallTransactions extends BaseTransactions {
 
     if (
       waterfallMetadata.nonWaterfallRecipient &&
-      waterfallMetadata.nonWaterfallRecipient !== ADDRESS_ZERO
+      waterfallMetadata.nonWaterfallRecipient.address !== ADDRESS_ZERO
     ) {
       if (
         recipient.toLowerCase() !==
-        waterfallMetadata.nonWaterfallRecipient.toLowerCase()
+        waterfallMetadata.nonWaterfallRecipient.address.toLowerCase()
       )
         throw new InvalidArgumentError(
           `The passed in recipient (${recipient}) must match the non waterfall recipient for this module: ${waterfallMetadata.nonWaterfallRecipient}`,
@@ -259,14 +259,14 @@ class WaterfallTransactions extends BaseTransactions {
           if (acc) return acc
 
           return (
-            tranche.recipientAddress.toLowerCase() === recipient.toLowerCase()
+            tranche.recipient.address.toLowerCase() === recipient.toLowerCase()
           )
         },
         false,
       )
       if (!foundRecipient)
         throw new InvalidArgumentError(
-          `You must pass in a valid recipient address for the given waterfall. Address ${recipient} not found in any tranche for waterfall ${waterfallModuleId}.`,
+          `You must pass in a valid recipient address for the given waterfall. Address ${recipient} not found in any tranche for waterfall ${waterfallModuleAddress}.`,
         )
     }
   }
@@ -365,12 +365,9 @@ export class WaterfallClient extends WaterfallTransactions {
   async createWaterfallModule(
     createWaterfallArgs: CreateWaterfallConfig,
   ): Promise<{
-    waterfallModuleId: string
+    waterfallModuleAddress: string
     event: Log
   }> {
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error()
-
     const { txHash } =
       await this.submitCreateWaterfallModuleTransaction(createWaterfallArgs)
     const events = await this.getTransactionEvents({
@@ -385,7 +382,7 @@ export class WaterfallClient extends WaterfallTransactions {
         topics: event.topics,
       })
       return {
-        waterfallModuleId: log.args.waterfallModule,
+        waterfallModuleAddress: log.args.waterfallModule,
         event,
       }
     }
@@ -408,9 +405,6 @@ export class WaterfallClient extends WaterfallTransactions {
   async waterfallFunds(waterfallFundsArgs: WaterfallFundsConfig): Promise<{
     event: Log
   }> {
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error()
-
     const { txHash } =
       await this.submitWaterfallFundsTransaction(waterfallFundsArgs)
     const events = await this.getTransactionEvents({
@@ -444,9 +438,6 @@ export class WaterfallClient extends WaterfallTransactions {
   ): Promise<{
     event: Log
   }> {
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error()
-
     const { txHash } =
       await this.submitRecoverNonWaterfallFundsTransaction(recoverFundsArgs)
     const events = await this.getTransactionEvents({
@@ -479,9 +470,6 @@ export class WaterfallClient extends WaterfallTransactions {
   ): Promise<{
     event: Log
   }> {
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error()
-
     const { txHash } =
       await this.submitWithdrawPullFundsTransaction(withdrawFundsArgs)
     const events = await this.getTransactionEvents({
@@ -499,16 +487,16 @@ export class WaterfallClient extends WaterfallTransactions {
 
   // Read actions
   async getDistributedFunds({
-    waterfallModuleId,
+    waterfallModuleAddress,
   }: {
-    waterfallModuleId: string
+    waterfallModuleAddress: string
   }): Promise<{
     distributedFunds: bigint
   }> {
-    validateAddress(waterfallModuleId)
+    validateAddress(waterfallModuleAddress)
     this._requirePublicClient()
 
-    const contract = this._getWaterfallContract(waterfallModuleId)
+    const contract = this._getWaterfallContract(waterfallModuleAddress)
     const distributedFunds = await contract.read.distributedFunds()
 
     return {
@@ -517,16 +505,16 @@ export class WaterfallClient extends WaterfallTransactions {
   }
 
   async getFundsPendingWithdrawal({
-    waterfallModuleId,
+    waterfallModuleAddress,
   }: {
-    waterfallModuleId: string
+    waterfallModuleAddress: string
   }): Promise<{
     fundsPendingWithdrawal: bigint
   }> {
-    validateAddress(waterfallModuleId)
+    validateAddress(waterfallModuleAddress)
     this._requirePublicClient()
 
-    const waterfallContract = this._getWaterfallContract(waterfallModuleId)
+    const waterfallContract = this._getWaterfallContract(waterfallModuleAddress)
     const fundsPendingWithdrawal =
       await waterfallContract.read.fundsPendingWithdrawal()
 
@@ -536,17 +524,17 @@ export class WaterfallClient extends WaterfallTransactions {
   }
 
   async getTranches({
-    waterfallModuleId,
+    waterfallModuleAddress,
   }: {
-    waterfallModuleId: string
+    waterfallModuleAddress: string
   }): Promise<{
     recipients: Address[]
     thresholds: bigint[]
   }> {
-    validateAddress(waterfallModuleId)
+    validateAddress(waterfallModuleAddress)
     this._requirePublicClient()
 
-    const waterfallContract = this._getWaterfallContract(waterfallModuleId)
+    const waterfallContract = this._getWaterfallContract(waterfallModuleAddress)
     const [recipients, thresholds] = await waterfallContract.read.getTranches()
 
     return {
@@ -556,16 +544,16 @@ export class WaterfallClient extends WaterfallTransactions {
   }
 
   async getNonWaterfallRecipient({
-    waterfallModuleId,
+    waterfallModuleAddress,
   }: {
-    waterfallModuleId: string
+    waterfallModuleAddress: string
   }): Promise<{
     nonWaterfallRecipient: Address
   }> {
-    validateAddress(waterfallModuleId)
+    validateAddress(waterfallModuleAddress)
     this._requirePublicClient()
 
-    const waterfallContract = this._getWaterfallContract(waterfallModuleId)
+    const waterfallContract = this._getWaterfallContract(waterfallModuleAddress)
     const nonWaterfallRecipient =
       await waterfallContract.read.nonWaterfallRecipient()
 
@@ -575,16 +563,16 @@ export class WaterfallClient extends WaterfallTransactions {
   }
 
   async getToken({
-    waterfallModuleId,
+    waterfallModuleAddress,
   }: {
-    waterfallModuleId: string
+    waterfallModuleAddress: string
   }): Promise<{
     token: Address
   }> {
-    validateAddress(waterfallModuleId)
+    validateAddress(waterfallModuleAddress)
     this._requirePublicClient()
 
-    const waterfallContract = this._getWaterfallContract(waterfallModuleId)
+    const waterfallContract = this._getWaterfallContract(waterfallModuleAddress)
     const token = await waterfallContract.read.token()
 
     return {
@@ -593,18 +581,18 @@ export class WaterfallClient extends WaterfallTransactions {
   }
 
   async getPullBalance({
-    waterfallModuleId,
+    waterfallModuleAddress,
     address,
   }: {
-    waterfallModuleId: string
+    waterfallModuleAddress: string
     address: string
   }): Promise<{
     pullBalance: bigint
   }> {
-    validateAddress(waterfallModuleId)
+    validateAddress(waterfallModuleAddress)
     this._requirePublicClient()
 
-    const waterfallContract = this._getWaterfallContract(waterfallModuleId)
+    const waterfallContract = this._getWaterfallContract(waterfallModuleAddress)
     const pullBalance = await waterfallContract.read.getPullBalance([
       getAddress(address),
     ])
@@ -700,57 +688,33 @@ class WaterfallCallData extends WaterfallTransactions {
     })
   }
 
-  async createWaterfallModule({
-    token,
-    tranches,
-    nonWaterfallRecipient = ADDRESS_ZERO,
-  }: CreateWaterfallConfig): Promise<CallData> {
-    const callData = await this._createWaterfallModuleTransaction({
-      token,
-      tranches,
-      nonWaterfallRecipient,
-    })
+  async createWaterfallModule(args: CreateWaterfallConfig): Promise<CallData> {
+    const callData = await this._createWaterfallModuleTransaction(args)
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData
   }
 
-  async waterfallFunds({
-    waterfallModuleId,
-    usePull = false,
-  }: WaterfallFundsConfig): Promise<CallData> {
-    const callData = await this._waterfallFundsTransaction({
-      waterfallModuleId,
-      usePull,
-    })
+  async waterfallFunds(args: WaterfallFundsConfig): Promise<CallData> {
+    const callData = await this._waterfallFundsTransaction(args)
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData
   }
 
-  async recoverNonWaterfallFunds({
-    waterfallModuleId,
-    token,
-    recipient = ADDRESS_ZERO,
-  }: RecoverNonWaterfallFundsConfig): Promise<CallData> {
-    const callData = await this._recoverNonWaterfallFundsTransaction({
-      waterfallModuleId,
-      token,
-      recipient,
-    })
+  async recoverNonWaterfallFunds(
+    args: RecoverNonWaterfallFundsConfig,
+  ): Promise<CallData> {
+    const callData = await this._recoverNonWaterfallFundsTransaction(args)
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData
   }
 
-  async withdrawPullFunds({
-    waterfallModuleId,
-    address,
-  }: WithdrawWaterfallPullFundsConfig): Promise<CallData> {
-    const callData = await this._withdrawPullFundsTransaction({
-      waterfallModuleId,
-      address,
-    })
+  async withdrawPullFunds(
+    args: WithdrawWaterfallPullFundsConfig,
+  ): Promise<CallData> {
+    const callData = await this._withdrawPullFundsTransaction(args)
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData

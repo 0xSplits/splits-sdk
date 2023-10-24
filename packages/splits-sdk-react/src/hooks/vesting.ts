@@ -159,7 +159,7 @@ export const useReleaseVestedFunds = (): {
 }
 
 export const useVestingMetadata = (
-  vestingModuleId: string,
+  vestingModuleAddress: string,
 ): {
   isLoading: boolean
   vestingMetadata: VestingModule | undefined
@@ -176,9 +176,9 @@ export const useVestingMetadata = (
   const [vestingMetadata, setVestingMetadata] = useState<
     VestingModule | undefined
   >()
-  const [isLoading, setIsLoading] = useState(!!vestingModuleId)
+  const [isLoading, setIsLoading] = useState(!!vestingModuleAddress)
   const [status, setStatus] = useState<DataLoadStatus | undefined>(
-    vestingModuleId ? 'loading' : undefined,
+    vestingModuleAddress ? 'loading' : undefined,
   )
   const [error, setError] = useState<RequestError>()
 
@@ -188,7 +188,7 @@ export const useVestingMetadata = (
     const fetchMetadata = async () => {
       try {
         const vesting = await vestingClient.getVestingMetadata({
-          vestingModuleId,
+          vestingModuleAddress,
         })
         if (!isActive) return
         setVestingMetadata(vesting)
@@ -204,7 +204,7 @@ export const useVestingMetadata = (
     }
 
     setError(undefined)
-    if (vestingModuleId) {
+    if (vestingModuleAddress) {
       setIsLoading(true)
       setStatus('loading')
       fetchMetadata()
@@ -217,7 +217,7 @@ export const useVestingMetadata = (
     return () => {
       isActive = false
     }
-  }, [vestingClient, vestingModuleId])
+  }, [vestingClient, vestingModuleAddress])
 
   return {
     isLoading,

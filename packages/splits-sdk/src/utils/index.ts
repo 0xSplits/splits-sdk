@@ -133,7 +133,7 @@ export const addWaterfallEnsNames = async (
   tranches: WaterfallTranche[],
 ): Promise<void> => {
   const addresses = tranches.map((tranche) =>
-    getAddress(tranche.recipientAddress),
+    getAddress(tranche.recipient.address),
   )
   const allNames = await fetchEnsNames(publicClient, addresses)
 
@@ -141,7 +141,7 @@ export const addWaterfallEnsNames = async (
     if (ens) {
       try {
         if (normalize(ens)) {
-          tranches[index].recipientEnsName = ens
+          tranches[index].recipient.ens = ens
         }
       } catch (e) {
         // If normalize generates an error let's just ignore for now and not add the ens

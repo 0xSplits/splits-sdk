@@ -457,7 +457,7 @@ export const useSwapperSetScaledOfferFactorOverrides = (): {
 }
 
 export const useSwapperMetadata = (
-  swapperId: string,
+  swapperAddress: string,
 ): {
   isLoading: boolean
   swapperMetadata: Swapper | undefined
@@ -472,9 +472,9 @@ export const useSwapperMetadata = (
   }
 
   const [swapperMetadata, setSwapperMetadata] = useState<Swapper | undefined>()
-  const [isLoading, setIsLoading] = useState(!!swapperId)
+  const [isLoading, setIsLoading] = useState(!!swapperAddress)
   const [status, setStatus] = useState<DataLoadStatus | undefined>(
-    swapperId ? 'loading' : undefined,
+    swapperAddress ? 'loading' : undefined,
   )
   const [error, setError] = useState<RequestError>()
 
@@ -483,7 +483,7 @@ export const useSwapperMetadata = (
 
     const fetchMetadata = async () => {
       try {
-        const swapper = await swapperClient.getSwapperMetadata({ swapperId })
+        const swapper = await swapperClient.getSwapperMetadata({ swapperAddress })
         if (!isActive) return
         setSwapperMetadata(swapper)
         setStatus('success')
@@ -498,7 +498,7 @@ export const useSwapperMetadata = (
     }
 
     setError(undefined)
-    if (swapperId) {
+    if (swapperAddress) {
       setIsLoading(true)
       setStatus('loading')
       fetchMetadata()
@@ -511,7 +511,7 @@ export const useSwapperMetadata = (
     return () => {
       isActive = false
     }
-  }, [splitsClient, swapperId])
+  }, [splitsClient, swapperAddress])
 
   return {
     isLoading,
