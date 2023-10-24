@@ -112,6 +112,10 @@ class BaseClient {
       throw new MissingWalletClientError(
         'Wallet client required to perform this action, please update your call to the constructor',
       )
+    if (!this._walletClient.account)
+      throw new MissingWalletClientError(
+        'Wallet client must have an account attached to it to perform this action, please update your wallet client passed into the constructor',
+      )
   }
 
   protected async _getUserBalancesByContract({
