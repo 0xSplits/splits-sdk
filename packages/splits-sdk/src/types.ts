@@ -1,10 +1,13 @@
 import type {
   Abi,
   AccessList,
+  Account,
   Address,
+  Chain,
   Hash,
   Hex,
   PublicClient,
+  Transport,
   WalletClient,
 } from 'viem'
 import { TransactionType } from './constants'
@@ -26,8 +29,8 @@ interface TransactionOverridesDict {
 // Splits
 export type SplitsClientConfig = {
   chainId: number
-  publicClient?: PublicClient
-  walletClient?: WalletClient
+  publicClient?: PublicClient<Transport, Chain>
+  walletClient?: WalletClient<Transport, Chain, Account>
   includeEnsNames?: boolean
   // ensPublicClient can be used to fetch ens names when publicClient is not on mainnet (reverseRecords
   // only works on mainnet).
@@ -441,7 +444,7 @@ export type LiquidSplit = {
   isFactoryGenerated: boolean
 }
 
-export type Account = Split | WaterfallModule | LiquidSplit | Swapper
+export type SplitsContract = Split | WaterfallModule | LiquidSplit | Swapper
 
 // INTERNAL
 

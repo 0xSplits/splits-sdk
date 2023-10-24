@@ -79,7 +79,7 @@ import type {
   SplitRecipient,
   Split,
   TokenBalances,
-  Account,
+  SplitsContract,
   CallData,
   TransactionConfig,
   TransactionFormat,
@@ -1387,7 +1387,7 @@ export class SplitsClient extends SplitsTransactions {
     accountAddress,
   }: {
     accountAddress: string
-  }): Promise<Account | undefined> {
+  }): Promise<SplitsContract | undefined> {
     validateAddress(accountAddress)
     this._requirePublicClient()
 
@@ -1408,7 +1408,7 @@ export class SplitsClient extends SplitsTransactions {
   // Helper functions
   private async _formatAccount(
     gqlAccount: GqlAccount,
-  ): Promise<Account | undefined> {
+  ): Promise<SplitsContract | undefined> {
     if (!gqlAccount) return
 
     if (gqlAccount.__typename === 'Split')

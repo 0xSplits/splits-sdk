@@ -7,7 +7,7 @@ export type {
   WaterfallTranche,
   WaterfallModule,
   WaterfallTrancheInput,
-  Account,
+  SplitsContract,
   LiquidSplit,
   VestingStream,
   VestingModule,
