@@ -825,17 +825,16 @@ jest.mock('graphql-request', () => {
 })
 
 describe('Graphql reads', () => {
-  const mockFormatWaterfall = jest
-    .spyOn(subgraph, 'protectedFormatWaterfallModule')
-    .mockReturnValue('formatted_waterfall_module' as unknown as WaterfallModule)
-  const mockAddEnsNames = jest
-    .spyOn(utils, 'addWaterfallEnsNames')
-    .mockImplementation()
   const mockGqlWaterfall = {
     token: {
       id: '0xwaterfallToken',
     },
+    tranches: [],
   }
+  const mockFormatWaterfall = jest
+    .spyOn(subgraph, 'protectedFormatWaterfallModule')
+    .mockReturnValue(mockGqlWaterfall as unknown as WaterfallModule)
+  const mockAddEnsNames = jest.spyOn(utils, 'addEnsNames').mockImplementation()
 
   const waterfallModuleAddress = '0xwaterfall'
   const publicClient = new mockPublicClient()
@@ -854,11 +853,7 @@ describe('Graphql reads', () => {
   describe('Get waterfall metadata tests', () => {
     beforeEach(() => {
       mockGqlClient.request.mockReturnValue({
-        waterfallModule: {
-          token: {
-            id: '0xwaterfallToken',
-          },
-        },
+        waterfallModule: mockGqlWaterfall,
       })
     })
 
@@ -896,7 +891,7 @@ describe('Graphql reads', () => {
         GET_TOKEN_DATA.symbol,
         GET_TOKEN_DATA.decimals,
       )
-      expect(waterfallModule).toEqual('formatted_waterfall_module')
+      expect(waterfallModule).toEqual(mockGqlWaterfall)
       expect(mockAddEnsNames).not.toBeCalled()
     })
 
@@ -929,7 +924,7 @@ describe('Graphql reads', () => {
         GET_TOKEN_DATA.symbol,
         GET_TOKEN_DATA.decimals,
       )
-      expect(waterfallModule).toEqual('formatted_waterfall_module')
+      expect(waterfallModule).toEqual(mockGqlWaterfall)
       expect(mockAddEnsNames).toBeCalled()
     })
   })

@@ -464,15 +464,16 @@ class SplitsTransactions extends BaseTransactions {
 
     if (this._includeEnsNames) {
       if (!this._ensPublicClient) throw new Error()
-      await addEnsNames(
-        this._ensPublicClient,
-        split.recipients.map((recipient) => {
-          return {
-            ...recipient,
-            address: getAddress(recipient.recipient.address),
-          }
-        }),
-      )
+      const ensRecipients = split.recipients
+        .map((recipient) => {
+          return recipient.recipient
+        })
+        .concat(split.controller ? [split.controller] : [])
+        .concat(
+          split.newPotentialController ? [split.newPotentialController] : [],
+        )
+
+      await addEnsNames(this._ensPublicClient, ensRecipients)
     }
 
     return split
@@ -1156,7 +1157,7 @@ export class SplitsClient extends SplitsTransactions {
       receivingFrom: { split: GqlSplit }[]
       controlling: GqlSplit[]
       pendingControl: GqlSplit[]
-    }>(RELATED_SPLITS_QUERY, { accountId: address.toLowerCase() })
+    }>(RELATED_SPLITS_QUERY, { accountAddress: address.toLowerCase() })
 
     const [receivingFrom, controlling, pendingControl] = await Promise.all([
       Promise.all(
@@ -1397,7 +1398,7 @@ export class SplitsClient extends SplitsTransactions {
     const response = await this._makeGqlRequest<{
       account: GqlAccount
     }>(ACCOUNT_QUERY, {
-      accountId: accountAddress.toLowerCase(),
+      accountAddress: accountAddress.toLowerCase(),
     })
 
     if (!response.account)

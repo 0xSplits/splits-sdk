@@ -131,9 +131,9 @@ class BaseClient {
         : USER_BALANCES_BY_CONTRACT_FILTERED_QUERY
     const gqlArgs =
       contractAddresses === undefined
-        ? { userId: userAddress.toLowerCase() }
+        ? { userAddress: userAddress.toLowerCase() }
         : {
-            userId: userAddress.toLowerCase(),
+            userAddress: userAddress.toLowerCase(),
             contractIds: contractAddresses.map((contractAddress) =>
               contractAddress.toLowerCase(),
             ),
@@ -176,7 +176,7 @@ class BaseClient {
     const response = await this._makeGqlRequest<{
       accountBalances: GqlAccountBalances
     }>(ACCOUNT_BALANCES_QUERY, {
-      accountId: accountAddress.toLowerCase(),
+      accountAddress: accountAddress.toLowerCase(),
     })
 
     if (!response.accountBalances)

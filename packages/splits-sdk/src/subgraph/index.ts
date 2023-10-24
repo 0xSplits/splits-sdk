@@ -558,8 +558,8 @@ export const RELATED_SPLITS_QUERY = gql`
 `
 
 export const ACCOUNT_BALANCES_QUERY = gql`
-  query accountBalances($accountId: ID!) {
-    accountBalances: account(id: $accountId) {
+  query accountBalances($accountAddress: ID!) {
+    accountBalances: account(id: $accountAddress) {
       __typename
       ...AccountBalancesFragment
     }
@@ -569,8 +569,8 @@ export const ACCOUNT_BALANCES_QUERY = gql`
 `
 
 export const USER_BALANCES_BY_CONTRACT_QUERY = gql`
-  query userBalancesByContract($userId: ID!) {
-    userBalancesByContract: user(id: $userId) {
+  query userBalancesByContract($userAddress: ID!) {
+    userBalancesByContract: user(id: $userAddress) {
       contractEarnings(first: 1000) {
         ...ContractEarningsFragment
       }
@@ -581,8 +581,8 @@ export const USER_BALANCES_BY_CONTRACT_QUERY = gql`
 `
 
 export const USER_BALANCES_BY_CONTRACT_FILTERED_QUERY = gql`
-  query userBalancesByContract($userId: ID!, $contractIds: [ID!]!) {
-    userBalancesByContract: user(id: $userId) {
+  query userBalancesByContract($userAddress: ID!, $contractIds: [ID!]!) {
+    userBalancesByContract: user(id: $userAddress) {
       contractEarnings(first: 1000, where: { contract_in: $contractIds }) {
         ...ContractEarningsFragment
       }

@@ -47,8 +47,8 @@ import type {
 } from '../types'
 import {
   getTrancheRecipientsAndSizes,
-  addWaterfallEnsNames,
   getTokenData,
+  addEnsNames,
 } from '../utils'
 import { validateAddress, validateTranches } from '../utils/validation'
 
@@ -215,9 +215,18 @@ class WaterfallTransactions extends BaseTransactions {
       tokenData.decimals,
     )
     if (this._includeEnsNames) {
-      await addWaterfallEnsNames(
+      const ensRecipients = waterfallModule.tranches
+        .map((tranche) => {
+          return tranche.recipient
+        })
+        .concat(
+          waterfallModule.nonWaterfallRecipient
+            ? [waterfallModule.nonWaterfallRecipient]
+            : [],
+        )
+      await addEnsNames(
         this._ensPublicClient ?? this._publicClient,
-        waterfallModule.tranches,
+        ensRecipients,
       )
     }
 

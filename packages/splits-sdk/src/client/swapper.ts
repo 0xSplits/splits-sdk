@@ -50,7 +50,7 @@ import type {
   UniV3FlashSwapConfig,
 } from '../types'
 import {
-  addSwapperEnsNames,
+  addEnsNames,
   getFormattedOracleParams,
   getFormattedScaledOfferFactor,
   getFormattedScaledOfferFactorOverrides,
@@ -391,7 +391,11 @@ class SwapperTransactions extends BaseTransactions {
     const swapper = protectedFormatSwapper(gqlSwapper)
     if (this._includeEnsNames) {
       if (!this._ensPublicClient) throw new Error()
-      await addSwapperEnsNames(this._ensPublicClient, swapper)
+
+      const ensRecipients = [swapper.beneficiary].concat(
+        swapper.owner ? [swapper.owner] : [],
+      )
+      await addEnsNames(this._ensPublicClient, ensRecipients)
     }
 
     return swapper

@@ -1403,7 +1403,7 @@ describe('Graphql reads', () => {
   const mockAddEnsNames = jest.spyOn(utils, 'addEnsNames').mockImplementation()
 
   const splitAddress = '0xsplit'
-  const userId = '0xuser'
+  const userAddress = '0xuser'
   const splitsClient = new SplitsClient({
     chainId: 1,
   })
@@ -1497,19 +1497,20 @@ describe('Graphql reads', () => {
       })
 
       expect(
-        async () => await badSplitsClient.getRelatedSplits({ address: userId }),
+        async () =>
+          await badSplitsClient.getRelatedSplits({ address: userAddress }),
       ).rejects.toThrow(UnsupportedSubgraphChainIdError)
     })
 
     test('Get related splits passes', async () => {
       const { receivingFrom, controlling, pendingControl } =
-        await splitsClient.getRelatedSplits({ address: userId })
+        await splitsClient.getRelatedSplits({ address: userAddress })
 
-      expect(validateAddress).toBeCalledWith(userId)
+      expect(validateAddress).toBeCalledWith(userAddress)
       expect(mockGqlClient.request).toBeCalledWith(
         subgraph.RELATED_SPLITS_QUERY,
         {
-          accountId: userId,
+          accountAddress: userAddress,
         },
       )
       expect(mockFormatSplit).toBeCalledTimes(4)
@@ -1531,13 +1532,13 @@ describe('Graphql reads', () => {
       })
 
       const { receivingFrom, controlling, pendingControl } =
-        await ensSplitsClient.getRelatedSplits({ address: userId })
+        await ensSplitsClient.getRelatedSplits({ address: userAddress })
 
-      expect(validateAddress).toBeCalledWith(userId)
+      expect(validateAddress).toBeCalledWith(userAddress)
       expect(mockGqlClient.request).toBeCalledWith(
         subgraph.RELATED_SPLITS_QUERY,
         {
-          accountId: userId,
+          accountAddress: userAddress,
         },
       )
       expect(mockFormatSplit).toBeCalledTimes(4)

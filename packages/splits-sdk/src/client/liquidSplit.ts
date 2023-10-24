@@ -204,10 +204,7 @@ class LiquidSplitTransactions extends BaseTransactions {
       await addEnsNames(
         this._ensPublicClient ?? this._publicClient,
         liquidSplit.holders.map((holder) => {
-          return {
-            ...holder,
-            address: getAddress(holder.recipient.address),
-          }
+          return holder.recipient
         }),
       )
     }

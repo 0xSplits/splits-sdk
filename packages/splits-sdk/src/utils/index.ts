@@ -27,8 +27,6 @@ import type {
   RecoupTrancheInput,
   ScaledOfferFactorOverride,
   SplitRecipient,
-  Swapper,
-  WaterfallTranche,
   WaterfallTrancheInput,
 } from '../types'
 import {
@@ -119,55 +117,6 @@ export const addEnsNames = async (
       try {
         if (normalize(ens)) {
           recipients[index].ensName = ens
-        }
-      } catch (e) {
-        // If normalize generates an error let's just ignore for now and not add the ens
-        return
-      }
-    }
-  })
-}
-
-export const addWaterfallEnsNames = async (
-  publicClient: PublicClient,
-  tranches: WaterfallTranche[],
-): Promise<void> => {
-  const addresses = tranches.map((tranche) =>
-    getAddress(tranche.recipient.address),
-  )
-  const allNames = await fetchEnsNames(publicClient, addresses)
-
-  allNames.map((ens, index) => {
-    if (ens) {
-      try {
-        if (normalize(ens)) {
-          tranches[index].recipient.ens = ens
-        }
-      } catch (e) {
-        // If normalize generates an error let's just ignore for now and not add the ens
-        return
-      }
-    }
-  })
-}
-
-export const addSwapperEnsNames = async (
-  publicClient: PublicClient,
-  swapper: Swapper,
-): Promise<void> => {
-  const addresses = [swapper.beneficiary.address]
-  if (swapper.owner) addresses.push(swapper.owner.address)
-  const allNames = await fetchEnsNames(publicClient, addresses)
-
-  allNames.map((ens, index) => {
-    if (ens) {
-      try {
-        if (normalize(ens)) {
-          if (index === 0) {
-            swapper.beneficiary.ens = ens
-          } else if (swapper.owner) {
-            swapper.owner.ens = ens
-          }
         }
       } catch (e) {
         // If normalize generates an error let's just ignore for now and not add the ens

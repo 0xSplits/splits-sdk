@@ -1093,9 +1093,7 @@ describe('Graphql reads', () => {
   const mockFormatSwapper = jest
     .spyOn(subgraph, 'protectedFormatSwapper')
     .mockReturnValue('formatted_swapper' as unknown as Swapper)
-  const mockAddEnsNames = jest
-    .spyOn(utils, 'addSwapperEnsNames')
-    .mockImplementation()
+  const mockAddEnsNames = jest.spyOn(utils, 'addEnsNames').mockImplementation()
   const mockGqlSwapper = {
     beneficiary: {
       id: '0xbeneficiary',
