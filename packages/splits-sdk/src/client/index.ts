@@ -452,9 +452,7 @@ class SplitsTransactions extends BaseTransactions {
     )
 
     if (!response.split)
-      throw new AccountNotFoundError(
-        `No split found at address ${splitAddress} on chain ${chainId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
-      )
+      throw new AccountNotFoundError('split', splitAddress, chainId)
 
     return await this._formatSplit(response.split)
   }
@@ -1402,9 +1400,7 @@ export class SplitsClient extends SplitsTransactions {
     })
 
     if (!response.account)
-      throw new AccountNotFoundError(
-        `No account found at address ${accountAddress} on chain ${chainId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
-      )
+      throw new AccountNotFoundError('account', accountAddress, chainId)
 
     return await this._formatAccount(response.account)
   }

@@ -372,6 +372,7 @@ class SwapperTransactions extends BaseTransactions {
     swapperAddress: string
   }): Promise<Swapper> {
     validateAddress(swapperAddress)
+    const chainId = this._chainId
 
     const response = await this._makeGqlRequest<{
       swapper: GqlSwapper
@@ -380,9 +381,7 @@ class SwapperTransactions extends BaseTransactions {
     })
 
     if (!response.swapper)
-      throw new AccountNotFoundError(
-        `No swapper found at address ${swapperAddress}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
-      )
+      throw new AccountNotFoundError('swapper', swapperAddress, chainId)
 
     return await this.formatSwapper(response.swapper)
   }

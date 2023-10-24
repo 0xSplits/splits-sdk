@@ -182,6 +182,7 @@ class WaterfallTransactions extends BaseTransactions {
     waterfallModuleAddress: string
   }): Promise<WaterfallModule> {
     validateAddress(waterfallModuleAddress)
+    const chainId = this._chainId
 
     const response = await this._makeGqlRequest<{
       waterfallModule: GqlWaterfallModule
@@ -191,7 +192,9 @@ class WaterfallTransactions extends BaseTransactions {
 
     if (!response.waterfallModule)
       throw new AccountNotFoundError(
-        `No waterfall module found at address ${waterfallModuleAddress}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
+        'waterfall module',
+        waterfallModuleAddress,
+        chainId,
       )
 
     return await this.formatWaterfallModule(response.waterfallModule)

@@ -178,6 +178,7 @@ class LiquidSplitTransactions extends BaseTransactions {
     liquidSplitAddress: string
   }): Promise<LiquidSplit> {
     validateAddress(liquidSplitAddress)
+    const chainId = this._chainId
 
     const response = await this._makeGqlRequest<{
       liquidSplit: GqlLiquidSplit
@@ -187,7 +188,9 @@ class LiquidSplitTransactions extends BaseTransactions {
 
     if (!response.liquidSplit)
       throw new AccountNotFoundError(
-        `No liquid split found at address ${liquidSplitAddress}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
+        'liquid split',
+        liquidSplitAddress,
+        chainId,
       )
 
     return await this.formatLiquidSplit(response.liquidSplit)

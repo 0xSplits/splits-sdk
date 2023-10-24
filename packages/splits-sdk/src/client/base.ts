@@ -146,9 +146,7 @@ class BaseClient {
     }>(gqlQuery, gqlArgs)
 
     if (!response.userBalancesByContract)
-      throw new AccountNotFoundError(
-        `No user found at address ${userAddress} on chain ${chainId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
-      )
+      throw new AccountNotFoundError('user', userAddress, chainId)
 
     const contractEarnings = formatContractEarnings(
       response.userBalancesByContract.contractEarnings,
@@ -180,9 +178,7 @@ class BaseClient {
     })
 
     if (!response.accountBalances)
-      throw new AccountNotFoundError(
-        `No account found at address ${accountAddress} on chain ${chainId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
-      )
+      throw new AccountNotFoundError('account', accountAddress, chainId)
 
     const withdrawn = formatAccountBalances(
       response.accountBalances.withdrawals,

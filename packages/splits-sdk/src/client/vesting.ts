@@ -397,6 +397,7 @@ export class VestingClient extends VestingTransactions {
     vestingModuleAddress: string
   }): Promise<VestingModule> {
     validateAddress(vestingModuleAddress)
+    const chainId = this._chainId
 
     const response = await this._makeGqlRequest<{
       vestingModule: GqlVestingModule
@@ -406,7 +407,9 @@ export class VestingClient extends VestingTransactions {
 
     if (!response.vestingModule)
       throw new AccountNotFoundError(
-        `No vesting module found at address ${vestingModuleAddress}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`,
+        'vesting module',
+        vestingModuleAddress,
+        chainId,
       )
 
     return await this.formatVestingModule(response.vestingModule)

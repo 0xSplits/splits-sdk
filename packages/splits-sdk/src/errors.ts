@@ -100,8 +100,9 @@ export class InvalidConfigError extends Error {
 export class AccountNotFoundError extends Error {
   name = 'AccountNotFoundError'
 
-  constructor(m?: string) {
-    super(m)
+  constructor(moduleType: string, address: string, chainId: number) {
+    const message = `No ${moduleType} found at address ${address} on chain ${chainId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`
+    super(message)
     Object.setPrototypeOf(this, AccountNotFoundError.prototype)
   }
 }
