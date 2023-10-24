@@ -313,27 +313,3 @@ export const getFormattedScaledOfferFactorOverrides = (
     },
   )
 }
-
-export const encodePath = (tokens: string[], fees: number[]): string => {
-  if (tokens.length !== fees.length + 1) {
-    throw new Error('token/fee lengths do not match')
-  }
-
-  let encoded = '0x'
-  fees.map((fee, index) => {
-    encoded += tokens[index].slice(2) // Drop 0x
-    encoded += getHexFromNumber(fee, 6)
-  })
-  encoded += tokens[tokens.length - 1].slice(2)
-
-  return encoded.toLowerCase()
-}
-
-const getHexFromNumber = (val: number, length: number): string => {
-  const hex = val.toString(16)
-  if (hex.length > length) throw new Error('Value too large')
-
-  const precedingZeros = '0'.repeat(length - hex.length)
-
-  return precedingZeros + hex
-}
