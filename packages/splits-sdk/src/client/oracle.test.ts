@@ -1,4 +1,4 @@
-import { Hex, PublicClient } from 'viem'
+import { Chain, Hex, PublicClient, Transport } from 'viem'
 
 import { OracleClient } from './oracle'
 import {
@@ -23,7 +23,7 @@ jest.mock('viem', () => {
 
 jest.mock('../utils/validation')
 
-const mockPublicClient = jest.fn<PublicClient, unknown[]>()
+const mockPublicClient = jest.fn<PublicClient<Transport, Chain>, unknown[]>()
 
 describe('Client config validation', () => {
   test('Including ens names with no provider fails', () => {

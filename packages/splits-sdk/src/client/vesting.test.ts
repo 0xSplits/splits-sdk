@@ -1,4 +1,12 @@
-import { Address, Log, PublicClient, WalletClient } from 'viem'
+import {
+  Account,
+  Address,
+  Chain,
+  Log,
+  PublicClient,
+  Transport,
+  WalletClient,
+} from 'viem'
 
 import { VestingClient } from './vesting'
 import { getVestingFactoryAddress } from '../constants'
@@ -77,7 +85,7 @@ const mockPublicClient = jest.fn(() => {
         return { request: jest.mock }
       },
     ),
-  } as unknown as PublicClient
+  } as unknown as PublicClient<Transport, Chain>
 })
 const mockWalletClient = jest.fn(() => {
   return {
@@ -87,7 +95,7 @@ const mockWalletClient = jest.fn(() => {
     writeContract: jest.fn(() => {
       return '0xhash'
     }),
-  } as unknown as WalletClient
+  } as unknown as WalletClient<Transport, Chain, Account>
 })
 
 describe('Client config validation', () => {

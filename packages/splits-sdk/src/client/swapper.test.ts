@@ -1,3 +1,13 @@
+import {
+  Account,
+  Address,
+  Chain,
+  Log,
+  PublicClient,
+  Transport,
+  WalletClient,
+} from 'viem'
+
 import { SwapperClient } from './swapper'
 import { getSwapperFactoryAddress } from '../constants'
 import {
@@ -28,7 +38,6 @@ import {
   readActions,
 } from '../testing/mocks/swapper'
 import type { ScaledOfferFactorOverride, Swapper } from '../types'
-import { Address, Log, PublicClient, WalletClient } from 'viem'
 import { MockViemContract } from '../testing/mocks/viemContract'
 
 jest.mock('viem', () => {
@@ -92,7 +101,7 @@ const mockPublicClient = jest.fn(() => {
         return { request: jest.mock }
       },
     ),
-  } as unknown as PublicClient
+  } as unknown as PublicClient<Transport, Chain>
 })
 const mockWalletClient = jest.fn(() => {
   return {
@@ -102,7 +111,7 @@ const mockWalletClient = jest.fn(() => {
     writeContract: jest.fn(() => {
       return '0xhash'
     }),
-  } as unknown as WalletClient
+  } as unknown as WalletClient<Transport, Chain, Account>
 })
 const mockWalletClientNonOwner = jest.fn(() => {
   return {
@@ -112,7 +121,7 @@ const mockWalletClientNonOwner = jest.fn(() => {
     writeContract: jest.fn(() => {
       return '0xhash'
     }),
-  } as unknown as WalletClient
+  } as unknown as WalletClient<Transport, Chain, Account>
 })
 
 describe('Client config validation', () => {
