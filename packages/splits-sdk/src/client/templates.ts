@@ -1,10 +1,12 @@
-import { Interface } from '@ethersproject/abi'
-import { BigNumber } from '@ethersproject/bignumber'
-import { AddressZero } from '@ethersproject/constants'
-import { ContractTransaction, Event } from '@ethersproject/contracts'
-
-import RECOUP_ARTIFACT from '../artifacts/contracts/Recoup/Recoup.json'
-import DIVERSIFIER_FACTORY_ARTIFACT from '../artifacts/contracts/DiversifierFactory/DiversifierFactory.json'
+import {
+  Address,
+  Hash,
+  Hex,
+  Log,
+  decodeEventLog,
+  encodeEventTopics,
+  getAddress,
+} from 'viem'
 
 import {
   BaseClientMixin,
@@ -17,7 +19,10 @@ import {
   TEMPLATES_CHAIN_IDS,
   getDiversifierFactoryAddress,
   DIVERSIFIER_CHAIN_IDS,
+  ADDRESS_ZERO,
 } from '../constants'
+import { recoupFactoryAbi } from '../constants/abi/recoupFactory'
+import { diversifierFactoryAbi } from '../constants/abi/diversifierFactory'
 import { TransactionFailedError, UnsupportedChainIdError } from '../errors'
 import { applyMixins } from './mixin'
 import type {
@@ -29,12 +34,10 @@ import type {
   TransactionFormat,
 } from '../types'
 import {
-  getTransactionEvents,
   getRecoupTranchesAndSizes,
   getDiversifierRecipients,
   getFormattedOracleParams,
 } from '../utils'
-import { ContractCallData } from '../utils/multicall'
 import {
   validateAddress,
   validateDiversifierRecipients,
@@ -42,50 +45,30 @@ import {
   validateRecoupNonWaterfallRecipient,
   validateRecoupTranches,
 } from '../utils/validation'
-import type { Recoup as RecoupType } from '../typechain/Recoup'
-import type { DiversifierFactory as DiversifierFactoryType } from '../typechain/DiversifierFactory'
-
-const recoupInterface = new Interface(RECOUP_ARTIFACT.abi)
-const diversifierFactoryInterface = new Interface(
-  DIVERSIFIER_FACTORY_ARTIFACT.abi,
-)
 
 class TemplatesTransactions extends BaseTransactions {
-  private readonly _recoupContract:
-    | ContractCallData
-    | RecoupType
-    | RecoupType['estimateGas']
-
-  private readonly _diversifierFactoryContract:
-    | ContractCallData
-    | DiversifierFactoryType
-    | DiversifierFactoryType['estimateGas']
-
   constructor({
     transactionType,
     chainId,
-    provider,
-    ensProvider,
-    signer,
+    publicClient,
+    ensPublicClient,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
       transactionType,
       chainId,
-      provider,
-      ensProvider,
-      signer,
+      publicClient,
+      ensPublicClient,
+      walletClient,
       includeEnsNames,
     })
-
-    this._recoupContract = this._getRecoupContract()
-    this._diversifierFactoryContract = this._getDiversifierFactoryContract()
   }
 
   protected async _createRecoupTransaction({
     token,
     tranches,
-    nonWaterfallRecipientAddress = AddressZero,
+    nonWaterfallRecipientAddress = ADDRESS_ZERO,
     nonWaterfallRecipientTrancheIndex = undefined,
     transactionOverrides = {},
   }: CreateRecoupConfig): Promise<TransactionFormat> {
@@ -98,15 +81,15 @@ class TemplatesTransactions extends BaseTransactions {
       nonWaterfallRecipientTrancheIndex,
     )
 
-    this._requireProvider()
-    if (!this._provider) throw new Error('Provider required')
-    if (this._shouldRequireSigner) this._requireSigner()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error('Public client required')
+    if (this._shouldRequreWalletClient) this._requireWalletClient()
 
     const [recoupTranches, trancheSizes] = await getRecoupTranchesAndSizes(
       this._chainId,
-      token,
+      getAddress(token),
       tranches,
-      this._provider,
+      this._publicClient,
     )
 
     const formattedNonWaterfallRecipientTrancheIndex =
@@ -114,24 +97,21 @@ class TemplatesTransactions extends BaseTransactions {
         ? recoupTranches.length
         : nonWaterfallRecipientTrancheIndex
 
-    const createRecoupResult = await this._recoupContract.createRecoup(
-      token,
-      nonWaterfallRecipientAddress,
-      formattedNonWaterfallRecipientTrancheIndex,
-      recoupTranches,
-      trancheSizes,
+    const result = await this._executeContractFunction({
+      contractAddress: getRecoupAddress(this._chainId),
+      contractAbi: recoupFactoryAbi,
+      functionName: 'createRecoup',
+      functionArgs: [
+        token,
+        nonWaterfallRecipientAddress,
+        formattedNonWaterfallRecipientTrancheIndex,
+        recoupTranches,
+        trancheSizes,
+      ],
       transactionOverrides,
-    )
+    })
 
-    return createRecoupResult
-  }
-
-  private _getRecoupContract() {
-    return this._getTransactionContract<RecoupType, RecoupType['estimateGas']>(
-      getRecoupAddress(this._chainId),
-      RECOUP_ARTIFACT.abi,
-      recoupInterface,
-    )
+    return result
   }
 
   protected async _createDiversifierTransaction({
@@ -148,52 +128,46 @@ class TemplatesTransactions extends BaseTransactions {
     validateOracleParams(oracleParams)
     validateDiversifierRecipients(recipients)
 
-    this._requireProvider()
-    if (!this._provider) throw new Error('Provider required')
-    if (this._shouldRequireSigner) this._requireSigner()
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error('Public client required')
+    if (this._shouldRequreWalletClient) this._requireWalletClient()
 
     const diversifierRecipients = getDiversifierRecipients(recipients)
     const formattedOracleParams = getFormattedOracleParams(oracleParams)
 
-    const createDiversifierResult =
-      await this._diversifierFactoryContract.createDiversifier(
+    const result = await this._executeContractFunction({
+      contractAddress: getDiversifierFactoryAddress(this._chainId),
+      contractAbi: diversifierFactoryAbi,
+      functionName: 'createDiversifier',
+      functionArgs: [
         [owner, paused, formattedOracleParams, diversifierRecipients],
-        transactionOverrides,
-      )
+      ],
+      transactionOverrides,
+    })
 
-    return createDiversifierResult
-  }
-
-  private _getDiversifierFactoryContract() {
-    return this._getTransactionContract<
-      DiversifierFactoryType,
-      DiversifierFactoryType['estimateGas']
-    >(
-      getDiversifierFactoryAddress(this._chainId),
-      DIVERSIFIER_FACTORY_ARTIFACT.abi,
-      diversifierFactoryInterface,
-    )
+    return result
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class TemplatesClient extends TemplatesTransactions {
-  readonly eventTopics: { [key: string]: string[] }
+  readonly eventTopics: { [key: string]: Hex[] }
   readonly callData: TemplatesCallData
   readonly estimateGas: TemplatesGasEstimates
 
   constructor({
     chainId,
-    provider,
-    ensProvider,
-    signer,
+    publicClient,
+    ensPublicClient,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Transaction,
       chainId,
-      provider,
-      ensProvider,
-      signer,
+      publicClient,
+      ensPublicClient,
+      walletClient,
       includeEnsNames,
     })
 
@@ -202,24 +176,32 @@ export class TemplatesClient extends TemplatesTransactions {
 
     this.eventTopics = {
       // TODO: add others here? create waterfall, create split, etc.
-      createRecoup: [recoupInterface.getEventTopic('CreateRecoup')],
+      createRecoup: [
+        encodeEventTopics({
+          abi: recoupFactoryAbi,
+          eventName: 'CreateRecoup',
+        })[0],
+      ],
       createDiversifier: [
-        diversifierFactoryInterface.getEventTopic('CreateDiversifier'),
+        encodeEventTopics({
+          abi: diversifierFactoryAbi,
+          eventName: 'CreateDiversifier',
+        })[0],
       ],
     }
 
     this.callData = new TemplatesCallData({
       chainId,
-      provider,
-      ensProvider,
-      signer,
+      publicClient,
+      ensPublicClient,
+      walletClient,
       includeEnsNames,
     })
     this.estimateGas = new TemplatesGasEstimates({
       chainId,
-      provider,
-      ensProvider,
-      signer,
+      publicClient,
+      ensPublicClient,
+      walletClient,
       includeEnsNames,
     })
   }
@@ -228,32 +210,40 @@ export class TemplatesClient extends TemplatesTransactions {
   async submitCreateRecoupTransaction(
     createRecoupArgs: CreateRecoupConfig,
   ): Promise<{
-    tx: ContractTransaction
+    txHash: Hash
   }> {
-    const createRecoupTx = await this._createRecoupTransaction(createRecoupArgs)
-    if (!this._isContractTransaction(createRecoupTx))
+    const txHash = await this._createRecoupTransaction(createRecoupArgs)
+    if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
-    return { tx: createRecoupTx }
+    return { txHash }
   }
 
   async createRecoup(createRecoupArgs: CreateRecoupConfig): Promise<{
-    waterfallModuleId: string
-    event: Event
+    waterfallModuleAddress: Address
+    event: Log
   }> {
-    const { tx: createRecoupTx } = await this.submitCreateRecoupTransaction(
-      createRecoupArgs,
-    )
-    const events = await getTransactionEvents(
-      createRecoupTx,
-      this.eventTopics.createRecoup,
-    )
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
+
+    const { txHash } =
+      await this.submitCreateRecoupTransaction(createRecoupArgs)
+    const events = await this.getTransactionEvents({
+      txHash,
+      eventTopics: this.eventTopics.createRecoup,
+    })
     const event = events.length > 0 ? events[0] : undefined
-    if (event && event.args)
+    if (event) {
+      const log = decodeEventLog({
+        abi: recoupFactoryAbi,
+        data: event.data,
+        topics: event.topics,
+      })
       return {
-        waterfallModuleId: event.args.waterfallModule,
+        waterfallModuleAddress: log.args.waterfallModule,
         event,
       }
+    }
 
     throw new TransactionFailedError()
   }
@@ -261,99 +251,110 @@ export class TemplatesClient extends TemplatesTransactions {
   async submitCreateDiversifierTransaction(
     createDiversifierArgs: CreateDiversifierConfig,
   ): Promise<{
-    tx: ContractTransaction
+    txHash: Hash
   }> {
-    const createDiversifierTx = await this._createDiversifierTransaction(
+    const txHash = await this._createDiversifierTransaction(
       createDiversifierArgs,
     )
-    if (!this._isContractTransaction(createDiversifierTx))
+    if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
-    return { tx: createDiversifierTx }
+    return { txHash }
   }
 
   async createDiversifier(
     createDiversifierArgs: CreateDiversifierConfig,
   ): Promise<{
-    passThroughWalletId: string
-    event: Event
+    passThroughWalletAddress: Address
+    event: Log
   }> {
-    const { tx: createDiversifierTx } =
-      await this.submitCreateDiversifierTransaction(createDiversifierArgs)
-    const events = await getTransactionEvents(
-      createDiversifierTx,
-      this.eventTopics.createDiversifier,
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
+
+    const { txHash } = await this.submitCreateDiversifierTransaction(
+      createDiversifierArgs,
     )
+    const events = await this.getTransactionEvents({
+      txHash,
+      eventTopics: this.eventTopics.createDiversifier,
+    })
     const event = events.length > 0 ? events[0] : undefined
-    if (event && event.args)
+    if (event) {
+      const log = decodeEventLog({
+        abi: diversifierFactoryAbi,
+        data: event.data,
+        topics: event.topics,
+      })
       return {
-        passThroughWalletId: event.args.diversifier,
+        passThroughWalletAddress: log.args.diversifier,
         event,
       }
+    }
 
     throw new TransactionFailedError()
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface TemplatesClient extends BaseClientMixin {}
 applyMixins(TemplatesClient, [BaseClientMixin])
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 class TemplatesGasEstimates extends TemplatesTransactions {
   constructor({
     chainId,
-    provider,
-    ensProvider,
-    signer,
+    publicClient,
+    ensPublicClient,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
       transactionType: TransactionType.GasEstimate,
       chainId,
-      provider,
-      ensProvider,
-      signer,
+      publicClient,
+      ensPublicClient,
+      walletClient,
       includeEnsNames,
     })
   }
 
-  async createRecoup(createRecoupArgs: CreateRecoupConfig): Promise<BigNumber> {
+  async createRecoup(createRecoupArgs: CreateRecoupConfig): Promise<bigint> {
     const gasEstimate = await this._createRecoupTransaction(createRecoupArgs)
-    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
   async createDiversifier(
     createDiversifierArgs: CreateDiversifierConfig,
-  ): Promise<BigNumber> {
+  ): Promise<bigint> {
     const gasEstimate = await this._createDiversifierTransaction(
       createDiversifierArgs,
     )
-    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 interface TemplatesGasEstimates extends BaseGasEstimatesMixin {}
 applyMixins(TemplatesGasEstimates, [BaseGasEstimatesMixin])
 
 class TemplatesCallData extends TemplatesTransactions {
   constructor({
     chainId,
-    provider,
-    ensProvider,
-    signer,
+    publicClient,
+    ensPublicClient,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
       transactionType: TransactionType.CallData,
       chainId,
-      provider,
-      ensProvider,
-      signer,
+      publicClient,
+      ensPublicClient,
+      walletClient,
       includeEnsNames,
     })
   }

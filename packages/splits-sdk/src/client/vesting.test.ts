@@ -1,14 +1,19 @@
-import { Provider } from '@ethersproject/abstract-provider'
-import { Signer } from '@ethersproject/abstract-signer'
-import { BigNumber } from '@ethersproject/bignumber'
-import type { Event } from '@ethersproject/contracts'
+import {
+  Account,
+  Address,
+  Chain,
+  Log,
+  PublicClient,
+  Transport,
+  WalletClient,
+} from 'viem'
 
 import { VestingClient } from './vesting'
 import { getVestingFactoryAddress } from '../constants'
 import {
   InvalidConfigError,
-  MissingProviderError,
-  MissingSignerError,
+  MissingPublicClientError,
+  MissingWalletClientError,
   UnsupportedChainIdError,
 } from '../errors'
 import * as subgraph from '../subgraph'
@@ -17,43 +22,38 @@ import { validateAddress, validateVestingPeriod } from '../utils/validation'
 import { GET_TOKEN_DATA } from '../testing/constants'
 import { MockGraphqlClient } from '../testing/mocks/graphql'
 import {
-  MockVestingFactory,
   writeActions as factoryWriteActions,
   readActions as factoryReadActions,
 } from '../testing/mocks/vestingFactory'
 import {
-  MockVestingModule,
   writeActions as moduleWriteActions,
   readActions,
 } from '../testing/mocks/vestingModule'
+import { MockViemContract } from '../testing/mocks/viemContract'
 import type { VestingModule } from '../types'
 
-jest.mock('@ethersproject/contracts', () => {
+jest.mock('viem', () => {
+  const originalModule = jest.requireActual('viem')
   return {
-    Contract: jest
-      .fn()
-      .mockImplementation((contractAddress, _contractInterface, provider) => {
-        if (contractAddress === getVestingFactoryAddress(1))
-          return new MockVestingFactory(provider)
-
-        return new MockVestingModule(provider)
-      }),
+    ...originalModule,
+    getContract: jest.fn(({ address }: { address: Address }) => {
+      if (address === getVestingFactoryAddress(1))
+        return new MockViemContract(factoryReadActions, factoryWriteActions)
+      return new MockViemContract(readActions, moduleWriteActions)
+    }),
+    getAddress: jest.fn((address) => address),
+    decodeEventLog: jest.fn(() => {
+      return {
+        eventName: 'eventName',
+        args: {
+          vestingModule: '0xvesting',
+        },
+      }
+    }),
   }
 })
 
 jest.mock('../utils/validation')
-
-const getTransactionEventsSpy = jest
-  .spyOn(utils, 'getTransactionEvents')
-  .mockImplementation(async () => {
-    const event = {
-      blockNumber: 12345,
-      args: {
-        vestingModule: '0xvesting',
-      },
-    } as unknown as Event
-    return [event]
-  })
 
 const getTokenDataMock = jest
   .spyOn(utils, 'getTokenData')
@@ -61,8 +61,42 @@ const getTokenDataMock = jest
     return GET_TOKEN_DATA
   })
 
-const mockProvider = jest.fn<Provider, unknown[]>()
-const mockSigner = jest.fn<Signer, unknown[]>()
+const mockPublicClient = jest.fn(() => {
+  return {
+    simulateContract: jest.fn(
+      async ({
+        address,
+        functionName,
+        args,
+      }: {
+        address: Address
+        functionName: string
+        args: unknown[]
+      }) => {
+        if (address === getVestingFactoryAddress(1)) {
+          type writeActions = typeof factoryWriteActions
+          type writeKeys = keyof writeActions
+          factoryWriteActions[functionName as writeKeys].call(this, ...args)
+        } else {
+          type writeActions = typeof moduleWriteActions
+          type writeKeys = keyof writeActions
+          moduleWriteActions[functionName as writeKeys].call(this, ...args)
+        }
+        return { request: jest.mock }
+      },
+    ),
+  } as unknown as PublicClient<Transport, Chain>
+})
+const mockWalletClient = jest.fn(() => {
+  return {
+    account: {
+      address: '0xsigner',
+    },
+    writeContract: jest.fn(() => {
+      return '0xhash'
+    }),
+  } as unknown as WalletClient<Transport, Chain, Account>
+})
 
 describe('Client config validation', () => {
   test('Including ens names with no provider fails', () => {
@@ -116,13 +150,24 @@ describe('Client config validation', () => {
 })
 
 describe('Vesting writes', () => {
-  const provider = new mockProvider()
-  const signer = new mockSigner()
+  const publicClient = new mockPublicClient()
+  const walletClient = new mockWalletClient()
   const vestingClient = new VestingClient({
     chainId: 1,
-    provider,
-    signer,
+    publicClient,
+    walletClient,
   })
+  const getTransactionEventsSpy = jest
+    .spyOn(vestingClient, 'getTransactionEvents')
+    .mockImplementation(async () => {
+      const event = {
+        blockNumber: 12345,
+        args: {
+          vestingModule: '0xvesting',
+        },
+      } as unknown as Log
+      return [event]
+    })
 
   beforeEach(() => {
     ;(validateVestingPeriod as jest.Mock).mockClear()
@@ -156,13 +201,13 @@ describe('Vesting writes', () => {
             beneficiary,
             vestingPeriodSeconds,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Create vesting fails with no signer', async () => {
       const badClient = new VestingClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
@@ -171,33 +216,33 @@ describe('Vesting writes', () => {
             beneficiary,
             vestingPeriodSeconds,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Create vesting passes', async () => {
-      const { event, vestingModuleId } =
+      const { event, vestingModuleAddress } =
         await vestingClient.createVestingModule({
           beneficiary,
           vestingPeriodSeconds,
         })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(vestingModuleId).toEqual('0xvesting')
+      expect(vestingModuleAddress).toEqual('0xvesting')
       expect(validateAddress).toBeCalledWith(beneficiary)
       expect(validateVestingPeriod).toBeCalledWith(vestingPeriodSeconds)
       expect(factoryWriteActions.createVestingModule).toBeCalledWith(
         beneficiary,
         vestingPeriodSeconds,
-        {},
       )
-      expect(getTransactionEventsSpy).toBeCalledWith(createVestingResult, [
-        vestingClient.eventTopics.createVestingModule[0],
-      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [vestingClient.eventTopics.createVestingModule[0]],
+      })
     })
   })
 
   describe('Create vesting streams tests', () => {
-    const vestingModuleId = '0xvesting'
+    const vestingModuleAddress = '0xvesting'
     const tokens = ['0xtoken1', '0xtoken2']
     const startVestResult = {
       value: 'start_vest_tx',
@@ -219,46 +264,47 @@ describe('Vesting writes', () => {
       await expect(
         async () =>
           await badClient.startVest({
-            vestingModuleId,
+            vestingModuleAddress,
             tokens,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Start vest fails with no signer', async () => {
       const badClient = new VestingClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
         async () =>
           await badClient.startVest({
-            vestingModuleId,
+            vestingModuleAddress,
             tokens,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Start vest passes', async () => {
       const { events } = await vestingClient.startVest({
-        vestingModuleId,
+        vestingModuleAddress,
         tokens,
       })
 
       expect(events[0].blockNumber).toEqual(12345)
-      expect(validateAddress).toBeCalledWith(vestingModuleId)
+      expect(validateAddress).toBeCalledWith(vestingModuleAddress)
       expect(validateAddress).toBeCalledWith('0xtoken1')
       expect(validateAddress).toBeCalledWith('0xtoken2')
-      expect(moduleWriteActions.createVestingStreams).toBeCalledWith(tokens, {})
-      expect(getTransactionEventsSpy).toBeCalledWith(startVestResult, [
-        vestingClient.eventTopics.startVest[0],
-      ])
+      expect(moduleWriteActions.createVestingStreams).toBeCalledWith(tokens)
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [vestingClient.eventTopics.startVest[0]],
+      })
     })
   })
 
   describe('Release vested funds tests', () => {
-    const vestingModuleId = '0xvesting'
+    const vestingModuleAddress = '0xvesting'
     const streamIds = ['1', '2']
     const releaseVestedFundsResult = {
       value: 'release_vested_funds_tx',
@@ -280,51 +326,49 @@ describe('Vesting writes', () => {
       await expect(
         async () =>
           await badClient.releaseVestedFunds({
-            vestingModuleId,
+            vestingModuleAddress,
             streamIds,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Release vested funds fails with no signer', async () => {
       const badClient = new VestingClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
         async () =>
           await badClient.releaseVestedFunds({
-            vestingModuleId,
+            vestingModuleAddress,
             streamIds,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Release vested funds passes', async () => {
       const { events } = await vestingClient.releaseVestedFunds({
-        vestingModuleId,
+        vestingModuleAddress,
         streamIds,
       })
 
       expect(events[0].blockNumber).toEqual(12345)
-      expect(validateAddress).toBeCalledWith(vestingModuleId)
-      expect(moduleWriteActions.releaseFromVesting).toBeCalledWith(
-        streamIds,
-        {},
-      )
-      expect(getTransactionEventsSpy).toBeCalledWith(releaseVestedFundsResult, [
-        vestingClient.eventTopics.releaseVestedFunds[0],
-      ])
+      expect(validateAddress).toBeCalledWith(vestingModuleAddress)
+      expect(moduleWriteActions.releaseFromVesting).toBeCalledWith(streamIds)
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [vestingClient.eventTopics.releaseVestedFunds[0]],
+      })
     })
   })
 })
 
 describe('Vesting reads', () => {
-  const provider = new mockProvider()
+  const publicClient = new mockPublicClient()
   const vestingClient = new VestingClient({
     chainId: 1,
-    provider,
+    publicClient,
   })
 
   beforeEach(() => {
@@ -350,7 +394,7 @@ describe('Vesting reads', () => {
             beneficiary,
             vestingPeriodSeconds,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns predicted address', async () => {
@@ -367,15 +411,15 @@ describe('Vesting reads', () => {
       expect(address).toEqual('0xpredictedAddress')
       expect(exists).toEqual(true)
       expect(validateAddress).toBeCalledWith(beneficiary)
-      expect(factoryReadActions.predictVestingModuleAddress).toBeCalledWith(
+      expect(factoryReadActions.predictVestingModuleAddress).toBeCalledWith([
         beneficiary,
-        vestingPeriodSeconds,
-      )
+        BigInt(vestingPeriodSeconds),
+      ])
     })
   })
 
   describe('Get beneficiary test', () => {
-    const vestingModuleId = '0xgetBeneficiary'
+    const vestingModuleAddress = '0xgetBeneficiary'
 
     beforeEach(() => {
       readActions.beneficiary.mockClear()
@@ -389,25 +433,25 @@ describe('Vesting reads', () => {
       await expect(
         async () =>
           await badClient.getBeneficiary({
-            vestingModuleId,
+            vestingModuleAddress,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns beneficiary', async () => {
       readActions.beneficiary.mockReturnValueOnce('0xbeneficiary')
       const { beneficiary } = await vestingClient.getBeneficiary({
-        vestingModuleId,
+        vestingModuleAddress,
       })
 
       expect(beneficiary).toEqual('0xbeneficiary')
-      expect(validateAddress).toBeCalledWith(vestingModuleId)
+      expect(validateAddress).toBeCalledWith(vestingModuleAddress)
       expect(readActions.beneficiary).toBeCalled()
     })
   })
 
   describe('Get vesting period test', () => {
-    const vestingModuleId = '0xgetVestingPeriod'
+    const vestingModuleAddress = '0xgetVestingPeriod'
 
     beforeEach(() => {
       readActions.vestingPeriod.mockClear()
@@ -421,25 +465,25 @@ describe('Vesting reads', () => {
       await expect(
         async () =>
           await badClient.getVestingPeriod({
-            vestingModuleId,
+            vestingModuleAddress,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns vesting period', async () => {
-      readActions.vestingPeriod.mockReturnValueOnce(BigNumber.from(20))
+      readActions.vestingPeriod.mockReturnValueOnce(BigInt(20))
       const { vestingPeriod } = await vestingClient.getVestingPeriod({
-        vestingModuleId,
+        vestingModuleAddress,
       })
 
-      expect(vestingPeriod).toEqual(BigNumber.from(20))
-      expect(validateAddress).toBeCalledWith(vestingModuleId)
+      expect(vestingPeriod).toEqual(BigInt(20))
+      expect(validateAddress).toBeCalledWith(vestingModuleAddress)
       expect(readActions.vestingPeriod).toBeCalled()
     })
   })
 
   describe('Get vested amount test', () => {
-    const vestingModuleId = '0xgetVestedAmount'
+    const vestingModuleAddress = '0xgetVestedAmount'
     const streamId = '1'
 
     beforeEach(() => {
@@ -454,27 +498,27 @@ describe('Vesting reads', () => {
       await expect(
         async () =>
           await badClient.getVestedAmount({
-            vestingModuleId,
+            vestingModuleAddress,
             streamId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns vested amount', async () => {
-      readActions.vested.mockReturnValueOnce(BigNumber.from(5))
+      readActions.vested.mockReturnValueOnce(BigInt(5))
       const { amount } = await vestingClient.getVestedAmount({
-        vestingModuleId,
+        vestingModuleAddress,
         streamId,
       })
 
-      expect(amount).toEqual(BigNumber.from(5))
-      expect(validateAddress).toBeCalledWith(vestingModuleId)
-      expect(readActions.vested).toBeCalledWith(streamId)
+      expect(amount).toEqual(BigInt(5))
+      expect(validateAddress).toBeCalledWith(vestingModuleAddress)
+      expect(readActions.vested).toBeCalledWith([BigInt(streamId)])
     })
   })
 
   describe('Get vested and unreleased amount test', () => {
-    const vestingModuleId = '0xgetVestedAndUnreleasedAmount'
+    const vestingModuleAddress = '0xgetVestedAndUnreleasedAmount'
     const streamId = '1'
 
     beforeEach(() => {
@@ -489,22 +533,22 @@ describe('Vesting reads', () => {
       await expect(
         async () =>
           await badClient.getVestedAndUnreleasedAmount({
-            vestingModuleId,
+            vestingModuleAddress,
             streamId,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns vested and unreleased amount', async () => {
-      readActions.vestedAndUnreleased.mockReturnValueOnce(BigNumber.from(3))
+      readActions.vestedAndUnreleased.mockReturnValueOnce(BigInt(3))
       const { amount } = await vestingClient.getVestedAndUnreleasedAmount({
-        vestingModuleId,
+        vestingModuleAddress,
         streamId,
       })
 
-      expect(amount).toEqual(BigNumber.from(3))
-      expect(validateAddress).toBeCalledWith(vestingModuleId)
-      expect(readActions.vestedAndUnreleased).toBeCalledWith(streamId)
+      expect(amount).toEqual(BigInt(3))
+      expect(validateAddress).toBeCalledWith(vestingModuleAddress)
+      expect(readActions.vestedAndUnreleased).toBeCalledWith([BigInt(streamId)])
     })
   })
 })
@@ -534,11 +578,11 @@ describe('Graphql reads', () => {
     ],
   }
 
-  const vestingModuleId = '0xvesting'
-  const provider = new mockProvider()
+  const vestingModuleAddress = '0xvesting'
+  const publicClient = new mockPublicClient()
   const vestingClient = new VestingClient({
     chainId: 1,
-    provider,
+    publicClient,
   })
 
   beforeEach(() => {
@@ -570,27 +614,27 @@ describe('Graphql reads', () => {
       await expect(
         async () =>
           await badClient.getVestingMetadata({
-            vestingModuleId,
+            vestingModuleAddress,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Get vesting metadata passes', async () => {
       const vestingModule = await vestingClient.getVestingMetadata({
-        vestingModuleId,
+        vestingModuleAddress,
       })
 
-      expect(validateAddress).toBeCalledWith(vestingModuleId)
+      expect(validateAddress).toBeCalledWith(vestingModuleAddress)
       expect(mockGqlClient.request).toBeCalledWith(
         subgraph.VESTING_MODULE_QUERY,
         {
-          vestingModuleId,
+          vestingModuleAddress,
         },
       )
       expect(getTokenDataMock).toBeCalledWith(
         1,
         mockGqlVesting.streams[0].token.id,
-        provider,
+        publicClient,
       )
       expect(mockFormatVesting).toBeCalledWith(mockGqlVesting, {
         [mockGqlVesting.streams[0].token.id]: {
@@ -603,28 +647,28 @@ describe('Graphql reads', () => {
     })
 
     test('Adds ens names', async () => {
-      const provider = new mockProvider()
+      const publicClient = new mockPublicClient()
       const ensVestingClient = new VestingClient({
         chainId: 1,
-        provider,
+        publicClient,
         includeEnsNames: true,
       })
 
       const vestingModule = await ensVestingClient.getVestingMetadata({
-        vestingModuleId,
+        vestingModuleAddress,
       })
 
-      expect(validateAddress).toBeCalledWith(vestingModuleId)
+      expect(validateAddress).toBeCalledWith(vestingModuleAddress)
       expect(mockGqlClient.request).toBeCalledWith(
         subgraph.VESTING_MODULE_QUERY,
         {
-          vestingModuleId,
+          vestingModuleAddress,
         },
       )
       expect(getTokenDataMock).toBeCalledWith(
         1,
         mockGqlVesting.streams[0].token.id,
-        provider,
+        publicClient,
       )
       expect(mockFormatVesting).toBeCalledWith(mockGqlVesting, {
         [mockGqlVesting.streams[0].token.id]: {

@@ -1,7 +1,6 @@
-import { isAddress } from '@ethersproject/address'
-import { AddressZero } from '@ethersproject/constants'
+import { isAddress } from 'viem'
 
-import { SPLITS_MAX_PRECISION_DECIMALS } from '../constants'
+import { ADDRESS_ZERO, SPLITS_MAX_PRECISION_DECIMALS } from '../constants'
 import {
   InvalidRecipientsError,
   InvalidDistributorFeePercentError,
@@ -161,7 +160,7 @@ export const validateVestingPeriod = (vestingPeriod: number): void => {
 export const validateSplitInputs = ({
   recipients,
   distributorFeePercent,
-  controller = AddressZero,
+  controller = ADDRESS_ZERO,
 }: CreateSplitConfig): void => {
   validateAddress(controller)
   validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
@@ -187,7 +186,7 @@ export const validateRecoupNonWaterfallRecipient = (
       )
     }
 
-    if (nonWaterfallRecipientAddress !== AddressZero) {
+    if (nonWaterfallRecipientAddress !== ADDRESS_ZERO) {
       throw new InvalidArgumentError(
         'Cannot set the non-waterfall recipient twice. Either set the nonWaterfallRecipientAddress or set the nonWaterfallRecipientTrancheIndex',
       )

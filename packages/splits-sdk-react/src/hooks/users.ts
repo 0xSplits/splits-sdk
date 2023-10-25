@@ -15,7 +15,7 @@ const DEFAULT_OPTIONS = {
 }
 
 export const useUserEarnings = (
-  userId: string,
+  userAddress: string,
 ): {
   isLoading: boolean
   userEarnings?: UserEarnings
@@ -26,9 +26,9 @@ export const useUserEarnings = (
   const splitsClient = getSplitsClient(context)
 
   const [userEarnings, setUserEarnings] = useState<UserEarnings | undefined>()
-  const [isLoading, setIsLoading] = useState(!!userId)
+  const [isLoading, setIsLoading] = useState(!!userAddress)
   const [status, setStatus] = useState<DataLoadStatus | undefined>(
-    userId ? 'loading' : undefined,
+    userAddress ? 'loading' : undefined,
   )
   const [error, setError] = useState<RequestError>()
 
@@ -38,7 +38,7 @@ export const useUserEarnings = (
     const fetchEarnings = async () => {
       try {
         const earnings = await splitsClient.getUserEarnings({
-          userId,
+          userAddress,
         })
         if (!isActive) return
         setUserEarnings(earnings)
@@ -54,7 +54,7 @@ export const useUserEarnings = (
     }
 
     setError(undefined)
-    if (userId) {
+    if (userAddress) {
       setIsLoading(true)
       setStatus('loading')
       fetchEarnings()
@@ -67,7 +67,7 @@ export const useUserEarnings = (
     return () => {
       isActive = false
     }
-  }, [splitsClient, userId])
+  }, [splitsClient, userAddress])
 
   return {
     isLoading,
@@ -78,7 +78,7 @@ export const useUserEarnings = (
 }
 
 export const useFormattedUserEarnings = (
-  userId: string,
+  userAddress: string,
 ): {
   isLoading: boolean
   formattedUserEarnings?: FormattedUserEarnings
@@ -91,9 +91,9 @@ export const useFormattedUserEarnings = (
   const [formattedUserEarnings, setFormattedUserEarnings] = useState<
     FormattedUserEarnings | undefined
   >()
-  const [isLoading, setIsLoading] = useState(!!userId)
+  const [isLoading, setIsLoading] = useState(!!userAddress)
   const [status, setStatus] = useState<DataLoadStatus | undefined>(
-    userId ? 'loading' : undefined,
+    userAddress ? 'loading' : undefined,
   )
   const [error, setError] = useState<RequestError>()
 
@@ -103,7 +103,7 @@ export const useFormattedUserEarnings = (
     const fetchEarnings = async () => {
       try {
         const formattedEarnings = await splitsClient.getFormattedUserEarnings({
-          userId,
+          userAddress,
         })
         if (!isActive) return
         setFormattedUserEarnings(formattedEarnings)
@@ -119,7 +119,7 @@ export const useFormattedUserEarnings = (
     }
 
     setError(undefined)
-    if (userId) {
+    if (userAddress) {
       setIsLoading(true)
       setStatus('loading')
       fetchEarnings()
@@ -132,7 +132,7 @@ export const useFormattedUserEarnings = (
     return () => {
       isActive = false
     }
-  }, [splitsClient, userId])
+  }, [splitsClient, userAddress])
 
   return {
     isLoading,
@@ -143,9 +143,9 @@ export const useFormattedUserEarnings = (
 }
 
 export const useUserEarningsByContract = (
-  userId: string,
+  userAddress: string,
   options?: {
-    contractIds?: string[]
+    contractAddresses?: string[]
   },
 ): {
   isLoading: boolean
@@ -156,15 +156,16 @@ export const useUserEarningsByContract = (
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context)
 
-  const contractIds = options?.contractIds ?? DEFAULT_OPTIONS.contractIds
-  const contractIdsString = JSON.stringify(contractIds)
+  const contractAddresses =
+    options?.contractAddresses ?? DEFAULT_OPTIONS.contractIds
+  const contractAddressesString = JSON.stringify(contractAddresses)
 
   const [userEarningsByContract, setUserEarningsByContract] = useState<
     UserEarningsByContract | undefined
   >()
-  const [isLoading, setIsLoading] = useState(!!userId)
+  const [isLoading, setIsLoading] = useState(!!userAddress)
   const [status, setStatus] = useState<DataLoadStatus | undefined>(
-    userId ? 'loading' : undefined,
+    userAddress ? 'loading' : undefined,
   )
   const [error, setError] = useState<RequestError>()
 
@@ -174,8 +175,8 @@ export const useUserEarningsByContract = (
     const fetchEarnings = async () => {
       try {
         const earnings = await splitsClient.getUserEarningsByContract({
-          userId,
-          contractIds,
+          userAddress,
+          contractAddresses,
         })
         if (!isActive) return
         setUserEarningsByContract(earnings)
@@ -191,7 +192,7 @@ export const useUserEarningsByContract = (
     }
 
     setError(undefined)
-    if (userId) {
+    if (userAddress) {
       setIsLoading(true)
       setStatus('loading')
       fetchEarnings()
@@ -204,7 +205,7 @@ export const useUserEarningsByContract = (
     return () => {
       isActive = false
     }
-  }, [splitsClient, userId, contractIdsString])
+  }, [splitsClient, userAddress, contractAddressesString])
 
   return {
     isLoading,
@@ -215,9 +216,9 @@ export const useUserEarningsByContract = (
 }
 
 export const useFormattedUserEarningsByContract = (
-  userId: string,
+  userAddress: string,
   options?: {
-    contractIds?: string[]
+    contractAddresses?: string[]
   },
 ): {
   isLoading: boolean
@@ -228,14 +229,15 @@ export const useFormattedUserEarningsByContract = (
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context)
 
-  const contractIds = options?.contractIds ?? DEFAULT_OPTIONS.contractIds
-  const contractIdsString = JSON.stringify(contractIds)
+  const contractAddresses =
+    options?.contractAddresses ?? DEFAULT_OPTIONS.contractIds
+  const contractAddressesString = JSON.stringify(contractAddresses)
 
   const [formattedUserEarningsByContract, setFormattedUserEarningsByContract] =
     useState<FormattedUserEarningsByContract | undefined>()
-  const [isLoading, setIsLoading] = useState(!!userId)
+  const [isLoading, setIsLoading] = useState(!!userAddress)
   const [status, setStatus] = useState<DataLoadStatus | undefined>(
-    userId ? 'loading' : undefined,
+    userAddress ? 'loading' : undefined,
   )
   const [error, setError] = useState<RequestError>()
 
@@ -246,8 +248,8 @@ export const useFormattedUserEarningsByContract = (
       try {
         const formattedEarnings =
           await splitsClient.getFormattedUserEarningsByContract({
-            userId,
-            contractIds,
+            userAddress,
+            contractAddresses,
           })
         if (!isActive) return
         setFormattedUserEarningsByContract(formattedEarnings)
@@ -263,7 +265,7 @@ export const useFormattedUserEarningsByContract = (
     }
 
     setError(undefined)
-    if (userId) {
+    if (userAddress) {
       setIsLoading(true)
       setStatus('loading')
       fetchEarnings()
@@ -276,7 +278,7 @@ export const useFormattedUserEarningsByContract = (
     return () => {
       isActive = false
     }
-  }, [splitsClient, userId, contractIdsString])
+  }, [splitsClient, userAddress, contractAddressesString])
 
   return {
     isLoading,

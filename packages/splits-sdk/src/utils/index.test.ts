@@ -1,8 +1,13 @@
-import { BigNumber } from '@ethersproject/bignumber'
+import * as viemApi from 'viem'
+
 import {
-  getBigNumberFromPercent,
+  getBigIntFromPercent,
   getRecipientSortedAddressesAndAllocations,
 } from './index'
+
+jest.spyOn(viemApi, 'getAddress').mockImplementation((address) => {
+  return address as viemApi.Address
+})
 
 describe('Test sorting recipients', () => {
   test('Recipients come back sorted by address', () => {
@@ -26,9 +31,9 @@ describe('Test sorting recipients', () => {
 
     const expectedAddresses = ['123', '456', '789']
     const expectedPercentAllocations = [
-      BigNumber.from(123 * 1e4),
-      BigNumber.from(456 * 1e4),
-      BigNumber.from(789 * 1e4),
+      BigInt(123 * 1e4),
+      BigInt(456 * 1e4),
+      BigInt(789 * 1e4),
     ]
 
     expect(sortedAddresses).toEqual(expectedAddresses)
@@ -59,10 +64,10 @@ describe('Test sorting recipients', () => {
 
     const expectedAddresses = ['ab', 'Ac', 'ad', 'Ae']
     const expectedPercentAllocations = [
-      BigNumber.from(1 * 1e4),
-      BigNumber.from(2 * 1e4),
-      BigNumber.from(3 * 1e4),
-      BigNumber.from(4 * 1e4),
+      BigInt(1 * 1e4),
+      BigInt(2 * 1e4),
+      BigInt(3 * 1e4),
+      BigInt(4 * 1e4),
     ]
 
     expect(sortedAddresses).toEqual(expectedAddresses)
@@ -70,9 +75,9 @@ describe('Test sorting recipients', () => {
   })
   test('Getting big number value', () => {
     const value = 10
-    const expectedBigNumber = BigNumber.from(10 * 1e4)
+    const expectedBigNumber = BigInt(10 * 1e4)
 
-    const result = getBigNumberFromPercent(value)
+    const result = getBigIntFromPercent(value)
     expect(result).toEqual(expectedBigNumber)
   })
 })

@@ -1,8 +1,7 @@
+import { Log } from 'viem'
 import { useCallback, useContext, useEffect, useState } from 'react'
-import type { Event } from '@ethersproject/contracts'
 import {
   CreateWaterfallConfig,
-  getTransactionEvents,
   RecoverNonWaterfallFundsConfig,
   WaterfallFundsConfig,
   WaterfallModule,
@@ -16,7 +15,7 @@ import { getSplitsClient } from '../utils'
 export const useCreateWaterfallModule = (): {
   createWaterfallModule: (
     arg0: CreateWaterfallConfig,
-  ) => Promise<Event[] | undefined>
+  ) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -32,24 +31,26 @@ export const useCreateWaterfallModule = (): {
     async (argsDict: CreateWaterfallConfig) => {
       if (!splitsClient.waterfall)
         throw new Error('Invalid chain id for waterfall')
+      if (!splitsClient._publicClient)
+        throw new Error('Invalid chain id for waterfall')
 
       try {
         setStatus('pendingApproval')
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
+        const { txHash: hash } =
           await splitsClient.waterfall.submitCreateWaterfallModuleTransaction(
             argsDict,
           )
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.waterfall.eventTopics.createWaterfallModule,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.waterfall.eventTopics.createWaterfallModule,
+        })
 
         setStatus('complete')
 
@@ -66,7 +67,7 @@ export const useCreateWaterfallModule = (): {
 }
 
 export const useWaterfallFunds = (): {
-  waterfallFunds: (arg0: WaterfallFundsConfig) => Promise<Event[] | undefined>
+  waterfallFunds: (arg0: WaterfallFundsConfig) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -88,16 +89,16 @@ export const useWaterfallFunds = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
+        const { txHash: hash } =
           await splitsClient.waterfall.submitWaterfallFundsTransaction(argsDict)
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.waterfall.eventTopics.waterfallFunds,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.waterfall.eventTopics.waterfallFunds,
+        })
 
         setStatus('complete')
 
@@ -116,7 +117,7 @@ export const useWaterfallFunds = (): {
 export const useRecoverNonWaterfallFunds = (): {
   recoverNonWaterfallFunds: (
     arg0: RecoverNonWaterfallFundsConfig,
-  ) => Promise<Event[] | undefined>
+  ) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -138,18 +139,19 @@ export const useRecoverNonWaterfallFunds = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
+        const { txHash: hash } =
           await splitsClient.waterfall.submitRecoverNonWaterfallFundsTransaction(
             argsDict,
           )
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.waterfall.eventTopics.recoverNonWaterfallFunds,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics:
+            splitsClient.waterfall.eventTopics.recoverNonWaterfallFunds,
+        })
 
         setStatus('complete')
 
@@ -168,7 +170,7 @@ export const useRecoverNonWaterfallFunds = (): {
 export const useWithdrawWaterfallPullFunds = (): {
   withdrawPullFunds: (
     arg0: WithdrawWaterfallPullFundsConfig,
-  ) => Promise<Event[] | undefined>
+  ) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -190,18 +192,18 @@ export const useWithdrawWaterfallPullFunds = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
+        const { txHash: hash } =
           await splitsClient.waterfall.submitWithdrawPullFundsTransaction(
             argsDict,
           )
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.waterfall.eventTopics.withdrawPullFunds,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.waterfall.eventTopics.withdrawPullFunds,
+        })
 
         setStatus('complete')
 
@@ -218,7 +220,7 @@ export const useWithdrawWaterfallPullFunds = (): {
 }
 
 export const useWaterfallMetadata = (
-  waterfallModuleId: string,
+  waterfallModuleAddress: string,
 ): {
   isLoading: boolean
   waterfallMetadata: WaterfallModule | undefined
@@ -235,9 +237,9 @@ export const useWaterfallMetadata = (
   const [waterfallMetadata, setWaterfallMetadata] = useState<
     WaterfallModule | undefined
   >()
-  const [isLoading, setIsLoading] = useState(!!waterfallModuleId)
+  const [isLoading, setIsLoading] = useState(!!waterfallModuleAddress)
   const [status, setStatus] = useState<DataLoadStatus | undefined>(
-    waterfallModuleId ? 'loading' : undefined,
+    waterfallModuleAddress ? 'loading' : undefined,
   )
   const [error, setError] = useState<RequestError>()
 
@@ -247,7 +249,7 @@ export const useWaterfallMetadata = (
     const fetchMetadata = async () => {
       try {
         const waterfall = await waterfallClient.getWaterfallMetadata({
-          waterfallModuleId,
+          waterfallModuleAddress,
         })
         if (!isActive) return
         setWaterfallMetadata(waterfall)
@@ -263,7 +265,7 @@ export const useWaterfallMetadata = (
     }
 
     setError(undefined)
-    if (waterfallModuleId) {
+    if (waterfallModuleAddress) {
       setStatus('loading')
       setIsLoading(true)
       fetchMetadata()
@@ -276,7 +278,7 @@ export const useWaterfallMetadata = (
     return () => {
       isActive = false
     }
-  }, [waterfallClient, waterfallModuleId])
+  }, [waterfallClient, waterfallModuleAddress])
 
   return {
     isLoading,

@@ -1,10 +1,9 @@
+import { Log } from 'viem'
 import { useCallback, useContext, useEffect, useState } from 'react'
-import type { Event } from '@ethersproject/contracts'
 import {
   SplitsClient,
   SplitsClientConfig,
   Split,
-  getTransactionEvents,
   CreateSplitConfig,
   UpdateSplitConfig,
   DistributeTokenConfig,
@@ -29,25 +28,25 @@ export const useSplitsClient = (config: SplitsClientConfig): SplitsClient => {
   }
 
   const chainId = config.chainId
-  const provider = config.provider
-  const signer = config.signer
+  const publicClient = config.publicClient
+  const walletClient = config.walletClient
   const includeEnsNames = config.includeEnsNames
-  const ensProvider = config.ensProvider
+  const ensPublicClient = config.ensPublicClient
   useEffect(() => {
     context.initClient({
       chainId,
-      provider,
-      signer,
+      publicClient,
+      walletClient,
       includeEnsNames,
-      ensProvider,
+      ensPublicClient,
     })
-  }, [chainId, provider, signer, includeEnsNames, ensProvider])
+  }, [chainId, publicClient, walletClient, includeEnsNames, ensPublicClient])
 
   return context.splitsClient as SplitsClient
 }
 
 export const useCreateSplit = (): {
-  createSplit: (arg0: CreateSplitConfig) => Promise<Event[] | undefined>
+  createSplit: (arg0: CreateSplitConfig) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -66,15 +65,16 @@ export const useCreateSplit = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } = await splitsClient.submitCreateSplitTransaction(argsDict)
+        const { txHash: hash } =
+          await splitsClient.submitCreateSplitTransaction(argsDict)
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.eventTopics.createSplit,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.eventTopics.createSplit,
+        })
 
         setStatus('complete')
 
@@ -91,7 +91,7 @@ export const useCreateSplit = (): {
 }
 
 export const useUpdateSplit = (): {
-  updateSplit: (arg0: UpdateSplitConfig) => Promise<Event[] | undefined>
+  updateSplit: (arg0: UpdateSplitConfig) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -110,15 +110,16 @@ export const useUpdateSplit = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } = await splitsClient.submitUpdateSplitTransaction(argsDict)
+        const { txHash: hash } =
+          await splitsClient.submitUpdateSplitTransaction(argsDict)
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.eventTopics.updateSplit,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.eventTopics.updateSplit,
+        })
 
         setStatus('complete')
 
@@ -135,7 +136,7 @@ export const useUpdateSplit = (): {
 }
 
 export const useDistributeToken = (): {
-  distributeToken: (arg0: DistributeTokenConfig) => Promise<Event[] | undefined>
+  distributeToken: (arg0: DistributeTokenConfig) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -154,17 +155,16 @@ export const useDistributeToken = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } = await splitsClient.submitDistributeTokenTransaction(
-          argsDict,
-        )
+        const { txHash: hash } =
+          await splitsClient.submitDistributeTokenTransaction(argsDict)
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.eventTopics.distributeToken,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.eventTopics.distributeToken,
+        })
 
         setStatus('complete')
 
@@ -183,7 +183,7 @@ export const useDistributeToken = (): {
 export const useUpdateSplitAndDistributeToken = (): {
   updateSplitAndDistributeToken: (
     arg0: UpdateSplitAndDistributeTokenConfig,
-  ) => Promise<Event[] | undefined>
+  ) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -202,18 +202,18 @@ export const useUpdateSplitAndDistributeToken = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
+        const { txHash: hash } =
           await splitsClient.submitUpdateSplitAndDistributeTokenTransaction(
             argsDict,
           )
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.eventTopics.updateSplitAndDistributeToken,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.eventTopics.updateSplitAndDistributeToken,
+        })
 
         setStatus('complete')
 
@@ -230,7 +230,7 @@ export const useUpdateSplitAndDistributeToken = (): {
 }
 
 export const useWithdrawFunds = (): {
-  withdrawFunds: (arg0: WithdrawFundsConfig) => Promise<Event[] | undefined>
+  withdrawFunds: (arg0: WithdrawFundsConfig) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -249,17 +249,16 @@ export const useWithdrawFunds = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } = await splitsClient.submitWithdrawFundsTransaction(
-          argsDict,
-        )
+        const { txHash: hash } =
+          await splitsClient.submitWithdrawFundsTransaction(argsDict)
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.eventTopics.withdrawFunds,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.eventTopics.withdrawFunds,
+        })
 
         setStatus('complete')
 
@@ -278,7 +277,7 @@ export const useWithdrawFunds = (): {
 export const useInitiateControlTransfer = (): {
   initiateControlTransfer: (
     arg0: InititateControlTransferConfig,
-  ) => Promise<Event[] | undefined>
+  ) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -297,16 +296,16 @@ export const useInitiateControlTransfer = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
+        const { txHash: hash } =
           await splitsClient.submitInitiateControlTransferTransaction(argsDict)
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.eventTopics.initiateControlTransfer,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.eventTopics.initiateControlTransfer,
+        })
 
         setStatus('complete')
 
@@ -325,7 +324,7 @@ export const useInitiateControlTransfer = (): {
 export const useCancelControlTransfer = (): {
   cancelControlTransfer: (
     arg0: CancelControlTransferConfig,
-  ) => Promise<Event[] | undefined>
+  ) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -344,16 +343,16 @@ export const useCancelControlTransfer = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
+        const { txHash: hash } =
           await splitsClient.submitCancelControlTransferTransaction(argsDict)
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.eventTopics.cancelControlTransfer,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.eventTopics.cancelControlTransfer,
+        })
 
         setStatus('complete')
 
@@ -372,7 +371,7 @@ export const useCancelControlTransfer = (): {
 export const useAcceptControlTransfer = (): {
   acceptControlTransfer: (
     arg0: AcceptControlTransferConfig,
-  ) => Promise<Event[] | undefined>
+  ) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -391,16 +390,16 @@ export const useAcceptControlTransfer = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
+        const { txHash: hash } =
           await splitsClient.submitAcceptControlTransferTransaction(argsDict)
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.eventTopics.acceptControlTransfer,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.eventTopics.acceptControlTransfer,
+        })
 
         setStatus('complete')
 
@@ -419,7 +418,7 @@ export const useAcceptControlTransfer = (): {
 export const useMakeSplitImmutable = (): {
   makeSplitImmutable: (
     arg0: MakeSplitImmutableConfig,
-  ) => Promise<Event[] | undefined>
+  ) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -438,17 +437,16 @@ export const useMakeSplitImmutable = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } = await splitsClient.submitMakeSplitImmutableTransaction(
-          argsDict,
-        )
+        const { txHash: hash } =
+          await splitsClient.submitMakeSplitImmutableTransaction(argsDict)
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.eventTopics.makeSplitImmutable,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.eventTopics.makeSplitImmutable,
+        })
 
         setStatus('complete')
 
@@ -465,7 +463,7 @@ export const useMakeSplitImmutable = (): {
 }
 
 export const useSplitMetadata = (
-  splitId: string,
+  splitAddress: string,
 ): {
   isLoading: boolean
   splitMetadata: Split | undefined
@@ -476,9 +474,9 @@ export const useSplitMetadata = (
   const splitsClient = getSplitsClient(context)
 
   const [splitMetadata, setSplitMetadata] = useState<Split | undefined>()
-  const [isLoading, setIsLoading] = useState(!!splitId)
+  const [isLoading, setIsLoading] = useState(!!splitAddress)
   const [status, setStatus] = useState<DataLoadStatus | undefined>(
-    splitId ? 'loading' : undefined,
+    splitAddress ? 'loading' : undefined,
   )
   const [error, setError] = useState<RequestError>()
 
@@ -487,7 +485,7 @@ export const useSplitMetadata = (
 
     const fetchMetadata = async () => {
       try {
-        const split = await splitsClient.getSplitMetadata({ splitId })
+        const split = await splitsClient.getSplitMetadata({ splitAddress })
         if (!isActive) return
         setSplitMetadata(split)
         setStatus('success')
@@ -502,7 +500,7 @@ export const useSplitMetadata = (
     }
 
     setError(undefined)
-    if (splitId) {
+    if (splitAddress) {
       setIsLoading(true)
       setStatus('loading')
       fetchMetadata()
@@ -515,7 +513,7 @@ export const useSplitMetadata = (
     return () => {
       isActive = false
     }
-  }, [splitsClient, splitId])
+  }, [splitsClient, splitAddress])
 
   return {
     isLoading,
@@ -526,7 +524,7 @@ export const useSplitMetadata = (
 }
 
 export const useSplitEarnings = (
-  splitId: string,
+  splitAddress: string,
   includeActiveBalances?: boolean,
   erc20TokenList?: string[],
   formatted = true,
@@ -546,9 +544,9 @@ export const useSplitEarnings = (
   const [formattedSplitEarnings, setFormattedSplitEarnings] = useState<
     FormattedSplitEarnings | undefined
   >()
-  const [isLoading, setIsLoading] = useState(!!splitId)
+  const [isLoading, setIsLoading] = useState(!!splitAddress)
   const [status, setStatus] = useState<DataLoadStatus | undefined>(
-    splitId ? 'loading' : undefined,
+    splitAddress ? 'loading' : undefined,
   )
   const [error, setError] = useState<RequestError>()
 
@@ -560,7 +558,7 @@ export const useSplitEarnings = (
         if (fetchFormattedEarnings) {
           const formattedEarnings =
             await splitsClient.getFormattedSplitEarnings({
-              splitId,
+              splitAddress,
               includeActiveBalances,
               erc20TokenList,
             })
@@ -570,7 +568,7 @@ export const useSplitEarnings = (
           setStatus('success')
         } else {
           const earnings = await splitsClient.getSplitEarnings({
-            splitId,
+            splitAddress,
             includeActiveBalances,
             erc20TokenList,
           })
@@ -590,7 +588,7 @@ export const useSplitEarnings = (
     }
 
     setError(undefined)
-    if (splitId) {
+    if (splitAddress) {
       setIsLoading(true)
       setStatus('loading')
       fetchEarnings(formatted)
@@ -604,7 +602,13 @@ export const useSplitEarnings = (
     return () => {
       isActive = false
     }
-  }, [splitsClient, splitId, formatted, includeActiveBalances, erc20TokenList])
+  }, [
+    splitsClient,
+    splitAddress,
+    formatted,
+    includeActiveBalances,
+    erc20TokenList,
+  ])
 
   return {
     isLoading,

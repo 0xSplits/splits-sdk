@@ -1,28 +1,29 @@
-import { Provider } from '@ethersproject/abstract-provider'
-import { BigNumber } from '@ethersproject/bignumber'
+import { Chain, Hex, PublicClient, Transport } from 'viem'
 
 import { OracleClient } from './oracle'
 import {
   InvalidConfigError,
-  MissingProviderError,
+  MissingPublicClientError,
   UnsupportedChainIdError,
 } from '../errors'
 import { validateAddress } from '../utils/validation'
-import { MockOracle, readActions } from '../testing/mocks/oracle'
+import { readActions } from '../testing/mocks/oracle'
+import { MockViemContract } from '../testing/mocks/viemContract'
 
-jest.mock('@ethersproject/contracts', () => {
+jest.mock('viem', () => {
+  const originalModule = jest.requireActual('viem')
   return {
-    Contract: jest
-      .fn()
-      .mockImplementation((_contractAddress, _contractInterface, provider) => {
-        return new MockOracle(provider)
-      }),
+    ...originalModule,
+    getContract: jest.fn(() => {
+      return new MockViemContract(readActions, {})
+    }),
+    getAddress: jest.fn((address) => address),
   }
 })
 
 jest.mock('../utils/validation')
 
-const mockProvider = jest.fn<Provider, unknown[]>()
+const mockPublicClient = jest.fn<PublicClient<Transport, Chain>, unknown[]>()
 
 describe('Client config validation', () => {
   test('Including ens names with no provider fails', () => {
@@ -76,10 +77,10 @@ describe('Client config validation', () => {
 })
 
 describe('Oracle reads', () => {
-  const provider = new mockProvider()
+  const publicClient = new mockPublicClient()
   const client = new OracleClient({
     chainId: 1,
-    provider,
+    publicClient,
   })
 
   beforeEach(() => {
@@ -87,15 +88,15 @@ describe('Oracle reads', () => {
   })
 
   describe('Get quote amounts test', () => {
-    const oracleId = '0xoracle'
+    const oracleAddress = '0xoracle'
     const quoteParams = [
       {
         quotePair: {
           base: '0xbase',
           quote: '0xquote',
         },
-        baseAmount: BigNumber.from(1),
-        data: '0x0',
+        baseAmount: BigInt(1),
+        data: '0x' as Hex,
       },
     ]
 
@@ -111,23 +112,32 @@ describe('Oracle reads', () => {
       await expect(
         async () =>
           await badClient.getQuoteAmounts({
-            oracleId,
+            oracleAddress,
             quoteParams,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns quote amounts', async () => {
-      readActions.getQuoteAmounts.mockReturnValueOnce([BigNumber.from(12)])
+      readActions.getQuoteAmounts.mockReturnValueOnce([BigInt(12)])
       const { quoteAmounts } = await client.getQuoteAmounts({
-        oracleId,
+        oracleAddress,
         quoteParams,
       })
 
-      expect(quoteAmounts).toEqual([BigNumber.from(12)])
-      expect(validateAddress).toBeCalledWith(oracleId)
+      expect(quoteAmounts).toEqual([BigInt(12)])
+      expect(validateAddress).toBeCalledWith(oracleAddress)
       expect(readActions.getQuoteAmounts).toBeCalledWith([
-        [['0xbase', '0xquote'], BigNumber.from(1), '0x0'],
+        [
+          {
+            baseAmount: BigInt(1),
+            data: '0x',
+            quotePair: {
+              base: '0xbase',
+              quote: '0xquote',
+            },
+          },
+        ],
       ])
     })
   })
