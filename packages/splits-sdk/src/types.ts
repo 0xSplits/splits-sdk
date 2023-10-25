@@ -411,7 +411,15 @@ export type Swapper = {
   owner: Recipient | null
   paused: boolean
   defaultScaledOfferFactorPercent: number
-  scaledOfferFactorOverrides: ScaledOfferFactorOverride[]
+  scaledOfferFactorOverrides: {
+    baseToken: {
+      address: string
+    }
+    quoteToken: {
+      address: string
+    }
+    scaledOfferFactorPercent: number
+  }[]
 }
 
 export type VestingStream = {

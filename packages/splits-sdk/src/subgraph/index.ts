@@ -430,8 +430,12 @@ export const protectedFormatSwapper = (gqlSwapper: GqlSwapper): Swapper => {
           (1e6 - parseInt(scaleOfferFactorOverride.scaledOfferFactor)) / 1e4
 
         return {
-          baseToken,
-          quoteToken,
+          baseToken: {
+            address: baseToken,
+          },
+          quoteToken: {
+            address: quoteToken,
+          },
           scaledOfferFactorPercent,
         }
       },
