@@ -27,7 +27,7 @@
   "bugs": {
     "url": "https://github.com/0xSplits/splits-sdk/issues"
   },
-  "homepage": "https://docs.splits.org/sdk-info/overview",
+  "homepage": "https://docs.splits.org/sdk",
   "dependencies": {
     "@0xsplits/splits-sdk": "^3.0.0-beta.0"
   },
