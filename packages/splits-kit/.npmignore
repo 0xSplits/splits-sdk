@@ -2,5 +2,7 @@
 *.test.ts
 src/testing/**/*
 
+storybook/
+
 # Typescript files
 */tsconfig.tsbuildinfo
