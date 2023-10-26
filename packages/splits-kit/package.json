@@ -12,7 +12,8 @@
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "rm -rf dist && tsc && npx tailwindcss -i src/styles.css -o dist/styles.css --minify"
+    "build": "rm -rf dist && tsc && npx tailwindcss -i src/styles.css -o dist/styles.css --minify",
+    "storybook": "cd storybook && yarn storybook"
   },
   "author": "0xSplits (https://splits.org)",
   "publishConfig": {
