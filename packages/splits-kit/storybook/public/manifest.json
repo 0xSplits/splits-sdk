@@ -1,0 +1,9 @@
+{
+  "short_name": "Splits Kit",
+  "name": "Splits Kit - Storybook",
+  "iconPath": "logo_light.svg",
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
