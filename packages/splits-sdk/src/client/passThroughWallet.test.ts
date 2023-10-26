@@ -1,71 +1,97 @@
-import { Provider } from '@ethersproject/abstract-provider'
-import { Signer } from '@ethersproject/abstract-signer'
-import { BigNumber } from '@ethersproject/bignumber'
-import type { Event } from '@ethersproject/contracts'
+import {
+  Account,
+  Address,
+  Chain,
+  Log,
+  PublicClient,
+  Transport,
+  WalletClient,
+} from 'viem'
 
 import { PassThroughWalletClient } from './passThroughWallet'
 import { getPassThroughWalletFactoryAddress } from '../constants'
 import {
   InvalidAuthError,
   InvalidConfigError,
-  MissingProviderError,
-  MissingSignerError,
+  MissingPublicClientError,
+  MissingWalletClientError,
   UnsupportedChainIdError,
 } from '../errors'
-import * as utils from '../utils'
 import { validateAddress } from '../utils/validation'
+import { writeActions as factoryWriteActions } from '../testing/mocks/passThroughWalletFactory'
 import {
-  MockPassThroughWalletFactory,
-  writeActions as factoryWriteActions,
-} from '../testing/mocks/passThroughWalletFactory'
-import {
-  MockPassThroughWallet,
   writeActions as moduleWriteActions,
   readActions,
 } from '../testing/mocks/passThroughWallet'
 import { OWNER_ADDRESS } from '../testing/constants'
+import { MockViemContract } from '../testing/mocks/viemContract'
 
-jest.mock('@ethersproject/contracts', () => {
+jest.mock('viem', () => {
+  const originalModule = jest.requireActual('viem')
   return {
-    Contract: jest
-      .fn()
-      .mockImplementation((contractAddress, _contractInterface, provider) => {
-        if (contractAddress === getPassThroughWalletFactoryAddress(1))
-          return new MockPassThroughWalletFactory(provider)
-
-        return new MockPassThroughWallet(provider)
-      }),
+    ...originalModule,
+    getContract: jest.fn(() => {
+      return new MockViemContract(readActions, moduleWriteActions)
+    }),
+    getAddress: jest.fn((address) => address),
+    decodeEventLog: jest.fn(() => {
+      return {
+        eventName: 'eventName',
+        args: {
+          passThroughWallet: '0xPassThroughWallet',
+        },
+      }
+    }),
   }
 })
 
 jest.mock('../utils/validation')
 
-const getTransactionEventsSpy = jest
-  .spyOn(utils, 'getTransactionEvents')
-  .mockImplementation(async () => {
-    const event = {
-      blockNumber: 12345,
-      args: {
-        passThroughWallet: '0xPassThroughWallet',
+const mockPublicClient = jest.fn(() => {
+  return {
+    simulateContract: jest.fn(
+      async ({
+        address,
+        functionName,
+        args,
+      }: {
+        address: Address
+        functionName: string
+        args: unknown[]
+      }) => {
+        if (address === getPassThroughWalletFactoryAddress(1)) {
+          type writeActions = typeof factoryWriteActions
+          type writeKeys = keyof writeActions
+          factoryWriteActions[functionName as writeKeys].call(this, ...args)
+        } else {
+          type writeActions = typeof moduleWriteActions
+          type writeKeys = keyof writeActions
+          moduleWriteActions[functionName as writeKeys].call(this, ...args)
+        }
+        return { request: jest.mock }
       },
-    } as unknown as Event
-    return [event]
-  })
-
-const mockProvider = jest.fn<Provider, unknown[]>()
-const mockSigner = jest.fn<Signer, unknown[]>(() => {
-  return {
-    getAddress: () => {
-      return OWNER_ADDRESS
-    },
-  } as unknown as Signer
+    ),
+  } as unknown as PublicClient<Transport, Chain>
 })
-const mockSignerNonOwner = jest.fn<Signer, unknown[]>(() => {
+const mockWalletClient = jest.fn(() => {
   return {
-    getAddress: () => {
-      return '0xnotOwner'
+    account: {
+      address: OWNER_ADDRESS,
     },
-  } as unknown as Signer
+    writeContract: jest.fn(() => {
+      return '0xhash'
+    }),
+  } as unknown as WalletClient<Transport, Chain, Account>
+})
+const mockWalletClientNonOwner = jest.fn(() => {
+  return {
+    account: {
+      address: '0xnotOwner',
+    },
+    writeContract: jest.fn(() => {
+      return '0xhash'
+    }),
+  } as unknown as WalletClient<Transport, Chain, Account>
 })
 
 describe('Client config validation', () => {
@@ -120,13 +146,24 @@ describe('Client config validation', () => {
 })
 
 describe('Pass through wallet writes', () => {
-  const provider = new mockProvider()
-  const signer = new mockSigner()
+  const publicClient = new mockPublicClient()
+  const walletClient = new mockWalletClient()
   const client = new PassThroughWalletClient({
     chainId: 1,
-    provider,
-    signer,
+    publicClient,
+    walletClient,
   })
+  const getTransactionEventsSpy = jest
+    .spyOn(client, 'getTransactionEvents')
+    .mockImplementation(async () => {
+      const event = {
+        blockNumber: 12345,
+        args: {
+          passThroughWallet: '0xPassThroughWallet',
+        },
+      } as unknown as Log
+      return [event]
+    })
 
   beforeEach(() => {
     ;(validateAddress as jest.Mock).mockClear()
@@ -162,13 +199,13 @@ describe('Pass through wallet writes', () => {
             paused,
             passThrough,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Create pass through wallet fails with no signer', async () => {
       const badClient = new PassThroughWalletClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
@@ -178,11 +215,11 @@ describe('Pass through wallet writes', () => {
             paused,
             passThrough,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Create pass through wallet passes', async () => {
-      const { event, passThroughWalletId } =
+      const { event, passThroughWalletAddress } =
         await client.createPassThroughWallet({
           owner,
           paused,
@@ -190,23 +227,24 @@ describe('Pass through wallet writes', () => {
         })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(passThroughWalletId).toEqual('0xPassThroughWallet')
+      expect(passThroughWalletAddress).toEqual('0xPassThroughWallet')
       expect(validateAddress).toBeCalledWith(owner)
       expect(validateAddress).toBeCalledWith(passThrough)
 
-      expect(factoryWriteActions.createPassThroughWallet).toBeCalledWith(
-        [owner, paused, passThrough],
-        {},
-      )
-      expect(getTransactionEventsSpy).toBeCalledWith(
-        createPassThroughWalletResult,
-        [client.eventTopics.createPassThroughWallet[0]],
-      )
+      expect(factoryWriteActions.createPassThroughWallet).toBeCalledWith([
+        owner,
+        paused,
+        passThrough,
+      ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [client.eventTopics.createPassThroughWallet[0]],
+      })
     })
   })
 
   describe('Pass through tokens tests', () => {
-    const passThroughWalletId = '0xpassthroughwallet'
+    const passThroughWalletAddress = '0xpassthroughwallet'
     const tokens = ['0xtoken1', '0xtoken2']
     const passThroughTokensResult = {
       value: 'pass_through_tokens_tx',
@@ -228,46 +266,47 @@ describe('Pass through wallet writes', () => {
       await expect(
         async () =>
           await badClient.passThroughTokens({
-            passThroughWalletId,
+            passThroughWalletAddress,
             tokens,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Pass through tokens fails with no signer', async () => {
       const badClient = new PassThroughWalletClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
         async () =>
           await badClient.passThroughTokens({
-            passThroughWalletId,
+            passThroughWalletAddress,
             tokens,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Pass through tokens passes', async () => {
       const { event } = await client.passThroughTokens({
-        passThroughWalletId,
+        passThroughWalletAddress,
         tokens,
       })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(validateAddress).toBeCalledWith(passThroughWalletId)
+      expect(validateAddress).toBeCalledWith(passThroughWalletAddress)
       expect(validateAddress).toBeCalledWith('0xtoken1')
       expect(validateAddress).toBeCalledWith('0xtoken2')
-      expect(moduleWriteActions.passThroughTokens).toBeCalledWith(tokens, {})
-      expect(getTransactionEventsSpy).toBeCalledWith(passThroughTokensResult, [
-        client.eventTopics.passThroughTokens[0],
-      ])
+      expect(moduleWriteActions.passThroughTokens).toBeCalledWith(tokens)
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [client.eventTopics.passThroughTokens[0]],
+      })
     })
   })
 
   describe('Set pass through tests', () => {
-    const passThroughWalletId = '0xpassthroughwallet'
+    const passThroughWalletAddress = '0xpassthroughwallet'
     const passThrough = '0xuser'
     const setPassThroughResult = {
       value: 'set_pass_through_tx',
@@ -289,39 +328,39 @@ describe('Pass through wallet writes', () => {
       await expect(
         async () =>
           await badClient.setPassThrough({
-            passThroughWalletId,
+            passThroughWalletAddress,
             passThrough,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Set pass through fails with no signer', async () => {
       const badClient = new PassThroughWalletClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
         async () =>
           await badClient.setPassThrough({
-            passThroughWalletId,
+            passThroughWalletAddress,
             passThrough,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Set pass through fails from non owner', async () => {
-      const nonOwnerSigner = new mockSignerNonOwner()
+      const nonOwnerSigner = new mockWalletClientNonOwner()
       const badClient = new PassThroughWalletClient({
         chainId: 1,
-        provider,
-        signer: nonOwnerSigner,
+        publicClient,
+        walletClient: nonOwnerSigner,
       })
 
       await expect(
         async () =>
           await badClient.setPassThrough({
-            passThroughWalletId,
+            passThroughWalletAddress,
             passThrough,
           }),
       ).rejects.toThrow(InvalidAuthError)
@@ -329,22 +368,23 @@ describe('Pass through wallet writes', () => {
 
     test('Set pass through passes', async () => {
       const { event } = await client.setPassThrough({
-        passThroughWalletId,
+        passThroughWalletAddress,
         passThrough,
       })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(validateAddress).toBeCalledWith(passThroughWalletId)
+      expect(validateAddress).toBeCalledWith(passThroughWalletAddress)
       expect(validateAddress).toBeCalledWith(passThrough)
-      expect(moduleWriteActions.setPassThrough).toBeCalledWith(passThrough, {})
-      expect(getTransactionEventsSpy).toBeCalledWith(setPassThroughResult, [
-        client.eventTopics.setPassThrough[0],
-      ])
+      expect(moduleWriteActions.setPassThrough).toBeCalledWith(passThrough)
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [client.eventTopics.setPassThrough[0]],
+      })
     })
   })
 
   describe('Set paused tests', () => {
-    const passThroughWalletId = '0xpassThroughWallet'
+    const passThroughWalletAddress = '0xpassThroughWallet'
     const paused = true
     const setPausedResult = {
       value: 'set_paused_tx',
@@ -364,39 +404,39 @@ describe('Pass through wallet writes', () => {
       await expect(
         async () =>
           await badClient.setPaused({
-            passThroughWalletId,
+            passThroughWalletAddress,
             paused,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Set paused fails with no signer', async () => {
       const badClient = new PassThroughWalletClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
         async () =>
           await badClient.setPaused({
-            passThroughWalletId,
+            passThroughWalletAddress,
             paused,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Set paused fails from non owner', async () => {
-      const nonOwnerSigner = new mockSignerNonOwner()
+      const nonOwnerSigner = new mockWalletClientNonOwner()
       const badClient = new PassThroughWalletClient({
         chainId: 1,
-        provider,
-        signer: nonOwnerSigner,
+        publicClient,
+        walletClient: nonOwnerSigner,
       })
 
       await expect(
         async () =>
           await badClient.setPaused({
-            passThroughWalletId,
+            passThroughWalletAddress,
             paused,
           }),
       ).rejects.toThrow(InvalidAuthError)
@@ -404,26 +444,27 @@ describe('Pass through wallet writes', () => {
 
     test('Set paused passes', async () => {
       const { event } = await client.setPaused({
-        passThroughWalletId,
+        passThroughWalletAddress,
         paused,
       })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(validateAddress).toBeCalledWith(passThroughWalletId)
+      expect(validateAddress).toBeCalledWith(passThroughWalletAddress)
 
-      expect(moduleWriteActions.setPaused).toBeCalledWith(paused, {})
-      expect(getTransactionEventsSpy).toBeCalledWith(setPausedResult, [
-        client.eventTopics.setPaused[0],
-      ])
+      expect(moduleWriteActions.setPaused).toBeCalledWith(paused)
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [client.eventTopics.setPaused[0]],
+      })
     })
   })
 
   describe('Exec calls tests', () => {
-    const passThroughWalletId = '0xpassthroughwallet'
+    const passThroughWalletAddress = '0xpassthroughwallet'
     const calls = [
       {
         to: '0xaddress',
-        value: BigNumber.from(1),
+        value: BigInt(1),
         data: '0x0',
       },
     ]
@@ -445,39 +486,39 @@ describe('Pass through wallet writes', () => {
       await expect(
         async () =>
           await badClient.execCalls({
-            passThroughWalletId,
+            passThroughWalletAddress,
             calls,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Exec calls fails with no signer', async () => {
       const badClient = new PassThroughWalletClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
         async () =>
           await badClient.execCalls({
-            passThroughWalletId,
+            passThroughWalletAddress,
             calls,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Exec calls fails from non owner', async () => {
-      const nonOwnerSigner = new mockSignerNonOwner()
+      const nonOwnerSigner = new mockWalletClientNonOwner()
       const badClient = new PassThroughWalletClient({
         chainId: 1,
-        provider,
-        signer: nonOwnerSigner,
+        publicClient,
+        walletClient: nonOwnerSigner,
       })
 
       await expect(
         async () =>
           await badClient.execCalls({
-            passThroughWalletId,
+            passThroughWalletAddress,
             calls,
           }),
       ).rejects.toThrow(InvalidAuthError)
@@ -485,30 +526,30 @@ describe('Pass through wallet writes', () => {
 
     test('Exec calls passes', async () => {
       const { event } = await client.execCalls({
-        passThroughWalletId,
+        passThroughWalletAddress,
         calls,
       })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(validateAddress).toBeCalledWith(passThroughWalletId)
+      expect(validateAddress).toBeCalledWith(passThroughWalletAddress)
       expect(validateAddress).toBeCalledWith('0xaddress')
 
-      expect(moduleWriteActions.execCalls).toBeCalledWith(
-        [[calls[0].to, calls[0].value, calls[0].data]],
-        {},
-      )
-      expect(getTransactionEventsSpy).toBeCalledWith(execCallsResult, [
-        client.eventTopics.execCalls[0],
+      expect(moduleWriteActions.execCalls).toBeCalledWith([
+        [calls[0].to, calls[0].value, calls[0].data],
       ])
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: [client.eventTopics.execCalls[0]],
+      })
     })
   })
 })
 
 describe('Pass through wallet reads', () => {
-  const provider = new mockProvider()
+  const publicClient = new mockPublicClient()
   const client = new PassThroughWalletClient({
     chainId: 1,
-    provider,
+    publicClient,
   })
 
   beforeEach(() => {
@@ -516,7 +557,7 @@ describe('Pass through wallet reads', () => {
   })
 
   describe('Get pass through test', () => {
-    const passThroughWalletId = '0xpassthroughwallet'
+    const passThroughWalletAddress = '0xpassthroughwallet'
 
     beforeEach(() => {
       readActions.passThrough.mockClear()
@@ -530,19 +571,19 @@ describe('Pass through wallet reads', () => {
       await expect(
         async () =>
           await badClient.getPassThrough({
-            passThroughWalletId,
+            passThroughWalletAddress,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Returns pass through', async () => {
       readActions.passThrough.mockReturnValueOnce('0xpassthrough')
       const { passThrough } = await client.getPassThrough({
-        passThroughWalletId,
+        passThroughWalletAddress,
       })
 
       expect(passThrough).toEqual('0xpassthrough')
-      expect(validateAddress).toBeCalledWith(passThroughWalletId)
+      expect(validateAddress).toBeCalledWith(passThroughWalletAddress)
       expect(readActions.passThrough).toBeCalled()
     })
   })

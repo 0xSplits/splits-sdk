@@ -1,13 +1,13 @@
+import { Log } from 'viem'
 import { useCallback, useContext, useState } from 'react'
-import type { Event } from '@ethersproject/contracts'
-import { getTransactionEvents, CallData } from '@0xsplits/splits-sdk'
+import { CallData } from '@0xsplits/splits-sdk'
 
 import { SplitsContext } from '../context'
 import { ContractExecutionStatus, RequestError } from '../types'
 import { getSplitsClient } from '../utils'
 
 export const useMulticall = (): {
-  multicall: (arg0: { calls: CallData[] }) => Promise<Event[] | undefined>
+  multicall: (arg0: { calls: CallData[] }) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -26,12 +26,17 @@ export const useMulticall = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } = await splitsClient.submitMulticallTransaction(argsDict)
+        const { txHash: hash } =
+          await splitsClient.submitMulticallTransaction(argsDict)
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(tx, [], true)
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: [],
+          includeAll: true,
+        })
 
         setStatus('complete')
 

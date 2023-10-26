@@ -1,7 +1,6 @@
+import { Log } from 'viem'
 import { useCallback, useContext, useState } from 'react'
-import type { Event } from '@ethersproject/contracts'
 import {
-  getTransactionEvents,
   CreatePassThroughWalletConfig,
   PassThroughTokensConfig,
   PassThroughWalletPauseConfig,
@@ -15,7 +14,7 @@ import { getSplitsClient } from '../utils'
 export const useCreatePassThroughWallet = (): {
   createPassThroughWallet: (
     arg0: CreatePassThroughWalletConfig,
-  ) => Promise<Event[] | undefined>
+  ) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -37,18 +36,19 @@ export const useCreatePassThroughWallet = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
+        const { txHash: hash } =
           await splitsClient.passThroughWallet.submitCreatePassThroughWalletTransaction(
             argsDict,
           )
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.passThroughWallet.eventTopics.createPassThroughWallet,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics:
+            splitsClient.passThroughWallet.eventTopics.createPassThroughWallet,
+        })
 
         setStatus('complete')
 
@@ -67,7 +67,7 @@ export const useCreatePassThroughWallet = (): {
 export const usePassThroughTokens = (): {
   passThroughTokens: (
     arg0: PassThroughTokensConfig,
-  ) => Promise<Event[] | undefined>
+  ) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -89,18 +89,19 @@ export const usePassThroughTokens = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
+        const { txHash: hash } =
           await splitsClient.passThroughWallet.submitPassThroughTokensTransaction(
             argsDict,
           )
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.passThroughWallet.eventTopics.passThroughTokens,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics:
+            splitsClient.passThroughWallet.eventTopics.passThroughTokens,
+        })
 
         setStatus('complete')
 
@@ -117,9 +118,7 @@ export const usePassThroughTokens = (): {
 }
 
 export const usePassThroughWalletPause = (): {
-  setPaused: (
-    arg0: PassThroughWalletPauseConfig,
-  ) => Promise<Event[] | undefined>
+  setPaused: (arg0: PassThroughWalletPauseConfig) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -141,18 +140,18 @@ export const usePassThroughWalletPause = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
+        const { txHash: hash } =
           await splitsClient.passThroughWallet.submitSetPausedTransaction(
             argsDict,
           )
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.passThroughWallet.eventTopics.setPaused,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.passThroughWallet.eventTopics.setPaused,
+        })
 
         setStatus('complete')
 
@@ -171,7 +170,7 @@ export const usePassThroughWalletPause = (): {
 export const usePassThroughWalletExecCalls = (): {
   execCalls: (
     arg0: PassThroughWalletExecCallsConfig,
-  ) => Promise<Event[] | undefined>
+  ) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -193,18 +192,18 @@ export const usePassThroughWalletExecCalls = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
+        const { txHash: hash } =
           await splitsClient.passThroughWallet.submitExecCallsTransaction(
             argsDict,
           )
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.passThroughWallet.eventTopics.execCalls,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.passThroughWallet.eventTopics.execCalls,
+        })
 
         setStatus('complete')
 

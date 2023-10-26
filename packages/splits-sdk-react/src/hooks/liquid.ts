@@ -1,7 +1,6 @@
+import { Log } from 'viem'
 import { useCallback, useContext, useEffect, useState } from 'react'
-import type { Event } from '@ethersproject/contracts'
 import {
-  getTransactionEvents,
   CreateLiquidSplitConfig,
   LiquidSplit,
   DistributeLiquidSplitTokenConfig,
@@ -15,7 +14,7 @@ import { getSplitsClient } from '../utils'
 export const useCreateLiquidSplit = (): {
   createLiquidSplit: (
     arg0: CreateLiquidSplitConfig,
-  ) => Promise<Event[] | undefined>
+  ) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -37,18 +36,18 @@ export const useCreateLiquidSplit = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
+        const { txHash: hash } =
           await splitsClient.liquidSplits.submitCreateLiquidSplitTransaction(
             argsDict,
           )
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.liquidSplits.eventTopics.createLiquidSplit,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.liquidSplits.eventTopics.createLiquidSplit,
+        })
 
         setStatus('complete')
 
@@ -67,7 +66,7 @@ export const useCreateLiquidSplit = (): {
 export const useDistributeLiquidSplitToken = (): {
   distributeToken: (
     arg0: DistributeLiquidSplitTokenConfig,
-  ) => Promise<Event[] | undefined>
+  ) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -89,18 +88,18 @@ export const useDistributeLiquidSplitToken = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
+        const { txHash: hash } =
           await splitsClient.liquidSplits.submitDistributeTokenTransaction(
             argsDict,
           )
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.liquidSplits.eventTopics.distributeToken,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.liquidSplits.eventTopics.distributeToken,
+        })
 
         setStatus('complete')
 
@@ -119,7 +118,7 @@ export const useDistributeLiquidSplitToken = (): {
 export const useTransferLiquidSplitOwnership = (): {
   transferOwnership: (
     arg0: TransferLiquidSplitOwnershipConfig,
-  ) => Promise<Event[] | undefined>
+  ) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -141,18 +140,18 @@ export const useTransferLiquidSplitOwnership = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const { tx } =
+        const { txHash: hash } =
           await splitsClient.liquidSplits.submitTransferOwnershipTransaction(
             argsDict,
           )
 
         setStatus('txInProgress')
-        setTxHash(tx.hash)
+        setTxHash(hash)
 
-        const events = await getTransactionEvents(
-          tx,
-          splitsClient.liquidSplits.eventTopics.transferOwnership,
-        )
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.liquidSplits.eventTopics.transferOwnership,
+        })
 
         setStatus('complete')
 
@@ -169,7 +168,7 @@ export const useTransferLiquidSplitOwnership = (): {
 }
 
 export const useLiquidSplitMetadata = (
-  liquidSplitId: string,
+  liquidSplitAddress: string,
 ): {
   isLoading: boolean
   liquidSplitMetadata: LiquidSplit | undefined
@@ -186,9 +185,9 @@ export const useLiquidSplitMetadata = (
   const [liquidSplitMetadata, setliquidSplitMetadata] = useState<
     LiquidSplit | undefined
   >()
-  const [isLoading, setIsLoading] = useState(!!liquidSplitId)
+  const [isLoading, setIsLoading] = useState(!!liquidSplitAddress)
   const [status, setStatus] = useState<DataLoadStatus | undefined>(
-    liquidSplitId ? 'loading' : undefined,
+    liquidSplitAddress ? 'loading' : undefined,
   )
   const [error, setError] = useState<RequestError>()
 
@@ -198,7 +197,7 @@ export const useLiquidSplitMetadata = (
     const fetchMetadata = async () => {
       try {
         const liquidSplit = await liquidSplitClient.getLiquidSplitMetadata({
-          liquidSplitId,
+          liquidSplitAddress,
         })
         if (!isActive) return
         setliquidSplitMetadata(liquidSplit)
@@ -214,7 +213,7 @@ export const useLiquidSplitMetadata = (
     }
 
     setError(undefined)
-    if (liquidSplitId) {
+    if (liquidSplitAddress) {
       setStatus('loading')
       setIsLoading(true)
       fetchMetadata()
@@ -227,7 +226,7 @@ export const useLiquidSplitMetadata = (
     return () => {
       isActive = false
     }
-  }, [liquidSplitClient, liquidSplitId])
+  }, [liquidSplitClient, liquidSplitAddress])
 
   return {
     isLoading,

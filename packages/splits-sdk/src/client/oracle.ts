@@ -1,12 +1,8 @@
-import { Interface } from '@ethersproject/abi'
-import { BigNumber } from '@ethersproject/bignumber'
-import { AddressZero } from '@ethersproject/constants'
-import { Contract } from '@ethersproject/contracts'
-
-import ORACLE_IMPL_ARTIFACT from '../artifacts/contracts/OracleImpl/OracleImpl.json'
+import { getAddress, getContract } from 'viem'
 
 import { BaseTransactions } from './base'
 import { TransactionType, ORACLE_CHAIN_IDS } from '../constants'
+import { uniV3OracleAbi } from '../constants/abi/uniV3Oracle'
 import { UnsupportedChainIdError } from '../errors'
 import type {
   QuoteParams,
@@ -15,50 +11,48 @@ import type {
 } from '../types'
 import { validateAddress } from '../utils/validation'
 
-const oracleImplInterface = new Interface(ORACLE_IMPL_ARTIFACT.abi)
-
 class OracleTransactions extends BaseTransactions {
   constructor({
     transactionType,
     chainId,
-    provider,
-    ensProvider,
-    signer,
+    publicClient,
+    ensPublicClient,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
       transactionType,
       chainId,
-      provider,
-      ensProvider,
-      signer,
+      publicClient,
+      ensPublicClient,
+      walletClient,
       includeEnsNames,
     })
   }
 
   protected _getOracleContract(oracle: string) {
-    return this._getTransactionContract<Contract, Contract['estimateGas']>(
-      oracle,
-      ORACLE_IMPL_ARTIFACT.abi,
-      oracleImplInterface,
-    )
+    return getContract({
+      address: getAddress(oracle),
+      abi: uniV3OracleAbi,
+      publicClient: this._publicClient,
+    })
   }
 }
 
 export class OracleClient extends OracleTransactions {
   constructor({
     chainId,
-    provider,
-    ensProvider,
-    signer,
+    publicClient,
+    ensPublicClient,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Transaction,
       chainId,
-      provider,
-      ensProvider,
-      signer,
+      publicClient,
+      ensPublicClient,
+      walletClient,
       includeEnsNames,
     })
 
@@ -68,30 +62,33 @@ export class OracleClient extends OracleTransactions {
 
   // Read actions
   async getQuoteAmounts({
-    oracleId,
+    oracleAddress,
     quoteParams,
   }: {
-    oracleId: string
+    oracleAddress: string
     quoteParams: QuoteParams[]
   }): Promise<{
-    quoteAmounts: BigNumber[]
+    quoteAmounts: bigint[]
   }> {
-    validateAddress(oracleId)
-    this._requireProvider()
+    validateAddress(oracleAddress)
+    this._requirePublicClient()
 
-    const oracleContract = this._getOracleContract(oracleId)
-    const quoteAmounts = await oracleContract.getQuoteAmounts(
+    const oracleContract = this._getOracleContract(oracleAddress)
+    const quoteAmounts = await oracleContract.read.getQuoteAmounts([
       quoteParams.map((quoteParam) => {
-        return [
-          [quoteParam.quotePair.base, quoteParam.quotePair.quote],
-          quoteParam.baseAmount,
-          quoteParam.data ?? AddressZero,
-        ]
+        return {
+          quotePair: {
+            base: getAddress(quoteParam.quotePair.base),
+            quote: getAddress(quoteParam.quotePair.quote),
+          },
+          baseAmount: quoteParam.baseAmount,
+          data: quoteParam.data ?? '0x',
+        }
       }),
-    )
+    ])
 
     return {
-      quoteAmounts,
+      quoteAmounts: quoteAmounts.slice(),
     }
   }
 }

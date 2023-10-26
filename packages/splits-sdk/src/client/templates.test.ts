@@ -1,12 +1,18 @@
-import { Provider } from '@ethersproject/abstract-provider'
-import { Signer } from '@ethersproject/abstract-signer'
-import type { Event } from '@ethersproject/contracts'
+import {
+  Account,
+  Address,
+  Chain,
+  Log,
+  PublicClient,
+  Transport,
+  WalletClient,
+} from 'viem'
 
 import { getRecoupAddress } from '../constants'
 import {
   InvalidConfigError,
-  MissingProviderError,
-  MissingSignerError,
+  MissingPublicClientError,
+  MissingWalletClientError,
   UnsupportedChainIdError,
 } from '../errors'
 import * as utils from '../utils'
@@ -26,27 +32,30 @@ import {
   FORMATTED_ORACLE_PARAMS,
   FORMATTED_DIVERSIFIER_RECIPIENTS,
 } from '../testing/constants'
-import {
-  MockDiversifierFactory,
-  writeActions as diversifierWriteActions,
-} from '../testing/mocks/diversifierFactory'
-import {
-  MockRecoup,
-  writeActions as recoupWriteActions,
-} from '../testing/mocks/recoup'
+import { writeActions as diversifierWriteActions } from '../testing/mocks/diversifierFactory'
+import { writeActions as recoupWriteActions } from '../testing/mocks/recoup'
 import { TemplatesClient } from './templates'
+import { MockViemContract } from '../testing/mocks/viemContract'
 
-jest.mock('@ethersproject/contracts', () => {
+jest.mock('viem', () => {
+  const originalModule = jest.requireActual('viem')
   return {
-    Contract: jest
-      .fn()
-      .mockImplementation((contractAddress, _contractInterface, provider) => {
-        if (contractAddress === getRecoupAddress(1)) {
-          return new MockRecoup(provider)
-        }
-
-        return new MockDiversifierFactory(provider)
-      }),
+    ...originalModule,
+    getContract: jest.fn(({ address }: { address: Address }) => {
+      if (address === getRecoupAddress(1))
+        return new MockViemContract({}, recoupWriteActions)
+      return new MockViemContract({}, diversifierWriteActions)
+    }),
+    getAddress: jest.fn((address) => address),
+    decodeEventLog: jest.fn(() => {
+      return {
+        eventName: 'eventName',
+        args: {
+          waterfallModule: '0xrecoup',
+          diversifier: '0xpassthroughwallet',
+        },
+      }
+    }),
   }
 })
 
@@ -67,15 +76,42 @@ const getDiversifierRecipientsMock = jest
   .mockImplementation(() => {
     return FORMATTED_DIVERSIFIER_RECIPIENTS
   })
-const getTransactionEventsSpy = jest.spyOn(utils, 'getTransactionEvents')
 
-const mockProvider = jest.fn<Provider, unknown[]>()
-const mockSigner = jest.fn<Signer, unknown[]>(() => {
+const mockPublicClient = jest.fn(() => {
   return {
-    getAddress: () => {
-      return CONTROLLER_ADDRESS
+    simulateContract: jest.fn(
+      async ({
+        address,
+        functionName,
+        args,
+      }: {
+        address: Address
+        functionName: string
+        args: unknown[]
+      }) => {
+        if (address === getRecoupAddress(1)) {
+          type writeActions = typeof recoupWriteActions
+          type writeKeys = keyof writeActions
+          recoupWriteActions[functionName as writeKeys].call(this, ...args)
+        } else {
+          type writeActions = typeof diversifierWriteActions
+          type writeKeys = keyof writeActions
+          diversifierWriteActions[functionName as writeKeys].call(this, ...args)
+        }
+        return { request: jest.mock }
+      },
+    ),
+  } as unknown as PublicClient<Transport, Chain>
+})
+const mockWalletClient = jest.fn(() => {
+  return {
+    account: {
+      address: CONTROLLER_ADDRESS,
     },
-  } as unknown as Signer
+    writeContract: jest.fn(() => {
+      return '0xhash'
+    }),
+  } as unknown as WalletClient<Transport, Chain, Account>
 })
 
 describe('Client config validation', () => {
@@ -130,13 +166,17 @@ describe('Client config validation', () => {
 })
 
 describe('Template writes', () => {
-  const provider = new mockProvider()
-  const signer = new mockSigner()
+  const publicClient = new mockPublicClient()
+  const walletClient = new mockWalletClient()
   const templatesClient = new TemplatesClient({
     chainId: 1,
-    provider,
-    signer,
+    publicClient,
+    walletClient,
   })
+  const getTransactionEventsSpy = jest.spyOn(
+    templatesClient,
+    'getTransactionEvents',
+  )
 
   beforeEach(() => {
     ;(validateRecipients as jest.Mock).mockClear()
@@ -169,7 +209,7 @@ describe('Template writes', () => {
           args: {
             waterfallModule: '0xrecoup',
           },
-        } as unknown as Event,
+        } as unknown as Log,
       ])
     })
 
@@ -186,13 +226,13 @@ describe('Template writes', () => {
             nonWaterfallRecipientAddress,
             nonWaterfallRecipientTrancheIndex,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Create recoup fails with no signer', async () => {
       const badClient = new TemplatesClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
@@ -203,19 +243,20 @@ describe('Template writes', () => {
             nonWaterfallRecipientAddress,
             nonWaterfallRecipientTrancheIndex,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Create recoup passes', async () => {
-      const { event, waterfallModuleId } = await templatesClient.createRecoup({
-        token,
-        tranches,
-        nonWaterfallRecipientAddress,
-        nonWaterfallRecipientTrancheIndex,
-      })
+      const { event, waterfallModuleAddress } =
+        await templatesClient.createRecoup({
+          token,
+          tranches,
+          nonWaterfallRecipientAddress,
+          nonWaterfallRecipientTrancheIndex,
+        })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(waterfallModuleId).toEqual('0xrecoup')
+      expect(waterfallModuleAddress).toEqual('0xrecoup')
       expect(validateAddress).toBeCalledWith(token)
       expect(validateAddress).toBeCalledWith(nonWaterfallRecipientAddress)
       expect(validateRecoupTranches).toBeCalledWith(tranches)
@@ -229,7 +270,7 @@ describe('Template writes', () => {
         1,
         token,
         tranches,
-        provider,
+        publicClient,
       )
 
       expect(recoupWriteActions.createRecoup).toBeCalledWith(
@@ -238,13 +279,12 @@ describe('Template writes', () => {
         tranches.length,
         RECOUP_TRANCHE_RECIPIENTS,
         TRANCHE_SIZES,
-        {},
       )
 
-      expect(getTransactionEventsSpy).toBeCalledWith(
-        createRecoupResult,
-        templatesClient.eventTopics.createRecoup,
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: templatesClient.eventTopics.createRecoup,
+      })
     })
   })
 
@@ -287,7 +327,7 @@ describe('Template writes', () => {
           args: {
             diversifier: '0xpassthroughwallet',
           },
-        } as unknown as Event,
+        } as unknown as Log,
       ])
     })
 
@@ -304,13 +344,13 @@ describe('Template writes', () => {
             oracleParams,
             recipients,
           }),
-      ).rejects.toThrow(MissingProviderError)
+      ).rejects.toThrow(MissingPublicClientError)
     })
 
     test('Create diversifier fails with no signer', async () => {
       const badClient = new TemplatesClient({
         chainId: 1,
-        provider,
+        publicClient,
       })
 
       await expect(
@@ -321,11 +361,11 @@ describe('Template writes', () => {
             oracleParams,
             recipients,
           }),
-      ).rejects.toThrow(MissingSignerError)
+      ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Create diversifier passes', async () => {
-      const { event, passThroughWalletId } =
+      const { event, passThroughWalletAddress } =
         await templatesClient.createDiversifier({
           owner,
           paused,
@@ -334,7 +374,7 @@ describe('Template writes', () => {
         })
 
       expect(event.blockNumber).toEqual(12345)
-      expect(passThroughWalletId).toEqual('0xpassthroughwallet')
+      expect(passThroughWalletAddress).toEqual('0xpassthroughwallet')
       expect(validateAddress).toBeCalledWith(owner)
       expect(validateOracleParams).toBeCalledWith(oracleParams)
       expect(validateDiversifierRecipients).toBeCalledWith(recipients)
@@ -342,20 +382,17 @@ describe('Template writes', () => {
       expect(getDiversifierRecipientsMock).toBeCalledWith(recipients)
       expect(getFormattedOracleParamsMock).toBeCalledWith(oracleParams)
 
-      expect(diversifierWriteActions.createDiversifier).toBeCalledWith(
-        [
-          owner,
-          paused,
-          FORMATTED_ORACLE_PARAMS,
-          FORMATTED_DIVERSIFIER_RECIPIENTS,
-        ],
-        {},
-      )
+      expect(diversifierWriteActions.createDiversifier).toBeCalledWith([
+        owner,
+        paused,
+        FORMATTED_ORACLE_PARAMS,
+        FORMATTED_DIVERSIFIER_RECIPIENTS,
+      ])
 
-      expect(getTransactionEventsSpy).toBeCalledWith(
-        createDiversifierResult,
-        templatesClient.eventTopics.createDiversifier,
-      )
+      expect(getTransactionEventsSpy).toBeCalledWith({
+        txHash: '0xhash',
+        eventTopics: templatesClient.eventTopics.createDiversifier,
+      })
     })
   })
 })

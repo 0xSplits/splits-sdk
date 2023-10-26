@@ -70,21 +70,21 @@ export class TransactionFailedError extends Error {
   }
 }
 
-export class MissingProviderError extends Error {
-  name = 'MissingProviderError'
+export class MissingPublicClientError extends Error {
+  name = 'MissingPublicClientError'
 
   constructor(m?: string) {
     super(m)
-    Object.setPrototypeOf(this, MissingProviderError.prototype)
+    Object.setPrototypeOf(this, MissingPublicClientError.prototype)
   }
 }
 
-export class MissingSignerError extends Error {
-  name = 'MissingSignerError'
+export class MissingWalletClientError extends Error {
+  name = 'MissingWalletClientError'
 
   constructor(m?: string) {
     super(m)
-    Object.setPrototypeOf(this, MissingSignerError.prototype)
+    Object.setPrototypeOf(this, MissingWalletClientError.prototype)
   }
 }
 
@@ -100,8 +100,9 @@ export class InvalidConfigError extends Error {
 export class AccountNotFoundError extends Error {
   name = 'AccountNotFoundError'
 
-  constructor(m?: string) {
-    super(m)
+  constructor(moduleType: string, address: string, chainId: number) {
+    const message = `No ${moduleType} found at address ${address} on chain ${chainId}, please confirm you have entered the correct address. There may just be a delay in subgraph indexing.`
+    super(message)
     Object.setPrototypeOf(this, AccountNotFoundError.prototype)
   }
 }

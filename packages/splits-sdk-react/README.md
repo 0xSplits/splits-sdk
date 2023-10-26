@@ -17,4 +17,18 @@ npm install @0xsplits/splits-sdk-react
 
 ## Documentation
 
-Detailed documentation for the SDK can be found [here](https://docs.splits.org/sdk-info/react)
+Detailed documentation for the SDK can be found [here](https://docs.splits.org/react)
+
+
+### Viem vs Ethers
+
+The Splits SDK uses Viem under the hood. There is an older version of the SDK that uses ethers-v5.
+If you would like to use that instead, you can install it with:
+
+```bash
+yarn add @0xsplits/splits-sdk-react@0
+
+npm install @0xsplits/splits-sdk-react@0
+```
+
+Documentation for the old Ethers version can be found [here](https://docs.splits.org/react-v0)

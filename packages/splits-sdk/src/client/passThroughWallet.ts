@@ -1,9 +1,13 @@
-import { Interface } from '@ethersproject/abi'
-import { BigNumber } from '@ethersproject/bignumber'
-import { Contract, ContractTransaction, Event } from '@ethersproject/contracts'
-
-import PASS_THROUGH_WALLET_FACTORY_ARTIFACT from '../artifacts/contracts/PassThroughWalletFactory/PassThroughWalletFactory.json'
-import PASS_THROUGH_WALLET_ARTIFACT from '../artifacts/contracts/PassThroughWallet/PassThroughWallet.json'
+import {
+  Address,
+  Hash,
+  Hex,
+  Log,
+  decodeEventLog,
+  encodeEventTopics,
+  getAddress,
+  getContract,
+} from 'viem'
 
 import {
   BaseClientMixin,
@@ -15,6 +19,8 @@ import {
   PASS_THROUGH_WALLET_CHAIN_IDS,
   getPassThroughWalletFactoryAddress,
 } from '../constants'
+import { passThroughWalletFactoryAbi } from '../constants/abi/passThroughWalletFactory'
+import { passThroughWalletAbi } from '../constants/abi/passThroughWallet'
 import {
   InvalidAuthError,
   TransactionFailedError,
@@ -32,42 +38,25 @@ import type {
   TransactionConfig,
   TransactionFormat,
 } from '../types'
-import { getTransactionEvents } from '../utils'
 import { validateAddress } from '../utils/validation'
-import { ContractCallData } from '../utils/multicall'
-
-const passThroughWalletFactoryInterface = new Interface(
-  PASS_THROUGH_WALLET_FACTORY_ARTIFACT.abi,
-)
-const passThroughWalletInterface = new Interface(
-  PASS_THROUGH_WALLET_ARTIFACT.abi,
-)
 
 class PassThroughWalletTransactions extends BaseTransactions {
-  private readonly _passThroughWalletFactoryContract:
-    | ContractCallData
-    | Contract
-    | Contract['estimateGas']
-
   constructor({
     transactionType,
     chainId,
-    provider,
-    ensProvider,
-    signer,
+    publicClient,
+    ensPublicClient,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
       transactionType,
       chainId,
-      provider,
-      ensProvider,
-      signer,
+      publicClient,
+      ensPublicClient,
+      walletClient,
       includeEnsNames,
     })
-
-    this._passThroughWalletFactoryContract =
-      this._getPassThroughWalletFactoryContract()
   }
 
   protected async _createPassThroughWalletTransaction({
@@ -78,155 +67,155 @@ class PassThroughWalletTransactions extends BaseTransactions {
   }: CreatePassThroughWalletConfig): Promise<TransactionFormat> {
     validateAddress(owner)
     validateAddress(passThrough)
-    if (this._shouldRequireSigner) this._requireSigner()
+    if (this._shouldRequreWalletClient) this._requireWalletClient()
 
-    const createPassThroughWalletResult =
-      await this._passThroughWalletFactoryContract.createPassThroughWallet(
-        [owner, paused, passThrough],
-        transactionOverrides,
-      )
+    const result = await this._executeContractFunction({
+      contractAddress: getPassThroughWalletFactoryAddress(this._chainId),
+      contractAbi: passThroughWalletFactoryAbi,
+      functionName: 'createPassThroughWallet',
+      functionArgs: [[owner, paused, passThrough]],
+      transactionOverrides,
+    })
 
-    return createPassThroughWalletResult
+    return result
   }
 
   protected async _passThroughTokensTransaction({
-    passThroughWalletId,
+    passThroughWalletAddress,
     tokens,
     transactionOverrides = {},
   }: PassThroughTokensConfig): Promise<TransactionFormat> {
-    validateAddress(passThroughWalletId)
+    validateAddress(passThroughWalletAddress)
     tokens.map((token) => validateAddress(token))
-    if (this._shouldRequireSigner) this._requireSigner()
+    if (this._shouldRequreWalletClient) this._requireWalletClient()
 
-    const passThroughWalletContract =
-      this._getPassThroughWalletContract(passThroughWalletId)
-    const passThroughTokensResult =
-      await passThroughWalletContract.passThroughTokens(
-        tokens,
-        transactionOverrides,
-      )
+    const result = await this._executeContractFunction({
+      contractAddress: getAddress(passThroughWalletAddress),
+      contractAbi: passThroughWalletAbi,
+      functionName: 'passThroughTokens',
+      functionArgs: [tokens],
+      transactionOverrides,
+    })
 
-    return passThroughTokensResult
+    return result
   }
 
   protected async _setPassThroughTransaction({
-    passThroughWalletId,
+    passThroughWalletAddress,
     passThrough,
     transactionOverrides = {},
   }: SetPassThroughConfig): Promise<TransactionFormat> {
-    validateAddress(passThroughWalletId)
+    validateAddress(passThroughWalletAddress)
     validateAddress(passThrough)
-    if (this._shouldRequireSigner) {
-      this._requireSigner()
-      await this._requireOwner(passThroughWalletId)
+    if (this._shouldRequreWalletClient) {
+      this._requireWalletClient()
+      await this._requireOwner(passThroughWalletAddress)
     }
 
-    const passThroughWalletContract =
-      this._getPassThroughWalletContract(passThroughWalletId)
-    const setPassThroughResult = await passThroughWalletContract.setPassThrough(
-      passThrough,
+    const result = await this._executeContractFunction({
+      contractAddress: getAddress(passThroughWalletAddress),
+      contractAbi: passThroughWalletAbi,
+      functionName: 'setPassThrough',
+      functionArgs: [passThrough],
       transactionOverrides,
-    )
+    })
 
-    return setPassThroughResult
+    return result
   }
 
   protected async _setPausedTransaction({
-    passThroughWalletId,
+    passThroughWalletAddress,
     paused,
     transactionOverrides = {},
   }: PassThroughWalletPauseConfig): Promise<TransactionFormat> {
-    validateAddress(passThroughWalletId)
-    if (this._shouldRequireSigner) {
-      this._requireSigner()
-      await this._requireOwner(passThroughWalletId)
+    validateAddress(passThroughWalletAddress)
+    if (this._shouldRequreWalletClient) {
+      this._requireWalletClient()
+      await this._requireOwner(passThroughWalletAddress)
     }
 
-    const passThroughWalletContract =
-      this._getPassThroughWalletContract(passThroughWalletId)
-    const pauseResult = await passThroughWalletContract.setPaused(
-      paused,
+    const result = await this._executeContractFunction({
+      contractAddress: getAddress(passThroughWalletAddress),
+      contractAbi: passThroughWalletAbi,
+      functionName: 'setPaused',
+      functionArgs: [paused],
       transactionOverrides,
-    )
+    })
 
-    return pauseResult
+    return result
   }
 
   protected async _execCallsTransaction({
-    passThroughWalletId,
+    passThroughWalletAddress,
     calls,
     transactionOverrides = {},
   }: PassThroughWalletExecCallsConfig): Promise<TransactionFormat> {
-    validateAddress(passThroughWalletId)
+    validateAddress(passThroughWalletAddress)
     calls.map((callData) => validateAddress(callData.to))
-    if (this._shouldRequireSigner) {
-      this._requireSigner()
-      await this._requireOwner(passThroughWalletId)
+    if (this._shouldRequreWalletClient) {
+      this._requireWalletClient()
+      await this._requireOwner(passThroughWalletAddress)
     }
 
-    const passThroughWalletContract =
-      this._getPassThroughWalletContract(passThroughWalletId)
     const formattedCalls = calls.map((callData) => {
       return [callData.to, callData.value, callData.data]
     })
-    const execCallsResult = await passThroughWalletContract.execCalls(
-      formattedCalls,
-      transactionOverrides,
-    )
 
-    return execCallsResult
+    const result = await this._executeContractFunction({
+      contractAddress: getAddress(passThroughWalletAddress),
+      contractAbi: passThroughWalletAbi,
+      functionName: 'execCalls',
+      functionArgs: [formattedCalls],
+      transactionOverrides,
+    })
+
+    return result
   }
 
-  private async _requireOwner(passThroughWalletId: string) {
-    const passThroughWalletContract =
-      this._getPassThroughWalletContract(passThroughWalletId)
-    const owner = await passThroughWalletContract.owner()
+  private async _requireOwner(passThroughWalletAddress: string) {
+    const passThroughWalletContract = this._getPassThroughWalletContract(
+      passThroughWalletAddress,
+    )
+    const owner = await passThroughWalletContract.read.owner()
     // TODO: how to get rid of this, needed for typescript check
-    if (!this._signer) throw new Error()
+    if (!this._walletClient?.account) throw new Error()
 
-    const signerAddress = await this._signer.getAddress()
+    const walletAddress = this._walletClient.account?.address
 
-    if (owner !== signerAddress)
+    if (owner !== walletAddress)
       throw new InvalidAuthError(
-        `Action only available to the pass through wallet owner. Pass through wallet id: ${passThroughWalletId}, owner: ${owner}, signer: ${signerAddress}`,
+        `Action only available to the pass through wallet owner. Pass through wallet address: ${passThroughWalletAddress}, owner: ${owner}, wallet address: ${walletAddress}`,
       )
   }
 
   protected _getPassThroughWalletContract(passThroughWallet: string) {
-    return this._getTransactionContract<Contract, Contract['estimateGas']>(
-      passThroughWallet,
-      PASS_THROUGH_WALLET_ARTIFACT.abi,
-      passThroughWalletInterface,
-    )
-  }
-
-  private _getPassThroughWalletFactoryContract() {
-    return this._getTransactionContract<Contract, Contract['estimateGas']>(
-      getPassThroughWalletFactoryAddress(this._chainId),
-      PASS_THROUGH_WALLET_FACTORY_ARTIFACT.abi,
-      passThroughWalletFactoryInterface,
-    )
+    return getContract({
+      address: getAddress(passThroughWallet),
+      abi: passThroughWalletAbi,
+      publicClient: this._publicClient,
+    })
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class PassThroughWalletClient extends PassThroughWalletTransactions {
-  readonly eventTopics: { [key: string]: string[] }
+  readonly eventTopics: { [key: string]: Hex[] }
   readonly callData: PassThroughWalletCallData
   readonly estimateGas: PassThroughWalletGasEstimates
 
   constructor({
     chainId,
-    provider,
-    ensProvider,
-    signer,
+    publicClient,
+    ensPublicClient,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Transaction,
       chainId,
-      provider,
-      ensProvider,
-      signer,
+      publicClient,
+      ensPublicClient,
+      walletClient,
       includeEnsNames,
     })
 
@@ -235,115 +224,118 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
 
     this.eventTopics = {
       createPassThroughWallet: [
-        passThroughWalletFactoryInterface.getEventTopic(
-          'CreatePassThroughWallet',
-        ),
+        encodeEventTopics({
+          abi: passThroughWalletFactoryAbi,
+          eventName: 'CreatePassThroughWallet',
+        })[0],
       ],
       passThroughTokens: [
-        passThroughWalletInterface.getEventTopic('PassThrough'),
+        encodeEventTopics({
+          abi: passThroughWalletAbi,
+          eventName: 'PassThrough',
+        })[0],
       ],
       setPassThrough: [
-        passThroughWalletInterface.getEventTopic('SetPassThrough'),
+        encodeEventTopics({
+          abi: passThroughWalletAbi,
+          eventName: 'SetPassThrough',
+        })[0],
       ],
-      setPaused: [passThroughWalletInterface.getEventTopic('SetPaused')],
-      execCalls: [passThroughWalletInterface.getEventTopic('ExecCalls')],
+      setPaused: [
+        encodeEventTopics({
+          abi: passThroughWalletAbi,
+          eventName: 'SetPaused',
+        })[0],
+      ],
+      execCalls: [
+        encodeEventTopics({
+          abi: passThroughWalletAbi,
+          eventName: 'ExecCalls',
+        })[0],
+      ],
     }
 
     this.callData = new PassThroughWalletCallData({
       chainId,
-      provider,
-      ensProvider,
-      signer,
+      publicClient,
+      ensPublicClient,
+      walletClient,
       includeEnsNames,
     })
     this.estimateGas = new PassThroughWalletGasEstimates({
       chainId,
-      provider,
-      ensProvider,
-      signer,
+      publicClient,
+      ensPublicClient,
+      walletClient,
       includeEnsNames,
     })
   }
 
   // Write actions
-  async submitCreatePassThroughWalletTransaction({
-    owner,
-    paused,
-    passThrough,
-  }: CreatePassThroughWalletConfig): Promise<{
-    tx: ContractTransaction
+  async submitCreatePassThroughWalletTransaction(
+    createPassThroughArgs: CreatePassThroughWalletConfig,
+  ): Promise<{
+    txHash: Hash
   }> {
-    const createPassThroughWalletTx =
-      await this._createPassThroughWalletTransaction({
-        owner,
-        paused,
-        passThrough,
-      })
-    if (!this._isContractTransaction(createPassThroughWalletTx))
+    const txHash = await this._createPassThroughWalletTransaction(
+      createPassThroughArgs,
+    )
+    if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
-    return { tx: createPassThroughWalletTx }
+    return { txHash }
   }
 
-  async createPassThroughWallet({
-    owner,
-    paused,
-    passThrough,
-  }: CreatePassThroughWalletConfig): Promise<{
-    passThroughWalletId: string
-    event: Event
+  async createPassThroughWallet(
+    createPassThroughArgs: CreatePassThroughWalletConfig,
+  ): Promise<{
+    passThroughWalletAddress: Address
+    event: Log
   }> {
-    const { tx: createPassThroughWalletTx } =
-      await this.submitCreatePassThroughWalletTransaction({
-        owner,
-        paused,
-        passThrough,
-      })
-    const events = await getTransactionEvents(
-      createPassThroughWalletTx,
-      this.eventTopics.createPassThroughWallet,
+    const { txHash } = await this.submitCreatePassThroughWalletTransaction(
+      createPassThroughArgs,
     )
+    const events = await this.getTransactionEvents({
+      txHash,
+      eventTopics: this.eventTopics.createPassThroughWallet,
+    })
     const event = events.length > 0 ? events[0] : undefined
-    if (event && event.args)
+    if (event) {
+      const log = decodeEventLog({
+        abi: passThroughWalletFactoryAbi,
+        data: event.data,
+        topics: event.topics,
+      })
       return {
-        passThroughWalletId: event.args.passThroughWallet,
+        passThroughWalletAddress: log.args.passThroughWallet,
         event,
       }
+    }
 
     throw new TransactionFailedError()
   }
 
-  async submitPassThroughTokensTransaction({
-    passThroughWalletId,
-    tokens,
-  }: PassThroughTokensConfig): Promise<{
-    tx: ContractTransaction
+  async submitPassThroughTokensTransaction(
+    passThroughArgs: PassThroughTokensConfig,
+  ): Promise<{
+    txHash: Hash
   }> {
-    const passThroughTokensTx = await this._passThroughTokensTransaction({
-      passThroughWalletId,
-      tokens,
-    })
-    if (!this._isContractTransaction(passThroughTokensTx))
+    const txHash = await this._passThroughTokensTransaction(passThroughArgs)
+    if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
-    return { tx: passThroughTokensTx }
+    return { txHash }
   }
 
-  async passThroughTokens({
-    passThroughWalletId,
-    tokens,
-  }: PassThroughTokensConfig): Promise<{
-    event: Event
+  async passThroughTokens(passThroughArgs: PassThroughTokensConfig): Promise<{
+    event: Log
   }> {
-    const { tx: passThroughTokensTx } =
-      await this.submitPassThroughTokensTransaction({
-        passThroughWalletId,
-        tokens,
-      })
-    const events = await getTransactionEvents(
-      passThroughTokensTx,
-      this.eventTopics.passThroughTokens,
-    )
+    const { txHash } =
+      await this.submitPassThroughTokensTransaction(passThroughArgs)
+    const events = await this.getTransactionEvents({
+      txHash,
+      eventTopics: this.eventTopics.passThroughTokens,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event)
       return {
@@ -354,20 +346,21 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
   }
 
   async submitSetPassThroughTransaction(args: SetPassThroughConfig): Promise<{
-    tx: ContractTransaction
+    txHash: Hash
   }> {
-    const tx = await this._setPassThroughTransaction(args)
-    if (!this._isContractTransaction(tx)) throw new Error('Invalid response')
+    const txHash = await this._setPassThroughTransaction(args)
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
 
-    return { tx }
+    return { txHash }
   }
 
-  async setPassThrough(args: SetPassThroughConfig): Promise<{ event: Event }> {
-    const { tx } = await this.submitSetPassThroughTransaction(args)
-    const events = await getTransactionEvents(
-      tx,
-      this.eventTopics.setPassThrough,
-    )
+  async setPassThrough(args: SetPassThroughConfig): Promise<{ event: Log }> {
+    const { txHash } = await this.submitSetPassThroughTransaction(args)
+    const events = await this.getTransactionEvents({
+      txHash,
+      eventTopics: this.eventTopics.setPassThrough,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event)
       return {
@@ -380,23 +373,22 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
   async submitSetPausedTransaction(
     pauseArgs: PassThroughWalletPauseConfig,
   ): Promise<{
-    tx: ContractTransaction
+    txHash: Hash
   }> {
-    const pauseTx = await this._setPausedTransaction(pauseArgs)
-    if (!this._isContractTransaction(pauseTx))
-      throw new Error('Invalid reponse')
+    const txHash = await this._setPausedTransaction(pauseArgs)
+    if (!this._isContractTransaction(txHash)) throw new Error('Invalid reponse')
 
-    return { tx: pauseTx }
+    return { txHash }
   }
 
   async setPaused(pauseArgs: PassThroughWalletPauseConfig): Promise<{
-    event: Event
+    event: Log
   }> {
-    const { tx: pauseTx } = await this.submitSetPausedTransaction(pauseArgs)
-    const events = await getTransactionEvents(
-      pauseTx,
-      this.eventTopics.setPaused,
-    )
+    const { txHash } = await this.submitSetPausedTransaction(pauseArgs)
+    const events = await this.getTransactionEvents({
+      txHash,
+      eventTopics: this.eventTopics.setPaused,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event)
       return {
@@ -409,19 +401,26 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
   async submitExecCallsTransaction(
     args: PassThroughWalletExecCallsConfig,
   ): Promise<{
-    tx: ContractTransaction
+    txHash: Hash
   }> {
-    const tx = await this._execCallsTransaction(args)
-    if (!this._isContractTransaction(tx)) throw new Error('Invalid response')
+    const txHash = await this._execCallsTransaction(args)
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
 
-    return { tx }
+    return { txHash }
   }
 
   async execCalls(args: PassThroughWalletExecCallsConfig): Promise<{
-    event: Event
+    event: Log
   }> {
-    const { tx } = await this.submitExecCallsTransaction(args)
-    const events = await getTransactionEvents(tx, this.eventTopics.execCalls)
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
+
+    const { txHash } = await this.submitExecCallsTransaction(args)
+    const events = await this.getTransactionEvents({
+      txHash,
+      eventTopics: this.eventTopics.execCalls,
+    })
     const event = events.length > 0 ? events[0] : undefined
     if (event)
       return {
@@ -433,18 +432,19 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
 
   // Read actions
   async getPassThrough({
-    passThroughWalletId,
+    passThroughWalletAddress,
   }: {
-    passThroughWalletId: string
+    passThroughWalletAddress: string
   }): Promise<{
     passThrough: string
   }> {
-    validateAddress(passThroughWalletId)
-    this._requireProvider()
+    validateAddress(passThroughWalletAddress)
+    this._requirePublicClient()
 
-    const passThroughWalletContract =
-      this._getPassThroughWalletContract(passThroughWalletId)
-    const passThrough = await passThroughWalletContract.passThrough()
+    const passThroughWalletContract = this._getPassThroughWalletContract(
+      passThroughWalletAddress,
+    )
+    const passThrough = await passThroughWalletContract.read.passThrough()
 
     return {
       passThrough,
@@ -452,123 +452,100 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface PassThroughWalletClient extends BaseClientMixin {}
 applyMixins(PassThroughWalletClient, [BaseClientMixin])
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 class PassThroughWalletGasEstimates extends PassThroughWalletTransactions {
   constructor({
     chainId,
-    provider,
-    ensProvider,
-    signer,
+    publicClient,
+    ensPublicClient,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
       transactionType: TransactionType.GasEstimate,
       chainId,
-      provider,
-      ensProvider,
-      signer,
+      publicClient,
+      ensPublicClient,
+      walletClient,
       includeEnsNames,
     })
   }
 
-  async createPassThroughWallet({
-    owner,
-    paused,
-    passThrough,
-  }: CreatePassThroughWalletConfig): Promise<BigNumber> {
-    const gasEstimate = await this._createPassThroughWalletTransaction({
-      owner,
-      paused,
-      passThrough,
-    })
-    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+  async createPassThroughWallet(
+    args: CreatePassThroughWalletConfig,
+  ): Promise<bigint> {
+    const gasEstimate = await this._createPassThroughWalletTransaction(args)
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
-  async passThroughTokens({
-    passThroughWalletId,
-    tokens,
-  }: PassThroughTokensConfig): Promise<BigNumber> {
-    const gasEstimate = await this._passThroughTokensTransaction({
-      passThroughWalletId,
-      tokens,
-    })
-    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+  async passThroughTokens(args: PassThroughTokensConfig): Promise<bigint> {
+    const gasEstimate = await this._passThroughTokensTransaction(args)
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
-  async setPassThrough(args: SetPassThroughConfig): Promise<BigNumber> {
+  async setPassThrough(args: SetPassThroughConfig): Promise<bigint> {
     const gasEstimate = await this._setPassThroughTransaction(args)
-    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
-  async setPaused(args: PassThroughWalletPauseConfig): Promise<BigNumber> {
+  async setPaused(args: PassThroughWalletPauseConfig): Promise<bigint> {
     const gasEstimate = await this._setPausedTransaction(args)
-    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 
-  async execCalls(args: PassThroughWalletExecCallsConfig): Promise<BigNumber> {
+  async execCalls(args: PassThroughWalletExecCallsConfig): Promise<bigint> {
     const gasEstimate = await this._execCallsTransaction(args)
-    if (!this._isBigNumber(gasEstimate)) throw new Error('Invalid response')
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 interface PassThroughWalletGasEstimates extends BaseGasEstimatesMixin {}
 applyMixins(PassThroughWalletGasEstimates, [BaseGasEstimatesMixin])
 
 class PassThroughWalletCallData extends PassThroughWalletTransactions {
   constructor({
     chainId,
-    provider,
-    ensProvider,
-    signer,
+    publicClient,
+    ensPublicClient,
+    walletClient,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
       transactionType: TransactionType.CallData,
       chainId,
-      provider,
-      ensProvider,
-      signer,
+      publicClient,
+      ensPublicClient,
+      walletClient,
       includeEnsNames,
     })
   }
 
-  async createPassThroughWallet({
-    owner,
-    paused,
-    passThrough,
-  }: CreatePassThroughWalletConfig): Promise<CallData> {
-    const callData = await this._createPassThroughWalletTransaction({
-      owner,
-      paused,
-      passThrough,
-    })
+  async createPassThroughWallet(
+    args: CreatePassThroughWalletConfig,
+  ): Promise<CallData> {
+    const callData = await this._createPassThroughWalletTransaction(args)
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData
   }
 
-  async passThroughTokens({
-    passThroughWalletId,
-    tokens,
-  }: PassThroughTokensConfig): Promise<CallData> {
-    const callData = await this._passThroughTokensTransaction({
-      passThroughWalletId,
-      tokens,
-    })
+  async passThroughTokens(args: PassThroughTokensConfig): Promise<CallData> {
+    const callData = await this._passThroughTokensTransaction(args)
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData
