@@ -1,4 +1,6 @@
-/** @type { import('@storybook/react').Preview } */
+import React from 'react'
+import WagmiProvider from '../components/WagmiProvider'
+
 const preview = {
   parameters: {
     actions: { argTypesRegex: '^on[A-Z].*' },
@@ -9,6 +11,15 @@ const preview = {
       },
     },
   },
+  decorators: [
+    (Story) => {
+      return (
+        <WagmiProvider>
+          <Story />
+        </WagmiProvider>
+      )
+    },
+  ],
 }
 
 export default preview
