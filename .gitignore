@@ -4,7 +4,7 @@ node_modules
 # storybook
 storybook-static/
 
-*/.env
+.env
 
 # debug
 npm-debug.log*
