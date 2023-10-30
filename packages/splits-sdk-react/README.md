@@ -31,4 +31,4 @@ yarn add @0xsplits/splits-sdk-react@0
 npm install @0xsplits/splits-sdk-react@0
 ```
 
-Documentation for the old Ethers version can be found [here](https://docs.splits.org/react-v0)
+Documentation for the old Ethers version can be found [here](https://docs.splits.org/react-ethers)
