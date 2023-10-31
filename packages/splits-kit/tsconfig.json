@@ -4,6 +4,6 @@
   "compilerOptions": {
     "outDir": "./dist"
   },
-  "include": ["./src"],
+  "include": ["./src", "stories"],
   "exclude": ["dist", "node_modules"]
 }

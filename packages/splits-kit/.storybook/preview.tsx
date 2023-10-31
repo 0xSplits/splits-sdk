@@ -1,5 +1,7 @@
 import React from 'react'
-import WagmiProvider from '../components/WagmiProvider'
+import WagmiProvider from '../storybook/components/WagmiProvider'
+
+import '../dist/styles.css'
 
 const preview = {
   parameters: {

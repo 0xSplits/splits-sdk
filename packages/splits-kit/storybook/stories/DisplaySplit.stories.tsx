@@ -1,6 +1,6 @@
 import React from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
-import { DisplaySplit } from '@0xsplits/splits-kit'
+import { DisplaySplit } from '../../src'
 import ConnectWallet from '../components/ConnectWallet'
 
 export type IAddress = `0x${string}`

@@ -1,6 +1,6 @@
 import React from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
-import { CreateSplit } from '@0xsplits/splits-kit'
+import { CreateSplit } from '../../src'
 import ConnectWallet from '../components/ConnectWallet'
 
 const DEFAULT_ARGS = {

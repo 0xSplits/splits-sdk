@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { publicClientToProvider, walletClientToSigner } from '../utils/ethers'
+import { publicClientToProvider, walletClientToSigner } from './ethers'
 import { SplitsClientConfig } from '@0xsplits/splits-sdk-react'
 import { usePublicClient, useWalletClient } from 'wagmi'
 import { ethers } from 'ethers'
