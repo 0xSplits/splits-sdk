@@ -6,7 +6,11 @@ import Tooltip from '../util/Tooltip'
 const ChainLogo = ({ chainInfo }: { chainInfo: L1ChainInfo }): JSX.Element => {
   return (
     <Tooltip content={chainInfo.label}>
-      <img src={chainInfo.logoUrl} alt={chainInfo.label} className="w-6 h-6" />
+      <img
+        src={chainInfo.logoUrl}
+        alt={chainInfo.label}
+        style={{ width: 22 }}
+      />
     </Tooltip>
   )
 }
