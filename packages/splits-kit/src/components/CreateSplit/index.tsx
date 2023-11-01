@@ -1,7 +1,6 @@
 import React from 'react'
 import type { Event } from '@ethersproject/contracts'
 
-import ComponentLayout from '../util/ComponentLayout'
 import CreateSplitForm from '../CreateSplit/CreateSplitForm'
 import { getNativeTokenSymbol } from '../../utils/display'
 import { ADDRESS_ZERO } from '../../constants/addresses'
@@ -38,41 +37,38 @@ const CreateSplit = ({
   onSuccess,
 }: ICreateSplitProps) => {
   return (
-    <ComponentLayout width={width}>
-      <Segment
-        title={'New Split contract'}
-        corner={
-          displayChain
-            ? CHAIN_INFO[chainId] && (
-                <ChainLogo chainInfo={CHAIN_INFO[chainId]} />
-              )
-            : undefined
-        }
-        body={
-          <div className="space-y-8 flex flex-col">
-            <div className="leading-relaxed text-gray-500">
-              Split is a payable smart contract that splits all incoming{' '}
-              {getNativeTokenSymbol(chainId)} & ERC20 tokens among the
-              recipients according to predefined ownership shares.{' '}
-              <Link
-                href="https://docs.splits.org/core/split"
-                className="underline transition hover:opacity-80"
-              >
-                Learn more
-              </Link>
-            </div>
-            <CreateSplitForm
-              defaultDistributorFee={defaultDistributorFee}
-              defaultController={defaultController}
-              defaultRecipients={defaultRecipients}
-              defaultDistributorFeeOptions={defaultDistributorFeeOptions}
-              chainId={chainId}
-              onSuccess={onSuccess}
-            />
+    <Segment
+      width={width}
+      title={'New Split contract'}
+      corner={
+        displayChain
+          ? CHAIN_INFO[chainId] && <ChainLogo chainInfo={CHAIN_INFO[chainId]} />
+          : undefined
+      }
+      body={
+        <div className="space-y-8 flex flex-col">
+          <div className="leading-relaxed text-gray-500">
+            Split is a payable smart contract that splits all incoming{' '}
+            {getNativeTokenSymbol(chainId)} & ERC20 tokens among the recipients
+            according to predefined ownership shares.{' '}
+            <Link
+              href="https://docs.splits.org/core/split"
+              className="underline transition hover:opacity-80"
+            >
+              Learn more
+            </Link>
           </div>
-        }
-      />
-    </ComponentLayout>
+          <CreateSplitForm
+            defaultDistributorFee={defaultDistributorFee}
+            defaultController={defaultController}
+            defaultRecipients={defaultRecipients}
+            defaultDistributorFeeOptions={defaultDistributorFeeOptions}
+            chainId={chainId}
+            onSuccess={onSuccess}
+          />
+        </div>
+      }
+    />
   )
 }
 
