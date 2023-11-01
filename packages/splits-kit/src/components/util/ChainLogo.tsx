@@ -9,7 +9,7 @@ const ChainLogo = ({ chainInfo }: { chainInfo: L1ChainInfo }): JSX.Element => {
       <img
         src={chainInfo.logoUrl}
         alt={chainInfo.label}
-        style={{ width: 22 }}
+        style={{ width: 20 }}
       />
     </Tooltip>
   )

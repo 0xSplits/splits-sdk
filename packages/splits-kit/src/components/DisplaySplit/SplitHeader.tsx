@@ -27,7 +27,7 @@ const SplitHeader = ({ address }: SplitHeaderProps) => {
           }
         >
           <Identicon
-            diameter={22}
+            diameter={20}
             address={address}
             className="flex-shrink-0"
           />
