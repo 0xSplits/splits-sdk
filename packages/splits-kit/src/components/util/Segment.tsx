@@ -55,9 +55,14 @@ const Segment = ({
               className="block dark:hidden"
             />
           </div>
-          <div>Powered by Splits</div>
+          <div className="font-medium">Powered by Splits</div>
         </div>
-        <Link href="https://splits.org">splits.org</Link>
+        <Link
+          href="https://splits.org"
+          className="text-gray-500 dark:text-gray-400"
+        >
+          splits.org
+        </Link>
       </div>
     </div>
   )
