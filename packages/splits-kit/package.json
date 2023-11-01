@@ -13,8 +13,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rm -rf dist && tsc && npx tailwindcss -i src/styles.css -o dist/styles.css --minify",
-    "storybook": "yarn run build && storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "yarn run build && storybook build"
   },
   "author": "0xSplits (https://splits.org)",
   "publishConfig": {
