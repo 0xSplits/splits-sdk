@@ -2,7 +2,15 @@
 *.test.ts
 src/testing/**/*
 
+# Storybook
+public/
+.storybook/
 storybook/
+storybook-static/
+postcss.config.ts
+tailwind.config.ts
+.babelrc.json
+.env
 
 # Typescript files
 */tsconfig.tsbuildinfo
