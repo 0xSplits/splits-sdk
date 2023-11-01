@@ -1,67 +1,22 @@
-import { JsonFragment } from '@ethersproject/abi'
-import { Chain } from 'wagmi'
 import {
   mainnet,
   goerli,
   polygon,
   polygonMumbai,
   optimismGoerli,
-  arbitrumGoerli,
   optimism,
+  arbitrumGoerli,
   arbitrum,
   gnosis,
   fantom,
-  avalanche,
   bsc,
+  avalanche,
   aurora,
-} from 'wagmi/chains'
-import { utils } from 'ethers'
-
-import SPLIT_MAIN_ARTIFACT_ETHEREUM from '@0xsplits/splits-sdk/dist/artifacts/contracts/SplitMain/ethereum/SplitMain.json'
-import SPLIT_MAIN_ARTIFACT_POLYGON from '@0xsplits/splits-sdk/dist/artifacts/contracts/SplitMain/polygon/SplitMain.json'
-
-const splitMainAbiEthereum = SPLIT_MAIN_ARTIFACT_ETHEREUM.abi
-const splitMainInterfaceEthereum = new utils.Interface(splitMainAbiEthereum)
-const splitMainAbiPolygon = SPLIT_MAIN_ARTIFACT_POLYGON.abi
-const splitMainInterfacePolygon = new utils.Interface(splitMainAbiPolygon)
-
-export const zora: Chain = {
-  id: 7777777,
-  name: 'Zora',
-  nativeCurrency: {
-    name: 'Ether',
-    symbol: 'ETH',
-    decimals: 18,
-  },
-  network: 'zora',
-  rpcUrls: {
-    default: {
-      http: ['https://rpc.zora.energy/'],
-    },
-    public: {
-      http: ['https://rpc.zora.energy/'],
-    },
-  },
-}
-
-export const base: Chain = {
-  id: 8453,
-  name: 'Base',
-  nativeCurrency: {
-    name: 'Ether',
-    symbol: 'ETH',
-    decimals: 18,
-  },
-  network: 'base',
-  rpcUrls: {
-    default: {
-      http: ['https://mainnet.base.org'],
-    },
-    public: {
-      http: ['https://mainnet.base.org'],
-    },
-  },
-}
+  base,
+  zora,
+  zoraTestnet,
+  Chain,
+} from 'viem/chains'
 
 const SupportedChainsList = [
   mainnet,
@@ -78,6 +33,7 @@ const SupportedChainsList = [
   bsc,
   aurora,
   zora,
+  zoraTestnet,
   base,
 ]
 
@@ -88,6 +44,11 @@ const DropdownDisplayChainsList = [
   arbitrum,
   zora,
   base,
+  gnosis,
+  fantom,
+  bsc,
+  avalanche,
+  aurora,
 ]
 
 export const SupportedChainsMap = SupportedChainsList.reduce(
@@ -104,7 +65,13 @@ export type SupportedChainId = SupportedChain['id']
 export const SUPPORTED_CHAINS = SupportedChains
 export const DISPLAY_CHAINS = DropdownDisplayChainsList
 
-export const TESTNETS = [goerli, polygonMumbai, optimismGoerli, arbitrumGoerli]
+export const TESTNETS = [
+  goerli,
+  polygonMumbai,
+  optimismGoerli,
+  arbitrumGoerli,
+  zoraTestnet,
+]
 
 export enum SupportedNetwork {
   ETHEREUM = 'ethereum',
@@ -121,6 +88,7 @@ export enum SupportedNetwork {
 }
 
 export interface L1ChainInfo {
+  readonly viemChain: Chain
   readonly docs: string
   readonly explorer: string
   readonly explorerName: string
@@ -142,12 +110,12 @@ export interface L1ChainInfo {
   readonly startBlock: number
   readonly supportsEns: boolean
   readonly supportsReverseEns: boolean
-  readonly splitMainAbi: JsonFragment[]
-  readonly splitMainInterface: utils.Interface
   readonly openseaName?: string
   readonly wrappedNativeTokenAddress?: string
   readonly supportsSwapper?: boolean
   readonly sponsorshipDisabled?: boolean
+  readonly distributionThresholdRange?: [number, number, number]
+  readonly gasPriceGwei?: number
 }
 
 export type ChainInfo = {
@@ -157,7 +125,8 @@ export type ChainInfo = {
 // merge with @usedapp & own utils getExplorer etc
 export const CHAIN_INFO: ChainInfo = {
   [mainnet.id]: {
-    docs: 'https://docs.0xsplits.xyz/',
+    viemChain: mainnet,
+    docs: 'https://docs.splits.org/',
     explorer: 'https://etherscan.io/',
     explorerName: 'Etherscan',
     network: SupportedNetwork.ETHEREUM,
@@ -184,14 +153,15 @@ export const CHAIN_INFO: ChainInfo = {
     startBlock: 14206768,
     supportsEns: true,
     supportsReverseEns: true,
-    splitMainAbi: splitMainAbiEthereum,
-    splitMainInterface: splitMainInterfaceEthereum,
     openseaName: 'ethereum',
     wrappedNativeTokenAddress: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
     supportsSwapper: true,
+    distributionThresholdRange: [0.1, 1, 10],
+    gasPriceGwei: 10,
   },
   [goerli.id]: {
-    docs: 'https://docs.0xsplits.xyz/',
+    viemChain: goerli,
+    docs: 'https://docs.splits.org/',
     explorer: 'https://goerli.etherscan.io/',
     explorerName: 'Etherscan',
     network: SupportedNetwork.ETHEREUM,
@@ -218,14 +188,13 @@ export const CHAIN_INFO: ChainInfo = {
     startBlock: 6374540,
     supportsEns: true,
     supportsReverseEns: true,
-    splitMainAbi: splitMainAbiEthereum,
-    splitMainInterface: splitMainInterfaceEthereum,
     openseaName: 'goerli',
     wrappedNativeTokenAddress: '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6',
     supportsSwapper: true,
   },
   [polygon.id]: {
-    docs: 'https://docs.0xsplits.xyz/',
+    viemChain: polygon,
+    docs: 'https://docs.splits.org/',
     explorer: 'https://polygonscan.com/',
     explorerName: 'Polygonscan',
     network: SupportedNetwork.POLYGON,
@@ -252,13 +221,14 @@ export const CHAIN_INFO: ChainInfo = {
     startBlock: 25303316,
     supportsEns: true,
     supportsReverseEns: false,
-    splitMainAbi: splitMainAbiPolygon,
-    splitMainInterface: splitMainInterfacePolygon,
     openseaName: 'matic',
     wrappedNativeTokenAddress: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270',
+    distributionThresholdRange: [10, 100, 1000],
+    gasPriceGwei: 50,
   },
   [polygonMumbai.id]: {
-    docs: 'https://docs.0xsplits.xyz/',
+    viemChain: polygonMumbai,
+    docs: 'https://docs.splits.org/',
     explorer: 'https://mumbai.polygonscan.com/',
     explorerName: 'Polygonscan',
     network: SupportedNetwork.POLYGON,
@@ -285,13 +255,14 @@ export const CHAIN_INFO: ChainInfo = {
     startBlock: 25258326,
     supportsEns: true,
     supportsReverseEns: false,
-    splitMainAbi: splitMainAbiPolygon,
-    splitMainInterface: splitMainInterfacePolygon,
     openseaName: 'mumbai',
     wrappedNativeTokenAddress: '0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889',
+    distributionThresholdRange: [10, 100, 1000],
+    gasPriceGwei: 50,
   },
   [optimism.id]: {
-    docs: 'https://docs.0xsplits.xyz/',
+    viemChain: optimism,
+    docs: 'https://docs.splits.org/',
     explorer: 'https://optimistic.etherscan.io/',
     explorerName: 'Explorer',
     network: SupportedNetwork.OPTIMISM,
@@ -318,13 +289,14 @@ export const CHAIN_INFO: ChainInfo = {
     startBlock: 24704537,
     supportsEns: true,
     supportsReverseEns: false,
-    splitMainAbi: splitMainAbiPolygon,
-    splitMainInterface: splitMainInterfacePolygon,
     openseaName: 'optimism',
     wrappedNativeTokenAddress: '0x4200000000000000000000000000000000000006',
+    distributionThresholdRange: [0.001, 0.01, 0.1],
+    gasPriceGwei: 0.001,
   },
   [optimismGoerli.id]: {
-    docs: 'https://docs.0xsplits.xyz/',
+    viemChain: optimismGoerli,
+    docs: 'https://docs.splits.org/',
     explorer: 'https://goerli-optimism.etherscan.io/',
     explorerName: 'Explorer',
     network: SupportedNetwork.OPTIMISM,
@@ -351,12 +323,13 @@ export const CHAIN_INFO: ChainInfo = {
     startBlock: 1324620,
     supportsEns: true,
     supportsReverseEns: false,
-    splitMainAbi: splitMainAbiPolygon,
-    splitMainInterface: splitMainInterfacePolygon,
     openseaName: 'optimism-goerli',
+    distributionThresholdRange: [0.001, 0.01, 0.1],
+    gasPriceGwei: 0.001,
   },
   [arbitrum.id]: {
-    docs: 'https://docs.0xsplits.xyz/',
+    viemChain: arbitrum,
+    docs: 'https://docs.splits.org/',
     explorer: 'https://arbiscan.io/',
     explorerName: 'Explorer',
     network: SupportedNetwork.ARBITRUM,
@@ -383,13 +356,14 @@ export const CHAIN_INFO: ChainInfo = {
     startBlock: 26082503,
     supportsEns: true,
     supportsReverseEns: false,
-    splitMainAbi: splitMainAbiPolygon,
-    splitMainInterface: splitMainInterfacePolygon,
     openseaName: 'arbitrum',
     wrappedNativeTokenAddress: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
+    distributionThresholdRange: [0.001, 0.01, 0.1],
+    gasPriceGwei: 0.001,
   },
   [arbitrumGoerli.id]: {
-    docs: 'https://docs.0xsplits.xyz/',
+    viemChain: arbitrumGoerli,
+    docs: 'https://docs.splits.org/',
     explorer: 'https://goerli-rollup-explorer.arbitrum.io/',
     explorerName: 'Explorer',
     network: SupportedNetwork.ARBITRUM,
@@ -416,12 +390,13 @@ export const CHAIN_INFO: ChainInfo = {
     startBlock: 383218,
     supportsEns: true,
     supportsReverseEns: false,
-    splitMainAbi: splitMainAbiPolygon,
-    splitMainInterface: splitMainInterfacePolygon,
     openseaName: 'arbitrum-goerli',
+    distributionThresholdRange: [0.001, 0.01, 0.1],
+    gasPriceGwei: 0.001,
   },
   [gnosis.id]: {
-    docs: 'https://docs.0xsplits.xyz/',
+    viemChain: gnosis,
+    docs: 'https://docs.splits.org/',
     explorer: 'https://gnosisscan.io/',
     explorerName: 'Gnosisscan',
     network: SupportedNetwork.GNOSIS,
@@ -448,11 +423,10 @@ export const CHAIN_INFO: ChainInfo = {
     startBlock: 26014830,
     supportsEns: true,
     supportsReverseEns: false,
-    splitMainAbi: splitMainAbiPolygon,
-    splitMainInterface: splitMainInterfacePolygon,
   },
   [fantom.id]: {
-    docs: 'https://docs.0xsplits.xyz/',
+    viemChain: fantom,
+    docs: 'https://docs.splits.org/',
     explorer: 'https://ftmscan.io/',
     explorerName: 'Explorer',
     network: SupportedNetwork.FANTOM,
@@ -479,11 +453,10 @@ export const CHAIN_INFO: ChainInfo = {
     startBlock: 53993922,
     supportsEns: true,
     supportsReverseEns: false,
-    splitMainAbi: splitMainAbiPolygon,
-    splitMainInterface: splitMainInterfacePolygon,
   },
   [avalanche.id]: {
-    docs: 'https://docs.0xsplits.xyz/',
+    viemChain: avalanche,
+    docs: 'https://docs.splits.org/',
     explorer: 'https://snowtrace.io/',
     explorerName: 'Explorer',
     network: SupportedNetwork.AVALANCHE,
@@ -510,12 +483,11 @@ export const CHAIN_INFO: ChainInfo = {
     startBlock: 25125818,
     supportsEns: true,
     supportsReverseEns: false,
-    splitMainAbi: splitMainAbiPolygon,
-    splitMainInterface: splitMainInterfacePolygon,
     openseaName: 'avalanche',
   },
   [bsc.id]: {
-    docs: 'https://docs.0xsplits.xyz/',
+    viemChain: bsc,
+    docs: 'https://docs.splits.org/',
     explorer: 'https://bsccan.com/',
     explorerName: 'Explorer',
     network: SupportedNetwork.BSC,
@@ -542,12 +514,11 @@ export const CHAIN_INFO: ChainInfo = {
     startBlock: 24962607,
     supportsEns: true,
     supportsReverseEns: false,
-    splitMainAbi: splitMainAbiPolygon,
-    splitMainInterface: splitMainInterfacePolygon,
     openseaName: 'bsc',
   },
   [aurora.id]: {
-    docs: 'https://docs.0xsplits.xyz/',
+    viemChain: aurora,
+    docs: 'https://docs.splits.org/',
     explorer: 'https://aurorascan.dev/',
     explorerName: 'Explorer',
     network: SupportedNetwork.AURORA,
@@ -572,11 +543,10 @@ export const CHAIN_INFO: ChainInfo = {
     startBlock: 83401794,
     supportsEns: false,
     supportsReverseEns: false,
-    splitMainAbi: splitMainAbiPolygon,
-    splitMainInterface: splitMainInterfacePolygon,
   },
   [zora.id]: {
-    docs: 'https://docs.0xsplits.xyz/',
+    viemChain: zora,
+    docs: 'https://docs.splits.org/',
     explorer: 'https://explorer.zora.energy/',
     explorerName: 'Explorer',
     network: SupportedNetwork.ZORA,
@@ -595,16 +565,46 @@ export const CHAIN_INFO: ChainInfo = {
     coingeckoErc20LookupId: 'n/a',
     ensCoinType: -1, // ens not supported
     gqlUrl:
-      'https://api.goldsky.com/api/public/project_clhk16b61ay9t49vm6ntn4mkz/subgraphs/splits-zora-mainnet/1.0.0/gn',
+      'https://api.goldsky.com/api/public/project_clhk16b61ay9t49vm6ntn4mkz/subgraphs/splits-zora-mainnet/stable/gn',
     startBlock: 1860322,
     supportsEns: false,
     supportsReverseEns: false,
-    splitMainAbi: splitMainAbiPolygon,
-    splitMainInterface: splitMainInterfacePolygon,
     sponsorshipDisabled: true,
+    distributionThresholdRange: [0.001, 0.01, 0.1],
+    gasPriceGwei: 0.001,
+  },
+  [zoraTestnet.id]: {
+    viemChain: zoraTestnet,
+    docs: 'https://docs.splits.org/',
+    explorer: 'https://testnet.explorer.zora.energy/',
+    explorerName: 'Explorer',
+    network: SupportedNetwork.ZORA,
+    label: 'Zora Goerli',
+    logoUrl: '/networks/zora_logo.svg',
+    rpcUrls: ['https://testnet.rpc.zora.energy/'],
+    websocketUrls: [],
+    nativeCurrency: {
+      name: 'ETH',
+      symbol: 'ETH',
+      decimals: 18,
+      logoUri:
+        'https://assets.trustwalletapp.com/blockchains/ethereum/info/logo.png',
+      coingeckoId: 'ethereum',
+    },
+    coingeckoErc20LookupId: 'n/a',
+    ensCoinType: -1, // ens not supported
+    gqlUrl:
+      'https://api.goldsky.com/api/public/project_clhk16b61ay9t49vm6ntn4mkz/subgraphs/splits-zora-testnet/stable/gn',
+    startBlock: 968023,
+    supportsEns: false,
+    supportsReverseEns: false,
+    sponsorshipDisabled: true,
+    distributionThresholdRange: [0.001, 0.01, 0.1],
+    gasPriceGwei: 0.001,
   },
   [base.id]: {
-    docs: 'https://docs.0xsplits.xyz/',
+    viemChain: base,
+    docs: 'https://docs.splits.org/',
     explorer: 'https://basescan.org/',
     explorerName: 'Explorer',
     network: SupportedNetwork.BASE,
@@ -631,8 +631,8 @@ export const CHAIN_INFO: ChainInfo = {
     startBlock: 2293907,
     supportsEns: false,
     supportsReverseEns: false,
-    splitMainAbi: splitMainAbiPolygon,
-    splitMainInterface: splitMainInterfacePolygon,
     sponsorshipDisabled: true,
+    distributionThresholdRange: [0.001, 0.01, 0.1],
+    gasPriceGwei: 0.001,
   },
 }

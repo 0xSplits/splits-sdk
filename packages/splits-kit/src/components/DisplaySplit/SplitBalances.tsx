@@ -3,6 +3,7 @@ import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
 import { FormattedSplitEarnings } from '@0xsplits/splits-sdk'
 
 import DistributeButton from '../DisplaySplit/DistributeButton'
+import { SupportedChainId } from '../../constants/chains'
 
 const SplitBalances = ({
   chainId,
@@ -11,7 +12,7 @@ const SplitBalances = ({
   onSuccess,
   onError,
 }: {
-  chainId: number
+  chainId: SupportedChainId
   address: string
   formattedSplitEarnings: FormattedSplitEarnings | undefined
   onSuccess?: (token: string) => void

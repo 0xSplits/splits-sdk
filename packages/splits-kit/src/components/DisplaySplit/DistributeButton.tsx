@@ -5,7 +5,7 @@ import { useAccount, useNetwork } from 'wagmi'
 
 import { displayBigNumber } from '../../utils/display'
 import Tooltip from '../util/Tooltip'
-import { CHAIN_INFO } from '../../constants/chains'
+import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
 import Button from '../util/Button'
 import { Balance } from '../../types'
 
@@ -17,7 +17,7 @@ function DistributeButton({
   onSuccess,
   onError,
 }: {
-  chainId: number
+  chainId: SupportedChainId
   token: string
   balance: Balance
   address: string

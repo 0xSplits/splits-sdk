@@ -12,12 +12,14 @@ import {
   avalanche,
   bsc,
   aurora,
+  zora,
+  zoraTestnet,
+  base,
 } from 'wagmi/chains'
-import { AddressZero } from '@ethersproject/constants'
 
-import { SupportedChainId, base, zora } from './chains'
+import { SupportedChainId } from './chains'
 
-export const ADDRESS_ZERO = AddressZero
+export const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000'
 
 export const SPLIT_MAIN_ADDRESS = '0x2ed6c4B5dA6378c7897AC67Ba9e43102Feb694EE'
 export const REVERSE_RECORDS_ADDRESS =
@@ -31,7 +33,7 @@ export const SPLITS_UNI_V3_ORACLE_ADDRESS =
 
 export const SPLITS_DONATION_ADDRESS = // donations.0xsplits.eth
   '0xF8843981e7846945960f53243cA2Fd42a579f719'
-export const SPLITS_ADDRESS = '0xEc8Bfc8637247cEe680444BA1E25fA5e151Ba342' // 0xsplits.eth
+export const SPLITS_ADDRESS = '0xEc8Bfc8637247cEe680444BA1E25fA5e151Ba342' // splits.eth
 
 export const PROTOCOL_GUILD_SPLIT_ADDRESS =
   '0x84af3D5824F0390b9510440B6ABB5CC02BB68ea1'
@@ -69,29 +71,30 @@ export const POPULAR_TOKENS: { [chainId in SupportedChainId]: string[] } = {
     '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1', // DAI
     '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8', // USDC
   ],
-  [arbitrumGoerli.id]: [AddressZero],
+  [arbitrumGoerli.id]: [ADDRESS_ZERO],
   [gnosis.id]: [
-    AddressZero,
+    ADDRESS_ZERO,
     '0xddafbb505ad214d7b80b1f830fccc89b60fb7a83', // USDC
   ],
   [fantom.id]: [
-    AddressZero,
+    ADDRESS_ZERO,
     '0x04068da6c83afcfa0e13ba15a6696662335d5b75', // USDC
   ],
   [avalanche.id]: [
-    AddressZero,
+    ADDRESS_ZERO,
     '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e', // USDC
   ],
   [bsc.id]: [
-    AddressZero,
+    ADDRESS_ZERO,
     '0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d', // USDC
   ],
   [aurora.id]: [
-    AddressZero,
+    ADDRESS_ZERO,
     '0xb12bfca5a55806aaf64e99521918a4bf0fc40802', // USDC
   ],
-  [zora.id]: [AddressZero],
-  [base.id]: [AddressZero],
+  [zora.id]: [ADDRESS_ZERO],
+  [zoraTestnet.id]: [ADDRESS_ZERO],
+  [base.id]: [ADDRESS_ZERO],
 }
 
 export const TOKEN_BLACKLIST: { [key: number]: string[] } = {
@@ -130,7 +133,7 @@ export const FEATURED_ACCOUNTS: FeaturedAccountsMap = {
       name: 'donations.0xsplits.eth',
       image: '/featured/donations.png',
       description: 'Platform',
-      url: 'https://docs.0xsplits.xyz/#public-goods',
+      url: 'https://docs.splits.org/#public-goods',
     },
     {
       id: '0x0BC3807Ec262cB779b38D65b38158acC3bfedE10',

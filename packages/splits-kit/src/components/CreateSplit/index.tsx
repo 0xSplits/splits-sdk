@@ -7,7 +7,7 @@ import { getNativeTokenSymbol } from '../../utils/display'
 import { ADDRESS_ZERO } from '../../constants/addresses'
 import ChainLogo from '../util/ChainLogo'
 import Segment from '../util/Segment'
-import { CHAIN_INFO } from '../../constants/chains'
+import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
 import { IAddress, Recipient } from '../../types'
 import Link from '../util/Link'
 import {
@@ -17,7 +17,7 @@ import {
 } from '../../constants/splits'
 
 export interface ICreateSplitProps {
-  chainId: number
+  chainId: SupportedChainId
   defaultDistributorFee?: number
   defaultController?: IAddress
   defaultRecipients?: Recipient[]

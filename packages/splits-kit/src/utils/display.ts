@@ -1,4 +1,4 @@
-import { CHAIN_INFO } from '../constants/chains'
+import { CHAIN_INFO, SupportedChainId } from '../constants/chains'
 import { PERCENTAGE_SCALE } from '../constants/splits'
 import { BigNumber, utils } from 'ethers'
 
@@ -25,7 +25,9 @@ export const displayBigNumber: (
   )
 }
 
-export const getNativeTokenSymbol: (arg0?: number) => string = (chainId) => {
+export const getNativeTokenSymbol: (arg0?: SupportedChainId) => string = (
+  chainId,
+) => {
   if (!chainId) return 'ETH'
   return CHAIN_INFO[chainId].nativeCurrency.symbol
 }

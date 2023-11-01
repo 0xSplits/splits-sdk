@@ -9,14 +9,14 @@ import SplitBalances from '../DisplaySplit/SplitBalances'
 import SplitHeader from '../DisplaySplit/SplitHeader'
 import ComponentLayout from '../util/ComponentLayout'
 import ChainLogo from '../util/ChainLogo'
-import { CHAIN_INFO } from '../../constants/chains'
+import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
 import Segment from '../util/Segment'
 import Tooltip from '../util/Tooltip'
 import { IAddress } from '../../types'
 
 export interface IDisplaySplitProps {
   address: IAddress
-  chainId: number
+  chainId: SupportedChainId
   displayBalances?: boolean
   displayChain?: boolean
   width?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full'

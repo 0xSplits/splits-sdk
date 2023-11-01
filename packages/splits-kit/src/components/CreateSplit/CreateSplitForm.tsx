@@ -12,7 +12,7 @@ import NumberSelectInput from '../inputs/NumberSelectInput'
 import { IAddress, Recipient, CreateSplitForm } from '../../types'
 import Disclaimer from '../CreateSplit/Disclaimer'
 import InputRow from '../inputs/InputRow'
-import { CHAIN_INFO } from '../../constants/chains'
+import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
 import Tooltip from '../util/Tooltip'
 import Button from '../util/Button'
 
@@ -24,7 +24,7 @@ const CreateCreateSplitForm = ({
   defaultDistributorFeeOptions,
   onSuccess,
 }: {
-  chainId: number
+  chainId: SupportedChainId
   defaultDistributorFee: number
   defaultController: IAddress
   defaultRecipients: Recipient[]
