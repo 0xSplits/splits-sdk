@@ -1,10 +1,9 @@
 # dependencies
 node_modules
 
-# storybook
-storybook-static/
-
-.env
+# splits-kit
+packages/splits-kit/storybook-static/
+packages/splits-kit/.env
 
 # debug
 npm-debug.log*
