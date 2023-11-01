@@ -30,7 +30,7 @@ const Segment = ({
 
   return (
     <div
-      className={`text-sm ${maxWidthClass[width]} min-h-[18rem] dark:text-white border rounded bg-white dark:bg-[#202020] 
+      className={`text-sm ${maxWidthClass[width]} min-h-[18rem] dark:text-white border rounded bg-white dark:bg-black 
       border-gray-200 dark:border-gray-700 divide-y dark:divide-gray-700 divide-gray-200`}
     >
       <div className="p-4 py-3.5 flex w-full items-center justify-between space-x-2 rounded-t">

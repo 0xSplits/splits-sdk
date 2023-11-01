@@ -236,7 +236,7 @@ const AddressErrorsDisplay = ({
   return (
     <div
       className={
-        'absolute -bottom-2.5 left-2 flex items-center bg-white px-px text-[12px] dark:bg-[#202020]'
+        'absolute -bottom-2.5 left-2 flex items-center bg-white px-px text-[12px] dark:bg-black'
       }
     >
       {(() => {
