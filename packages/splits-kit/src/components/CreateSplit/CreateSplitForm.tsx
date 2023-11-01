@@ -74,7 +74,7 @@ const CreateCreateSplitForm = ({
 
   return (
     <FormProvider {...form}>
-      <form onSubmit={handleSubmit(onSubmit)} className="text-sm space-y-8">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
         <RecipientSetter />
         <InputRow
           label="Controller"

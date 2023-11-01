@@ -50,7 +50,7 @@ const CreateSplit = ({
         }
         body={
           <div className="space-y-8 flex flex-col">
-            <div className="text-sm leading-relaxed text-gray-500">
+            <div className="leading-relaxed text-gray-500">
               Split is a payable smart contract that splits all incoming{' '}
               {getNativeTokenSymbol(chainId)} & ERC20 tokens among the
               recipients according to predefined ownership shares.{' '}

@@ -31,7 +31,7 @@ const SplitHeader = ({ address }: SplitHeaderProps) => {
             address={address}
             className="flex-shrink-0"
           />
-          <div className="truncate text-sm">{displayName}</div>
+          <div className="truncate">{displayName}</div>
         </div>
       </div>
     </div>

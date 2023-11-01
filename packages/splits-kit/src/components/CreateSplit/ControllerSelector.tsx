@@ -12,7 +12,6 @@ import { useAccount } from 'wagmi'
 import AddressSelectInput from '../inputs/AddressSelectInput'
 import { ADDRESS_ZERO } from '../../constants/addresses'
 import { shortenAddress } from '../../utils/address'
-// import { useDisplayName } from 'utils/useENS'
 
 export const ControllerSelector = <FormType extends FieldValues>({
   control,

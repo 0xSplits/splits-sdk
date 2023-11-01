@@ -24,7 +24,7 @@ export const RecipientRow = ({
 
   return (
     <fieldset>
-      <div className={'text-xs flex items-stretch space-x-3'}>
+      <div className={'flex items-stretch space-x-3'}>
         <AddressInput
           control={control}
           inputName={`recipients.${index}.address`}
