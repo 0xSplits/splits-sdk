@@ -4,8 +4,6 @@ import { Identicon } from '@lidofinance/identicon'
 import { shortenAddress } from '../../utils/address'
 import { copyToClipboard } from '../../utils/clipboard'
 import { IAddress } from '../../types'
-// import SponsorBadge from './SponsorBadge'
-// import { isSplitSponsor } from 'utils/splits'
 
 interface SplitHeaderProps {
   address: IAddress
@@ -14,9 +12,6 @@ interface SplitHeaderProps {
 const SplitHeader = ({ address }: SplitHeaderProps) => {
   const [showFullAddress, setShowFullAddress] = useState(false)
   const displayName = showFullAddress ? address : shortenAddress(address)
-
-  // const sponsorshipBadge =
-  //   split && isSplitSponsor(split) ? <SponsorBadge split={split} /> : undefined
 
   return (
     <div className="flex w-full items-center space-x-2 overflow-hidden md:overflow-visible">
