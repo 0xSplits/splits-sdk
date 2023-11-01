@@ -78,7 +78,6 @@ const CreateCreateSplitForm = ({
         <RecipientSetter />
         <InputRow
           label="Controller"
-          tooltip="If set, this account can modify the Split after it's been created"
           input={
             <ControllerSelector
               control={control}
@@ -91,7 +90,6 @@ const CreateCreateSplitForm = ({
         />
         <InputRow
           label="Distributor Fee"
-          tooltip="This incentivizes distributors to push funds for this Split"
           input={
             <NumberSelectInput
               control={control}

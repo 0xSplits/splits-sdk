@@ -32,7 +32,6 @@ const SplitHeader = ({ address }: SplitHeaderProps) => {
             className="flex-shrink-0"
           />
           <div className="truncate text-sm">{displayName}</div>
-          {/* {sponsorshipBadge}  */}
         </div>
       </div>
     </div>

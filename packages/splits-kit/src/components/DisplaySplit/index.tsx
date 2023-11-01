@@ -3,16 +3,16 @@ import { useSplitEarnings, useSplitMetadata } from '@0xsplits/splits-sdk-react'
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/20/solid'
 import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
 
+import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
 import SplitRecipients from '../DisplaySplit/SplitRecipients'
 import SkeletonLoader from '../DisplaySplit/SkeletonLoader'
 import SplitBalances from '../DisplaySplit/SplitBalances'
 import SplitHeader from '../DisplaySplit/SplitHeader'
 import ComponentLayout from '../util/ComponentLayout'
 import ChainLogo from '../util/ChainLogo'
-import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
-import Segment from '../util/Segment'
-import Tooltip from '../util/Tooltip'
 import { IAddress } from '../../types'
+import Segment from '../util/Segment'
+import Link from '../util/Link'
 
 export interface IDisplaySplitProps {
   address: IAddress
@@ -59,16 +59,12 @@ const DisplaySplit = ({
         title={<SplitHeader address={address} />}
         titleButton={
           <div className="flex items-center space-x-2">
-            <Tooltip content={'View on the Splits app'}>
-              <a
-                target="_blank"
-                rel="noopener noreferrer"
-                href={`https://app.splits.org/accounts/${address}/?chainId=${chainId}`}
-                className="cursor-pointer text-gray-500 transition hover:text-black focus:outline-none dark:hover:text-white"
-              >
-                <ArrowTopRightOnSquareIcon className="h-4 w-4" />
-              </a>
-            </Tooltip>
+            <Link
+              href={`https://app.splits.org/accounts/${address}/?chainId=${chainId}`}
+              className="cursor-pointer text-gray-500 transition hover:text-black focus:outline-none dark:hover:text-white"
+            >
+              <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+            </Link>
           </div>
         }
         corner={
