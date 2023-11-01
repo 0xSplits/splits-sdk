@@ -15,6 +15,8 @@ import InputRow from '../inputs/InputRow'
 import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
 import Tooltip from '../util/Tooltip'
 import Button from '../util/Button'
+import Link from '../util/Link'
+import { getSplitRouterParams } from '../../utils/splits'
 
 const CreateCreateSplitForm = ({
   chainId,
@@ -32,7 +34,7 @@ const CreateCreateSplitForm = ({
   onSuccess?: (address: string, event: Event | undefined) => void
 }) => {
   const { createSplit } = useCreateSplit()
-  const { isConnected } = useAccount()
+  const { isConnected, address: connectedAddress } = useAccount()
   const { chain } = useNetwork()
 
   const form = useForm<CreateSplitForm>({
@@ -47,6 +49,7 @@ const CreateCreateSplitForm = ({
   const {
     handleSubmit,
     control,
+    watch,
     setValue,
     setError,
     formState: { isValid: isFormValid },
@@ -71,6 +74,12 @@ const CreateCreateSplitForm = ({
 
   const isWrongChain = chain && chainId !== chain.id
   const isButtonDisabled = !isConnected || isWrongChain || !isFormValid
+
+  const formData = watch()
+  const createOnSplitsAppLink = `https://app.splits.org/new/split?${getSplitRouterParams(
+    formData,
+    connectedAddress,
+  )}`
 
   return (
     <FormProvider {...form}>
@@ -123,7 +132,7 @@ const CreateCreateSplitForm = ({
           }
           link="https://docs.splits.org/distribute#distribution-bounty"
         />
-        <div className={'my-5'}>
+        <div className="my-5 flex flex-col space-y-1 text-center">
           <Tooltip
             isDisabled={isConnected && !isWrongChain}
             content={
@@ -138,6 +147,15 @@ const CreateCreateSplitForm = ({
               Create Split
             </Button>
           </Tooltip>
+          <span className="text-gray-400">or</span>
+          <div>
+            <Link
+              href={createOnSplitsAppLink}
+              className="font-medium text-gray-500 dark:text-gray-300"
+            >
+              Create on app.splits.org
+            </Link>
+          </div>
         </div>
       </form>
       <Disclaimer />
