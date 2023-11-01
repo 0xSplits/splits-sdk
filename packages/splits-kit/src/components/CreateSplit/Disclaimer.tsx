@@ -4,7 +4,7 @@ import Link from '../../components/util/Link'
 
 const Disclaimer = () => {
   return (
-    <div className="text-xs max-w-xs mx-auto text-center text-gray-500 mt-4">
+    <div className="text-xs max-w-md mx-auto text-center text-gray-500 mt-4">
       By creating a Split you agree to the{' '}
       <Link
         href="https://www.notion.so/0xsplits/Splits-Protocols-Inc-Terms-of-Service-7246b65eb87d4f6997cbe0af1ebb2b88"
