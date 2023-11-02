@@ -26,11 +26,11 @@ export default function ConnectWallet({
   return (
     <SplitsProvider config={config}>
       <UseConfig config={config} />
-      <div className="absolute right-0 mr-8 space-y-2">
-        <ConnectButton />
+      <div className="flex justify-center items-center space-x-4 w-full border-b border-gray-200 p-2 mb-2">
         <NetworkSwitcher chainId={chainId} />
+        <ConnectButton />
       </div>
-      {children}
+      <div className="p-4">{children}</div>
     </SplitsProvider>
   )
 }
@@ -46,7 +46,7 @@ function ConnectButton() {
   const { disconnect } = useDisconnect()
 
   return (
-    <div>
+    <div className="flex items-center space-x-2">
       {isConnected && <Button onClick={() => disconnect()}>Disconnect</Button>}
       {connectors
         .filter((conn) => conn.ready && conn.id !== connector?.id)
@@ -66,25 +66,25 @@ function NetworkSwitcher({ chainId }: { chainId: number }) {
   const { chain } = useNetwork()
 
   return (
-    <div className="flex flex-col items-end text-xs">
+    <>
       {isConnected && chain && (
-        <div>
+        <div className="flex text-xs space-x-2 items-center">
           <select
             value={chain.id}
             onChange={(e) => switchNetwork?.(Number(e.target.value))}
-            className="border p-2 rounded border-gray-200 bg-gray-50"
+            className="border p-1 rounded border-gray-200 bg-gray-50"
           >
             {chains.map((chain, idx) => (
               <option key={idx} value={chain.id}>
                 {chain.name}
+                {chainId !== chain.id && (
+                  <div className="text-red-500"> (wrong network)</div>
+                )}
               </option>
             ))}
           </select>
-          {chainId !== chain.id && (
-            <div className="mt-2 text-center text-red-500">Wrong network</div>
-          )}
         </div>
       )}
-    </div>
+    </>
   )
 }
