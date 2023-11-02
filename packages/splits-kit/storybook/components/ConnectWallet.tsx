@@ -77,9 +77,7 @@ function NetworkSwitcher({ chainId }: { chainId: number }) {
             {chains.map((chain, idx) => (
               <option key={idx} value={chain.id}>
                 {chain.name}
-                {chainId !== chain.id && (
-                  <div className="text-red-500"> (wrong network)</div>
-                )}
+                {chainId !== chain.id && ' (wrong network)'}
               </option>
             ))}
           </select>
