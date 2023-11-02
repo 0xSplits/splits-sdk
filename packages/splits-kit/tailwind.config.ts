@@ -1,10 +1,14 @@
 // eslint-disable-next-line
 const colors = require('tailwindcss/colors')
 
-// eslint-disable-next-line no-undef
 module.exports = {
   darkMode: 'class',
-  content: ['./public/**/*.html', './src/**/*.{js,jsx,ts,tsx}'],
+  content: [
+    './public/**/*.html',
+    './src/**/*.{js,jsx,ts,tsx}',
+    // TODO: Figure out how to purge storybook css in production build
+    './storybook/**/*.{js,jsx,ts,tsx}',
+  ],
   theme: {
     colors: {
       transparent: 'transparent',
