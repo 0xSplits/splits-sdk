@@ -2,9 +2,10 @@ import React from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
 import { CreateSplit } from '../../src'
 import ConnectWallet from '../components/ConnectWallet'
+import { SupportedChainId } from '../../src/constants/chains'
 
 const DEFAULT_ARGS = {
-  chainId: 1,
+  chainId: 1 as SupportedChainId,
 }
 
 const meta: Meta<typeof CreateSplit> = {

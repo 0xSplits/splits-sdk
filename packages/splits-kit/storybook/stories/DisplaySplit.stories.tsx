@@ -2,12 +2,13 @@ import React from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
 import { DisplaySplit } from '../../src'
 import ConnectWallet from '../components/ConnectWallet'
+import { SupportedChainId } from '../../src/constants/chains'
 
 export type IAddress = `0x${string}`
 
 const DEFAULT_ARGS = {
   address: '0xF8843981e7846945960f53243cA2Fd42a579f719' as IAddress,
-  chainId: 1,
+  chainId: 1 as SupportedChainId,
 }
 
 const meta: Meta<typeof DisplaySplit> = {
