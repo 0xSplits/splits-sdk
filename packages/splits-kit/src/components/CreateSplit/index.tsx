@@ -22,6 +22,7 @@ export interface ICreateSplitProps {
   defaultRecipients?: Recipient[]
   defaultDistributorFeeOptions?: number[]
   width?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full'
+  theme?: 'light' | 'dark' | 'system'
   displayChain?: boolean
   onSuccess?: (address: string, event: Event | undefined) => void
 }
@@ -33,12 +34,14 @@ const CreateSplit = ({
   defaultRecipients = DEFAULT_RECIPIENTS,
   defaultDistributorFeeOptions = DEFAULT_DISTRIBUTOR_FEE_OPTIONS,
   width = 'lg',
+  theme = 'system',
   displayChain = true,
   onSuccess,
 }: ICreateSplitProps) => {
   return (
     <Segment
       width={width}
+      theme={theme}
       title={'New Split contract'}
       corner={
         displayChain

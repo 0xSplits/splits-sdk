@@ -19,6 +19,7 @@ export interface IDisplaySplitProps {
   displayBalances?: boolean
   displayChain?: boolean
   width?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full'
+  theme?: 'light' | 'dark' | 'system'
   onSuccess?: (token: string) => void
   onError?: (error: RequestError) => void
 }
@@ -29,6 +30,7 @@ const DisplaySplit = ({
   displayBalances = true,
   displayChain = true,
   width = 'md',
+  theme = 'system',
   onSuccess,
   onError,
 }: IDisplaySplitProps) => {
@@ -55,6 +57,7 @@ const DisplaySplit = ({
   return (
     <Segment
       width={width}
+      theme={theme}
       title={<SplitHeader address={address} />}
       titleButton={
         <div className="flex items-center space-x-2">
