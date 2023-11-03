@@ -1,5 +1,5 @@
 import type { StorybookConfig } from '@storybook/react-webpack5'
-const path = require('path')
+import path from 'path'
 
 const config: StorybookConfig = {
   stories: [
@@ -7,11 +7,11 @@ const config: StorybookConfig = {
     '../storybook/**/*.stories.@(js|jsx|mjs|ts|tsx)',
   ],
   addons: [
-    '@storybook/addon-links',
     '@storybook/addon-essentials',
-    '@storybook/addon-interactions',
     '@storybook/addon-styling-webpack',
     '@storybook/addon-themes',
+    '@storybook/addon-storysource',
+    'storybook-dark-mode',
   ],
   webpackFinal: async (config) => {
     config.module?.rules?.push({
