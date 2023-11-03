@@ -2,13 +2,11 @@ import React from 'react'
 import type { Event } from '@ethersproject/contracts'
 
 import CreateSplitForm from '../CreateSplit/CreateSplitForm'
-import { getNativeTokenSymbol } from '../../utils/display'
 import { ADDRESS_ZERO } from '../../constants/addresses'
 import ChainLogo from '../util/ChainLogo'
-import Segment from '../util/Segment'
+import ComponentLayout from '../util/ComponentLayout'
 import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
 import { IAddress, Recipient } from '../../types'
-import Link from '../util/Link'
 import {
   DEFAULT_DISTRIBUTOR_FEE,
   DEFAULT_DISTRIBUTOR_FEE_OPTIONS,
@@ -39,7 +37,8 @@ const CreateSplit = ({
   onSuccess,
 }: ICreateSplitProps) => {
   return (
-    <Segment
+    <ComponentLayout
+      chainId={chainId}
       width={width}
       theme={theme}
       title={'New Split contract'}
@@ -49,27 +48,14 @@ const CreateSplit = ({
           : undefined
       }
       body={
-        <div className="space-y-8 flex flex-col">
-          <div className="leading-relaxed text-gray-500">
-            Split is a payable smart contract that splits all incoming{' '}
-            {getNativeTokenSymbol(chainId)} & ERC20 tokens among the recipients
-            according to predefined ownership shares.{' '}
-            <Link
-              href="https://docs.splits.org/core/split"
-              className="underline transition hover:opacity-80"
-            >
-              Learn more
-            </Link>
-          </div>
-          <CreateSplitForm
-            defaultDistributorFee={defaultDistributorFee}
-            defaultController={defaultController}
-            defaultRecipients={defaultRecipients}
-            defaultDistributorFeeOptions={defaultDistributorFeeOptions}
-            chainId={chainId}
-            onSuccess={onSuccess}
-          />
-        </div>
+        <CreateSplitForm
+          defaultDistributorFee={defaultDistributorFee}
+          defaultController={defaultController}
+          defaultRecipients={defaultRecipients}
+          defaultDistributorFeeOptions={defaultDistributorFeeOptions}
+          chainId={chainId}
+          onSuccess={onSuccess}
+        />
       }
     />
   )

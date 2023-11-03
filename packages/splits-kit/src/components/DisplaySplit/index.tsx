@@ -10,7 +10,7 @@ import SplitBalances from '../DisplaySplit/SplitBalances'
 import SplitHeader from '../DisplaySplit/SplitHeader'
 import ChainLogo from '../util/ChainLogo'
 import { IAddress } from '../../types'
-import Segment from '../util/Segment'
+import ComponentLayout from '../util/ComponentLayout'
 import Link from '../util/Link'
 
 export interface IDisplaySplitProps {
@@ -51,11 +51,9 @@ const DisplaySplit = ({
     if (earningsError && onError) onError(earningsError)
   }, [earningsError, metadataError, onError])
 
-  const isNotFound =
-    metadataError && metadataError.name === 'AccountNotFoundError'
-
   return (
-    <Segment
+    <ComponentLayout
+      chainId={chainId}
       width={width}
       theme={theme}
       title={<SplitHeader address={address} />}
@@ -69,40 +67,37 @@ const DisplaySplit = ({
           </Link>
         </div>
       }
-      corner={
-        displayChain
-          ? CHAIN_INFO[chainId] && <ChainLogo chainInfo={CHAIN_INFO[chainId]} />
-          : undefined
+      corner={displayChain && <ChainLogo chainInfo={CHAIN_INFO[chainId]} />}
+      error={
+        metadataError &&
+        ((metadataError.name === 'AccountNotFoundError' && {
+          title: 'Split not found',
+          body: `This account is not a Splits contract on the ${CHAIN_INFO[chainId].label} network.`,
+        }) ||
+          (metadataError.name === 'InvalidArgumentError' && {
+            title: 'Invalid Address',
+            body: `Address ${address} is not a valid Ethereum address.`,
+          }))
       }
       body={
-        isNotFound ? (
-          <div className="text-center mt-12 space-y-2">
-            <div className="text-lg">Split not found</div>
-            <div className="text-xs">
-              This account is not a Splits contract on the{' '}
-              {CHAIN_INFO[chainId].label} network.
+        <div className="text-xs">
+          {isLoadingMetadata || isLoadingEarnings ? (
+            <SkeletonLoader />
+          ) : (
+            <div className="space-y-4">
+              <SplitRecipients split={split} />
+              {displayBalances && !isLoadingEarnings && (
+                <SplitBalances
+                  chainId={chainId}
+                  address={address}
+                  formattedSplitEarnings={formattedSplitEarnings}
+                  onSuccess={onSuccess}
+                  onError={onError}
+                />
+              )}
             </div>
-          </div>
-        ) : (
-          <div className="text-xs">
-            {isLoadingMetadata || isLoadingEarnings ? (
-              <SkeletonLoader />
-            ) : (
-              <div className="space-y-4">
-                <SplitRecipients split={split} />
-                {displayBalances && !isLoadingEarnings && (
-                  <SplitBalances
-                    chainId={chainId}
-                    address={address}
-                    formattedSplitEarnings={formattedSplitEarnings}
-                    onSuccess={onSuccess}
-                    onError={onError}
-                  />
-                )}
-              </div>
-            )}
-          </div>
-        )
+          )}
+        </div>
       }
     />
   )

@@ -17,6 +17,7 @@ import Tooltip from '../util/Tooltip'
 import Button from '../util/Button'
 import Link from '../util/Link'
 import { getSplitRouterParams } from '../../utils/splits'
+import { getNativeTokenSymbol } from '../../utils/display'
 
 const CreateCreateSplitForm = ({
   chainId,
@@ -88,85 +89,98 @@ const CreateCreateSplitForm = ({
   )}`
 
   return (
-    <FormProvider {...form}>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-        <RecipientSetter chainId={chainId} />
-        <InputRow
-          label="Controller"
-          input={
-            <ControllerSelector
-              chainId={chainId}
-              control={control}
-              inputName={'controller'}
-              setValue={setValue}
-              setError={setError}
-            />
-          }
-          link="https://docs.splits.org/create#split"
-        />
-        <InputRow
-          label="Distributor Fee"
-          input={
-            <NumberSelectInput
-              control={control}
-              inputName={'distributorFee'}
-              defaultVal={defaultDistributorFee}
-              setValue={setValue}
-              options={uniq([
-                ...defaultDistributorFeeOptions,
-                defaultDistributorFee,
-              ])
-                .sort()
-                .map((value) => {
-                  return {
-                    value,
-                    display: () => <span>{value}%</span>,
-                  }
-                })
-                .concat([
-                  {
-                    value: 0,
-                    display: () => <span>Manually distribute (0%)</span>,
-                  },
-                ])}
-              placeholder={`${defaultDistributorFee}%`}
-              decimalScale={2}
-              suffix={`%`}
-              minVal={0.01}
-              maxVal={99.99}
-              hideSelectedValue={false}
-            />
-          }
-          link="https://docs.splits.org/distribute#distribution-bounty"
-        />
-        <div className="my-5 flex flex-col space-y-1 text-center">
-          <Tooltip
-            isDisabled={isConnected && !isWrongChain}
-            content={
-              isWrongChain
-                ? `Switch to ${CHAIN_INFO[chainId].label} to distribute funds`
-                : !isConnected
-                ? 'Connect wallect'
-                : ''
-            }
+    <div className="space-y-8 flex flex-col">
+      <FormProvider {...form}>
+        <div className="leading-relaxed text-gray-500">
+          Split is a payable smart contract that splits all incoming{' '}
+          {getNativeTokenSymbol(chainId)} & ERC20 tokens among the recipients
+          according to predefined ownership shares.{' '}
+          <Link
+            href="https://docs.splits.org/core/split"
+            className="underline transition hover:opacity-80"
           >
-            <Button type="submit" isDisabled={isButtonDisabled}>
-              Create Split
-            </Button>
-          </Tooltip>
-          <span className="text-gray-400">or</span>
-          <div>
-            <Link
-              href={createOnSplitsAppLink}
-              className="font-medium text-gray-500 dark:text-gray-300"
-            >
-              Create on app.splits.org
-            </Link>
-          </div>
+            Learn more
+          </Link>
         </div>
-      </form>
-      <Disclaimer />
-    </FormProvider>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+          <RecipientSetter chainId={chainId} />
+          <InputRow
+            label="Controller"
+            input={
+              <ControllerSelector
+                chainId={chainId}
+                control={control}
+                inputName={'controller'}
+                setValue={setValue}
+                setError={setError}
+              />
+            }
+            link="https://docs.splits.org/create#split"
+          />
+          <InputRow
+            label="Distributor Fee"
+            input={
+              <NumberSelectInput
+                control={control}
+                inputName={'distributorFee'}
+                defaultVal={defaultDistributorFee}
+                setValue={setValue}
+                options={uniq([
+                  ...defaultDistributorFeeOptions,
+                  defaultDistributorFee,
+                ])
+                  .sort()
+                  .map((value) => {
+                    return {
+                      value,
+                      display: () => <span>{value}%</span>,
+                    }
+                  })
+                  .concat([
+                    {
+                      value: 0,
+                      display: () => <span>Manually distribute (0%)</span>,
+                    },
+                  ])}
+                placeholder={`${defaultDistributorFee}%`}
+                decimalScale={2}
+                suffix={`%`}
+                minVal={0.01}
+                maxVal={99.99}
+                hideSelectedValue={false}
+              />
+            }
+            link="https://docs.splits.org/distribute#distribution-bounty"
+          />
+          <div className="my-5 flex flex-col space-y-1 text-center">
+            <Tooltip
+              isDisabled={isConnected && !isWrongChain}
+              content={
+                isWrongChain
+                  ? `Switch to ${CHAIN_INFO[chainId].label} to distribute funds`
+                  : !isConnected
+                  ? 'Connect wallect'
+                  : ''
+              }
+            >
+              <Button type="submit" isDisabled={isButtonDisabled}>
+                Create Split
+              </Button>
+            </Tooltip>
+            <span className="text-gray-400">or</span>
+            <div>
+              <Link
+                href={createOnSplitsAppLink}
+                className="font-medium text-gray-500 dark:text-gray-300"
+              >
+                Create on app.splits.org
+              </Link>
+            </div>
+          </div>
+        </form>
+        <Disclaimer />
+      </FormProvider>
+    </div>
   )
 }
 

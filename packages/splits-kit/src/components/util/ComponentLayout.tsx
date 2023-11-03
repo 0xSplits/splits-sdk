@@ -1,26 +1,36 @@
 import React, { useEffect, useState } from 'react'
 import Link from './Link'
+import { CHAIN_INFO } from '../../constants/chains'
 
-interface ISegment {
+interface IComponentLayout {
   title?: string | JSX.Element
   count?: string | JSX.Element | false
   titleButton?: JSX.Element
   body: JSX.Element
   tooltip?: string | JSX.Element
-  corner?: string | JSX.Element
+  corner?: string | JSX.Element | false
   showTooltipOnContentHover?: boolean
+  error?:
+    | {
+        title: string | JSX.Element
+        body: string | JSX.Element
+      }
+    | false
+  chainId?: number
   width?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full'
   theme?: 'light' | 'dark' | 'system'
 }
 
-const Segment = ({
+const ComponentLayout = ({
   title,
   titleButton,
   body,
   corner,
+  error,
+  chainId,
   width = 'md',
   theme = 'system',
-}: ISegment): JSX.Element => {
+}: IComponentLayout): JSX.Element => {
   const maxWidthClass = {
     xs: 'max-w-xs',
     sm: 'max-w-sm',
@@ -48,10 +58,21 @@ const Segment = ({
     system: userPrefersDark ? 'dark' : '',
   }
 
+  const unsupportedChainId =
+    chainId && !Object.keys(CHAIN_INFO).includes(chainId.toString())
+  const errorDisplay = unsupportedChainId
+    ? {
+        title: 'Unsupported Chain ID',
+        body: `Chain ID ${chainId} is not supported by Splits. Supported chainId's include: ${Object.keys(
+          CHAIN_INFO,
+        ).join(', ')}.`,
+      }
+    : error
+
   return (
     <div className={`${themeClass[theme]}`}>
       <div
-        className={`text-sm ${maxWidthClass[width]} min-h-[18rem] dark:text-white border rounded bg-white dark:bg-black 
+        className={`grid text-sm ${maxWidthClass[width]} min-h-[18rem] dark:text-white border rounded bg-white dark:bg-black 
       border-gray-200 dark:border-gray-700 divide-y dark:divide-gray-700 divide-gray-200`}
       >
         <div className="p-4 py-3.5 flex w-full items-center justify-between space-x-2 rounded-t">
@@ -61,8 +82,17 @@ const Segment = ({
           </div>
           {corner && <div className="self-end shrink-0">{corner}</div>}
         </div>
-        <div className="p-4">{body}</div>
-        <div className="p-4 flex items-center justify-between text-xs bg-gray-50 dark:bg-[#1f1f1f] rounded-b">
+        <div className="p-4">
+          {errorDisplay ? (
+            <div className="text-center my-8 space-y-2">
+              <div className="text-lg">{errorDisplay.title}</div>
+              <div className="text-xs max-w-md">{errorDisplay.body}</div>
+            </div>
+          ) : (
+            body
+          )}
+        </div>
+        <div className="p-4 self-end flex items-center justify-between text-xs bg-gray-50 dark:bg-[#1f1f1f] rounded-b">
           <div className="flex space-x-2 items-center">
             <div>
               <img
@@ -90,4 +120,4 @@ const Segment = ({
   )
 }
 
-export default Segment
+export default ComponentLayout
