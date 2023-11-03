@@ -31,13 +31,13 @@ const ComponentLayout = ({
   width = 'md',
   theme = 'system',
 }: IComponentLayout): JSX.Element => {
-  const maxWidthClass = {
-    xs: 'max-w-xs',
-    sm: 'max-w-sm',
-    md: 'max-w-md',
-    lg: 'max-w-lg',
-    xl: 'max-w-xl',
-    full: 'max-w-full',
+  const widthValue = {
+    xs: '20rem',
+    sm: '24rem',
+    md: '28rem',
+    lg: '32rem',
+    xl: '36rem',
+    full: '100%',
   }
 
   const mq = window.matchMedia('(prefers-color-scheme: dark)')
@@ -70,10 +70,12 @@ const ComponentLayout = ({
     : error
 
   return (
-    <div className={`${themeClass[theme]}`}>
+    <div
+      className={`${themeClass[theme]}`}
+      style={{ width: widthValue[width] }}
+    >
       <div
-        className={`grid text-sm ${maxWidthClass[width]} min-h-[18rem] dark:text-white border rounded bg-white dark:bg-black 
-      border-gray-200 dark:border-gray-700 divide-y dark:divide-gray-700 divide-gray-200`}
+        className={`w-full grid text-sm min-h-[18rem] dark:text-white border rounded bg-white dark:bg-black border-gray-200 dark:border-gray-700 divide-y dark:divide-gray-700 divide-gray-200`}
       >
         <div className="p-4 py-3.5 flex w-full items-center justify-between space-x-2 rounded-t">
           <div className="flex items-center space-x-3 overflow-x-hidden overflow-y-visible w-full grow">

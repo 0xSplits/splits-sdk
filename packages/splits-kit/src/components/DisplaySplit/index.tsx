@@ -80,7 +80,7 @@ const DisplaySplit = ({
           }))
       }
       body={
-        <div className="text-xs">
+        <div className="flex flex-col text-xs">
           {isLoadingMetadata || isLoadingEarnings ? (
             <SkeletonLoader />
           ) : (
