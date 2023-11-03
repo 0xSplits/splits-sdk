@@ -23,6 +23,13 @@ export const RecipientRow = ({
 
   const isAddressValid = () => {
     const address = getValues(`recipients.${index}.address`)
+    const otherRecipients = getValues('recipients').filter(
+      (_, i) => i !== index,
+    )
+    const isDuplicate = otherRecipients.some(
+      (r) => r.address.toLowerCase() === address.toLowerCase(),
+    )
+    if (isDuplicate) return 'Address in use'
     return isAddress(address) || 'Invalid address'
   }
 
