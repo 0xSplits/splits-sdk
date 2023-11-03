@@ -1,8 +1,6 @@
 import React from 'react'
 import WagmiProvider from '../storybook/components/WagmiProvider'
 
-import '../dist/styles.css'
-
 const preview = {
   parameters: {
     actions: { argTypesRegex: '^on[A-Z].*' },

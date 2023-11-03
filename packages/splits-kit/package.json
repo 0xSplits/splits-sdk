@@ -13,8 +13,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rm -rf dist && tsc && npx tailwindcss -i src/styles.css -o dist/styles.css --minify",
-    "storybook": "yarn run build && storybook dev -p 6006",
-    "build-storybook": "yarn run build && storybook build"
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "author": "0xSplits (https://splits.org)",
   "publishConfig": {
@@ -52,6 +52,7 @@
     "@storybook/addon-essentials": "^7.5.2",
     "@storybook/addon-interactions": "^7.5.2",
     "@storybook/addon-links": "^7.5.2",
+    "@storybook/addon-postcss": "^2.0.0",
     "@storybook/addon-styling-webpack": "^0.0.5",
     "@storybook/addon-themes": "^7.5.2",
     "@storybook/blocks": "^7.5.2",
@@ -59,6 +60,7 @@
     "@storybook/react-webpack5": "^7.5.2",
     "@storybook/testing-library": "^0.2.2",
     "@types/lodash": "^4.14.200",
+    "postcss-loader": "^7.3.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "storybook": "^7.5.2",
