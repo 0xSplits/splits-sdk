@@ -13,7 +13,7 @@ import {
 } from '@0xsplits/splits-sdk-react'
 
 import { useConfig } from './useConfig'
-import Button from './Button'
+import { SecondaryButton } from './Button'
 
 export default function ConnectWallet({
   chainId,
@@ -47,14 +47,22 @@ function ConnectButton() {
 
   return (
     <div className="flex items-center space-x-2">
-      {isConnected && <Button onClick={() => disconnect()}>Disconnect</Button>}
+      {isConnected && (
+        <SecondaryButton size="xs" onClick={() => disconnect()}>
+          Disconnect
+        </SecondaryButton>
+      )}
       {connectors
         .filter((conn) => conn.ready && conn.id !== connector?.id)
         .map((conn) => (
-          <Button key={conn.id} onClick={() => connect({ connector: conn })}>
+          <SecondaryButton
+            size="xs"
+            key={conn.id}
+            onClick={() => connect({ connector: conn })}
+          >
             Connect with {conn.name}
             {isLoading && conn.id === pendingConnector?.id && ' (connecting)'}
-          </Button>
+          </SecondaryButton>
         ))}
     </div>
   )
@@ -72,7 +80,7 @@ function NetworkSwitcher({ chainId }: { chainId: number }) {
           <select
             value={chain.id}
             onChange={(e) => switchNetwork?.(Number(e.target.value))}
-            className="border p-1 rounded border-gray-200 bg-gray-50"
+            className="border p-0.5 rounded border-gray-200 bg-gray-50"
           >
             {chains.map((chain, idx) => (
               <option key={idx} value={chain.id}>
