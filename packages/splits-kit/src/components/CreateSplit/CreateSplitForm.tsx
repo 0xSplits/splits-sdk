@@ -4,7 +4,7 @@ import { CreateSplitConfig } from '@0xsplits/splits-sdk'
 import { useForm, FormProvider } from 'react-hook-form'
 import type { Event } from '@ethersproject/contracts'
 import { useAccount, useNetwork } from 'wagmi'
-import { uniq } from 'lodash'
+import { sum, uniq } from 'lodash'
 
 import { ControllerSelector } from '../CreateSplit/ControllerSelector'
 import RecipientSetter from '../CreateSplit/RecipientSetter'
@@ -72,8 +72,14 @@ const CreateCreateSplitForm = ({
     [createSplit, onSuccess],
   )
 
+  const recipientAllocationTotal = sum(
+    watch('recipients').map((recipient) => recipient.percentAllocation),
+  )
+
+  const isFullyAllocated = recipientAllocationTotal === 100
   const isWrongChain = chain && chainId !== chain.id
-  const isButtonDisabled = !isConnected || isWrongChain || !isFormValid
+  const isButtonDisabled =
+    !isConnected || isWrongChain || !isFormValid || !isFullyAllocated
 
   const formData = watch()
   const createOnSplitsAppLink = `https://app.splits.org/new/split?${getSplitRouterParams(
