@@ -46,12 +46,12 @@ export const DefaultRecipients: Story = {
   args: {
     defaultRecipients: [
       {
-        address: '0xA8b2e53C70743309f8D668B52ea09158008FAf91',
-        percentAllocation: 99.0,
+        address: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
+        percentAllocation: 80.0,
       },
       {
         address: '0xEc8Bfc8637247cEe680444BA1E25fA5e151Ba342',
-        percentAllocation: 1.0,
+        percentAllocation: 20.0,
       },
     ],
   },

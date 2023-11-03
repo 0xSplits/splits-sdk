@@ -12,8 +12,9 @@ import TotalAllocated from '../CreateSplit/TotalAllocated'
 import { SecondaryButton } from '../util/Button'
 import DropdownMenu from '../util/DropdownMenu'
 import { CreateSplitForm } from '../../types'
+import { SupportedChainId } from '../../constants/chains'
 
-const RecipientSetter = () => {
+const RecipientSetter = ({ chainId }: { chainId: SupportedChainId }) => {
   const { watch, control, setValue } = useFormContext<CreateSplitForm>()
   const { fields, append, remove } = useFieldArray({
     name: 'recipients',
@@ -92,7 +93,12 @@ const RecipientSetter = () => {
     <div className="space-y-4">
       <div>Recipients</div>
       {fields.map((f, index) => (
-        <RecipientRow key={f.id} index={index} onRemove={() => remove(index)} />
+        <RecipientRow
+          key={f.id}
+          index={index}
+          chainId={chainId}
+          onRemove={() => remove(index)}
+        />
       ))}
       <div className="flex justify-between">
         <SecondaryButton

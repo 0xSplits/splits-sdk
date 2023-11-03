@@ -84,11 +84,12 @@ const CreateCreateSplitForm = ({
   return (
     <FormProvider {...form}>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-        <RecipientSetter />
+        <RecipientSetter chainId={chainId} />
         <InputRow
           label="Controller"
           input={
             <ControllerSelector
+              chainId={chainId}
               control={control}
               inputName={'controller'}
               setValue={setValue}

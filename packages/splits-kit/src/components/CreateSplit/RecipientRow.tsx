@@ -7,25 +7,30 @@ import AddressInput from '../inputs/AddressInput'
 import { SecondaryButton } from '../util/Button'
 import NumberInput from '../inputs/NumberInput'
 import { CreateSplitForm } from '../../types'
+import { SupportedChainId } from '../../constants/chains'
 
 export const RecipientRow = ({
   index,
   onRemove,
+  chainId,
 }: {
   index: number
   onRemove?: () => void
+  chainId: SupportedChainId
 }) => {
   const { control, getValues, setValue, setError } =
     useFormContext<CreateSplitForm>()
 
   const isAddressValid = () => {
-    return isAddress(getValues(`recipients.${index}.address`))
+    const address = getValues(`recipients.${index}.address`)
+    return isAddress(address) || 'Invalid address'
   }
 
   return (
     <fieldset>
       <div className={'flex items-stretch space-x-3'}>
         <AddressInput
+          chainId={chainId}
           control={control}
           inputName={`recipients.${index}.address`}
           placeholder="Enter address"
