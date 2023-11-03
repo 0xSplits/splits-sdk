@@ -9,12 +9,14 @@ import {
   polygon,
   zora,
 } from 'wagmi/chains'
-import { publicProvider } from 'wagmi/providers/public'
 import { InjectedConnector } from 'wagmi/connectors/injected'
+import { alchemyProvider } from 'wagmi/providers/alchemy'
+import { alchemyApiKey } from './useConfig'
+import { publicProvider } from 'wagmi/providers/public'
 
 export const { chains, publicClient, webSocketPublicClient } = configureChains(
   [mainnet, goerli, polygon, optimism, arbitrum, zora, base],
-  [publicProvider()],
+  [publicProvider(), alchemyProvider({ apiKey: alchemyApiKey })],
 )
 
 const config = createConfig({

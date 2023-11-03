@@ -4,9 +4,9 @@ import { SplitsClientConfig } from '@0xsplits/splits-sdk-react'
 import { usePublicClient, useWalletClient } from 'wagmi'
 import { ethers } from 'ethers'
 
-const alchemyApiKey = process.env.STORYBOOK_ALCHEMY_API_KEY
-if (!alchemyApiKey || alchemyApiKey === undefined)
+if (process.env.STORYBOOK_ALCHEMY_API_KEY === undefined)
   throw new Error('STORYBOOK_ALCHEMY_API_KEY env variable is not set')
+export const alchemyApiKey = process.env.STORYBOOK_ALCHEMY_API_KEY
 
 export function useConfig(chainId: number): SplitsClientConfig {
   const ensProvider = new ethers.providers.AlchemyProvider(1, alchemyApiKey)
