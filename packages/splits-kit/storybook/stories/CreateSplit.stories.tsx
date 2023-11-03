@@ -23,6 +23,10 @@ const meta: Meta<typeof CreateSplit> = {
     chainId: {
       description: 'Chain ID of a supported network',
     },
+    defaultController: {
+      description: 'Default controller of the split contract',
+      type: 'string',
+    },
   },
   args: DEFAULT_ARGS,
   decorators: [
