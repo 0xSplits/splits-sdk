@@ -30,7 +30,9 @@ export default function ConnectWallet({
         <NetworkSwitcher chainId={chainId} />
         <ConnectButton />
       </div>
-      <div className="p-4">{children}</div>
+      <div className="p-4 text-center">
+        <div className="inline-block text-left">{children}</div>
+      </div>
     </SplitsProvider>
   )
 }
