@@ -1,5 +1,5 @@
 import { join, dirname } from 'path'
-import type { StorybookConfig } from '@storybook/react-webpack5';
+import type { StorybookConfig } from '@storybook/react-webpack5'
 
 /**
  * This function is used to resolve the absolute path of a package.
@@ -17,7 +17,6 @@ const config: StorybookConfig = {
   addons: [
     getAbsolutePath('@storybook/addon-links'),
     getAbsolutePath('@storybook/addon-essentials'),
-    getAbsolutePath('@storybook/addon-onboarding'),
     getAbsolutePath('@storybook/addon-interactions'),
     getAbsolutePath('@storybook/addon-styling-webpack'),
     getAbsolutePath('@storybook/addon-themes'),
@@ -29,6 +28,6 @@ const config: StorybookConfig = {
   docs: {
     autodocs: 'tag',
   },
-  staticDirs: ['../public']
+  staticDirs: ['../storybook/public'],
 }
 export default config

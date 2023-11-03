@@ -3,7 +3,6 @@
 src/testing/**/*
 
 # Storybook
-public/
 .storybook/
 storybook/
 storybook-static/
