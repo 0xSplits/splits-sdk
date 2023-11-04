@@ -1,23 +1,4 @@
 import React from 'react'
-import { CheckBadgeIcon } from '@heroicons/react/20/solid'
-
-import Tooltip from '../util/Tooltip'
-
-export function SponsorIcon(): JSX.Element {
-  return (
-    <Tooltip content={'Sponsorship recipient'} delay={50}>
-      <CheckBadgeIcon className="h-4 w-4 text-yellow-500" />
-    </Tooltip>
-  )
-}
-
-export function SponsorLabel({ amount }: { amount?: string }): JSX.Element {
-  return (
-    <div className="rounded-full bg-gradient-to-tr from-yellow-500 via-yellow-400 to-yellow-600 px-1.5 text-[12px] font-medium text-white dark:text-black">
-      {amount ?? 'Sponsor'}
-    </div>
-  )
-}
 
 export default function Label({
   icon,

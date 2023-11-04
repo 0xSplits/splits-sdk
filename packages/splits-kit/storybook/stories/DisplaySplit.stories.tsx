@@ -116,12 +116,3 @@ export const Controller: Story = {
     address: '0xFEe2Da13156eA1A6B649819c28f1888288C0C2A8',
   },
 }
-
-// TODO: figure out if we want to handle this gracefully
-// export const UnsupportedChainId: Story = {
-//   name: 'Error: Unsupported ChainId',
-//   args: {
-//     chainId: 2,
-//     address: '0x5bc5cDa58ec99b60d569ab9Ec8B94664D04D38F1',
-//   },
-// }
