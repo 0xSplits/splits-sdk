@@ -1,5 +1,4 @@
 import type {
-  Abi,
   AccessList,
   Account,
   Address,
@@ -163,9 +162,7 @@ export type TransferLiquidSplitOwnershipConfig = {
 
 export type CallData = {
   address: string
-  abi: Abi
-  args?: readonly unknown[]
-  functionName: string
+  data: Hex
 }
 
 export type RecoupTrancheInput = {

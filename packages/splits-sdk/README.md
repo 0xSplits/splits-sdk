@@ -25,4 +25,4 @@ yarn add @0xsplits/splits-sdk@2
 npm install @0xsplits/splits-sdk@2
 ```
 
-Documentation for the old Ethers version can be found [here](https://docs.splits.org/sdk-v2)
+Documentation for the old Ethers version can be found [here](https://docs.splits.org/sdk-ethers)

@@ -346,22 +346,15 @@ export class BaseTransactions extends BaseClient {
       })
       return gasEstimate
     } else if (this._transactionType === TransactionType.CallData) {
-      const { request } = await this._publicClient.simulateContract({
-        address: contractAddress,
+      const calldata = encodeFunctionData({
         abi: contractAbi,
         functionName,
-        account: this._walletClient.account,
         args: functionArgs ?? [],
-        ...transactionOverrides,
       })
 
       return {
-        ...request,
-        abi: request.abi.filter(
-          (abiVal) =>
-            abiVal.type === 'function' && abiVal.name === functionName,
-        ),
-        account: undefined,
+        address: contractAddress,
+        data: calldata,
       }
     } else if (this._transactionType === TransactionType.Transaction) {
       const { request } = await this._publicClient.simulateContract({
@@ -401,14 +394,9 @@ export class BaseTransactions extends BaseClient {
     if (!this._walletClient) throw new Error()
 
     const callRequests = calls.map((call) => {
-      const callData = encodeFunctionData({
-        abi: call.abi,
-        args: call.args,
-        functionName: call.functionName,
-      })
       return {
         target: call.address,
-        callData,
+        callData: call.data,
       }
     })
 
