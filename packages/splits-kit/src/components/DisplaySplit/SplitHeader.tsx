@@ -19,7 +19,7 @@ const SplitHeader = ({
   const displayName = showFullAddress ? address : shortenAddress(address)
 
   return (
-    <div className="flex w-full items-center space-x-2 overflow-hidden md:overflow-visible">
+    <div className="flex w-full items-center space-x-2 overflow-hidden">
       <div
         onMouseEnter={() => setShowFullAddress(true)}
         onMouseLeave={() => setShowFullAddress(false)}
@@ -39,14 +39,12 @@ const SplitHeader = ({
           <div className="truncate">{displayName}</div>
         </div>
       </div>
-      <div className="flex items-center space-x-2">
-        <Link
-          href={`https://app.splits.org/accounts/${address}/?chainId=${chainId}`}
-          className="cursor-pointer text-gray-500 transition hover:text-black focus:outline-none dark:hover:text-white"
-        >
-          <ArrowTopRightOnSquareIcon className="h-4 w-4" />
-        </Link>
-      </div>
+      <Link
+        href={`https://app.splits.org/accounts/${address}/?chainId=${chainId}`}
+        className="cursor-pointer text-gray-500 transition hover:text-black focus:outline-none dark:hover:text-white"
+      >
+        <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+      </Link>
     </div>
   )
 }

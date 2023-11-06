@@ -77,12 +77,12 @@ const ComponentLayout = ({
       <div
         className={`w-full grid text-sm min-h-[18rem] dark:text-white border rounded bg-white dark:bg-black border-gray-200 dark:border-gray-700 divide-y dark:divide-gray-700 divide-gray-200`}
       >
-        <div className="px-4 py-3.5 flex items-center justify-between space-x-2 rounded-t">
+        <div className="px-4 py-3.5 flex items-center justify-between space-x-2 rounded-t overflow-hidden">
           <div className="flex items-center overflow-x-hidden ">
             {title && <div className="font-medium">{title}</div>}
             {titleButton && <div className="">{titleButton}</div>}
           </div>
-          {corner && <div className="shrink-0">{corner}</div>}
+          {corner && <div className="">{corner}</div>}
         </div>
         <div className="p-4">
           {errorDisplay ? (
