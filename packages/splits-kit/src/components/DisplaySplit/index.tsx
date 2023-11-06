@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react'
 import { useSplitEarnings, useSplitMetadata } from '@0xsplits/splits-sdk-react'
-import { ArrowTopRightOnSquareIcon } from '@heroicons/react/20/solid'
 import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
 
 import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
@@ -11,7 +10,6 @@ import SplitHeader from '../DisplaySplit/SplitHeader'
 import ChainLogo from '../util/ChainLogo'
 import { IAddress } from '../../types'
 import ComponentLayout from '../util/ComponentLayout'
-import Link from '../util/Link'
 
 export interface IDisplaySplitProps {
   address: IAddress
@@ -56,17 +54,7 @@ const DisplaySplit = ({
       chainId={chainId}
       width={width}
       theme={theme}
-      title={<SplitHeader address={address} />}
-      titleButton={
-        <div className="flex items-center space-x-2">
-          <Link
-            href={`https://app.splits.org/accounts/${address}/?chainId=${chainId}`}
-            className="cursor-pointer text-gray-500 transition hover:text-black focus:outline-none dark:hover:text-white"
-          >
-            <ArrowTopRightOnSquareIcon className="h-4 w-4" />
-          </Link>
-        </div>
-      }
+      title={<SplitHeader chainId={chainId} address={address} />}
       corner={displayChain && <ChainLogo chainInfo={CHAIN_INFO[chainId]} />}
       error={
         metadataError &&

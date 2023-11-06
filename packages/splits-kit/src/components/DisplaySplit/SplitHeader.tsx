@@ -4,12 +4,17 @@ import { Identicon } from '@lidofinance/identicon'
 import { shortenAddress } from '../../utils/address'
 import { copyToClipboard } from '../../utils/clipboard'
 import { IAddress } from '../../types'
+import Link from '../util/Link'
+import { ArrowTopRightOnSquareIcon } from '@heroicons/react/20/solid'
+import { SupportedChainId } from '../../constants/chains'
 
-interface SplitHeaderProps {
+const SplitHeader = ({
+  address,
+  chainId,
+}: {
   address: IAddress
-}
-
-const SplitHeader = ({ address }: SplitHeaderProps) => {
+  chainId: SupportedChainId
+}) => {
   const [showFullAddress, setShowFullAddress] = useState(false)
   const displayName = showFullAddress ? address : shortenAddress(address)
 
@@ -33,6 +38,14 @@ const SplitHeader = ({ address }: SplitHeaderProps) => {
           />
           <div className="truncate">{displayName}</div>
         </div>
+      </div>
+      <div className="flex items-center space-x-2">
+        <Link
+          href={`https://app.splits.org/accounts/${address}/?chainId=${chainId}`}
+          className="cursor-pointer text-gray-500 transition hover:text-black focus:outline-none dark:hover:text-white"
+        >
+          <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+        </Link>
       </div>
     </div>
   )
