@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import { EllipsisHorizontalIcon, UserPlusIcon } from '@heroicons/react/20/solid'
 import { useFieldArray, useFormContext } from 'react-hook-form'
 import { round, sumBy } from 'lodash'

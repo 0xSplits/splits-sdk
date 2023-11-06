@@ -1,13 +1,12 @@
-import React from 'react'
 import { XMarkIcon } from '@heroicons/react/20/solid'
 import { useFormContext } from 'react-hook-form'
 import { isAddress } from 'viem'
 
+import { SupportedChainId } from '../../constants/chains'
 import AddressInput from '../inputs/AddressInput'
 import { SecondaryButton } from '../util/Button'
 import NumberInput from '../inputs/NumberInput'
 import { CreateSplitForm } from '../../types'
-import { SupportedChainId } from '../../constants/chains'
 
 export const RecipientRow = ({
   index,

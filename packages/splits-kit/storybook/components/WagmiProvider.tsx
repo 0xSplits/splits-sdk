@@ -1,4 +1,3 @@
-import React from 'react'
 import { WagmiConfig, configureChains, createConfig } from 'wagmi'
 import {
   arbitrum,

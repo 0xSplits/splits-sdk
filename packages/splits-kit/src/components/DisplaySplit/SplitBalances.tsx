@@ -1,8 +1,7 @@
-import React from 'react'
 import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
 import { FormattedSplitEarnings } from '@0xsplits/splits-sdk'
 
-import DistributeButton from '../DisplaySplit/DistributeButton'
+import DistributeBalance from './DistributeBalance'
 import { SupportedChainId } from '../../constants/chains'
 
 const SplitBalances = ({
@@ -26,7 +25,7 @@ const SplitBalances = ({
       {hasBalances ? (
         <div>
           {Object.entries(balances).map(([token, balance], idx: number) => (
-            <DistributeButton
+            <DistributeBalance
               chainId={chainId}
               key={idx}
               token={token}

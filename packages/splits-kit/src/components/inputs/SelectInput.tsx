@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import { Fragment } from 'react'
 import { Listbox, Transition } from '@headlessui/react'
 import { ChevronDownIcon, LockClosedIcon } from '@heroicons/react/20/solid'
 

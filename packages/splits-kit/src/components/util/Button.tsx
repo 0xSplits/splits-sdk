@@ -1,5 +1,3 @@
-import * as React from 'react'
-
 interface IButton {
   children: React.ReactNode
   onClick?: React.MouseEventHandler<HTMLButtonElement>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Split } from '@0xsplits/splits-sdk-react'
 import { Identicon } from '@lidofinance/identicon'
 import { useAccount } from 'wagmi'

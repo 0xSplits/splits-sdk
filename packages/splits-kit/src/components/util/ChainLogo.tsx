@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { L1ChainInfo } from '../../constants/chains'
 import Tooltip from '../util/Tooltip'
 

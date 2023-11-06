@@ -1,4 +1,3 @@
-import React from 'react'
 import { CheckIcon, ExclamationCircleIcon } from '@heroicons/react/20/solid'
 import { round } from 'lodash'
 

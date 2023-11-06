@@ -1,12 +1,12 @@
-import React from 'react'
-
-interface LinkProps {
+export default function Link({
+  href,
+  children,
+  className,
+}: {
   href: string
   children: React.ReactNode
   className?: string
-}
-
-const Link: React.FC<LinkProps> = ({ href, children, className }) => {
+}) {
   return (
     <a
       href={href}
@@ -18,5 +18,3 @@ const Link: React.FC<LinkProps> = ({ href, children, className }) => {
     </a>
   )
 }
-
-export default Link

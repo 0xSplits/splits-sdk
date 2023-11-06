@@ -1,12 +1,11 @@
-import React from 'react'
 import type { Event } from '@ethersproject/contracts'
 
+import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
 import CreateSplitForm from '../CreateSplit/CreateSplitForm'
 import { ADDRESS_ZERO } from '../../constants/addresses'
-import ChainLogo from '../util/ChainLogo'
 import ComponentLayout from '../util/ComponentLayout'
-import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
 import { IAddress, Recipient } from '../../types'
+import ChainLogo from '../util/ChainLogo'
 import {
   DEFAULT_DISTRIBUTOR_FEE,
   DEFAULT_DISTRIBUTOR_FEE_OPTIONS,

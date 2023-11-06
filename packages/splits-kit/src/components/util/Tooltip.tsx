@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { Transition } from '@headlessui/react'
 import { InformationCircleIcon } from '@heroicons/react/20/solid'
 

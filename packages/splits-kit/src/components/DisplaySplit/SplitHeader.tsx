@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Identicon } from '@lidofinance/identicon'
 
 import { shortenAddress } from '../../utils/address'

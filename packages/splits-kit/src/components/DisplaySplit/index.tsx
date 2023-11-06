@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import { useSplitEarnings, useSplitMetadata } from '@0xsplits/splits-sdk-react'
 import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
 

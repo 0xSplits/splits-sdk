@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import { useCallback } from 'react'
 import { useCreateSplit } from '@0xsplits/splits-sdk-react'
 import { CreateSplitConfig } from '@0xsplits/splits-sdk'
 import { useForm, FormProvider } from 'react-hook-form'
@@ -7,17 +7,16 @@ import { useAccount, useNetwork } from 'wagmi'
 import { sum, uniq } from 'lodash'
 
 import { ControllerSelector } from '../CreateSplit/ControllerSelector'
+import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
+import { IAddress, Recipient, CreateSplitForm } from '../../types'
 import RecipientSetter from '../CreateSplit/RecipientSetter'
 import NumberSelectInput from '../inputs/NumberSelectInput'
-import { IAddress, Recipient, CreateSplitForm } from '../../types'
-import Disclaimer from '../CreateSplit/Disclaimer'
+import { getNativeTokenSymbol } from '../../utils/display'
+import { getSplitRouterParams } from '../../utils/splits'
 import InputRow from '../inputs/InputRow'
-import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
 import Tooltip from '../util/Tooltip'
 import Button from '../util/Button'
 import Link from '../util/Link'
-import { getSplitRouterParams } from '../../utils/splits'
-import { getNativeTokenSymbol } from '../../utils/display'
 
 const CreateCreateSplitForm = ({
   chainId,
@@ -180,6 +179,21 @@ const CreateCreateSplitForm = ({
         </form>
         <Disclaimer />
       </FormProvider>
+    </div>
+  )
+}
+
+const Disclaimer = () => {
+  return (
+    <div className="text-xs max-w-md mx-auto text-center text-gray-500 mt-4">
+      By creating a Split you agree to the{' '}
+      <Link href="https://splits.org/terms/" className="underline">
+        Terms of Service
+      </Link>{' '}
+      and acknowledge that you have read &amp; understand the{' '}
+      <Link href="https://splits.org/disclaimer/" className="underline">
+        Protocol Disclaimer
+      </Link>
     </div>
   )
 }

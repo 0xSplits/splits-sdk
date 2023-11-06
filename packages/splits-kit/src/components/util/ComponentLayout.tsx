@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from './Link'
 import { CHAIN_INFO } from '../../constants/chains'
 

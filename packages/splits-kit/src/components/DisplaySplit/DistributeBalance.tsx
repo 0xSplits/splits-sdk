@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
 import { useDistributeToken } from '@0xsplits/splits-sdk-react'
 import { useAccount, useNetwork } from 'wagmi'
@@ -9,7 +9,7 @@ import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
 import Button from '../util/Button'
 import { Balance } from '../../types'
 
-function DistributeButton({
+function DistributeBalance({
   chainId,
   token,
   balance,
@@ -75,4 +75,4 @@ function DistributeButton({
   )
 }
 
-export default DistributeButton
+export default DistributeBalance
