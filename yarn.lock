@@ -2,6 +2,23 @@
 # yarn lockfile v1
 
 
+"@0xsplits/splits-sdk-react@^1.0.6":
+  version "1.0.6"
+  resolved "https://registry.yarnpkg.com/@0xsplits/splits-sdk-react/-/splits-sdk-react-1.0.6.tgz#b6ba4e0ddfa955352179b359d4cc616cff4b78b4"
+  integrity sha512-e3rHDiJPX/Qzf7n0nRr0bTCcFMKVu5HI8nlIEHroMvHsRT14s13F+4Iyx9uLARC76MK5fmd0+bL5WZFot6N3Vg==
+  dependencies:
+    "@0xsplits/splits-sdk" "^3.0.6"
+
+"@0xsplits/splits-sdk@^3.0.6":
+  version "3.0.6"
+  resolved "https://registry.yarnpkg.com/@0xsplits/splits-sdk/-/splits-sdk-3.0.6.tgz#d304040134ab21dbf1e99aecc8f36bcefd2815ef"
+  integrity sha512-vbbi1JIJdhTpc4vOTdcKF5mRAsT5iDZoBIpnScyRwVRrfmmGHNkBp2fk6UVojb7UZgcz806kzx6vpDh0B/SMpw==
+  dependencies:
+    base-64 "^1.0.0"
+    graphql "^16.8.1"
+    graphql-request "^6.1.0"
+    viem "^1.16.6"
+
 "@aashutoshrathi/word-wrap@^1.2.3":
   version "1.2.6"
   resolved "https://registry.yarnpkg.com/@aashutoshrathi/word-wrap/-/word-wrap-1.2.6.tgz#bd9154aec9983f77b3a034ecaa015c2e4201f6cf"
