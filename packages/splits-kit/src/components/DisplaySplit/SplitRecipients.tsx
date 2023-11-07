@@ -6,10 +6,10 @@ import { useAccount } from 'wagmi'
 import { shortenENS, shortenAddress } from '../../utils/address'
 import { getSplitsAccountUrl } from '../../utils/splits'
 import { displayPercentage } from '../../utils/display'
-import { Recipient as Recipient } from '../../types'
 import Button from '../util/Button'
 import Label from '../util/Label'
 import Link from '../util/Link'
+import { Recipient } from '@0xsplits/splits-sdk'
 
 interface ISplitRecipientsProps {
   split: Split | undefined
@@ -20,8 +20,8 @@ const SplitRecipients = ({ split }: ISplitRecipientsProps) => {
   const { address: connectedAddress } = useAccount()
 
   const displayAddress = (recipient: Recipient) => {
-    if (recipient.ensName) {
-      return shortenENS(recipient.ensName)
+    if (recipient.ens) {
+      return shortenENS(recipient.ens)
     }
     if (recipient.address) {
       return shortenAddress(recipient.address)
@@ -33,9 +33,9 @@ const SplitRecipients = ({ split }: ISplitRecipientsProps) => {
     <div className="space-y-2 text-xs">
       {split?.controller && (
         <div className="border-yellow-500/50 bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 w-full rounded-sm border p-2 ">
-          {connectedAddress === split?.controller
+          {connectedAddress === split?.controller.address
             ? 'You control'
-            : `${shortenAddress(split?.controller)} controls`}{' '}
+            : `${shortenAddress(split?.controller.address)} controls`}{' '}
           this Split
         </div>
       )}
@@ -47,7 +47,7 @@ const SplitRecipients = ({ split }: ISplitRecipientsProps) => {
         <div>
           {recipients
             ?.slice(0, viewAll ? recipients?.length : 10)
-            .map((recipient, idx) => (
+            .map(({ recipient, percentAllocation }, idx) => (
               <div
                 key={idx}
                 className="py-2 flex items-stretch justify-between space-x-0.5"
@@ -60,13 +60,11 @@ const SplitRecipients = ({ split }: ISplitRecipientsProps) => {
                   {recipient.address === connectedAddress && (
                     <Label text="You" />
                   )}
-                  {recipient.address === split?.controller && (
+                  {recipient.address === split?.controller?.address && (
                     <Label text="Controller" />
                   )}
                 </div>
-                <div>
-                  {displayPercentage(recipient.percentAllocation * 10000, 2)}
-                </div>
+                <div>{displayPercentage(percentAllocation * 10000, 2)}</div>
               </div>
             ))}
         </div>

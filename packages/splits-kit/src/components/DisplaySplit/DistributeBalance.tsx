@@ -8,6 +8,7 @@ import Tooltip from '../util/Tooltip'
 import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
 import Button from '../util/Button'
 import { Balance } from '../../types'
+import { DistributeTokenConfig } from '@0xsplits/splits-sdk'
 
 function DistributeBalance({
   chainId,
@@ -29,12 +30,15 @@ function DistributeBalance({
   const { chain } = useNetwork()
 
   useEffect(() => {
-    if (error && onError) onError(error)
+    if (error) {
+      console.error(error)
+      onError && onError(error)
+    }
   }, [error, onError])
 
   const onClick = async () => {
-    const args = {
-      splitId: address,
+    const args: DistributeTokenConfig = {
+      splitAddress: address,
       token,
       distributorAddress: connectedAddress,
     }

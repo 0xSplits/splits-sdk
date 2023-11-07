@@ -45,8 +45,14 @@ const DisplaySplit = ({
   } = useSplitEarnings(address)
 
   useEffect(() => {
-    if (metadataError && onError) onError(metadataError)
-    if (earningsError && onError) onError(earningsError)
+    if (earningsError) {
+      console.error(earningsError)
+      onError && onError(earningsError)
+    }
+    if (metadataError) {
+      console.error(metadataError)
+      onError && onError(metadataError)
+    }
   }, [earningsError, metadataError, onError])
 
   return (

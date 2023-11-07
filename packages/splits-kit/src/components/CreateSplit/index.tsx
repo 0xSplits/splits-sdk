@@ -1,5 +1,3 @@
-import type { Event } from '@ethersproject/contracts'
-
 import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
 import CreateSplitForm from '../CreateSplit/CreateSplitForm'
 import { ADDRESS_ZERO } from '../../constants/addresses'
@@ -11,6 +9,7 @@ import {
   DEFAULT_DISTRIBUTOR_FEE_OPTIONS,
   DEFAULT_RECIPIENTS,
 } from '../../constants/splits'
+import { Log } from 'viem'
 
 export interface ICreateSplitProps {
   chainId: SupportedChainId
@@ -21,7 +20,7 @@ export interface ICreateSplitProps {
   width?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full'
   theme?: 'light' | 'dark' | 'system'
   displayChain?: boolean
-  onSuccess?: (address: string, event: Event | undefined) => void
+  onSuccess?: (events: Log[]) => void
 }
 
 const CreateSplit = ({

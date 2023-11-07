@@ -1,7 +1,9 @@
+import React from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
-import { DisplaySplit } from '../../src'
-import ConnectWallet from '../components/ConnectWallet'
+
 import { SupportedChainId } from '../../src/constants/chains'
+import ConnectWallet from '../components/ConnectWallet'
+import { DisplaySplit } from '../../src'
 
 export type IAddress = `0x${string}`
 

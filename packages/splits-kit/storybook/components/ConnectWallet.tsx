@@ -1,18 +1,21 @@
+import React from 'react'
 import {
   useAccount,
   useConnect,
   useDisconnect,
   useNetwork,
   useSwitchNetwork,
+  useWalletClient,
 } from 'wagmi'
 import {
   SplitsClientConfig,
   SplitsProvider,
   useSplitsClient,
 } from '@0xsplits/splits-sdk-react'
-
-import { useConfig } from './useConfig'
+import { Chain, createPublicClient, http } from 'viem'
+import { CHAIN_INFO } from '../../src/constants/chains'
 import { SecondaryButton } from './Button'
+import { mainnet } from 'viem/chains'
 
 export default function ConnectWallet({
   chainId,
@@ -21,10 +24,32 @@ export default function ConnectWallet({
   chainId: number
   children: React.ReactNode
 }) {
-  const config = useConfig(chainId)
+  Object.values(CHAIN_INFO).forEach((chain) => {
+    console.log(chain.rpcUrls[0])
+  })
+
+  const chain: Chain = CHAIN_INFO[chainId].viemChain
+  const transport = http(CHAIN_INFO[chainId].rpcUrls[0])
+  const publicClient = createPublicClient({ chain, transport })
+
+  const { data: walletClient } = useWalletClient({ chainId })
+
+  const ensPublicClient = createPublicClient({
+    chain: mainnet,
+    transport: http(CHAIN_INFO[1].rpcUrls[0]),
+  })
+
+  const splitsConfig: SplitsClientConfig = {
+    chainId,
+    publicClient,
+    walletClient: walletClient !== null ? walletClient : undefined,
+    includeEnsNames: true,
+    ensPublicClient,
+  }
+
   return (
-    <SplitsProvider config={config}>
-      <UseConfig config={config} />
+    <SplitsProvider config={splitsConfig}>
+      <UseConfig config={splitsConfig} />
       <div className="flex justify-center items-center space-x-4 w-full border-b border-gray-200 p-2 mb-2">
         <NetworkSwitcher chainId={chainId} />
         <ConnectButton />

@@ -1,3 +1,4 @@
+import React from 'react'
 import { CreateSplit, DisplaySplit } from '../../src'
 import { SplitsProvider } from '@0xsplits/splits-sdk-react'
 

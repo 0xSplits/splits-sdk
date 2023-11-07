@@ -1,6 +1,4 @@
-import { BigNumber } from 'ethers'
-
-export const PERCENTAGE_SCALE = BigNumber.from(1e6)
+export const PERCENTAGE_SCALE = 1e6
 export const SPLIT_RECIPIENT_MAX_DECIMALS = 4
 
 export const EMPTY_RECIPIENT = { address: '', percentAllocation: 0 }

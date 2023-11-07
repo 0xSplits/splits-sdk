@@ -2,7 +2,6 @@ import { useCallback } from 'react'
 import { useCreateSplit } from '@0xsplits/splits-sdk-react'
 import { CreateSplitConfig } from '@0xsplits/splits-sdk'
 import { useForm, FormProvider } from 'react-hook-form'
-import type { Event } from '@ethersproject/contracts'
 import { useAccount, useNetwork } from 'wagmi'
 import { sum, uniq } from 'lodash'
 
@@ -17,6 +16,7 @@ import InputRow from '../inputs/InputRow'
 import Tooltip from '../util/Tooltip'
 import Button from '../util/Button'
 import Link from '../util/Link'
+import { Log } from 'viem'
 
 const CreateCreateSplitForm = ({
   chainId,
@@ -31,9 +31,14 @@ const CreateCreateSplitForm = ({
   defaultController: IAddress
   defaultRecipients: Recipient[]
   defaultDistributorFeeOptions: number[]
-  onSuccess?: (address: string, event: Event | undefined) => void
+  onSuccess?: (events: Log[]) => void
 }) => {
-  const { createSplit } = useCreateSplit()
+  const { createSplit, error } = useCreateSplit()
+  // NOTE: should we log this error?
+  if (error) {
+    console.error(error)
+  }
+
   const { isConnected, address: connectedAddress } = useAccount()
   const { chain } = useNetwork()
 
@@ -64,9 +69,7 @@ const CreateCreateSplitForm = ({
       }
       const result = await createSplit(args)
       if (result) {
-        const event = result?.[0]
-        const splitId = event?.args?.split
-        onSuccess && onSuccess(splitId, event)
+        onSuccess && onSuccess(result)
       }
     },
     [createSplit, onSuccess],

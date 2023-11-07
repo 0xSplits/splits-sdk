@@ -1,5 +1,3 @@
-import { BigNumber } from 'ethers'
-
 export type IAddress = `0x${string}`
 export type IAccount = IAddress | null | undefined
 
@@ -12,7 +10,7 @@ export type Recipient = {
 export type Balance = {
   decimals: number
   formattedAmount: string
-  rawAmount: BigNumber
+  rawAmount: bigint
   symbol: string
 }
 
