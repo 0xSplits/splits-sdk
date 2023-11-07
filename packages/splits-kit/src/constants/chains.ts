@@ -51,10 +51,13 @@ const DropdownDisplayChainsList = [
   aurora,
 ]
 
-export const SupportedChainsMap = SupportedChainsList.reduce((acc, chain) => {
-  acc[chain.id] = chain
-  return acc
-}, {} as { [key: string]: Chain })
+export const SupportedChainsMap = SupportedChainsList.reduce(
+  (acc, chain) => {
+    acc[chain.id] = chain
+    return acc
+  },
+  {} as { [key: string]: Chain },
+)
 export const SupportedChains = SupportedChainsList
 export type SupportedChain = (typeof SupportedChains)[number]
 export type SupportedChainId = SupportedChain['id']

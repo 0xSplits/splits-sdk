@@ -161,7 +161,7 @@ const CreateCreateSplitForm = ({
                 isWrongChain
                   ? `Switch to ${CHAIN_INFO[chainId].label} to distribute funds`
                   : !isConnected
-                  ? 'Connect wallect'
+                  ? 'Connect wallet'
                   : ''
               }
             >

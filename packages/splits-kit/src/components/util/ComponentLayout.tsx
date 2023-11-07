@@ -75,7 +75,7 @@ const ComponentLayout = ({
       style={{ width: widthValue[width] }}
     >
       <div
-        className={`w-full grid text-sm min-h-[18rem] dark:text-white border rounded bg-white dark:bg-black border-gray-200 dark:border-gray-700 divide-y dark:divide-gray-700 divide-gray-200`}
+        className={`w-full grid text-left text-sm min-h-[18rem] dark:text-white border rounded bg-white dark:bg-black border-gray-200 dark:border-gray-700 divide-y dark:divide-gray-700 divide-gray-200`}
       >
         <div className="px-4 py-3.5 flex items-center justify-between space-x-2 rounded-t overflow-hidden">
           <div className="flex items-center overflow-x-hidden ">
@@ -98,12 +98,12 @@ const ComponentLayout = ({
           <div className="flex space-x-2 items-center">
             <div>
               <img
-                src="/logo_dark.svg"
+                src="https://splits-kit.vercel.app/logo_dark.svg"
                 width={18}
                 className="hidden dark:block"
               />
               <img
-                src="/logo_light.svg"
+                src="https://splits-kit.vercel.app/logo_light.svg"
                 width={18}
                 className="block dark:hidden"
               />
