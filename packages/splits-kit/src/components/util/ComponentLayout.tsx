@@ -75,7 +75,7 @@ const ComponentLayout = ({
       style={{ width: widthValue[width] }}
     >
       <div
-        className={`w-full grid text-left text-sm min-h-[18rem] dark:text-white border rounded bg-white dark:bg-black border-gray-200 dark:border-gray-700 divide-y dark:divide-gray-700 divide-gray-200`}
+        className={`w-full grid font-sans text-left text-sm min-h-[18rem] dark:text-white border rounded bg-white dark:bg-black border-gray-200 dark:border-gray-700 divide-y dark:divide-gray-700 divide-gray-200`}
       >
         <div className="px-4 py-3.5 flex items-center justify-between space-x-2 rounded-t overflow-hidden">
           <div className="flex items-center overflow-x-hidden ">
