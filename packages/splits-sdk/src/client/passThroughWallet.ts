@@ -1,8 +1,10 @@
 import {
   Address,
+  GetContractReturnType,
   Hash,
   Hex,
   Log,
+  PublicClient,
   decodeEventLog,
   encodeEventTopics,
   getAddress,
@@ -39,6 +41,8 @@ import type {
   TransactionFormat,
 } from '../types'
 import { validateAddress } from '../utils/validation'
+
+type PassThroughWalletAbi = typeof passThroughWalletAbi
 
 class PassThroughWalletTransactions extends BaseTransactions {
   constructor({
@@ -188,7 +192,9 @@ class PassThroughWalletTransactions extends BaseTransactions {
       )
   }
 
-  protected _getPassThroughWalletContract(passThroughWallet: string) {
+  protected _getPassThroughWalletContract(
+    passThroughWallet: string,
+  ): GetContractReturnType<PassThroughWalletAbi, PublicClient> {
     return getContract({
       address: getAddress(passThroughWallet),
       abi: passThroughWalletAbi,

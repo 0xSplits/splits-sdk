@@ -1,8 +1,10 @@
 import {
   Address,
+  GetContractReturnType,
   Hash,
   Hex,
   Log,
+  PublicClient,
   decodeEventLog,
   encodeEventTopics,
   getAddress,
@@ -64,6 +66,9 @@ import {
 } from '../utils/validation'
 import { GqlSwapper } from '../subgraph/types'
 import { SWAPPER_QUERY, protectedFormatSwapper } from '../subgraph'
+
+type SwapperAbi = typeof swapperAbi
+type UniV3SwapAbi = typeof uniV3SwapAbi
 
 class SwapperTransactions extends BaseTransactions {
   constructor({
@@ -414,7 +419,10 @@ class SwapperTransactions extends BaseTransactions {
       )
   }
 
-  protected _getUniV3SwapContract() {
+  protected _getUniV3SwapContract(): GetContractReturnType<
+    UniV3SwapAbi,
+    PublicClient
+  > {
     return getContract({
       address: getUniV3SwapAddress(this._chainId),
       abi: uniV3SwapAbi,
@@ -422,7 +430,9 @@ class SwapperTransactions extends BaseTransactions {
     })
   }
 
-  protected _getSwapperContract(swapper: string) {
+  protected _getSwapperContract(
+    swapper: string,
+  ): GetContractReturnType<SwapperAbi, PublicClient> {
     return getContract({
       address: getAddress(swapper),
       abi: swapperAbi,

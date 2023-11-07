@@ -1,8 +1,10 @@
 import {
   Address,
+  GetContractReturnType,
   Hash,
   Hex,
   Log,
+  PublicClient,
   decodeEventLog,
   encodeEventTopics,
   getAddress,
@@ -51,6 +53,8 @@ import {
   addEnsNames,
 } from '../utils'
 import { validateAddress, validateTranches } from '../utils/validation'
+
+type WaterfallAbi = typeof waterfallAbi
 
 class WaterfallTransactions extends BaseTransactions {
   constructor({
@@ -283,7 +287,9 @@ class WaterfallTransactions extends BaseTransactions {
     }
   }
 
-  protected _getWaterfallContract(waterfallModule: string) {
+  protected _getWaterfallContract(
+    waterfallModule: string,
+  ): GetContractReturnType<WaterfallAbi, PublicClient> {
     return getContract({
       address: getAddress(waterfallModule),
       abi: waterfallAbi,

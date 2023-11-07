@@ -29,7 +29,8 @@
   },
   "homepage": "https://docs.splits.org/sdk",
   "dependencies": {
-    "@0xsplits/splits-sdk": "^3.0.6"
+    "@0xsplits/splits-sdk": "^3.0.6",
+    "viem": "^1.16.6"
   },
   "peerDependencies": {
     "react": "17.x.x || 18.x.x"
