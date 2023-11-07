@@ -19,7 +19,7 @@ export type TransactionOverrides = {
   maxFeePerGas?: bigint
   maxPriorityFeePerGas?: bigint
   nonce?: number
-  value?: number
+  value?: bigint
 }
 
 interface TransactionOverridesDict {
