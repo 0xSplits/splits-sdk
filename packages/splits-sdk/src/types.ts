@@ -19,17 +19,11 @@ export type TransactionOverrides = {
   maxFeePerGas?: bigint
   maxPriorityFeePerGas?: bigint
   nonce?: number
-  value?: bigint
 }
 
 interface TransactionOverridesDict {
   transactionOverrides?: TransactionOverrides
 }
-
-// Multicall
-export type MulticallConfig = {
-  calls: CallData[]
-} & TransactionOverridesDict
 
 // Splits
 export type SplitsClientConfig = {

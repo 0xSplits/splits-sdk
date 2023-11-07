@@ -30,7 +30,6 @@ export {
   LIQUID_SPLITS_MAX_PRECISION_DECIMALS,
 } from './constants'
 export type {
-  MulticallConfig,
   CreateSplitConfig,
   UpdateSplitConfig,
   DistributeTokenConfig,

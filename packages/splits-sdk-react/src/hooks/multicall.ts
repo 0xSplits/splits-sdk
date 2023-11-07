@@ -1,13 +1,13 @@
 import { Log } from 'viem'
 import { useCallback, useContext, useState } from 'react'
-import { MulticallConfig } from '@0xsplits/splits-sdk'
+import { CallData } from '@0xsplits/splits-sdk'
 
 import { SplitsContext } from '../context'
 import { ContractExecutionStatus, RequestError } from '../types'
 import { getSplitsClient } from '../utils'
 
 export const useMulticall = (): {
-  multicall: (arg0: MulticallConfig) => Promise<Log[] | undefined>
+  multicall: (arg0: { calls: CallData[] }) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -20,7 +20,7 @@ export const useMulticall = (): {
   const [error, setError] = useState<RequestError>()
 
   const multicall = useCallback(
-    async (argsDict: MulticallConfig) => {
+    async (argsDict: { calls: CallData[] }) => {
       try {
         setStatus('pendingApproval')
         setError(undefined)

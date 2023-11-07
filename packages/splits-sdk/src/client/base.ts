@@ -39,7 +39,6 @@ import type {
   CallData,
   EarningsByContract,
   FormattedTokenBalances,
-  MulticallConfig,
   SplitsClientConfig,
   TokenBalances,
   TransactionConfig,
@@ -388,8 +387,9 @@ export class BaseTransactions extends BaseClient {
 
   async _multicallTransaction({
     calls,
-    transactionOverrides = {},
-  }: MulticallConfig): Promise<TransactionFormat> {
+  }: {
+    calls: CallData[]
+  }): Promise<TransactionFormat> {
     this._requireWalletClient()
     if (!this._walletClient) throw new Error()
 
@@ -405,7 +405,7 @@ export class BaseTransactions extends BaseClient {
       contractAbi: multicallAbi,
       functionName: 'aggregate',
       functionArgs: [callRequests],
-      transactionOverrides,
+      transactionOverrides: {},
     })
     return result
   }
@@ -441,21 +441,27 @@ export class BaseClientMixin extends BaseTransactions {
     return []
   }
 
-  async submitMulticallTransaction(multicallArgs: MulticallConfig): Promise<{
+  async submitMulticallTransaction({ calls }: { calls: CallData[] }): Promise<{
     txHash: Hash
   }> {
-    const multicallResult = await this._multicallTransaction(multicallArgs)
+    const multicallResult = await this._multicallTransaction({ calls })
     if (!this._isContractTransaction(multicallResult))
       throw new Error('Invalid response')
 
     return { txHash: multicallResult }
   }
 
-  async multicall(multicallArgs: MulticallConfig): Promise<{ events: Log[] }> {
+  async multicall({
+    calls,
+  }: {
+    calls: CallData[]
+  }): Promise<{ events: Log[] }> {
     this._requirePublicClient()
     if (!this._publicClient) throw new Error()
 
-    const { txHash } = await this.submitMulticallTransaction(multicallArgs)
+    const { txHash } = await this.submitMulticallTransaction({
+      calls,
+    })
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: [],
@@ -466,8 +472,10 @@ export class BaseClientMixin extends BaseTransactions {
 }
 
 export class BaseGasEstimatesMixin extends BaseTransactions {
-  async multicall(multicallArgs: MulticallConfig): Promise<bigint> {
-    const gasEstimate = await this._multicallTransaction(multicallArgs)
+  async multicall({ calls }: { calls: CallData[] }): Promise<bigint> {
+    const gasEstimate = await this._multicallTransaction({
+      calls,
+    })
     if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
 
     return gasEstimate
