@@ -24,10 +24,6 @@ export default function ConnectWallet({
   chainId: number
   children: React.ReactNode
 }) {
-  Object.values(CHAIN_INFO).forEach((chain) => {
-    console.log(chain.rpcUrls[0])
-  })
-
   const chain: Chain = CHAIN_INFO[chainId].viemChain
   const transport = http(CHAIN_INFO[chainId].rpcUrls[0])
   const publicClient = createPublicClient({ chain, transport })
