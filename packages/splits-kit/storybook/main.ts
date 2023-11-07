@@ -30,6 +30,9 @@ const config: StorybookConfig = {
     })
     return config
   },
+  env: (config) => {
+    return config
+  },
   typescript: {
     check: true,
   },
