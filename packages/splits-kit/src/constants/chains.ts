@@ -130,10 +130,10 @@ export const CHAIN_INFO: ChainInfo = {
     label: 'Ethereum',
     logoUrl: '/networks/ethereum_logo.svg',
     rpcUrls: [
-      `https://eth-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
+      `https://eth-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
     ],
     websocketUrls: [
-      `wss://eth-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
+      `wss://eth-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
     ],
     nativeCurrency: {
       name: 'ETH',
@@ -165,10 +165,10 @@ export const CHAIN_INFO: ChainInfo = {
     label: 'Goerli',
     logoUrl: '/networks/ethereum_logo.svg',
     rpcUrls: [
-      `https://eth-goerli.g.alchemy.com/v2/${process.env.GOERLI_ALCHEMY_API_KEY}`,
+      `https://eth-goerli.g.alchemy.com/v2/${process.env.STORYBOOK_GOERLI_ALCHEMY_API_KEY}`,
     ],
     websocketUrls: [
-      `wss://eth-goerli.g.alchemy.com/v2/${process.env.GOERLI_ALCHEMY_API_KEY}`,
+      `wss://eth-goerli.g.alchemy.com/v2/${process.env.STORYBOOK_GOERLI_ALCHEMY_API_KEY}`,
     ],
     nativeCurrency: {
       name: 'Goerli ETH',
@@ -198,10 +198,10 @@ export const CHAIN_INFO: ChainInfo = {
     label: 'Polygon',
     logoUrl: '/networks/polygon_logo.svg',
     rpcUrls: [
-      `https://polygon-mainnet.g.alchemy.com/v2/${process.env.POLYGON_ALCHEMY_API_KEY}`,
+      `https://polygon-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_POLYGON_ALCHEMY_API_KEY}`,
     ],
     websocketUrls: [
-      `wss://polygon-mainnet.g.alchemy.com/v2/${process.env.POLYGON_ALCHEMY_API_KEY}`,
+      `wss://polygon-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_POLYGON_ALCHEMY_API_KEY}`,
     ],
     nativeCurrency: {
       name: 'MATIC',
@@ -232,10 +232,10 @@ export const CHAIN_INFO: ChainInfo = {
     label: 'Polygon Mumbai',
     logoUrl: '/networks/polygon_logo.svg',
     rpcUrls: [
-      `https://polygon-mumbai.g.alchemy.com/v2/${process.env.MUMBAI_ALCHEMY_API_KEY}`,
+      `https://polygon-mumbai.g.alchemy.com/v2/${process.env.STORYBOOK_MUMBAI_ALCHEMY_API_KEY}`,
     ],
     websocketUrls: [
-      `wss://polygon-mumbai.g.alchemy.com/v2/${process.env.MUMBAI_ALCHEMY_API_KEY}`,
+      `wss://polygon-mumbai.g.alchemy.com/v2/${process.env.STORYBOOK_MUMBAI_ALCHEMY_API_KEY}`,
     ],
     nativeCurrency: {
       name: 'Mumbai MATIC',
@@ -266,10 +266,10 @@ export const CHAIN_INFO: ChainInfo = {
     label: 'Optimism',
     logoUrl: '/networks/optimism_logo.svg',
     rpcUrls: [
-      `https://opt-mainnet.g.alchemy.com/v2/${process.env.OPTIMISM_ALCHEMY_API_KEY}`,
+      `https://opt-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_OPTIMISM_ALCHEMY_API_KEY}`,
     ],
     websocketUrls: [
-      `wss://opt-mainnet.g.alchemy.com/v2/${process.env.OPTIMISM_ALCHEMY_API_KEY}`,
+      `wss://opt-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_OPTIMISM_ALCHEMY_API_KEY}`,
     ],
     nativeCurrency: {
       name: 'ETH',
@@ -300,10 +300,10 @@ export const CHAIN_INFO: ChainInfo = {
     label: 'Optimism Goerli',
     logoUrl: '/networks/optimism_logo.svg',
     rpcUrls: [
-      `https://opt-goerli.g.alchemy.com/v2/${process.env.OPT_GOERLI_ALCHEMY_API_KEY}`,
+      `https://opt-goerli.g.alchemy.com/v2/${process.env.STORYBOOK_OPT_GOERLI_ALCHEMY_API_KEY}`,
     ],
     websocketUrls: [
-      `wss://opt-goerli.g.alchemy.com/v2/${process.env.OPT_GOERLI_ALCHEMY_API_KEY}`,
+      `wss://opt-goerli.g.alchemy.com/v2/${process.env.STORYBOOK_OPT_GOERLI_ALCHEMY_API_KEY}`,
     ],
     nativeCurrency: {
       name: 'Goerli ETH',
@@ -333,10 +333,10 @@ export const CHAIN_INFO: ChainInfo = {
     label: 'Arbitrum',
     logoUrl: '/networks/arbitrum_logo.svg',
     rpcUrls: [
-      `https://arb-mainnet.g.alchemy.com/v2/${process.env.ARBITRUM_ALCHEMY_API_KEY}`,
+      `https://arb-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ARBITRUM_ALCHEMY_API_KEY}`,
     ],
     websocketUrls: [
-      `wss://arb-mainnet.g.alchemy.com/v2/${process.env.ARBITRUM_ALCHEMY_API_KEY}`,
+      `wss://arb-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ARBITRUM_ALCHEMY_API_KEY}`,
     ],
     nativeCurrency: {
       name: 'ETH',
@@ -367,10 +367,10 @@ export const CHAIN_INFO: ChainInfo = {
     label: 'Arbitrum Goerli',
     logoUrl: '/networks/arbitrum_logo.svg',
     rpcUrls: [
-      `https://arb-goerli.g.alchemy.com/v2/${process.env.ARB_GOERLI_ALCHEMY_API_KEY}`,
+      `https://arb-goerli.g.alchemy.com/v2/${process.env.STORYBOOK_ARB_GOERLI_ALCHEMY_API_KEY}`,
     ],
     websocketUrls: [
-      `wss://arb-goerli.g.alchemy.com/v2/${process.env.ARB_GOERLI_ALCHEMY_API_KEY}`,
+      `wss://arb-goerli.g.alchemy.com/v2/${process.env.STORYBOOK_ARB_GOERLI_ALCHEMY_API_KEY}`,
     ],
     nativeCurrency: {
       name: 'Goerli ETH',
@@ -400,10 +400,10 @@ export const CHAIN_INFO: ChainInfo = {
     label: 'Gnosis',
     logoUrl: '/networks/gnosis_logo.svg',
     rpcUrls: [
-      `https://proud-cold-slug.xdai.quiknode.pro/${process.env.GNOSIS_QUICKNODE_API_KEY}/`,
+      `https://proud-cold-slug.xdai.quiknode.pro/${process.env.STORYBOOK_GNOSIS_QUICKNODE_API_KEY}/`,
     ],
     websocketUrls: [
-      `wss://proud-cold-slug.xdai.quiknode.pro/${process.env.GNOSIS_QUICKNODE_API_KEY}/`,
+      `wss://proud-cold-slug.xdai.quiknode.pro/${process.env.STORYBOOK_GNOSIS_QUICKNODE_API_KEY}/`,
     ],
     nativeCurrency: {
       name: 'xDai',
@@ -430,10 +430,10 @@ export const CHAIN_INFO: ChainInfo = {
     label: 'Fantom',
     logoUrl: '/networks/fantom_logo.svg',
     rpcUrls: [
-      `https://distinguished-light-scion.fantom.quiknode.pro/${process.env.FANTOM_QUICKNODE_API_KEY}/`,
+      `https://distinguished-light-scion.fantom.quiknode.pro/${process.env.STORYBOOK_FANTOM_QUICKNODE_API_KEY}/`,
     ],
     websocketUrls: [
-      `wss://distinguished-light-scion.fantom.quiknode.pro/${process.env.FANTOM_QUICKNODE_API_KEY}/`,
+      `wss://distinguished-light-scion.fantom.quiknode.pro/${process.env.STORYBOOK_FANTOM_QUICKNODE_API_KEY}/`,
     ],
     nativeCurrency: {
       name: 'FTM',
@@ -460,10 +460,10 @@ export const CHAIN_INFO: ChainInfo = {
     label: 'Avalanche',
     logoUrl: '/networks/avalanche_logo.svg',
     rpcUrls: [
-      `https://divine-convincing-lambo.avalanche-mainnet.quiknode.pro/${process.env.AVALANCHE_QUICKNODE_API_KEY}/ext/bc/C/rpc`,
+      `https://divine-convincing-lambo.avalanche-mainnet.quiknode.pro/${process.env.STORYBOOK_AVALANCHE_QUICKNODE_API_KEY}/ext/bc/C/rpc`,
     ],
     websocketUrls: [
-      `wss://divine-convincing-lambo.avalanche-mainnet.quiknode.pro/${process.env.AVALANCHE_QUICKNODE_API_KEY}/`,
+      `wss://divine-convincing-lambo.avalanche-mainnet.quiknode.pro/${process.env.STORYBOOK_AVALANCHE_QUICKNODE_API_KEY}/`,
     ],
     nativeCurrency: {
       name: 'AVAX',
@@ -491,10 +491,10 @@ export const CHAIN_INFO: ChainInfo = {
     label: 'BSC',
     logoUrl: '/networks/bsc_logo.svg',
     rpcUrls: [
-      `https://white-summer-dinghy.bsc.quiknode.pro/${process.env.BSC_QUICKNODE_API_KEY}/`,
+      `https://white-summer-dinghy.bsc.quiknode.pro/${process.env.STORYBOOK_BSC_QUICKNODE_API_KEY}/`,
     ],
     websocketUrls: [
-      `wss://white-summer-dinghy.bsc.quiknode.pro/${process.env.BSC_QUICKNODE_API_KEY}/`,
+      `wss://white-summer-dinghy.bsc.quiknode.pro/${process.env.STORYBOOK_BSC_QUICKNODE_API_KEY}/`,
     ],
     nativeCurrency: {
       name: 'BNB',
@@ -522,7 +522,7 @@ export const CHAIN_INFO: ChainInfo = {
     label: 'Aurora',
     logoUrl: '/networks/aurora_logo.svg',
     rpcUrls: [
-      `https://aurora-mainnet.infura.io/v3/${process.env.AURORA_INFURA_API_KEY}`,
+      `https://aurora-mainnet.infura.io/v3/${process.env.STORYBOOK_AURORA_INFURA_API_KEY}`,
     ],
     websocketUrls: [],
     nativeCurrency: {
@@ -608,10 +608,10 @@ export const CHAIN_INFO: ChainInfo = {
     label: 'Base',
     logoUrl: '/networks/base_logo.svg',
     rpcUrls: [
-      `https://holy-sly-moon.base-mainnet.quiknode.pro/${process.env.BASE_QUICKNODE_API_KEY}/`,
+      `https://holy-sly-moon.base-mainnet.quiknode.pro/${process.env.STORYBOOK_BASE_QUICKNODE_API_KEY}/`,
     ],
     websocketUrls: [
-      `wss://holy-sly-moon.base-mainnet.quiknode.pro/${process.env.BASE_QUICKNODE_API_KEY}/`,
+      `wss://holy-sly-moon.base-mainnet.quiknode.pro/${process.env.STORYBOOK_BASE_QUICKNODE_API_KEY}/`,
     ],
     nativeCurrency: {
       name: 'ETH',
