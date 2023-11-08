@@ -51,7 +51,7 @@ importers:
   packages/splits-kit:
     dependencies:
       '@0xsplits/splits-sdk-react':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../splits-sdk-react
       '@headlessui/react':
         specifier: ^1.7.17
