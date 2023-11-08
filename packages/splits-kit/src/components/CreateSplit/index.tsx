@@ -1,4 +1,5 @@
 import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
+import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
 import CreateSplitForm from '../CreateSplit/CreateSplitForm'
 import { ADDRESS_ZERO } from '../../constants/addresses'
 import ComponentLayout from '../util/ComponentLayout'
@@ -21,6 +22,7 @@ export interface ICreateSplitProps {
   theme?: 'light' | 'dark' | 'system'
   displayChain?: boolean
   onSuccess?: (events: Log[]) => void
+  onError?: (error: RequestError) => void
 }
 
 const CreateSplit = ({
@@ -33,6 +35,7 @@ const CreateSplit = ({
   theme = 'system',
   displayChain = true,
   onSuccess,
+  onError,
 }: ICreateSplitProps) => {
   return (
     <ComponentLayout
@@ -53,6 +56,7 @@ const CreateSplit = ({
           defaultDistributorFeeOptions={defaultDistributorFeeOptions}
           chainId={chainId}
           onSuccess={onSuccess}
+          onError={onError}
         />
       }
     />

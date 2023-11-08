@@ -14,7 +14,7 @@ export type Balance = {
   symbol: string
 }
 
-export type CreateSplitForm = {
+export type ICreateSplitForm = {
   recipients: Recipient[]
   distributorFee: number
   controller: IAddress

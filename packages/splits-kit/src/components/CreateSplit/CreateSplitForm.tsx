@@ -1,4 +1,5 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
+import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
 import { useCreateSplit } from '@0xsplits/splits-sdk-react'
 import { CreateSplitConfig } from '@0xsplits/splits-sdk'
 import { useForm, FormProvider } from 'react-hook-form'
@@ -7,7 +8,7 @@ import { sum, uniq } from 'lodash'
 
 import { ControllerSelector } from '../CreateSplit/ControllerSelector'
 import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
-import { IAddress, Recipient, CreateSplitForm } from '../../types'
+import { IAddress, Recipient, ICreateSplitForm } from '../../types'
 import RecipientSetter from '../CreateSplit/RecipientSetter'
 import NumberSelectInput from '../inputs/NumberSelectInput'
 import { getNativeTokenSymbol } from '../../utils/display'
@@ -18,13 +19,14 @@ import Button from '../util/Button'
 import Link from '../util/Link'
 import { Log } from 'viem'
 
-const CreateCreateSplitForm = ({
+const CreateSplitForm = ({
   chainId,
   defaultDistributorFee,
   defaultRecipients,
   defaultController,
   defaultDistributorFeeOptions,
   onSuccess,
+  onError,
 }: {
   chainId: SupportedChainId
   defaultDistributorFee: number
@@ -32,17 +34,21 @@ const CreateCreateSplitForm = ({
   defaultRecipients: Recipient[]
   defaultDistributorFeeOptions: number[]
   onSuccess?: (events: Log[]) => void
+  onError?: (error: RequestError) => void
 }) => {
   const { createSplit, error } = useCreateSplit()
-  // NOTE: should we log this error?
-  if (error) {
-    console.error(error)
-  }
+
+  useEffect(() => {
+    if (error) {
+      console.error(error)
+      onError && onError(error)
+    }
+  }, [error, onError])
 
   const { isConnected, address: connectedAddress } = useAccount()
   const { chain } = useNetwork()
 
-  const form = useForm<CreateSplitForm>({
+  const form = useForm<ICreateSplitForm>({
     mode: 'onChange',
     defaultValues: {
       recipients: defaultRecipients,
@@ -61,7 +67,7 @@ const CreateCreateSplitForm = ({
   } = form
 
   const onSubmit = useCallback(
-    async (data: CreateSplitForm) => {
+    async (data: ICreateSplitForm) => {
       const args: CreateSplitConfig = {
         recipients: data.recipients,
         distributorFeePercent: data.distributorFee,
@@ -201,4 +207,4 @@ const Disclaimer = () => {
   )
 }
 
-export default CreateCreateSplitForm
+export default CreateSplitForm
