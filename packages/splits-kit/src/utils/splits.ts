@@ -1,5 +1,5 @@
 import { sortBy } from 'lodash'
-import { CreateSplitForm, IAccount, Recipient } from '../types'
+import { ICreateSplitForm, IAccount, Recipient } from '../types'
 
 export const getSplitsAccountUrl = (address: string, chainId?: number) => {
   const chainQueryParam = chainId ? `?chainId=${chainId}` : ''
@@ -17,7 +17,7 @@ export const sortRecipients = (
 }
 
 export const getSplitRouterParams = (
-  split: CreateSplitForm,
+  split: ICreateSplitForm,
   account: IAccount,
 ) => {
   const distributorFee = split.distributorFee * 10000
