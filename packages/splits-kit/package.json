@@ -60,6 +60,7 @@
     "@storybook/react": "^7.5.2",
     "@storybook/react-webpack5": "^7.5.2",
     "@types/lodash": "^4.14.200",
+    "@types/react": "^18.0.24",
     "postcss-loader": "^7.3.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

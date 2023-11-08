@@ -1,8 +1,10 @@
 import {
   Address,
+  GetContractReturnType,
   Hash,
   Hex,
   Log,
+  PublicClient,
   decodeEventLog,
   encodeEventTopics,
   getAddress,
@@ -41,6 +43,9 @@ import type {
 } from '../types'
 import { getTokenData, addEnsNames } from '../utils'
 import { validateAddress, validateVestingPeriod } from '../utils/validation'
+
+type VestingAbi = typeof vestingAbi
+type VestingFactoryAbi = typeof vestingFactoryAbi
 
 class VestingTransactions extends BaseTransactions {
   constructor({
@@ -121,7 +126,9 @@ class VestingTransactions extends BaseTransactions {
     return result
   }
 
-  protected _getVestingContract(vestingModule: string) {
+  protected _getVestingContract(
+    vestingModule: string,
+  ): GetContractReturnType<VestingAbi, PublicClient> {
     return getContract({
       address: getAddress(vestingModule),
       abi: vestingAbi,
@@ -129,7 +136,10 @@ class VestingTransactions extends BaseTransactions {
     })
   }
 
-  protected _getVestingFactoryContract() {
+  protected _getVestingFactoryContract(): GetContractReturnType<
+    VestingFactoryAbi,
+    PublicClient
+  > {
     return getContract({
       address: getVestingFactoryAddress(this._chainId),
       abi: vestingFactoryAbi,

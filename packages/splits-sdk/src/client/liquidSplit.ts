@@ -1,9 +1,11 @@
 import { decode } from 'base-64'
 import {
   Address,
+  GetContractReturnType,
   Hash,
   Hex,
   Log,
+  PublicClient,
   decodeEventLog,
   encodeEventTopics,
   getAddress,
@@ -56,6 +58,8 @@ import {
   validateDistributorFeePercent,
   validateRecipients,
 } from '../utils/validation'
+
+type LS1155Abi = typeof ls1155CloneAbi
 
 class LiquidSplitTransactions extends BaseTransactions {
   constructor({
@@ -232,7 +236,9 @@ class LiquidSplitTransactions extends BaseTransactions {
       )
   }
 
-  protected _getLiquidSplitContract(liquidSplit: string) {
+  protected _getLiquidSplitContract(
+    liquidSplit: string,
+  ): GetContractReturnType<LS1155Abi, PublicClient> {
     return getContract({
       address: getAddress(liquidSplit),
       abi: ls1155CloneAbi,

@@ -1,8 +1,10 @@
 import {
   Address,
+  GetContractReturnType,
   Hash,
   Hex,
   Log,
+  PublicClient,
   decodeEventLog,
   encodeEventTopics,
   getAddress,
@@ -110,9 +112,14 @@ const polygonAbiChainIds = [
   ...BASE_CHAIN_IDS,
 ]
 
+type SplitMainEthereumAbiType = typeof splitMainEthereumAbi
+
 class SplitsTransactions extends BaseTransactions {
   protected readonly _splitMainAbi
-  protected readonly _splitMainContract
+  protected readonly _splitMainContract: GetContractReturnType<
+    SplitMainEthereumAbiType,
+    PublicClient
+  >
 
   constructor({
     transactionType,
@@ -131,20 +138,16 @@ class SplitsTransactions extends BaseTransactions {
       includeEnsNames,
     })
 
+    this._splitMainContract = getContract({
+      address: getSplitMainAddress(chainId),
+      abi: splitMainEthereumAbi,
+      publicClient: this._publicClient,
+    })
+
     if (ETHEREUM_CHAIN_IDS.includes(chainId)) {
       this._splitMainAbi = splitMainEthereumAbi
-      this._splitMainContract = getContract({
-        address: getSplitMainAddress(chainId),
-        abi: splitMainEthereumAbi,
-        publicClient: this._publicClient,
-      })
     } else if (polygonAbiChainIds.includes(chainId)) {
       this._splitMainAbi = splitMainPolygonAbi
-      this._splitMainContract = getContract({
-        address: getSplitMainAddress(chainId),
-        abi: splitMainPolygonAbi,
-        publicClient: this._publicClient,
-      })
     } else
       throw new UnsupportedChainIdError(chainId, SPLITS_SUPPORTED_CHAIN_IDS)
   }

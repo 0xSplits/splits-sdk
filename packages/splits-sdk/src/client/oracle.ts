@@ -1,4 +1,9 @@
-import { getAddress, getContract } from 'viem'
+import {
+  GetContractReturnType,
+  PublicClient,
+  getAddress,
+  getContract,
+} from 'viem'
 
 import { BaseTransactions } from './base'
 import { TransactionType, ORACLE_CHAIN_IDS } from '../constants'
@@ -10,6 +15,8 @@ import type {
   TransactionConfig,
 } from '../types'
 import { validateAddress } from '../utils/validation'
+
+type UniV3OracleAbi = typeof uniV3OracleAbi
 
 class OracleTransactions extends BaseTransactions {
   constructor({
@@ -30,7 +37,9 @@ class OracleTransactions extends BaseTransactions {
     })
   }
 
-  protected _getOracleContract(oracle: string) {
+  protected _getOracleContract(
+    oracle: string,
+  ): GetContractReturnType<UniV3OracleAbi, PublicClient> {
     return getContract({
       address: getAddress(oracle),
       abi: uniV3OracleAbi,
