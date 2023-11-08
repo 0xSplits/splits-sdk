@@ -6,7 +6,7 @@ import { SupportedChainId } from '../../constants/chains'
 import AddressInput from '../inputs/AddressInput'
 import { SecondaryButton } from '../util/Button'
 import NumberInput from '../inputs/NumberInput'
-import { CreateSplitForm } from '../../types'
+import { ICreateSplitForm } from '../../types'
 
 export const RecipientRow = ({
   index,
@@ -18,7 +18,7 @@ export const RecipientRow = ({
   chainId: SupportedChainId
 }) => {
   const { control, getValues, setValue, setError } =
-    useFormContext<CreateSplitForm>()
+    useFormContext<ICreateSplitForm>()
 
   const isAddressValid = () => {
     const address = getValues(`recipients.${index}.address`)

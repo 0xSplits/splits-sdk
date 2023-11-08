@@ -11,11 +11,11 @@ import { RecipientRow } from '../CreateSplit/RecipientRow'
 import TotalAllocated from '../CreateSplit/TotalAllocated'
 import { SecondaryButton } from '../util/Button'
 import DropdownMenu from '../util/DropdownMenu'
-import { CreateSplitForm } from '../../types'
+import { ICreateSplitForm } from '../../types'
 import { SupportedChainId } from '../../constants/chains'
 
 const RecipientSetter = ({ chainId }: { chainId: SupportedChainId }) => {
-  const { watch, control, setValue } = useFormContext<CreateSplitForm>()
+  const { watch, control, setValue } = useFormContext<ICreateSplitForm>()
   const { fields, append, remove } = useFieldArray({
     name: 'recipients',
     control,
