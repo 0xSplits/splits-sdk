@@ -1,4 +1,4 @@
-import { createContext, useState, useMemo } from 'react'
+import React, { createContext, useState, useMemo } from 'react'
 import { SplitsClient, SplitsClientConfig } from '@0xsplits/splits-sdk'
 
 export type SplitsReactSdkContext = {

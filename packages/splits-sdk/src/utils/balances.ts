@@ -111,6 +111,7 @@ const processBalanceMulticallResponse: (
     if (token === ADDRESS_ZERO) {
       balances[ADDRESS_ZERO] = balance
     } else {
+      if (!tokenData[token]) return // Unable to fetch token data
       const { symbol, decimals } = tokenData[token]
       if (symbol === undefined || decimals === undefined) return // ignore non erc20
       balances[token] = balance

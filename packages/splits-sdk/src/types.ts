@@ -25,6 +25,11 @@ interface TransactionOverridesDict {
   transactionOverrides?: TransactionOverrides
 }
 
+// Multicall
+export type MulticallConfig = {
+  calls: CallData[]
+} & TransactionOverridesDict
+
 // Splits
 export type SplitsClientConfig = {
   chainId: number
