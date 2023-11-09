@@ -1,6 +1,4 @@
-# Splits Kit
-
-Coming soon!
+# SplitsKit
 
 ## Install
 
@@ -15,3 +13,6 @@ npm install @0xsplits/splits-kit
 
 ## Documentation
 
+Detailed documentation for the SDK can be found [here](https://docs.splits.org/splits-kit)
+
+Live Storybook demo can be found [here](https://kit.splits.org)
