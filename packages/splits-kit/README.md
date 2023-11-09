@@ -1,4 +1,4 @@
-# Splits Kit
+# SplitsKit
 
 ## Install
 

@@ -1,6 +1,6 @@
 {
-  "short_name": "Splits Kit",
-  "name": "Splits Kit - Storybook",
+  "short_name": "SplitsKit",
+  "name": "SplitsKit - Storybook",
   "iconPath": "logo_light.svg",
   "start_url": ".",
   "display": "standalone",
