@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Link from './Link'
 import { CHAIN_INFO } from '../../constants/chains'
+import SplitsLogo from './SplitsLogo'
 
 interface IComponentLayout {
   title?: string | JSX.Element
@@ -69,6 +70,8 @@ const ComponentLayout = ({
       }
     : error
 
+  const isDark = themeClass[theme] === 'dark'
+
   return (
     <div
       className={`${themeClass[theme]}`}
@@ -96,18 +99,7 @@ const ComponentLayout = ({
         </div>
         <div className="p-4 self-end flex items-center justify-between text-xs bg-gray-50 dark:bg-[#1f1f1f] rounded-b">
           <div className="flex space-x-2 items-center">
-            <div>
-              <img
-                src="https://splits-kit.vercel.app/logo_dark.svg"
-                width={18}
-                className="hidden dark:block"
-              />
-              <img
-                src="https://splits-kit.vercel.app/logo_light.svg"
-                width={18}
-                className="block dark:hidden"
-              />
-            </div>
+            <SplitsLogo dark={isDark} />
             <div className="font-medium">Powered by Splits</div>
           </div>
           <Link
