@@ -7,8 +7,8 @@ const Components = () => {
     <div className="p-4 max-w-5xl mx-auto space-y-4">
       <h1 className="text-4xl">SplitsKit</h1>
       <p className="my-4">
-        SplitsKit is the best way developers to add Splits-related flows into
-        their React apps. Learn more in the{' '}
+        SplitsKit is the best way for developers to add Splits-related flows
+        into their React apps. Learn more in the{' '}
         <a
           className="underline"
           target="_blank"
