@@ -5,7 +5,7 @@ const ChainLogo = ({ chainInfo }: { chainInfo: L1ChainInfo }): JSX.Element => {
   return (
     <Tooltip content={chainInfo.label} position="left">
       <img
-        src={`https://splits-kit.vercel.app/${chainInfo.logoUrl}`}
+        src={`https://kit.splits.org/${chainInfo.logoUrl}`}
         alt={chainInfo.label}
         style={{ width: 20 }}
       />
