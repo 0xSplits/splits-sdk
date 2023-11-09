@@ -50,6 +50,9 @@ importers:
 
   packages/splits-kit:
     dependencies:
+      '@0xsplits/splits-sdk':
+        specifier: ^3.0.7
+        version: link:../splits-sdk
       '@0xsplits/splits-sdk-react':
         specifier: ^1.0.7
         version: link:../splits-sdk-react
@@ -83,6 +86,9 @@ importers:
       styled-components:
         specifier: ^6.1.0
         version: 6.1.1(react-dom@18.2.0)(react@18.2.0)
+      viem:
+        specifier: ^1.16.6
+        version: 1.18.9(typescript@5.2.2)
       wagmi:
         specifier: ^1.4.5
         version: 1.4.6(@types/react@18.2.37)(react-dom@18.2.0)(react@18.2.0)(typescript@5.2.2)(viem@1.18.9)
@@ -2446,7 +2452,7 @@ packages:
     resolution: {integrity: sha512-9cIRrfkWvHblSiNDVXsjivqa9Ak0RYo/1H6tqTqTbAx+oBK2Sva0lWDHxGchOqA7bySGUJKAWSNJvH6gdHZ0gQ==}
     engines: {node: '>=14.0.0'}
     dependencies:
-      '@types/debug': 4.1.11
+      '@types/debug': 4.1.12
       debug: 4.3.4
       semver: 7.5.4
       superstruct: 1.0.3
@@ -5041,8 +5047,8 @@ packages:
       '@types/node': 20.9.0
     dev: true
 
-  /@types/debug@4.1.11:
-    resolution: {integrity: sha512-R2qflTjHDs4CL6D/6TkqBeIHr54WzZfIxN729xvCNlYIVp2LknlnCro5Yo3frNaX2E5gO9pZ3/QAPVdGmu+q9w==}
+  /@types/debug@4.1.12:
+    resolution: {integrity: sha512-vIChWdVG3LG1SMxEvI/AK+FWJthlrqlTu7fbrlywTkkaONwk/UAGaULXRlf8vkzFBLVm0zkMdCquhL5aOjhXPQ==}
     dependencies:
       '@types/ms': 0.7.34
     dev: false
@@ -6723,7 +6729,7 @@ packages:
     hasBin: true
     dependencies:
       caniuse-lite: 1.0.30001561
-      electron-to-chromium: 1.4.578
+      electron-to-chromium: 1.4.579
       node-releases: 2.0.13
       update-browserslist-db: 1.0.13(browserslist@4.22.1)
 
@@ -7849,8 +7855,8 @@ packages:
       jake: 10.8.7
     dev: true
 
-  /electron-to-chromium@1.4.578:
-    resolution: {integrity: sha512-V0ZhSu1BQZKfG0yNEL6Dadzik8E1vAzfpVOapdSiT9F6yapEJ3Bk+4tZ4SMPdWiUchCgnM/ByYtBzp5ntzDMIA==}
+  /electron-to-chromium@1.4.579:
+    resolution: {integrity: sha512-bJKvA+awBIzYR0xRced7PrQuRIwGQPpo6ZLP62GAShahU9fWpsNN2IP6BSP1BLDDSbxvBVRGAMWlvVVq3npmLA==}
 
   /emittery@0.13.1:
     resolution: {integrity: sha512-DeWwawk6r5yR9jFgnDKYt4sLS0LmHJJi3ZOnb5/JdbYwj3nW+FxQnHIjhBKz8YLC7oRNPVM9NQ47I3CVx34eqQ==}
