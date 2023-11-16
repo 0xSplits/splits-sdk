@@ -1085,6 +1085,7 @@ export class SplitsClient extends SplitsTransactions {
     distributorFeePercent: number
   }): Promise<{
     splitAddress: Address
+    splitExists: boolean
   }> {
     validateSplitInputs({ recipients, distributorFeePercent })
     this._requirePublicClient()
@@ -1099,7 +1100,12 @@ export class SplitsClient extends SplitsTransactions {
         Number(distributorFee),
       ])
 
-    return { splitAddress }
+    const { hash } = await this.getHash({ splitAddress })
+    const splitExists =
+      hash !==
+      '0x0000000000000000000000000000000000000000000000000000000000000000'
+
+    return { splitAddress, splitExists }
   }
 
   async getController({ splitAddress }: { splitAddress: string }): Promise<{
