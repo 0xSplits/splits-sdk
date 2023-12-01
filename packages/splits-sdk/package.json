@@ -2,14 +2,22 @@
   "name": "@0xsplits/splits-sdk",
   "version": "3.0.9-alpha.0",
   "description": "SDK for the 0xSplits protocol",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "main": "./dist/index.js",
+  "typings": "./dist/index.d.ts",
   "exports": {
     ".": "./dist/index.js",
     "./constants": "./dist/constants/index.js",
     "./constants/abi": "./dist/constants/abi/index.js",
     "./errors": "./dist/errors.js",
     "./types": "./dist/types.js"
+  },
+  "typesVersions": {
+    "*": {
+      "constants": ["./dist/constants/index.d.ts"],
+      "constants/abi": ["./dist/constants/abi/index.d.ts"],
+      "errors": ["./dist/errors.d.ts"],
+      "types": ["./dist/types.d.ts"]
+    }
   },
   "keywords": [
     "0xSplits",
