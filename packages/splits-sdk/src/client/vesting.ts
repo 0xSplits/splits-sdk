@@ -1,10 +1,12 @@
 import {
   Address,
+  Chain,
   GetContractReturnType,
   Hash,
   Hex,
   Log,
   PublicClient,
+  Transport,
   decodeEventLog,
   encodeEventTopics,
   getAddress,
@@ -128,7 +130,7 @@ class VestingTransactions extends BaseTransactions {
 
   protected _getVestingContract(
     vestingModule: string,
-  ): GetContractReturnType<VestingAbi, PublicClient> {
+  ): GetContractReturnType<VestingAbi, PublicClient<Transport, Chain>> {
     return getContract({
       address: getAddress(vestingModule),
       abi: vestingAbi,
@@ -138,7 +140,7 @@ class VestingTransactions extends BaseTransactions {
 
   protected _getVestingFactoryContract(): GetContractReturnType<
     VestingFactoryAbi,
-    PublicClient
+    PublicClient<Transport, Chain>
   > {
     return getContract({
       address: getVestingFactoryAddress(this._chainId),

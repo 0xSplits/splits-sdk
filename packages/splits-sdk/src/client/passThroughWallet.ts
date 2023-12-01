@@ -1,10 +1,12 @@
 import {
   Address,
+  Chain,
   GetContractReturnType,
   Hash,
   Hex,
   Log,
   PublicClient,
+  Transport,
   decodeEventLog,
   encodeEventTopics,
   getAddress,
@@ -194,7 +196,10 @@ class PassThroughWalletTransactions extends BaseTransactions {
 
   protected _getPassThroughWalletContract(
     passThroughWallet: string,
-  ): GetContractReturnType<PassThroughWalletAbi, PublicClient> {
+  ): GetContractReturnType<
+    PassThroughWalletAbi,
+    PublicClient<Transport, Chain>
+  > {
     return getContract({
       address: getAddress(passThroughWallet),
       abi: passThroughWalletAbi,

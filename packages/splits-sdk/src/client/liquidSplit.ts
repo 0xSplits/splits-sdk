@@ -1,11 +1,13 @@
 import { decode } from 'base-64'
 import {
   Address,
+  Chain,
   GetContractReturnType,
   Hash,
   Hex,
   Log,
   PublicClient,
+  Transport,
   decodeEventLog,
   encodeEventTopics,
   getAddress,
@@ -238,7 +240,7 @@ class LiquidSplitTransactions extends BaseTransactions {
 
   protected _getLiquidSplitContract(
     liquidSplit: string,
-  ): GetContractReturnType<LS1155Abi, PublicClient> {
+  ): GetContractReturnType<LS1155Abi, PublicClient<Transport, Chain>> {
     return getContract({
       address: getAddress(liquidSplit),
       abi: ls1155CloneAbi,

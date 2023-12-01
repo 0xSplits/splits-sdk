@@ -1,10 +1,12 @@
 import {
   Address,
+  Chain,
   GetContractReturnType,
   Hash,
   Hex,
   Log,
   PublicClient,
+  Transport,
   decodeEventLog,
   encodeEventTopics,
   getAddress,
@@ -118,7 +120,7 @@ class SplitsTransactions extends BaseTransactions {
   protected readonly _splitMainAbi
   protected readonly _splitMainContract: GetContractReturnType<
     SplitMainEthereumAbiType,
-    PublicClient
+    PublicClient<Transport, Chain>
   >
 
   constructor({

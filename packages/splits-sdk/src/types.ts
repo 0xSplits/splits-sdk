@@ -39,7 +39,7 @@ export type SplitsClientConfig = {
   includeEnsNames?: boolean
   // ensPublicClient can be used to fetch ens names when publicClient is not on mainnet (reverseRecords
   // only works on mainnet).
-  ensPublicClient?: PublicClient
+  ensPublicClient?: PublicClient<Transport, Chain>
 }
 
 export type TransactionConfig = {

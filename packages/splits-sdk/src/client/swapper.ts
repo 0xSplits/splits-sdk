@@ -1,10 +1,12 @@
 import {
   Address,
+  Chain,
   GetContractReturnType,
   Hash,
   Hex,
   Log,
   PublicClient,
+  Transport,
   decodeEventLog,
   encodeEventTopics,
   getAddress,
@@ -421,7 +423,7 @@ class SwapperTransactions extends BaseTransactions {
 
   protected _getUniV3SwapContract(): GetContractReturnType<
     UniV3SwapAbi,
-    PublicClient
+    PublicClient<Transport, Chain>
   > {
     return getContract({
       address: getUniV3SwapAddress(this._chainId),
@@ -432,7 +434,7 @@ class SwapperTransactions extends BaseTransactions {
 
   protected _getSwapperContract(
     swapper: string,
-  ): GetContractReturnType<SwapperAbi, PublicClient> {
+  ): GetContractReturnType<SwapperAbi, PublicClient<Transport, Chain>> {
     return getContract({
       address: getAddress(swapper),
       abi: swapperAbi,

@@ -8,6 +8,9 @@ import {
   encodeFunctionData,
   Log,
   Hex,
+  Transport,
+  Chain,
+  Account,
 } from 'viem'
 
 import { GraphQLClient, Variables } from 'graphql-request'
@@ -58,9 +61,11 @@ import {
 
 class BaseClient {
   readonly _chainId: number
-  protected readonly _ensPublicClient: PublicClient | undefined
-  readonly _walletClient: WalletClient | undefined
-  readonly _publicClient: PublicClient | undefined
+  protected readonly _ensPublicClient:
+    | PublicClient<Transport, Chain>
+    | undefined
+  readonly _walletClient: WalletClient<Transport, Chain, Account> | undefined
+  readonly _publicClient: PublicClient<Transport, Chain> | undefined
   private readonly _graphqlClient: GraphQLClient | undefined
   protected readonly _includeEnsNames: boolean
 
