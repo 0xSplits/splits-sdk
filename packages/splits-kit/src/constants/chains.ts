@@ -148,7 +148,7 @@ export const CHAIN_INFO: ChainInfo = {
     label: 'Arbitrum Goerli',
     logoUrl: '/networks/arbitrum_logo.svg',
     rpcUrls: [
-      `https://arb-goerli.g.alchemy.com/v2/${process.env.STORYBOOK_ARB_GOERLI_ALCHEMY_API_KEY}`,
+      `https://blissful-restless-butterfly.arbitrum-goerli.quiknode.pro/${process.env.STORYBOOK_ARBITRUM_GOERLI_QUICKNODE_API_KEY}/`,
     ],
     nativeCurrency: {
       symbol: 'ETH',
@@ -232,7 +232,7 @@ export const CHAIN_INFO: ChainInfo = {
     label: 'Base',
     logoUrl: '/networks/base_logo.svg',
     rpcUrls: [
-      `https://holy-sly-moon.base-mainnet.quiknode.pro/${process.env.STORYBOOK_BASE_QUICKNODE_API_KEY}/`,
+      `https://base-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_BASE_ALCHEMY_API_KEY}`,
     ],
     nativeCurrency: {
       symbol: 'ETH',
