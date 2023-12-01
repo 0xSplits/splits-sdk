@@ -83,23 +83,37 @@ export class OracleClient extends OracleTransactions {
   }> {
     validateAddress(oracleAddress)
     this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
 
-    const oracleContract = this._getOracleContract(oracleAddress)
-    const quoteAmounts = await oracleContract.read.getQuoteAmounts([
-      quoteParams.map((quoteParam) => {
+    // It's possible to fetch all quotes in a single request to the oracle, but if the
+    // oracle hits an error for just one pair there is no way to separate that out. So
+    // instead we are making a multicall combining each individual quote request. This
+    // allows us to easily filter out the failed quotes.
+    const multicallResponse = await this._publicClient.multicall({
+      contracts: quoteParams.map((quoteParam) => {
         return {
-          quotePair: {
-            base: getAddress(quoteParam.quotePair.base),
-            quote: getAddress(quoteParam.quotePair.quote),
-          },
-          baseAmount: quoteParam.baseAmount,
-          data: quoteParam.data ?? '0x',
+          address: getAddress(oracleAddress),
+          abi: uniV3OracleAbi,
+          functionName: 'getQuoteAmounts',
+          args: [
+            [
+              [
+                [quoteParam.quotePair.base, quoteParam.quotePair.quote],
+                quoteParam.baseAmount,
+                quoteParam.data ?? '0x',
+              ],
+            ],
+          ],
         }
       }),
-    ])
+    })
 
-    return {
-      quoteAmounts: quoteAmounts.slice(),
-    }
+    const quoteAmounts = multicallResponse.map((data) => {
+      return data.status === 'success'
+        ? (data.result as bigint[])[0]
+        : BigInt(0)
+    })
+
+    return { quoteAmounts }
   }
 }

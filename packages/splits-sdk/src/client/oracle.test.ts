@@ -9,6 +9,7 @@ import {
 import { validateAddress } from '../utils/validation'
 import { readActions } from '../testing/mocks/oracle'
 import { MockViemContract } from '../testing/mocks/viemContract'
+import { uniV3OracleAbi } from '../constants/abi/uniV3Oracle'
 
 jest.mock('viem', () => {
   const originalModule = jest.requireActual('viem')
@@ -119,26 +120,37 @@ describe('Oracle reads', () => {
     })
 
     test('Returns quote amounts', async () => {
-      readActions.getQuoteAmounts.mockReturnValueOnce([BigInt(12)])
+      publicClient.multicall = jest
+        .fn()
+        .mockReturnValueOnce([{ status: 'success', result: [BigInt(12)] }])
       const { quoteAmounts } = await client.getQuoteAmounts({
         oracleAddress,
         quoteParams,
       })
 
       expect(quoteAmounts).toEqual([BigInt(12)])
-      expect(validateAddress).toBeCalledWith(oracleAddress)
-      expect(readActions.getQuoteAmounts).toBeCalledWith([
-        [
+      expect(validateAddress).toHaveBeenCalledWith(oracleAddress)
+      expect(publicClient.multicall).toHaveBeenCalledWith({
+        contracts: [
           {
-            baseAmount: BigInt(1),
-            data: '0x',
-            quotePair: {
-              base: '0xbase',
-              quote: '0xquote',
-            },
+            address: oracleAddress,
+            abi: uniV3OracleAbi,
+            functionName: 'getQuoteAmounts',
+            args: [
+              [
+                [
+                  [
+                    quoteParams[0].quotePair.base,
+                    quoteParams[0].quotePair.quote,
+                  ],
+                  quoteParams[0].baseAmount,
+                  quoteParams[0].data,
+                ],
+              ],
+            ],
           },
         ],
-      ])
+      })
     })
   })
 })
