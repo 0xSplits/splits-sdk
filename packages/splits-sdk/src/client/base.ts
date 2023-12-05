@@ -318,8 +318,8 @@ export class BaseTransactions extends BaseClient {
 
     this._transactionType = transactionType
     this._shouldRequreWalletClient = [
+      TransactionType.GasEstimate,
       TransactionType.Transaction,
-      TransactionType.CallData,
     ].includes(transactionType)
   }
 
@@ -338,10 +338,12 @@ export class BaseTransactions extends BaseClient {
   }) {
     this._requirePublicClient()
     if (!this._publicClient) throw new Error()
-    this._requireWalletClient()
-    if (!this._walletClient?.account) throw new Error()
+    if (this._shouldRequreWalletClient) {
+      this._requireWalletClient()
+    }
 
     if (this._transactionType === TransactionType.GasEstimate) {
+      if (!this._walletClient?.account) throw new Error()
       const gasEstimate = await this._publicClient.estimateContractGas({
         address: contractAddress,
         abi: contractAbi,
@@ -363,6 +365,7 @@ export class BaseTransactions extends BaseClient {
         data: calldata,
       }
     } else if (this._transactionType === TransactionType.Transaction) {
+      if (!this._walletClient?.account) throw new Error()
       const { request } = await this._publicClient.simulateContract({
         address: contractAddress,
         abi: contractAbi,

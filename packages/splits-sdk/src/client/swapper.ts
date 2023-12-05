@@ -172,7 +172,7 @@ class SwapperTransactions extends BaseTransactions {
       quoteParams.push([
         [inputAsset.token, tokenToBeneficiary.address],
         inputAsset.amountIn,
-        ADDRESS_ZERO,
+        '0x',
       ])
       if (inputAsset.encodedPath) {
         exactInputParams.push([
