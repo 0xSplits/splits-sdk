@@ -46,3 +46,13 @@ If you want to publish an alpha/beta version, apply the appropriate tag:
 ```bash
 npm publish --tag beta
 ```
+
+### Creating a Release
+
+Once you are done publishing all the packages, create a release on GitHub. The release version should match the version you published to npm. Use the `Generate release notes` button to automatically generate the release notes.
+
+### Configuring npm for publishing
+
+1. You will need to be added to the `0xsplits` npm organization to publish packages. Ask a team member to add you.
+2. You will need to be logged in to npm on your local machine. Run `npm login` and enter your credentials.
+3. Set the scope to `@0xsplits` by running `npm config set scope 0xsplits`
