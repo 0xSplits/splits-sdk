@@ -71,18 +71,15 @@ export const getPassThroughWalletFactoryAddress = (
 }
 
 export const getSwapperFactoryAddress = (chainId: number): Address => {
-  if (chainId === ChainId.BSC) return SWAPPER_FACTORY_ADDRESS
   return SWAPPER_FACTORY_ADDRESS
 }
 
 export const getUniV3SwapAddress = (chainId: number): Address => {
-  if (chainId === ChainId.BSC) return UNI_V3_SWAP_ADDRESS
   return UNI_V3_SWAP_ADDRESS
 }
 
 export const getDiversifierFactoryAddress = (chainId: number): Address => {
-  if (chainId === ChainId.BSC || ChainId.MAINNET)
-    return DIVERSIFIER_FACTORY_ADDRESS_MAINNET
+  if (chainId === ChainId.MAINNET) return DIVERSIFIER_FACTORY_ADDRESS_MAINNET
   return DIVERSIFIER_FACTORY_ADDRESS
 }
 
