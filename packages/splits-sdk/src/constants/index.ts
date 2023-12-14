@@ -70,11 +70,11 @@ export const getPassThroughWalletFactoryAddress = (
   return PASS_THROUGH_WALLET_FACTORY_ADDRESS
 }
 
-export const getSwapperFactoryAddress = (chainId: number): Address => {
+export const getSwapperFactoryAddress = (_chainId: number): Address => {
   return SWAPPER_FACTORY_ADDRESS
 }
 
-export const getUniV3SwapAddress = (chainId: number): Address => {
+export const getUniV3SwapAddress = (_chainId: number): Address => {
   return UNI_V3_SWAP_ADDRESS
 }
 
