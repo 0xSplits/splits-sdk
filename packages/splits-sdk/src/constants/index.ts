@@ -24,9 +24,9 @@ const PASS_THROUGH_WALLET_FACTORY_ADDRESS =
 const SWAPPER_FACTORY_ADDRESS = '0xa244bbe019cf1BA177EE5A532250be2663Fb55cA'
 const UNI_V3_SWAP_ADDRESS = '0x981a6aC55c7D39f50666938CcD0df53D59797e87'
 // Keep in sync with subgraph
-const DIVERSIFIER_FACTORY_ADDRESS = '0x78791997483f25217F4C3FE2a568Fe3eFaf77884'
-const DIVERSIFIER_FACTORY_ADDRESS_BASE =
-  '0x1f3f5C7342Ae19E2b35b657864106f227201eF8A'
+const DIVERSIFIER_FACTORY_ADDRESS_MAINNET =
+  '0x78791997483f25217F4C3FE2a568Fe3eFaf77884'
+const DIVERSIFIER_FACTORY_ADDRESS = '0x1f3f5C7342Ae19E2b35b657864106f227201eF8A'
 
 const SPLIT_MAIN_ADDRESS_BSC = '0x5924cD81dC672151527B1E4b5Ef57B69cBD07Eda'
 const VESTING_MODULE_FACTORY_ADDRESS_BSC =
@@ -70,19 +70,16 @@ export const getPassThroughWalletFactoryAddress = (
   return PASS_THROUGH_WALLET_FACTORY_ADDRESS
 }
 
-export const getSwapperFactoryAddress = (chainId: number): Address => {
-  if (chainId === ChainId.BSC) return SWAPPER_FACTORY_ADDRESS
+export const getSwapperFactoryAddress = (_chainId: number): Address => {
   return SWAPPER_FACTORY_ADDRESS
 }
 
-export const getUniV3SwapAddress = (chainId: number): Address => {
-  if (chainId === ChainId.BSC) return UNI_V3_SWAP_ADDRESS
+export const getUniV3SwapAddress = (_chainId: number): Address => {
   return UNI_V3_SWAP_ADDRESS
 }
 
 export const getDiversifierFactoryAddress = (chainId: number): Address => {
-  if (chainId === ChainId.BSC) return DIVERSIFIER_FACTORY_ADDRESS
-  if (chainId === ChainId.BASE) return DIVERSIFIER_FACTORY_ADDRESS_BASE
+  if (chainId === ChainId.MAINNET) return DIVERSIFIER_FACTORY_ADDRESS_MAINNET
   return DIVERSIFIER_FACTORY_ADDRESS
 }
 
@@ -140,7 +137,13 @@ export const LIQUID_SPLIT_CHAIN_IDS = ALL_CHAIN_IDS.slice()
 export const VESTING_CHAIN_IDS = ALL_CHAIN_IDS.slice()
 export const TEMPLATES_CHAIN_IDS = ALL_CHAIN_IDS.slice()
 
-export const SWAPPER_CHAIN_IDS = [ChainId.MAINNET, ChainId.GOERLI, ChainId.BASE]
+export const SWAPPER_CHAIN_IDS = [
+  ChainId.MAINNET,
+  ChainId.GOERLI,
+  ChainId.BASE,
+  ChainId.POLYGON,
+  ChainId.OPTIMISM,
+]
 export const PASS_THROUGH_WALLET_CHAIN_IDS = SWAPPER_CHAIN_IDS.slice()
 export const ORACLE_CHAIN_IDS = SWAPPER_CHAIN_IDS.slice()
 export const DIVERSIFIER_CHAIN_IDS = SWAPPER_CHAIN_IDS.slice()
