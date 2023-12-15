@@ -92,3 +92,5 @@ export type {
   PassThroughWalletPauseConfig,
   PassThroughWalletExecCallsConfig,
 } from './types'
+
+export { roundToDecimals } from './utils'
