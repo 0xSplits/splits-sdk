@@ -112,13 +112,17 @@ describe('Client config validation', () => {
     expect(() => new PassThroughWalletClient({ chainId: 5 })).not.toThrow()
   })
 
-  test('Polygon chain ids fail', () => {
-    expect(() => new PassThroughWalletClient({ chainId: 137 })).toThrow()
+  test('Polygon chain id pass', () => {
+    expect(() => new PassThroughWalletClient({ chainId: 137 })).not.toThrow()
+  })
+  test('Mumbai chain id fail', () => {
     expect(() => new PassThroughWalletClient({ chainId: 80001 })).toThrow()
   })
 
-  test('Optimism chain ids fail', () => {
-    expect(() => new PassThroughWalletClient({ chainId: 10 })).toThrow()
+  test('Optimism chain id pass', () => {
+    expect(() => new PassThroughWalletClient({ chainId: 10 })).not.toThrow()
+  })
+  test('Optimism goerli chain id fail', () => {
     expect(() => new PassThroughWalletClient({ chainId: 420 })).toThrow()
   })
 
@@ -132,8 +136,8 @@ describe('Client config validation', () => {
     expect(() => new PassThroughWalletClient({ chainId: 999 })).toThrow()
   })
 
-  test('Base chain ids fail', () => {
-    expect(() => new PassThroughWalletClient({ chainId: 8453 })).toThrow()
+  test('Base chain ids pass', () => {
+    expect(() => new PassThroughWalletClient({ chainId: 8453 })).not.toThrow()
   })
 
   test('Other chain ids fail', () => {
