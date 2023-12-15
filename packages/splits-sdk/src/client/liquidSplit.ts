@@ -58,7 +58,7 @@ import {
 import {
   validateAddress,
   validateDistributorFeePercent,
-  validateRecipients,
+  validateSplitRecipients,
 } from '../utils/validation'
 
 type LS1155Abi = typeof ls1155CloneAbi
@@ -88,7 +88,7 @@ class LiquidSplitTransactions extends BaseTransactions {
     owner = undefined,
     transactionOverrides = {},
   }: CreateLiquidSplitConfig): Promise<TransactionFormat> {
-    validateRecipients(recipients, LIQUID_SPLITS_MAX_PRECISION_DECIMALS)
+    validateSplitRecipients(recipients, LIQUID_SPLITS_MAX_PRECISION_DECIMALS)
     validateDistributorFeePercent(distributorFeePercent)
 
     if (this._shouldRequreWalletClient) this._requireWalletClient()

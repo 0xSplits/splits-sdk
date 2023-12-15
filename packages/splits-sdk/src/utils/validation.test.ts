@@ -6,7 +6,7 @@ import {
 } from '../errors'
 import { SplitRecipient, WaterfallTrancheInput } from '../types'
 import {
-  validateRecipients,
+  validateSplitRecipients,
   validateDistributorFeePercent,
   validateAddress,
   validateWaterfallTranches,
@@ -68,43 +68,46 @@ describe('Recipients validation', () => {
   test('Percent allocation doesnt sum to 100 fails', () => {
     recipients[0].percentAllocation = 51
     expect(() =>
-      validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS),
+      validateSplitRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS),
     ).toThrow(InvalidRecipientsError)
   })
   test('Percent allocationt too many decimals fails', () => {
     recipients[0].percentAllocation = 49.99999
     recipients[1].percentAllocation = 50.00001
     expect(() =>
-      validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS),
+      validateSplitRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS),
     ).toThrow(InvalidRecipientsError)
   })
   test('Percent allocation outside valid range fails', () => {
     recipients[0].percentAllocation = 0
     recipients[1].percentAllocation = 100
     expect(() =>
-      validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS),
+      validateSplitRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS),
     ).toThrow(InvalidRecipientsError)
   })
   test('Repeat address fails', () => {
     recipients[1].address = recipients[0].address
     expect(() =>
-      validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS),
+      validateSplitRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS),
     ).toThrow(InvalidRecipientsError)
   })
   test('Less than two recipients fails', () => {
     expect(() =>
-      validateRecipients(recipients.slice(0, 1), SPLITS_MAX_PRECISION_DECIMALS),
+      validateSplitRecipients(
+        recipients.slice(0, 1),
+        SPLITS_MAX_PRECISION_DECIMALS,
+      ),
     ).toThrow(InvalidRecipientsError)
   })
   test('Invalid address fails', () => {
     recipients[0].address = '12345'
     expect(() =>
-      validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS),
+      validateSplitRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS),
     ).toThrow(InvalidRecipientsError)
   })
   test('Valid recipients pass', () => {
     expect(() =>
-      validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS),
+      validateSplitRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS),
     ).not.toThrow()
   })
 })

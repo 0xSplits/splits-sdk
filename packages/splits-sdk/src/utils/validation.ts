@@ -24,7 +24,7 @@ const getNumDigitsAfterDecimal = (value: number): number => {
   return decimalStr.length
 }
 
-export const validateRecipients = (
+export const validateSplitRecipients = (
   recipients: SplitRecipient[],
   maxPrecisionDecimals: number,
 ): void => {
@@ -165,7 +165,7 @@ export const validateSplitInputs = ({
   controller = ADDRESS_ZERO,
 }: CreateSplitConfig): void => {
   validateAddress(controller)
-  validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
+  validateSplitRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
   validateDistributorFeePercent(distributorFeePercent)
 }
 

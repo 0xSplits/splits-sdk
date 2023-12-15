@@ -28,7 +28,7 @@ import * as utils from '../utils'
 import {
   validateAddress,
   validateDistributorFeePercent,
-  validateRecipients,
+  validateSplitRecipients,
 } from '../utils/validation'
 import {
   SORTED_ADDRESSES,
@@ -202,7 +202,7 @@ describe('Liquid split writes', () => {
     })
 
   beforeEach(() => {
-    ;(validateRecipients as jest.Mock).mockClear()
+    ;(validateSplitRecipients as jest.Mock).mockClear()
     ;(validateDistributorFeePercent as jest.Mock).mockClear()
     ;(validateAddress as jest.Mock).mockClear()
     getTransactionEventsSpy.mockClear()
@@ -268,7 +268,7 @@ describe('Liquid split writes', () => {
       expect(event.blockNumber).toEqual(12345)
       expect(liquidSplitAddress).toEqual('0xliquidSplit')
       expect(validateAddress).toBeCalledWith(CONTROLLER_ADDRESS)
-      expect(validateRecipients).toBeCalledWith(
+      expect(validateSplitRecipients).toBeCalledWith(
         recipients,
         LIQUID_SPLITS_MAX_PRECISION_DECIMALS,
       )
@@ -301,7 +301,7 @@ describe('Liquid split writes', () => {
       expect(event.blockNumber).toEqual(12345)
       expect(liquidSplitAddress).toEqual('0xliquidSplit')
       expect(validateAddress).toBeCalledWith('0xowner')
-      expect(validateRecipients).toBeCalledWith(
+      expect(validateSplitRecipients).toBeCalledWith(
         recipients,
         LIQUID_SPLITS_MAX_PRECISION_DECIMALS,
       )

@@ -21,7 +21,7 @@ import {
   validateDistributorFeePercent,
   validateDiversifierRecipients,
   validateOracleParams,
-  validateRecipients,
+  validateSplitRecipients,
   validateRecoupNonWaterfallRecipient,
   validateRecoupTranches,
 } from '../utils/validation'
@@ -179,7 +179,7 @@ describe('Template writes', () => {
   )
 
   beforeEach(() => {
-    ;(validateRecipients as jest.Mock).mockClear()
+    ;(validateSplitRecipients as jest.Mock).mockClear()
     ;(validateDistributorFeePercent as jest.Mock).mockClear()
     ;(validateAddress as jest.Mock).mockClear()
     getRecoupTranchesAndSizesMock.mockClear()
