@@ -90,7 +90,9 @@ export const validateAddress = (address: string): void => {
     throw new InvalidArgumentError(`Invalid address: ${address}`)
 }
 
-export const validateTranches = (tranches: WaterfallTrancheInput[]): void => {
+export const validateWaterfallTranches = (
+  tranches: WaterfallTrancheInput[],
+): void => {
   validateNumTranches(tranches.length)
   tranches.forEach((tranche, index) => {
     if (!isAddress(tranche.recipient))

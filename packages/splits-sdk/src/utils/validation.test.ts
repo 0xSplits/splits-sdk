@@ -9,7 +9,7 @@ import {
   validateRecipients,
   validateDistributorFeePercent,
   validateAddress,
-  validateTranches,
+  validateWaterfallTranches,
   validateVestingPeriod,
   validateRecoupNonWaterfallRecipient,
   validateDiversifierRecipients,
@@ -129,21 +129,27 @@ describe('Tranches validation', () => {
 
   test('Bad address fails', () => {
     tranches[0].recipient = '0xbadAddress'
-    expect(() => validateTranches(tranches)).toThrow(InvalidArgumentError)
+    expect(() => validateWaterfallTranches(tranches)).toThrow(
+      InvalidArgumentError,
+    )
   })
 
   test('Extra size fails', () => {
     tranches[2].size = 1
-    expect(() => validateTranches(tranches)).toThrow(InvalidArgumentError)
+    expect(() => validateWaterfallTranches(tranches)).toThrow(
+      InvalidArgumentError,
+    )
   })
 
   test('Missing size fails', () => {
     tranches[1].size = undefined
-    expect(() => validateTranches(tranches)).toThrow(InvalidArgumentError)
+    expect(() => validateWaterfallTranches(tranches)).toThrow(
+      InvalidArgumentError,
+    )
   })
 
   test('Valid tranches pass', () => {
-    expect(() => validateTranches(tranches)).not.toThrow()
+    expect(() => validateWaterfallTranches(tranches)).not.toThrow()
   })
 })
 

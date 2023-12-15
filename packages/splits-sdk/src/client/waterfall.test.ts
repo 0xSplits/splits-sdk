@@ -19,7 +19,7 @@ import {
 } from '../errors'
 import * as subgraph from '../subgraph'
 import * as utils from '../utils'
-import { validateAddress, validateTranches } from '../utils/validation'
+import { validateAddress, validateWaterfallTranches } from '../utils/validation'
 import {
   TRANCHE_RECIPIENTS,
   TRANCHE_SIZES,
@@ -176,7 +176,7 @@ describe('Waterfall writes', () => {
     })
 
   beforeEach(() => {
-    ;(validateTranches as jest.Mock).mockClear()
+    ;(validateWaterfallTranches as jest.Mock).mockClear()
     ;(validateAddress as jest.Mock).mockClear()
     getTransactionEventsSpy.mockClear()
     getTrancheRecipientsAndSizesMock.mockClear()
@@ -244,7 +244,7 @@ describe('Waterfall writes', () => {
       expect(event.blockNumber).toEqual(12345)
       expect(waterfallModuleAddress).toEqual('0xwaterfall')
       expect(validateAddress).toBeCalledWith(token)
-      expect(validateTranches).toBeCalledWith(tranches)
+      expect(validateWaterfallTranches).toBeCalledWith(tranches)
       expect(getTrancheRecipientsAndSizesMock).toBeCalledWith(
         1,
         token,
@@ -274,7 +274,7 @@ describe('Waterfall writes', () => {
       expect(event.blockNumber).toEqual(12345)
       expect(waterfallModuleAddress).toEqual('0xwaterfall')
       expect(validateAddress).toBeCalledWith(token)
-      expect(validateTranches).toBeCalledWith(tranches)
+      expect(validateWaterfallTranches).toBeCalledWith(tranches)
       expect(getTrancheRecipientsAndSizesMock).toBeCalledWith(
         1,
         token,
