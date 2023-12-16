@@ -99,6 +99,19 @@ export type MakeSplitImmutableConfig = {
   splitAddress: string
 } & TransactionOverridesDict
 
+export type BatchDistributeAndWithdrawConfig = {
+  splitAddress: string
+  tokens: string[]
+  recipientAddresses: string[]
+  distributorAddress?: string
+}
+
+export type BatchDistributeAndWithdrawForAllConfig = {
+  splitAddress: string
+  tokens: string[]
+  distributorAddress?: string
+}
+
 export type GetSplitBalanceConfig = {
   splitAddress: string
   token?: string
