@@ -137,10 +137,18 @@ const ALL_CHAIN_IDS = [
 export const SPLITS_SUPPORTED_CHAIN_IDS = [3, 4, 42, ...ALL_CHAIN_IDS]
 
 export const SPLITS_SUBGRAPH_CHAIN_IDS = ALL_CHAIN_IDS.slice()
-export const WATERFALL_CHAIN_IDS = ALL_CHAIN_IDS.slice()
-export const LIQUID_SPLIT_CHAIN_IDS = ALL_CHAIN_IDS.slice()
-export const VESTING_CHAIN_IDS = ALL_CHAIN_IDS.slice()
-export const TEMPLATES_CHAIN_IDS = ALL_CHAIN_IDS.slice()
+export const WATERFALL_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
+  (id) => id !== ChainId.ZORA_SEPOLIA,
+)
+export const LIQUID_SPLIT_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
+  (id) => id !== ChainId.ZORA_SEPOLIA,
+)
+export const VESTING_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
+  (id) => id !== ChainId.ZORA_SEPOLIA,
+)
+export const TEMPLATES_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
+  (id) => id !== ChainId.ZORA_SEPOLIA,
+)
 
 export const SWAPPER_CHAIN_IDS = [
   ChainId.MAINNET,
