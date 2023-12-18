@@ -99,6 +99,7 @@ enum ChainId {
   AURORA = 1313161554,
   ZORA = 7777777,
   ZORA_GOERLI = 999,
+  ZORA_SEPOLIA = 999999999,
   BASE = 8453,
 }
 
@@ -111,7 +112,11 @@ export const FANTOM_CHAIN_IDS = [ChainId.FANTOM]
 export const AVALANCHE_CHAIN_IDS = [ChainId.AVALANCHE]
 export const BSC_CHAIN_IDS = [ChainId.BSC]
 export const AURORA_CHAIN_IDS = [ChainId.AURORA]
-export const ZORA_CHAIN_IDS = [ChainId.ZORA, ChainId.ZORA_GOERLI]
+export const ZORA_CHAIN_IDS = [
+  ChainId.ZORA,
+  ChainId.ZORA_GOERLI,
+  ChainId.ZORA_SEPOLIA,
+]
 export const BASE_CHAIN_IDS = [ChainId.BASE]
 
 const ALL_CHAIN_IDS = [
@@ -132,10 +137,18 @@ const ALL_CHAIN_IDS = [
 export const SPLITS_SUPPORTED_CHAIN_IDS = [3, 4, 42, ...ALL_CHAIN_IDS]
 
 export const SPLITS_SUBGRAPH_CHAIN_IDS = ALL_CHAIN_IDS.slice()
-export const WATERFALL_CHAIN_IDS = ALL_CHAIN_IDS.slice()
-export const LIQUID_SPLIT_CHAIN_IDS = ALL_CHAIN_IDS.slice()
-export const VESTING_CHAIN_IDS = ALL_CHAIN_IDS.slice()
-export const TEMPLATES_CHAIN_IDS = ALL_CHAIN_IDS.slice()
+export const WATERFALL_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
+  (id) => id !== ChainId.ZORA_SEPOLIA,
+)
+export const LIQUID_SPLIT_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
+  (id) => id !== ChainId.ZORA_SEPOLIA,
+)
+export const VESTING_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
+  (id) => id !== ChainId.ZORA_SEPOLIA,
+)
+export const TEMPLATES_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
+  (id) => id !== ChainId.ZORA_SEPOLIA,
+)
 
 export const SWAPPER_CHAIN_IDS = [
   ChainId.MAINNET,
@@ -240,6 +253,11 @@ export const CHAIN_INFO: {
     startBlock: 968023,
     gqlEndpoint:
       'https://api.goldsky.com/api/public/project_clhk16b61ay9t49vm6ntn4mkz/subgraphs/splits-zora-testnet/1.0.0/gn',
+  },
+  [ChainId.ZORA_SEPOLIA]: {
+    startBlock: 2296044,
+    gqlEndpoint:
+      'https://api.goldsky.com/api/public/project_clhk16b61ay9t49vm6ntn4mkz/subgraphs/splits-zora-sepolia/1.0/gn',
   },
   [ChainId.BASE]: {
     startBlock: 2293907,
