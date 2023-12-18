@@ -37,10 +37,16 @@ import {
   formatContractEarnings,
   getGraphqlClient,
 } from '../subgraph'
-import { GqlAccountBalances, GqlContractEarnings } from '../subgraph/types'
+import {
+  GqlAccount,
+  GqlAccountBalances,
+  GqlContractEarnings,
+} from '../subgraph/types'
 import type {
   CallData,
+  ContractEarnings,
   EarningsByContract,
+  FormattedContractEarnings,
   FormattedTokenBalances,
   MulticallConfig,
   SplitsClientConfig,
@@ -58,6 +64,7 @@ import {
   fetchActiveBalances,
   fetchERC20TransferredTokens,
 } from '../utils/balances'
+import { validateAddress } from '../utils/validation'
 
 class BaseClient {
   readonly _chainId: number
@@ -176,7 +183,9 @@ class BaseClient {
     includeActiveBalances: boolean
     erc20TokenList?: string[]
   }): Promise<{
+    type: GqlAccount['__typename']
     withdrawn: TokenBalances
+    distributed: TokenBalances
     activeBalances?: TokenBalances
   }> {
     const chainId = this._chainId
@@ -193,8 +202,15 @@ class BaseClient {
     const withdrawn = formatAccountBalances(
       response.accountBalances.withdrawals,
     )
+    const distributed = formatAccountBalances(
+      response.accountBalances.distributed,
+    )
     if (!includeActiveBalances) {
-      return { withdrawn }
+      return {
+        type: response.accountBalances.__typename,
+        withdrawn,
+        distributed,
+      }
     }
 
     const internalBalances = formatAccountBalances(
@@ -202,7 +218,12 @@ class BaseClient {
     )
     if (response.accountBalances.__typename === 'User') {
       // Only including split main balance for users
-      return { withdrawn, activeBalances: internalBalances }
+      return {
+        type: response.accountBalances.__typename,
+        withdrawn,
+        distributed,
+        activeBalances: internalBalances,
+      }
     }
 
     // Need to fetch current balance. Handle alchemy/infura with logs, and all other rpc's with token list
@@ -247,7 +268,12 @@ class BaseClient {
       return acc
     }, {} as TokenBalances)
 
-    return { withdrawn, activeBalances: filteredBalances }
+    return {
+      type: response.accountBalances.__typename,
+      withdrawn,
+      distributed,
+      activeBalances: filteredBalances,
+    }
   }
 
   protected async _getFormattedTokenBalances(
@@ -293,6 +319,74 @@ class BaseClient {
     )
 
     return formattedTokenBalancesList
+  }
+
+  async getContractEarnings({
+    contractAddress,
+    includeActiveBalances = true,
+    erc20TokenList,
+  }: {
+    contractAddress: string
+    includeActiveBalances?: boolean
+    erc20TokenList?: string[]
+  }): Promise<ContractEarnings> {
+    validateAddress(contractAddress)
+    if (includeActiveBalances && !this._publicClient)
+      throw new MissingPublicClientError(
+        'Public client required to get contract active balances. Please update your call to the SplitsClient constructor with a valid public client, or set includeActiveBalances to false',
+      )
+
+    const { type, distributed, activeBalances } =
+      await this._getAccountBalances({
+        accountAddress: getAddress(contractAddress),
+        includeActiveBalances,
+        erc20TokenList,
+      })
+
+    if (type === 'User')
+      throw new Error(
+        'Cannot fetch contract earnings for a User, use getUserEarnings instead',
+      )
+
+    if (!includeActiveBalances) return { distributed }
+    return { distributed, activeBalances }
+  }
+
+  async getFormattedContractEarnings({
+    contractAddress,
+    includeActiveBalances = true,
+    erc20TokenList,
+  }: {
+    contractAddress: string
+    includeActiveBalances?: boolean
+    erc20TokenList?: string[]
+  }): Promise<FormattedContractEarnings> {
+    if (!this._publicClient)
+      throw new MissingPublicClientError(
+        'Public client required to get formatted earnings. Please update your call to the SplitsClient constructor with a valid public client',
+      )
+    const { distributed, activeBalances } = await this.getContractEarnings({
+      contractAddress,
+      includeActiveBalances,
+      erc20TokenList,
+    })
+
+    const balancesToFormat = [distributed]
+    if (activeBalances) balancesToFormat.push(activeBalances)
+
+    const formattedBalances =
+      await this._getFormattedTokenBalances(balancesToFormat)
+    const returnData: {
+      distributed: FormattedTokenBalances
+      activeBalances?: FormattedTokenBalances
+    } = {
+      distributed: formattedBalances[0],
+    }
+    if (includeActiveBalances) {
+      returnData.activeBalances = formattedBalances[1]
+    }
+
+    return returnData
   }
 }
 

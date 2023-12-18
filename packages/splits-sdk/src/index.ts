@@ -57,6 +57,8 @@ export type {
   Split,
   TokenBalances,
   FormattedTokenBalances,
+  ContractEarnings,
+  FormattedContractEarnings,
   SplitEarnings,
   FormattedSplitEarnings,
   UserEarnings,

@@ -56,6 +56,9 @@ const ACCOUNT_BALANCES_FRAGMENT = gql`
     withdrawals(first: 1000, orderBy: amount, orderDirection: desc) {
       ...TokenBalanceFieldsFragment
     }
+    distributions(first: 1000, orderBy: amount, orderDirection: desc) {
+      ...TokenBalanceFieldsFragment
+    }
   }
 
   ${TOKEN_BALANCE_FIELDS_FRAGMENT}

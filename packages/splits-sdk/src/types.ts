@@ -353,15 +353,18 @@ export type FormattedEarningsByContract = {
   [contractAddress: string]: FormattedUserEarnings
 }
 
-export type SplitEarnings = {
+export type ContractEarnings = {
   distributed: TokenBalances
   activeBalances?: TokenBalances
 }
 
-export type FormattedSplitEarnings = {
+export type FormattedContractEarnings = {
   distributed: FormattedTokenBalances
   activeBalances?: FormattedTokenBalances
 }
+
+export type SplitEarnings = ContractEarnings
+export type FormattedSplitEarnings = FormattedContractEarnings
 
 export type UserEarnings = {
   withdrawn: TokenBalances

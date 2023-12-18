@@ -22,6 +22,7 @@ export type GqlAccountBalances = {
   __typename: GqlAccount['__typename']
   withdrawals: GqlTokenBalance[]
   internalBalances: GqlTokenBalance[]
+  distributed: GqlTokenBalance[]
 }
 
 export type GqlContractEarnings = {
