@@ -1068,8 +1068,8 @@ export class SplitsClient extends SplitsTransactions {
   }> {
     const txHash = await this._batchDistributeAndWithdrawTransaction(
       batchDistributeAndWithdrawArgs,
-      this.callData.distributeToken,
-      this.callData.withdrawFunds,
+      this.callData.distributeToken.bind(this.callData),
+      this.callData.withdrawFunds.bind(this.callData),
     )
     if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
@@ -1090,8 +1090,8 @@ export class SplitsClient extends SplitsTransactions {
   }> {
     const txHash = await this._batchDistributeAndWithdrawForAllTransaction(
       batchDistributeAndWithdrawForAllArgs,
-      this.callData.distributeToken,
-      this.callData.withdrawFunds,
+      this.callData.distributeToken.bind(this.callData),
+      this.callData.withdrawFunds.bind(this.callData),
     )
     if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
@@ -1697,8 +1697,8 @@ class SplitsCallData extends SplitsTransactions {
   ): Promise<CallData> {
     const callData = await this._batchDistributeAndWithdrawTransaction(
       batchDistributeAndWithdrawArgs,
-      this.distributeToken,
-      this.withdrawFunds,
+      this.distributeToken.bind(this),
+      this.withdrawFunds.bind(this),
     )
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
@@ -1710,8 +1710,8 @@ class SplitsCallData extends SplitsTransactions {
   ): Promise<CallData> {
     const callData = await this._batchDistributeAndWithdrawForAllTransaction(
       batchDistributeAndWithdrawForAllArgs,
-      this.distributeToken,
-      this.withdrawFunds,
+      this.distributeToken.bind(this),
+      this.withdrawFunds.bind(this),
     )
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
