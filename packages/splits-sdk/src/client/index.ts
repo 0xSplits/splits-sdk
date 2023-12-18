@@ -499,7 +499,10 @@ class SplitsTransactions extends BaseTransactions {
   ): Promise<TransactionFormat> {
     validateAddress(splitAddress)
     tokens.map((token) => validateAddress(token))
-    this._requireWalletClient()
+
+    if (this._shouldRequreWalletClient) {
+      this._requireWalletClient()
+    }
 
     const { recipients } = await this.getSplitMetadata({
       splitAddress,
