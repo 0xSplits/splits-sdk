@@ -93,6 +93,8 @@ import type {
   FormattedEarningsByContract,
   UserEarningsByContract,
   FormattedUserEarningsByContract,
+  BatchDistributeAndWithdrawConfig,
+  BatchDistributeAndWithdrawForAllConfig,
 } from '../types'
 import {
   getRecipientSortedAddressesAndAllocations,
@@ -436,6 +438,89 @@ class SplitsTransactions extends BaseTransactions {
       functionArgs: [splitAddress],
       transactionOverrides,
     })
+
+    return result
+  }
+
+  protected async _batchDistributeAndWithdrawTransaction(
+    {
+      splitAddress,
+      tokens,
+      recipientAddresses,
+      distributorAddress,
+    }: BatchDistributeAndWithdrawConfig,
+    distributeFunc: (args: DistributeTokenConfig) => Promise<CallData>,
+    withdrawFunc: (args: WithdrawFundsConfig) => Promise<CallData>,
+  ): Promise<TransactionFormat> {
+    validateAddress(splitAddress)
+    tokens.map((token) => validateAddress(token))
+    recipientAddresses.map((address) => validateAddress(address))
+
+    if (this._shouldRequreWalletClient) {
+      this._requireWalletClient()
+    }
+
+    const distributorPayoutAddress = distributorAddress
+      ? distributorAddress
+      : this._walletClient?.account
+      ? this._walletClient.account.address
+      : ADDRESS_ZERO
+    validateAddress(distributorPayoutAddress)
+
+    const distributeCalls = await Promise.all(
+      tokens.map(async (token) => {
+        return await distributeFunc({
+          splitAddress,
+          token,
+          distributorAddress: distributorPayoutAddress,
+        })
+      }),
+    )
+    const withdrawCalls = await Promise.all(
+      recipientAddresses.map(async (address) => {
+        return await withdrawFunc({ address, tokens })
+      }),
+    )
+
+    const multicallData = [...distributeCalls, ...withdrawCalls]
+    const result = await this._multicallTransaction({ calls: multicallData })
+
+    return result
+  }
+
+  protected async _batchDistributeAndWithdrawForAllTransaction(
+    {
+      splitAddress,
+      tokens,
+      distributorAddress,
+    }: BatchDistributeAndWithdrawForAllConfig,
+    distributeFunc: (args: DistributeTokenConfig) => Promise<CallData>,
+    withdrawFunc: (args: WithdrawFundsConfig) => Promise<CallData>,
+  ): Promise<TransactionFormat> {
+    validateAddress(splitAddress)
+    tokens.map((token) => validateAddress(token))
+
+    if (this._shouldRequreWalletClient) {
+      this._requireWalletClient()
+    }
+
+    const { recipients } = await this.getSplitMetadata({
+      splitAddress,
+    })
+    const recipientAddresses = recipients.map(
+      (recipient) => recipient.recipient.address,
+    )
+
+    const result = await this._batchDistributeAndWithdrawTransaction(
+      {
+        splitAddress,
+        tokens,
+        recipientAddresses,
+        distributorAddress,
+      },
+      distributeFunc,
+      withdrawFunc,
+    )
 
     return result
   }
@@ -976,80 +1061,45 @@ export class SplitsClient extends SplitsTransactions {
     throw new TransactionFailedError()
   }
 
-  async batchDistributeAndWithdraw({
-    splitAddress,
-    tokens,
-    recipientAddresses,
-    distributorAddress,
-  }: {
-    splitAddress: string
-    tokens: string[]
-    recipientAddresses: string[]
-    distributorAddress?: string
-  }): Promise<{
+  async batchDistributeAndWithdraw(
+    batchDistributeAndWithdrawArgs: BatchDistributeAndWithdrawConfig,
+  ): Promise<{
     events: Log[]
   }> {
-    validateAddress(splitAddress)
-    tokens.map((token) => validateAddress(token))
-    recipientAddresses.map((address) => validateAddress(address))
-
-    this._requireWalletClient()
-    // TODO: how to remove this, needed for typescript check right now
-    if (!this._walletClient?.account) throw new Error()
-
-    const distributorPayoutAddress = distributorAddress
-      ? distributorAddress
-      : this._walletClient.account.address
-    validateAddress(distributorPayoutAddress)
-
-    const distributeCalls = await Promise.all(
-      tokens.map(async (token) => {
-        return await this.callData.distributeToken({
-          splitAddress,
-          token,
-          distributorAddress: distributorPayoutAddress,
-        })
-      }),
+    const txHash = await this._batchDistributeAndWithdrawTransaction(
+      batchDistributeAndWithdrawArgs,
+      this.callData.distributeToken.bind(this.callData),
+      this.callData.withdrawFunds.bind(this.callData),
     )
-    const withdrawCalls = await Promise.all(
-      recipientAddresses.map(async (address) => {
-        return await this.callData.withdrawFunds({ address, tokens })
-      }),
-    )
-
-    const multicallData = [...distributeCalls, ...withdrawCalls]
-    const { events } = await this.multicall({ calls: multicallData })
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
+    const events = await this.getTransactionEvents({
+      txHash,
+      eventTopics: this.eventTopics.distributeToken.concat(
+        this.eventTopics.withdrawFunds,
+      ),
+    })
 
     return { events }
   }
 
-  async batchDistributeAndWithdrawForAll({
-    splitAddress,
-    tokens,
-    distributorAddress,
-  }: {
-    splitAddress: string
-    tokens: string[]
-    distributorAddress?: string
-  }): Promise<{
+  async batchDistributeAndWithdrawForAll(
+    batchDistributeAndWithdrawForAllArgs: BatchDistributeAndWithdrawForAllConfig,
+  ): Promise<{
     events: Log[]
   }> {
-    validateAddress(splitAddress)
-    tokens.map((token) => validateAddress(token))
-    this._requireWalletClient()
-
-    const { recipients } = await this.getSplitMetadata({
-      splitAddress,
-    })
-    const recipientAddresses = recipients.map(
-      (recipient) => recipient.recipient.address,
+    const txHash = await this._batchDistributeAndWithdrawForAllTransaction(
+      batchDistributeAndWithdrawForAllArgs,
+      this.callData.distributeToken.bind(this.callData),
+      this.callData.withdrawFunds.bind(this.callData),
     )
-
-    const { events } = await this.batchDistributeAndWithdraw({
-      splitAddress,
-      tokens,
-      recipientAddresses,
-      distributorAddress,
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
+    const events = await this.getTransactionEvents({
+      txHash,
+      eventTopics: this.eventTopics.distributeToken.concat(
+        this.eventTopics.withdrawFunds,
+      ),
     })
 
     return { events }
@@ -1637,6 +1687,32 @@ class SplitsCallData extends SplitsTransactions {
   ): Promise<CallData> {
     const callData =
       await this._makeSplitImmutableTransaction(makeImmutableArgs)
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
+
+    return callData
+  }
+
+  async batchDistributeAndWithdraw(
+    batchDistributeAndWithdrawArgs: BatchDistributeAndWithdrawConfig,
+  ): Promise<CallData> {
+    const callData = await this._batchDistributeAndWithdrawTransaction(
+      batchDistributeAndWithdrawArgs,
+      this.distributeToken.bind(this),
+      this.withdrawFunds.bind(this),
+    )
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
+
+    return callData
+  }
+
+  async batchDistributeAndWithdrawForAll(
+    batchDistributeAndWithdrawForAllArgs: BatchDistributeAndWithdrawForAllConfig,
+  ): Promise<CallData> {
+    const callData = await this._batchDistributeAndWithdrawForAllTransaction(
+      batchDistributeAndWithdrawForAllArgs,
+      this.distributeToken.bind(this),
+      this.withdrawFunds.bind(this),
+    )
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData
