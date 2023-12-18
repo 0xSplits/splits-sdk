@@ -16,6 +16,7 @@ import type {
   UniV3FlashSwapConfig,
   WaterfallTrancheInput,
 } from '../types'
+import { roundToDecimals } from '.'
 
 const getNumDigitsAfterDecimal = (value: number): number => {
   if (Number.isInteger(value)) return 0
@@ -24,7 +25,7 @@ const getNumDigitsAfterDecimal = (value: number): number => {
   return decimalStr.length
 }
 
-export const validateRecipients = (
+export const validateSplitRecipients = (
   recipients: SplitRecipient[],
   maxPrecisionDecimals: number,
 ): void => {
@@ -59,9 +60,10 @@ export const validateRecipients = (
 
   // Cutoff any decimals beyond the max precision, they may get introduced due
   // to javascript floating point precision
-  const factorOfTen = Math.pow(10, maxPrecisionDecimals)
-  totalPercentAllocation =
-    Math.round(totalPercentAllocation * factorOfTen) / factorOfTen
+  totalPercentAllocation = roundToDecimals(
+    totalPercentAllocation,
+    maxPrecisionDecimals,
+  )
   if (totalPercentAllocation !== 100)
     throw new InvalidRecipientsError(
       `Percent allocation must add up to 100. Currently adds up to ${totalPercentAllocation}`,
@@ -90,7 +92,9 @@ export const validateAddress = (address: string): void => {
     throw new InvalidArgumentError(`Invalid address: ${address}`)
 }
 
-export const validateTranches = (tranches: WaterfallTrancheInput[]): void => {
+export const validateWaterfallTranches = (
+  tranches: WaterfallTrancheInput[],
+): void => {
   validateNumTranches(tranches.length)
   tranches.forEach((tranche, index) => {
     if (!isAddress(tranche.recipient))
@@ -163,7 +167,7 @@ export const validateSplitInputs = ({
   controller = ADDRESS_ZERO,
 }: CreateSplitConfig): void => {
   validateAddress(controller)
-  validateRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
+  validateSplitRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS)
   validateDistributorFeePercent(distributorFeePercent)
 }
 
@@ -237,9 +241,10 @@ export const validateDiversifierRecipients = (
 
   // Cutoff any decimals beyond the max precision, they may get introduced due
   // to javascript floating point precision
-  const factorOfTen = Math.pow(10, SPLITS_MAX_PRECISION_DECIMALS)
-  totalPercentAllocation =
-    Math.round(totalPercentAllocation * factorOfTen) / factorOfTen
+  totalPercentAllocation = roundToDecimals(
+    totalPercentAllocation,
+    SPLITS_MAX_PRECISION_DECIMALS,
+  )
   if (totalPercentAllocation !== 100)
     throw new InvalidArgumentError(
       `Percent allocation must add up to 100. Currently adds up to ${totalPercentAllocation}`,

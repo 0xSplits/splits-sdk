@@ -9,7 +9,8 @@
     "./constants": "./dist/constants/index.js",
     "./constants/abi": "./dist/constants/abi/index.js",
     "./errors": "./dist/errors.js",
-    "./types": "./dist/types.js"
+    "./types": "./dist/types.js",
+    "./utils/validation": "./dist/utils/validation.js"
   },
   "typesVersions": {
     "*": {
@@ -24,6 +25,9 @@
       ],
       "types": [
         "./dist/types.d.ts"
+      ],
+      "utils/validation": [
+        "./dist/validation.d.ts"
       ]
     }
   },

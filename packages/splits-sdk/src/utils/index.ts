@@ -37,6 +37,15 @@ import {
 import { erc20Abi } from '../constants/abi/erc20'
 import { reverseRecordsAbi } from '../constants/abi/reverseRecords'
 
+export const roundToDecimals: (arg0: number, arg1: number) => number = (
+  num,
+  decimals,
+) => {
+  const multiplier = Math.pow(10, decimals)
+  // Include Number.EPSILON to help with floating point precision (i.e. expected 1.325 but got 1.324999999999)
+  return Math.round((num + Number.EPSILON) * multiplier) / multiplier
+}
+
 export const getRecipientSortedAddressesAndAllocations = (
   recipients: SplitRecipient[],
 ): [Address[], bigint[]] => {

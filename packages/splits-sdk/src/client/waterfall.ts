@@ -54,7 +54,7 @@ import {
   getTokenData,
   addEnsNames,
 } from '../utils'
-import { validateAddress, validateTranches } from '../utils/validation'
+import { validateAddress, validateWaterfallTranches } from '../utils/validation'
 
 type WaterfallAbi = typeof waterfallAbi
 
@@ -85,7 +85,7 @@ class WaterfallTransactions extends BaseTransactions {
   }: CreateWaterfallConfig): Promise<TransactionFormat> {
     validateAddress(token)
     validateAddress(nonWaterfallRecipient)
-    validateTranches(tranches)
+    validateWaterfallTranches(tranches)
     this._requirePublicClient()
     if (!this._publicClient) throw new Error('Public client required')
     if (this._shouldRequreWalletClient) this._requireWalletClient()
