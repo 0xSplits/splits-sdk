@@ -39,6 +39,7 @@ export {
   useSplitsClient,
   useSplitMetadata,
   useSplitEarnings,
+  useContractEarnings,
   useWaterfallMetadata,
   useLiquidSplitMetadata,
   useVestingMetadata,
