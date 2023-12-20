@@ -203,7 +203,7 @@ class BaseClient {
       response.accountBalances.withdrawals,
     )
     const distributed = formatAccountBalances(
-      response.accountBalances.distributed,
+      response.accountBalances.distributions,
     )
     if (!includeActiveBalances) {
       return {
