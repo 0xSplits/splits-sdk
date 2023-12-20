@@ -15,6 +15,8 @@ import {
   MakeSplitImmutableConfig,
   SplitEarnings,
   FormattedSplitEarnings,
+  ContractEarnings,
+  FormattedContractEarnings,
 } from '@0xsplits/splits-sdk'
 
 import { SplitsContext } from '../context'
@@ -614,6 +616,102 @@ export const useSplitEarnings = (
     isLoading,
     splitEarnings,
     formattedSplitEarnings,
+    status,
+    error,
+  }
+}
+
+export const useContractEarnings = (
+  contractAddress: string,
+  includeActiveBalances?: boolean,
+  erc20TokenList?: string[],
+  formatted = true,
+): {
+  isLoading: boolean
+  contractEarnings: ContractEarnings | undefined
+  formattedContractEarnings: FormattedContractEarnings | undefined
+  status?: DataLoadStatus
+  error?: RequestError
+} => {
+  const context = useContext(SplitsContext)
+  const splitsClient = getSplitsClient(context)
+
+  const [contractEarnings, setContractEarnings] = useState<
+    ContractEarnings | undefined
+  >()
+  const [formattedContractEarnings, setFormattedContractEarnings] = useState<
+    FormattedContractEarnings | undefined
+  >()
+  const [isLoading, setIsLoading] = useState(!!contractAddress)
+  const [status, setStatus] = useState<DataLoadStatus | undefined>(
+    contractAddress ? 'loading' : undefined,
+  )
+  const [error, setError] = useState<RequestError>()
+
+  useEffect(() => {
+    let isActive = true
+
+    const fetchEarnings = async (fetchFormattedEarnings?: boolean) => {
+      try {
+        if (fetchFormattedEarnings) {
+          const formattedEarnings =
+            await splitsClient.getFormattedContractEarnings({
+              contractAddress,
+              includeActiveBalances,
+              erc20TokenList,
+            })
+          if (!isActive) return
+          setFormattedContractEarnings(formattedEarnings)
+          setContractEarnings(undefined)
+          setStatus('success')
+        } else {
+          const earnings = await splitsClient.getContractEarnings({
+            contractAddress,
+            includeActiveBalances,
+            erc20TokenList,
+          })
+          if (!isActive) return
+          setContractEarnings(earnings)
+          setFormattedContractEarnings(undefined)
+          setStatus('success')
+        }
+      } catch (e) {
+        if (isActive) {
+          setStatus('error')
+          setError(e)
+        }
+      } finally {
+        if (isActive) setIsLoading(false)
+      }
+    }
+
+    setError(undefined)
+    if (contractAddress) {
+      setIsLoading(true)
+      setStatus('loading')
+      fetchEarnings(formatted)
+    } else {
+      setStatus(undefined)
+      setIsLoading(false)
+      setContractEarnings(undefined)
+      setFormattedContractEarnings(undefined)
+    }
+
+    return () => {
+      isActive = false
+    }
+  }, [
+    splitsClient,
+    contractAddress,
+    formatted,
+    includeActiveBalances,
+    erc20TokenList,
+  ])
+
+  return {
+    isLoading,
+    contractEarnings,
+    formattedContractEarnings,
     status,
     error,
   }
