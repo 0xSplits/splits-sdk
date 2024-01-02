@@ -1,6 +1,6 @@
 {
   "name": "@0xsplits/splits-kit",
-  "version": "0.1.1-beta.7",
+  "version": "0.1.1",
   "description": "UI Components for working with 0xSplits contracts",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -31,8 +31,8 @@
   },
   "homepage": "https://docs.splits.org/sdk-info/overview",
   "dependencies": {
-    "@0xsplits/splits-sdk": "^3.2.0",
-    "@0xsplits/splits-sdk-react": "^1.2.0",
+    "@0xsplits/splits-sdk": "^3.2.1",
+    "@0xsplits/splits-sdk-react": "^1.2.1",
     "@headlessui/react": "^1.7.17",
     "@heroicons/react": "^2.0.18",
     "@hookform/error-message": "^2.0.1",
