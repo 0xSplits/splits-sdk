@@ -38,7 +38,8 @@ const LIQUID_SPLIT_FACTORY_ADDRESS_BSC =
 const RECOUP_ADDRESS_BSC = '0x5ff0C88311F79803B43e9Dc3F2B20F49A6b680fd'
 
 export const getSplitMainAddress = (chainId: number): Address => {
-  if (chainId === ChainId.BSC) return SPLIT_MAIN_ADDRESS_BSC
+  if (chainId === ChainId.BSC || chainId === ChainId.SEPOLIA)
+    return SPLIT_MAIN_ADDRESS_BSC
   return SPLIT_MAIN_ADDRESS
 }
 
@@ -86,6 +87,7 @@ export const getDiversifierFactoryAddress = (chainId: number): Address => {
 enum ChainId {
   MAINNET = 1,
   GOERLI = 5,
+  SEPOLIA = 11155111,
   POLYGON = 137,
   POLYGON_MUMBAI = 80001,
   OPTIMISM = 10,
@@ -103,7 +105,14 @@ enum ChainId {
   BASE = 8453,
 }
 
-export const ETHEREUM_CHAIN_IDS = [ChainId.MAINNET, 3, 4, ChainId.GOERLI, 42]
+export const ETHEREUM_CHAIN_IDS = [
+  ChainId.MAINNET,
+  3,
+  4,
+  ChainId.GOERLI,
+  42,
+  ChainId.SEPOLIA,
+]
 export const POLYGON_CHAIN_IDS = [ChainId.POLYGON, ChainId.POLYGON_MUMBAI]
 export const OPTIMISM_CHAIN_IDS = [ChainId.OPTIMISM, ChainId.OPTIMISM_GOERLI]
 export const ARBITRUM_CHAIN_IDS = [ChainId.ARBITRUM, ChainId.ARBITRUM_GOERLI]
@@ -185,6 +194,11 @@ export const CHAIN_INFO: {
     startBlock: 6374540,
     gqlEndpoint:
       'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-goerli',
+  },
+  [ChainId.SEPOLIA]: {
+    startBlock: 4836246,
+    gqlEndpoint:
+      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-sepolia',
   },
   42: {
     startBlock: 29821123,
