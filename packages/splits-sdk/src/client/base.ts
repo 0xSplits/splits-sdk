@@ -261,7 +261,7 @@ class BaseClient {
       }
 
       // Include already distributed tokens in list for balances
-      const customTokens = Object.keys(withdrawn) ?? []
+      const customTokens = Object.keys(distributed) ?? []
       const fullTokenList = Array.from(
         new Set(
           [ADDRESS_ZERO, ...tokenList]
