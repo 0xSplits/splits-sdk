@@ -1,8 +1,10 @@
-import { Address, MulticallReturnType, PublicClient } from 'viem'
+import { Address, MulticallReturnType, PublicClient, getAddress } from 'viem'
 
 import { ADDRESS_ZERO, CHAIN_INFO } from '../constants'
 import { erc20Abi } from '../constants/abi/erc20'
 import { Token, TokenBalances } from '../types'
+import { isAlchemyPublicClient } from '.'
+import { retryExponentialBackoff } from './requests'
 
 export const fetchERC20TransferredTokens = async (
   chainId: number,
@@ -64,6 +66,67 @@ export const fetchActiveBalances: (
     multicallResponse,
     balances,
   )
+
+  return balances
+}
+
+// NOTE: this should never be called for a user, we only care about a user's
+// balance in split main which is stored in subgraph
+export const fetchContractBalancesWithAlchemy: (
+  arg0: Address,
+  arg1: PublicClient,
+) => Promise<TokenBalances> = async (address, rpcPublicClient) => {
+  if (!isAlchemyPublicClient(rpcPublicClient))
+    throw new Error('Cannot call this without an alchemy provider')
+
+  const balances: TokenBalances = {}
+  const getBalanceFunc = rpcPublicClient.getBalance.bind(rpcPublicClient)
+  const sendFunc = rpcPublicClient.request.bind(rpcPublicClient)
+
+  let pageKey = ''
+  // eslint-disable-next-line no-loops/no-loops
+  do {
+    const promisesArray = [
+      retryExponentialBackoff(
+        sendFunc,
+        [
+          {
+            method: 'alchemy_getTokenBalances',
+            params: [
+              address,
+              'erc20',
+              { pageKey: pageKey ? pageKey : undefined },
+            ],
+          },
+        ] as never,
+        3,
+      ),
+    ]
+    // Only need to fetch native token on the first loop
+    if (!pageKey) {
+      promisesArray.push(
+        retryExponentialBackoff(getBalanceFunc, [{ address }], 3),
+      )
+    }
+
+    const results = await Promise.all(promisesArray)
+    if (!pageKey) {
+      const ethBalance = results[1] as bigint
+      balances[ADDRESS_ZERO] = ethBalance
+    }
+
+    const erc20Balances = results[0] as {
+      tokenBalances: { contractAddress: string; tokenBalance: string }[]
+      pageKey: string
+    }
+    erc20Balances.tokenBalances.map(
+      (balanceData: { contractAddress: string; tokenBalance: string }) => {
+        const formattedAddress = getAddress(balanceData.contractAddress)
+        balances[formattedAddress] = BigInt(balanceData.tokenBalance)
+      },
+    )
+    pageKey = erc20Balances.pageKey
+  } while (pageKey)
 
   return balances
 }

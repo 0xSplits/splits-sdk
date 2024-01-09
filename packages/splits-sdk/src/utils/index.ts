@@ -245,9 +245,24 @@ export const getTokenData = async (
 export const isLogsPublicClient = (
   publicClient: PublicClient<Transport, Chain | undefined>,
 ): boolean => {
-  if (publicClient.transport?.url?.includes('.alchemy.')) return true
-  if (publicClient.transport?.url?.includes('.alchemyapi.')) return true
-  if (publicClient.transport?.url?.includes('.infura.')) return true
+  return (
+    isAlchemyPublicClient(publicClient) || isInfuraPublicClient(publicClient)
+  )
+}
+
+export const isAlchemyPublicClient: (arg0: PublicClient) => boolean = (
+  rpcPublicClient,
+) => {
+  if (rpcPublicClient.transport?.url?.includes('.alchemy.')) return true
+  if (rpcPublicClient.transport?.url?.includes('.alchemyapi.')) return true
+
+  return false
+}
+
+export const isInfuraPublicClient: (arg0: PublicClient) => boolean = (
+  rpcPublicClient,
+) => {
+  if (rpcPublicClient.transport?.url?.includes('.infura.')) return true
 
   return false
 }
