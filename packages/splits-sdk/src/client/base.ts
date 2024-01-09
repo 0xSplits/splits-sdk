@@ -58,10 +58,12 @@ import type {
 import {
   fromBigIntToTokenValue,
   getTokenData,
+  isAlchemyPublicClient,
   isLogsPublicClient,
 } from '../utils'
 import {
   fetchActiveBalances,
+  fetchContractBalancesWithAlchemy,
   fetchERC20TransferredTokens,
 } from '../utils/balances'
 import { validateAddress } from '../utils/validation'
@@ -232,39 +234,65 @@ class BaseClient {
         'Public client required to get active balances. Please update your call to the client constructor with a valid public client, or set includeActiveBalances to false',
       )
     const tokenList = erc20TokenList ?? []
-    if (erc20TokenList === undefined) {
-      if (!isLogsPublicClient(this._publicClient))
-        throw new InvalidArgumentError(
-          'Token list required if public client is not alchemy or infura',
-        )
-      const transferredErc20Tokens = await fetchERC20TransferredTokens(
-        this._chainId,
-        this._publicClient,
+
+    let balances: TokenBalances
+    if (
+      erc20TokenList === undefined &&
+      isAlchemyPublicClient(this._publicClient)
+    ) {
+      // If no token list passed in and we're using alchemy, fetch all balances with alchemy's custom api
+      balances = await fetchContractBalancesWithAlchemy(
         accountAddress,
+        this._publicClient,
       )
-      tokenList.push(...transferredErc20Tokens)
+    } else {
+      if (erc20TokenList === undefined) {
+        // If no token list passed in, make sure the public client supports logs and then fetch all erc20 tokens
+        if (!isLogsPublicClient(this._publicClient))
+          throw new InvalidArgumentError(
+            'Token list required if public client is not alchemy or infura',
+          )
+        const transferredErc20Tokens = await fetchERC20TransferredTokens(
+          this._chainId,
+          this._publicClient,
+          accountAddress,
+        )
+        tokenList.push(...transferredErc20Tokens)
+      }
+
+      // Include already distributed tokens in list for balances
+      const customTokens = Object.keys(withdrawn) ?? []
+      const fullTokenList = Array.from(
+        new Set(
+          [ADDRESS_ZERO, ...tokenList]
+            .concat(Object.keys(internalBalances))
+            .concat(customTokens)
+            .map((token) => getAddress(token)),
+        ),
+      )
+      balances = await fetchActiveBalances(
+        accountAddress,
+        this._publicClient,
+        fullTokenList,
+      )
     }
 
-    // Include already distributed tokens in list for balances
-    const customTokens = Object.keys(withdrawn) ?? []
-    const fullTokenList = Array.from(
-      new Set(
-        [ADDRESS_ZERO, ...tokenList]
-          .concat(Object.keys(internalBalances ?? {}))
-          .concat(customTokens)
-          .map((token) => getAddress(token)),
-      ),
+    const allTokens = Array.from(
+      new Set(Object.keys(balances).concat(Object.keys(internalBalances))),
     )
-    const balances = await fetchActiveBalances(
-      accountAddress,
-      this._publicClient,
-      fullTokenList,
-    )
-    const filteredBalances = Object.keys(balances).reduce((acc, token) => {
-      const tokenBalance =
-        balances[token] + (internalBalances[token] ?? BigInt(0))
+    const filteredBalances = allTokens.reduce((acc, token) => {
+      const internalBalanceAmount = internalBalances[token] ?? BigInt(0)
+      const contractBalanceAmount = balances[token] ?? BigInt(0)
 
-      if (tokenBalance > BigInt(1)) acc[token] = tokenBalance
+      // SplitMain leaves a balance of 1 for gas efficiency in internal balances.
+      // Splits leave a balance of 1 (for erc20) for gas efficiency
+      const tokenBalance =
+        (internalBalanceAmount > BigInt(1)
+          ? internalBalanceAmount
+          : BigInt(0)) +
+        (contractBalanceAmount > BigInt(1) ? contractBalanceAmount : BigInt(0))
+      if (tokenBalance > BigInt(0)) acc[token] = tokenBalance
+
       return acc
     }, {} as TokenBalances)
 
