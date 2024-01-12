@@ -10,6 +10,7 @@
     "./constants/abi": "./dist/constants/abi/index.js",
     "./errors": "./dist/errors.js",
     "./types": "./dist/types.js",
+    "./utils": "./dist/utils.js",
     "./utils/validation": "./dist/utils/validation.js"
   },
   "typesVersions": {
@@ -25,6 +26,9 @@
       ],
       "types": [
         "./dist/types.d.ts"
+      ],
+      "utils": [
+        "./dist/utils.d.ts"
       ],
       "utils/validation": [
         "./dist/validation.d.ts"
