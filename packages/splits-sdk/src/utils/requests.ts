@@ -1,3 +1,5 @@
+import { Chain, PublicClient, Transport } from 'viem'
+
 /**
  * Retries a function n number of times with exponential backoff before giving up
  */
@@ -33,4 +35,30 @@ const delay: (timeoutMs: number) => void = async (timeoutMs) => {
 
 const getRandomTimeMs: (maxMs: number) => number = (maxMs) => {
   return Math.random() * maxMs
+}
+
+// Return true if the public client supports a large enough logs request to fetch erc20 tranfer history
+export const isLogsPublicClient = (
+  publicClient: PublicClient<Transport, Chain | undefined>,
+): boolean => {
+  return (
+    isAlchemyPublicClient(publicClient) || isInfuraPublicClient(publicClient)
+  )
+}
+
+export const isAlchemyPublicClient: (arg0: PublicClient) => boolean = (
+  rpcPublicClient,
+) => {
+  if (rpcPublicClient.transport?.url?.includes('.alchemy.')) return true
+  if (rpcPublicClient.transport?.url?.includes('.alchemyapi.')) return true
+
+  return false
+}
+
+export const isInfuraPublicClient: (arg0: PublicClient) => boolean = (
+  rpcPublicClient,
+) => {
+  if (rpcPublicClient.transport?.url?.includes('.infura.')) return true
+
+  return false
 }

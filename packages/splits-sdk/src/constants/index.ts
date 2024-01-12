@@ -103,6 +103,7 @@ enum ChainId {
   ZORA_GOERLI = 999,
   ZORA_SEPOLIA = 999999999,
   BASE = 8453,
+  BASE_GOERLI = 84531,
 }
 
 export const ETHEREUM_CHAIN_IDS = [
@@ -126,7 +127,7 @@ export const ZORA_CHAIN_IDS = [
   ChainId.ZORA_GOERLI,
   ChainId.ZORA_SEPOLIA,
 ]
-export const BASE_CHAIN_IDS = [ChainId.BASE]
+export const BASE_CHAIN_IDS = [ChainId.BASE, ChainId.BASE_GOERLI]
 
 const ALL_CHAIN_IDS = [
   ChainId.MAINNET,
@@ -277,6 +278,11 @@ export const CHAIN_INFO: {
     startBlock: 2293907,
     gqlEndpoint:
       'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-base',
+  },
+  [ChainId.BASE_GOERLI]: {
+    startBlock: 8858512,
+    gqlEndpoint:
+      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-base-goerli',
   },
 }
 

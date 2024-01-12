@@ -19,6 +19,8 @@ import {
 } from '../errors'
 import * as subgraph from '../subgraph'
 import * as utils from '../utils'
+import * as tokenUtils from '../utils/tokens'
+import * as ensUtils from '../utils/ens'
 import { validateAddress, validateWaterfallTranches } from '../utils/validation'
 import {
   TRANCHE_RECIPIENTS,
@@ -60,7 +62,7 @@ const getTrancheRecipientsAndSizesMock = jest
   })
 
 const getTokenDataMock = jest
-  .spyOn(utils, 'getTokenData')
+  .spyOn(tokenUtils, 'getTokenData')
   .mockImplementation(async () => {
     return GET_TOKEN_DATA
   })
@@ -842,7 +844,9 @@ describe('Graphql reads', () => {
   const mockFormatWaterfall = jest
     .spyOn(subgraph, 'protectedFormatWaterfallModule')
     .mockReturnValue(mockGqlWaterfall as unknown as WaterfallModule)
-  const mockAddEnsNames = jest.spyOn(utils, 'addEnsNames').mockImplementation()
+  const mockAddEnsNames = jest
+    .spyOn(ensUtils, 'addEnsNames')
+    .mockImplementation()
 
   const waterfallModuleAddress = '0xwaterfall'
   const publicClient = new mockPublicClient()
