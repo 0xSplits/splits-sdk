@@ -19,6 +19,8 @@ import {
 } from '../errors'
 import * as subgraph from '../subgraph'
 import * as utils from '../utils'
+import * as numberUtils from '../utils/numbers'
+import * as ensUtils from '../utils/ens'
 import { validateSplitInputs, validateAddress } from '../utils/validation'
 import {
   SORTED_ADDRESSES,
@@ -59,7 +61,7 @@ const getSortedRecipientsMock = jest
     return [SORTED_ADDRESSES, SORTED_ALLOCATIONS]
   })
 const getBigIntMock = jest
-  .spyOn(utils, 'getBigIntFromPercent')
+  .spyOn(numberUtils, 'getBigIntFromPercent')
   .mockImplementation(() => {
     return DISTRIBUTOR_FEE
   })
@@ -1407,7 +1409,9 @@ describe('Graphql reads', () => {
   const mockFormatSplit = jest
     .spyOn(subgraph, 'protectedFormatSplit')
     .mockReturnValue(mockSplit)
-  const mockAddEnsNames = jest.spyOn(utils, 'addEnsNames').mockImplementation()
+  const mockAddEnsNames = jest
+    .spyOn(ensUtils, 'addEnsNames')
+    .mockImplementation()
 
   const splitAddress = '0xsplit'
   const userAddress = '0xuser'

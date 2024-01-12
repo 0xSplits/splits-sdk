@@ -18,7 +18,8 @@ import {
   UnsupportedChainIdError,
 } from '../errors'
 import * as subgraph from '../subgraph'
-import * as utils from '../utils'
+import * as swapperUtils from '../utils/swapper'
+import * as ensUtils from '../utils/ens'
 import {
   validateAddress,
   validateOracleParams,
@@ -62,17 +63,17 @@ jest.mock('viem', () => {
 jest.mock('../utils/validation')
 
 const getFormattedOracleParamsMock = jest
-  .spyOn(utils, 'getFormattedOracleParams')
+  .spyOn(swapperUtils, 'getFormattedOracleParams')
   .mockImplementation(() => {
     return FORMATTED_ORACLE_PARAMS
   })
 const getFormattedScaledOfferFactorMock = jest
-  .spyOn(utils, 'getFormattedScaledOfferFactor')
+  .spyOn(swapperUtils, 'getFormattedScaledOfferFactor')
   .mockImplementation(() => {
     return FORMATTED_SCALED_OFFER_FACTOR
   })
 const getFormattedScaledOfferFactorOverridesMock = jest
-  .spyOn(utils, 'getFormattedScaledOfferFactorOverrides')
+  .spyOn(swapperUtils, 'getFormattedScaledOfferFactorOverrides')
   .mockImplementation(() => {
     return FORMATTED_SCALED_OFFER_FACTOR_OVERRIDES
   })
@@ -1106,7 +1107,9 @@ describe('Graphql reads', () => {
   const mockFormatSwapper = jest
     .spyOn(subgraph, 'protectedFormatSwapper')
     .mockReturnValue('formatted_swapper' as unknown as Swapper)
-  const mockAddEnsNames = jest.spyOn(utils, 'addEnsNames').mockImplementation()
+  const mockAddEnsNames = jest
+    .spyOn(ensUtils, 'addEnsNames')
+    .mockImplementation()
   const mockGqlSwapper = {
     beneficiary: {
       id: '0xbeneficiary',

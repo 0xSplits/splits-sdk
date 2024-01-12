@@ -25,6 +25,8 @@ import {
 } from '../errors'
 import * as subgraph from '../subgraph'
 import * as utils from '../utils'
+import * as numberUtils from '../utils/numbers'
+import * as ensUtils from '../utils/ens'
 import {
   validateAddress,
   validateDistributorFeePercent,
@@ -73,7 +75,7 @@ const getSortedRecipientsMock = jest
     return [SORTED_ADDRESSES, SORTED_ALLOCATIONS]
   })
 const getBigIntMock = jest
-  .spyOn(utils, 'getBigIntFromPercent')
+  .spyOn(numberUtils, 'getBigIntFromPercent')
   .mockImplementation(() => {
     return DISTRIBUTOR_FEE
   })
@@ -758,7 +760,9 @@ describe('Graphql reads', () => {
   const mockFormatLiquidSplit = jest
     .spyOn(subgraph, 'protectedFormatLiquidSplit')
     .mockReturnValue(SAMPLE_LIQUID_SPLIT)
-  const mockAddEnsNames = jest.spyOn(utils, 'addEnsNames').mockImplementation()
+  const mockAddEnsNames = jest
+    .spyOn(ensUtils, 'addEnsNames')
+    .mockImplementation()
   const mockGqlLiquidSplit = {
     token: {
       id: '0xliquidSplitToken',

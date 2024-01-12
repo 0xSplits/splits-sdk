@@ -16,6 +16,7 @@ import {
   UnsupportedChainIdError,
 } from '../errors'
 import * as utils from '../utils'
+import * as swapperUtils from '../utils/swapper'
 import {
   validateAddress,
   validateDistributorFeePercent,
@@ -67,12 +68,12 @@ const getRecoupTranchesAndSizesMock = jest
     return [RECOUP_TRANCHE_RECIPIENTS, TRANCHE_SIZES]
   })
 const getFormattedOracleParamsMock = jest
-  .spyOn(utils, 'getFormattedOracleParams')
+  .spyOn(swapperUtils, 'getFormattedOracleParams')
   .mockImplementation(() => {
     return FORMATTED_ORACLE_PARAMS
   })
 const getDiversifierRecipientsMock = jest
-  .spyOn(utils, 'getDiversifierRecipients')
+  .spyOn(swapperUtils, 'getDiversifierRecipients')
   .mockImplementation(() => {
     return FORMATTED_DIVERSIFIER_RECIPIENTS
   })

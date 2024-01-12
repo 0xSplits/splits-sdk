@@ -17,7 +17,8 @@ import {
   UnsupportedChainIdError,
 } from '../errors'
 import * as subgraph from '../subgraph'
-import * as utils from '../utils'
+import * as tokenUtils from '../utils/tokens'
+import * as ensUtils from '../utils/ens'
 import { validateAddress, validateVestingPeriod } from '../utils/validation'
 import { GET_TOKEN_DATA } from '../testing/constants'
 import { MockGraphqlClient } from '../testing/mocks/graphql'
@@ -56,7 +57,7 @@ jest.mock('viem', () => {
 jest.mock('../utils/validation')
 
 const getTokenDataMock = jest
-  .spyOn(utils, 'getTokenData')
+  .spyOn(tokenUtils, 'getTokenData')
   .mockImplementation(async () => {
     return GET_TOKEN_DATA
   })
@@ -567,7 +568,9 @@ describe('Graphql reads', () => {
   const mockFormatVesting = jest
     .spyOn(subgraph, 'protectedFormatVestingModule')
     .mockReturnValue('formatted_vesting_module' as unknown as VestingModule)
-  const mockAddEnsNames = jest.spyOn(utils, 'addEnsNames').mockImplementation()
+  const mockAddEnsNames = jest
+    .spyOn(ensUtils, 'addEnsNames')
+    .mockImplementation()
   const mockGqlVesting = {
     streams: [
       {
