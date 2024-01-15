@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Identicon } from '@lidofinance/identicon'
 
 import { shortenAddress } from '../../utils/address'
 import { copyToClipboard } from '../../utils/clipboard'
@@ -7,6 +6,7 @@ import { IAddress } from '../../types'
 import Link from '../util/Link'
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/20/solid'
 import { SupportedChainId } from '../../constants/chains'
+import Identicon from '../util/Identicon'
 
 const SplitHeader = ({
   address,
@@ -31,11 +31,7 @@ const SplitHeader = ({
             'flex items-center space-x-2 truncate active:bg-yellow-200 dark:active:text-black'
           }
         >
-          <Identicon
-            diameter={20}
-            address={address}
-            className="flex-shrink-0"
-          />
+          <Identicon address={address} size={20} className="flex-shrink-0" />
           <div className="truncate">{displayName}</div>
         </div>
       </div>
