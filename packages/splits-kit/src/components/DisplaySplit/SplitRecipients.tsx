@@ -9,7 +9,7 @@ import { displayPercentage } from '../../utils/display'
 import Button from '../util/Button'
 import Label from '../util/Label'
 import Link from '../util/Link'
-import Identicon from '../util/Identicon'
+import SplitsAvatar from '../util/SplitsAvatar'
 
 interface ISplitRecipientsProps {
   split: Split | undefined
@@ -53,7 +53,7 @@ const SplitRecipients = ({ split }: ISplitRecipientsProps) => {
                 className="py-2 flex items-stretch justify-between space-x-0.5"
               >
                 <div className="flex items-center space-x-2">
-                  <Identicon address={recipient.address} size={20} />
+                  <SplitsAvatar address={recipient.address} size={20} />
                   <Link href={getSplitsAccountUrl(recipient.address)}>
                     <div>{displayAddress(recipient)}</div>
                   </Link>

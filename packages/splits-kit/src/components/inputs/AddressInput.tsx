@@ -20,7 +20,7 @@ import { useEnsName, useEnsAddress } from 'wagmi'
 import { IAddress } from '../../types'
 import { SupportedChainId } from '../../constants/chains'
 import { isAddress } from 'viem'
-import Identicon from '../util/Identicon'
+import SplitsAvatar from '../util/SplitsAvatar'
 
 const AddressInput = <FormType extends FieldValues>({
   control,
@@ -183,7 +183,7 @@ const ValidAddressDisplay = ({
           validAddressDisplay(address)
         ) : (
           <>
-            <Identicon
+            <SplitsAvatar
               address={address}
               size={18}
               className={'flex-shrink-0'}

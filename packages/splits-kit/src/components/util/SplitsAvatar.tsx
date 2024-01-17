@@ -3,7 +3,7 @@ import { getAddress } from 'viem'
 import { normalize } from 'viem/ens'
 import { useEnsAvatar, useEnsName } from 'wagmi'
 
-export default function Identicon({
+export default function SplitsAvatar({
   address,
   size = 18,
   className,

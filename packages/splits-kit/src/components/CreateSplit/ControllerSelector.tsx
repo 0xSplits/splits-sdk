@@ -5,7 +5,7 @@ import {
   Path,
   FieldValues,
 } from 'react-hook-form'
-import Identicon from '../util/Identicon'
+import SplitsAvatar from '../util/SplitsAvatar'
 import { useAccount } from 'wagmi'
 
 import AddressSelectInput from '../inputs/AddressSelectInput'
@@ -46,7 +46,7 @@ export const ControllerSelector = <FormType extends FieldValues>({
                 value: connectedAddress,
                 display: () => (
                   <div className="flex w-full flex-grow items-center space-x-2">
-                    <Identicon address={connectedAddress} size={18} />
+                    <SplitsAvatar address={connectedAddress} size={18} />
                     <div className={'flex truncate'}>{accountDisplayName}</div>
                     <div className="flex-shrink-0 rounded-lg bg-blue-100/50 px-2 text-[80%] text-blue-500 dark:bg-blue-900/50">
                       You
