@@ -11,7 +11,6 @@ import {
   useFormState,
   useWatch,
 } from 'react-hook-form'
-import { Identicon } from '@lidofinance/identicon'
 import { XMarkIcon } from '@heroicons/react/20/solid'
 import { Dictionary } from 'lodash'
 
@@ -21,6 +20,7 @@ import { useEnsName, useEnsAddress } from 'wagmi'
 import { IAddress } from '../../types'
 import { SupportedChainId } from '../../constants/chains'
 import { isAddress } from 'viem'
+import SplitsAvatar from '../util/SplitsAvatar'
 
 const AddressInput = <FormType extends FieldValues>({
   control,
@@ -183,9 +183,9 @@ const ValidAddressDisplay = ({
           validAddressDisplay(address)
         ) : (
           <>
-            <Identicon
+            <SplitsAvatar
               address={address}
-              diameter={18}
+              size={18}
               className={'flex-shrink-0'}
             />
             {ens ? (
