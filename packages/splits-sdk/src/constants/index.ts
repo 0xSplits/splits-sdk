@@ -37,9 +37,15 @@ const LIQUID_SPLIT_FACTORY_ADDRESS_BSC =
   '0xCDe071bE119024EdC970B3Da15003ee834ae40D2'
 const RECOUP_ADDRESS_BSC = '0x5ff0C88311F79803B43e9Dc3F2B20F49A6b680fd'
 
+const SPLIT_MAIN_ADDRESS_HOLESKY = '0xfC8a305728051367797DADE6Aa0344E0987f5286'
+const LIQUID_SPLIT_FACTORY_ADDRESS_HOLESKY =
+  '0xAbA0E852f1EB10196b55f877903A87a2588b7aa8'
+const RECOUP_ADDRESS_HOLESKY = '0xcFba37C5Ee4d80c286593342470EB881deb9799e'
+
 export const getSplitMainAddress = (chainId: number): Address => {
   if (chainId === ChainId.BSC || chainId === ChainId.SEPOLIA)
     return SPLIT_MAIN_ADDRESS_BSC
+  if (chainId === ChainId.HOLESKY) return SPLIT_MAIN_ADDRESS_HOLESKY
   return SPLIT_MAIN_ADDRESS
 }
 
@@ -55,11 +61,13 @@ export const getWaterfallFactoryAddress = (chainId: number): Address => {
 
 export const getLiquidSplitFactoryAddress = (chainId: number): Address => {
   if (chainId === ChainId.BSC) return LIQUID_SPLIT_FACTORY_ADDRESS_BSC
+  if (chainId === ChainId.HOLESKY) return LIQUID_SPLIT_FACTORY_ADDRESS_HOLESKY
   return LIQUID_SPLIT_FACTORY_ADDRESS
 }
 
 export const getRecoupAddress = (chainId: number): Address => {
   if (chainId === ChainId.BSC) return RECOUP_ADDRESS_BSC
+  if (chainId === ChainId.HOLESKY) return RECOUP_ADDRESS_HOLESKY
   return RECOUP_ADDRESS
 }
 
@@ -88,6 +96,7 @@ enum ChainId {
   MAINNET = 1,
   GOERLI = 5,
   SEPOLIA = 11155111,
+  HOLESKY = 17000,
   POLYGON = 137,
   POLYGON_MUMBAI = 80001,
   OPTIMISM = 10,
@@ -104,6 +113,7 @@ enum ChainId {
   ZORA_SEPOLIA = 999999999,
   BASE = 8453,
   BASE_GOERLI = 84531,
+  BASE_SEPOLIA = 84532,
 }
 
 export const ETHEREUM_CHAIN_IDS = [
@@ -113,6 +123,7 @@ export const ETHEREUM_CHAIN_IDS = [
   ChainId.GOERLI,
   42,
   ChainId.SEPOLIA,
+  ChainId.HOLESKY,
 ]
 export const POLYGON_CHAIN_IDS = [ChainId.POLYGON, ChainId.POLYGON_MUMBAI]
 export const OPTIMISM_CHAIN_IDS = [ChainId.OPTIMISM, ChainId.OPTIMISM_GOERLI]
@@ -127,11 +138,16 @@ export const ZORA_CHAIN_IDS = [
   ChainId.ZORA_GOERLI,
   ChainId.ZORA_SEPOLIA,
 ]
-export const BASE_CHAIN_IDS = [ChainId.BASE, ChainId.BASE_GOERLI]
+export const BASE_CHAIN_IDS = [
+  ChainId.BASE,
+  ChainId.BASE_GOERLI,
+  ChainId.BASE_SEPOLIA,
+]
 
 const ALL_CHAIN_IDS = [
   ChainId.MAINNET,
   ChainId.GOERLI,
+  ChainId.HOLESKY,
   ...POLYGON_CHAIN_IDS,
   ...OPTIMISM_CHAIN_IDS,
   ...ARBITRUM_CHAIN_IDS,
@@ -148,16 +164,16 @@ export const SPLITS_SUPPORTED_CHAIN_IDS = [3, 4, 42, ...ALL_CHAIN_IDS]
 
 export const SPLITS_SUBGRAPH_CHAIN_IDS = ALL_CHAIN_IDS.slice()
 export const WATERFALL_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
-  (id) => id !== ChainId.ZORA_SEPOLIA,
+  (id) => id !== ChainId.ZORA_SEPOLIA && id !== ChainId.BASE_SEPOLIA,
 )
 export const LIQUID_SPLIT_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
-  (id) => id !== ChainId.ZORA_SEPOLIA,
+  (id) => id !== ChainId.ZORA_SEPOLIA && id !== ChainId.BASE_SEPOLIA,
 )
 export const VESTING_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
-  (id) => id !== ChainId.ZORA_SEPOLIA,
+  (id) => id !== ChainId.ZORA_SEPOLIA && id !== ChainId.BASE_SEPOLIA,
 )
 export const TEMPLATES_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
-  (id) => id !== ChainId.ZORA_SEPOLIA,
+  (id) => id !== ChainId.ZORA_SEPOLIA && id !== ChainId.BASE_SEPOLIA,
 )
 
 export const SWAPPER_CHAIN_IDS = [
@@ -203,6 +219,11 @@ export const CHAIN_INFO: {
   },
   42: {
     startBlock: 29821123,
+  },
+  [ChainId.HOLESKY]: {
+    startBlock: 148241,
+    gqlEndpoint:
+      'https://api.studio.thegraph.com/query/63614/splits-subgraph-holesky/version/latest',
   },
   [ChainId.POLYGON]: {
     startBlock: 25303316,
@@ -283,6 +304,11 @@ export const CHAIN_INFO: {
     startBlock: 8858512,
     gqlEndpoint:
       'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-base-goerli',
+  },
+  [ChainId.BASE_SEPOLIA]: {
+    startBlock: 3324413,
+    gqlEndpoint:
+      'https://api.studio.thegraph.com/query/63614/splits-subgraph-base-sepolia/version/latest',
   },
 }
 
