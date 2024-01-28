@@ -113,7 +113,6 @@ enum ChainId {
   ZORA_SEPOLIA = 999999999,
   BASE = 8453,
   BASE_GOERLI = 84531,
-  BASE_SEPOLIA = 84532,
 }
 
 export const ETHEREUM_CHAIN_IDS = [
@@ -138,11 +137,7 @@ export const ZORA_CHAIN_IDS = [
   ChainId.ZORA_GOERLI,
   ChainId.ZORA_SEPOLIA,
 ]
-export const BASE_CHAIN_IDS = [
-  ChainId.BASE,
-  ChainId.BASE_GOERLI,
-  ChainId.BASE_SEPOLIA,
-]
+export const BASE_CHAIN_IDS = [ChainId.BASE, ChainId.BASE_GOERLI]
 
 const ALL_CHAIN_IDS = [
   ChainId.MAINNET,
@@ -164,16 +159,16 @@ export const SPLITS_SUPPORTED_CHAIN_IDS = [3, 4, 42, ...ALL_CHAIN_IDS]
 
 export const SPLITS_SUBGRAPH_CHAIN_IDS = ALL_CHAIN_IDS.slice()
 export const WATERFALL_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
-  (id) => id !== ChainId.ZORA_SEPOLIA && id !== ChainId.BASE_SEPOLIA,
+  (id) => id !== ChainId.ZORA_SEPOLIA,
 )
 export const LIQUID_SPLIT_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
-  (id) => id !== ChainId.ZORA_SEPOLIA && id !== ChainId.BASE_SEPOLIA,
+  (id) => id !== ChainId.ZORA_SEPOLIA,
 )
 export const VESTING_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
-  (id) => id !== ChainId.ZORA_SEPOLIA && id !== ChainId.BASE_SEPOLIA,
+  (id) => id !== ChainId.ZORA_SEPOLIA,
 )
 export const TEMPLATES_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
-  (id) => id !== ChainId.ZORA_SEPOLIA && id !== ChainId.BASE_SEPOLIA,
+  (id) => id !== ChainId.ZORA_SEPOLIA,
 )
 
 export const SWAPPER_CHAIN_IDS = [
@@ -304,11 +299,6 @@ export const CHAIN_INFO: {
     startBlock: 8858512,
     gqlEndpoint:
       'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-base-goerli',
-  },
-  [ChainId.BASE_SEPOLIA]: {
-    startBlock: 3324413,
-    gqlEndpoint:
-      'https://api.studio.thegraph.com/query/63614/splits-subgraph-base-sepolia/version/latest',
   },
 }
 
