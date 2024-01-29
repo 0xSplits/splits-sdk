@@ -2,6 +2,8 @@ import React from 'react'
 import WagmiProvider from './components/WagmiProvider'
 import { dark, light } from './theme'
 
+import '@0xsplits/splits-kit/dist/styles.css'
+
 const preview = {
   parameters: {
     darkMode: {
