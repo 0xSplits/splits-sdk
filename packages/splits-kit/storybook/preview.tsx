@@ -1,6 +1,7 @@
 import React from 'react'
 import WagmiProvider from './components/WagmiProvider'
 import { dark, light } from './theme'
+import '../dist/styles.css'
 
 const preview = {
   parameters: {
