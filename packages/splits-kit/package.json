@@ -31,8 +31,8 @@
   },
   "homepage": "https://docs.splits.org/sdk-info/overview",
   "dependencies": {
-    "@0xsplits/splits-sdk": "^3.2.3",
-    "@0xsplits/splits-sdk-react": "^1.2.3",
+    "@0xsplits/splits-sdk": "^3.2.4-alpha.2",
+    "@0xsplits/splits-sdk-react": "^1.2.4-alpha.2",
     "@headlessui/react": "^1.7.17",
     "@heroicons/react": "^2.0.18",
     "@hookform/error-message": "^2.0.1",
