@@ -182,6 +182,7 @@ export const SWAPPER_CHAIN_IDS = [
   ChainId.BASE,
   ChainId.POLYGON,
   ChainId.OPTIMISM,
+  ChainId.ARBITRUM,
 ]
 export const PASS_THROUGH_WALLET_CHAIN_IDS = SWAPPER_CHAIN_IDS.slice()
 export const ORACLE_CHAIN_IDS = SWAPPER_CHAIN_IDS.slice()
