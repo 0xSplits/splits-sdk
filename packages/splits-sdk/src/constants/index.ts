@@ -148,6 +148,7 @@ const ALL_CHAIN_IDS = [
   ChainId.MAINNET,
   ChainId.GOERLI,
   ChainId.HOLESKY,
+  ChainId.SEPOLIA,
   ...POLYGON_CHAIN_IDS,
   ...OPTIMISM_CHAIN_IDS,
   ...ARBITRUM_CHAIN_IDS,
@@ -214,7 +215,7 @@ export const CHAIN_INFO: {
       'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-goerli',
   },
   [ChainId.SEPOLIA]: {
-    startBlock: 4836246,
+    startBlock: 4836125,
     gqlEndpoint:
       'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-sepolia',
   },
