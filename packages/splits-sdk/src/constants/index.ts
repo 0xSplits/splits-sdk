@@ -42,6 +42,9 @@ const LIQUID_SPLIT_FACTORY_ADDRESS_HOLESKY =
   '0xAbA0E852f1EB10196b55f877903A87a2588b7aa8'
 const RECOUP_ADDRESS_HOLESKY = '0xcFba37C5Ee4d80c286593342470EB881deb9799e'
 
+const RECOUP_ADDRESS_SEPOLIA = '0xCA64fab630cDB098e5a5d393058aa27163a14293'
+const DIVERSIFIER_FACTORY_ADDRESS_SEPOLIA = '0x15Cb41615d210f4c4E597BeCEcB8Ee9410B9837F'
+
 export const getSplitMainAddress = (chainId: number): Address => {
   if (chainId === ChainId.BSC || chainId === ChainId.SEPOLIA)
     return SPLIT_MAIN_ADDRESS_BSC
@@ -68,6 +71,7 @@ export const getLiquidSplitFactoryAddress = (chainId: number): Address => {
 export const getRecoupAddress = (chainId: number): Address => {
   if (chainId === ChainId.BSC) return RECOUP_ADDRESS_BSC
   if (chainId === ChainId.HOLESKY) return RECOUP_ADDRESS_HOLESKY
+  if (chainId === ChainId.SEPOLIA) return RECOUP_ADDRESS_SEPOLIA
   return RECOUP_ADDRESS
 }
 
@@ -89,6 +93,7 @@ export const getUniV3SwapAddress = (_chainId: number): Address => {
 
 export const getDiversifierFactoryAddress = (chainId: number): Address => {
   if (chainId === ChainId.MAINNET) return DIVERSIFIER_FACTORY_ADDRESS_MAINNET
+  if (chainId === ChainId.SEPOLIA) return DIVERSIFIER_FACTORY_ADDRESS_SEPOLIA
   return DIVERSIFIER_FACTORY_ADDRESS
 }
 
@@ -180,6 +185,7 @@ export const TEMPLATES_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
 export const SWAPPER_CHAIN_IDS = [
   ChainId.MAINNET,
   ChainId.GOERLI,
+  ChainId.SEPOLIA,
   ChainId.BASE,
   ChainId.POLYGON,
   ChainId.OPTIMISM,
