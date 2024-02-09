@@ -185,6 +185,7 @@ export const TEMPLATES_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
 export const SWAPPER_CHAIN_IDS = [
   ChainId.MAINNET,
   ChainId.GOERLI,
+  ChainId.SEPOLIA,
   ChainId.BASE,
   ChainId.POLYGON,
   ChainId.OPTIMISM,
