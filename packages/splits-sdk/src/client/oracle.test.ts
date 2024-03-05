@@ -58,8 +58,8 @@ describe('Client config validation', () => {
     expect(() => new OracleClient({ chainId: 420 })).toThrow()
   })
 
-  test('Arbitrum chain ids fail', () => {
-    expect(() => new OracleClient({ chainId: 42161 })).toThrow()
+  test('Arbitrum chain ids pass (test chain fails)', () => {
+    expect(() => new OracleClient({ chainId: 42161 })).not.toThrow()
     expect(() => new OracleClient({ chainId: 421613 })).toThrow()
   })
 
