@@ -296,7 +296,7 @@ export const CHAIN_INFO: {
   [ChainId.ZORA_GOERLI]: {
     startBlock: 968023,
     gqlEndpoint:
-      'https://api.goldsky.com/api/public/project_clhk16b61ay9t49vm6ntn4mkz/subgraphs/splits-zora-testnet/1.0.0/gn',
+      'https://api.goldsky.com/api/public/project_clhk16b61ay9t49vm6ntn4mkz/subgraphs/splits-zora-testnet/stable/gn',
   },
   [ChainId.ZORA_SEPOLIA]: {
     startBlock: 2296044,
