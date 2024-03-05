@@ -29,15 +29,26 @@ export const useSplitsClient = (config?: SplitsClientConfig): SplitsClient => {
     throw new Error('Make sure to include <SplitsProvider>')
   }
 
-  const chainId = config?.chainId ?? context.splitsClient._chainId
+  const chainId =
+    config && 'chainId' in config
+      ? config.chainId
+      : context.splitsClient._chainId
   const publicClient =
-    config?.publicClient ?? context.splitsClient._publicClient
+    config && 'publicClient' in config
+      ? config.publicClient
+      : context.splitsClient._publicClient
   const walletClient =
-    config?.walletClient ?? context.splitsClient._walletClient
+    config && 'walletClient' in config
+      ? config.walletClient
+      : context.splitsClient._walletClient
   const includeEnsNames =
-    config?.includeEnsNames ?? context.splitsClient._includeEnsNames
+    config && 'includeEnsNames' in config
+      ? config.includeEnsNames
+      : context.splitsClient._includeEnsNames
   const ensPublicClient =
-    config?.ensPublicClient ?? context.splitsClient._ensPublicClient
+    config && 'ensPublicClient' in config
+      ? config.ensPublicClient
+      : context.splitsClient._ensPublicClient
   useEffect(() => {
     context.initClient({
       chainId,
