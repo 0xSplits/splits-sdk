@@ -1,6 +1,6 @@
 {
   "name": "@0xsplits/splits-kit",
-  "version": "0.3.0-alpha.1",
+  "version": "0.3.0-alpha.2",
   "description": "UI Components for working with 0xSplits contracts",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
