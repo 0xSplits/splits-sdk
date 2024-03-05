@@ -43,7 +43,8 @@ const LIQUID_SPLIT_FACTORY_ADDRESS_HOLESKY =
 const RECOUP_ADDRESS_HOLESKY = '0xcFba37C5Ee4d80c286593342470EB881deb9799e'
 
 const RECOUP_ADDRESS_SEPOLIA = '0xCA64fab630cDB098e5a5d393058aa27163a14293'
-const DIVERSIFIER_FACTORY_ADDRESS_SEPOLIA = '0x15Cb41615d210f4c4E597BeCEcB8Ee9410B9837F'
+const DIVERSIFIER_FACTORY_ADDRESS_SEPOLIA =
+  '0x15Cb41615d210f4c4E597BeCEcB8Ee9410B9837F'
 
 export const getSplitMainAddress = (chainId: number): Address => {
   if (chainId === ChainId.BSC || chainId === ChainId.SEPOLIA)
@@ -202,121 +203,197 @@ export const LIQUID_SPLIT_NFT_COUNT = 1000
 export const LIQUID_SPLIT_URI_BASE_64_HEADER = 'data:application/json;base64,'
 
 export const CHAIN_INFO: {
-  [chainId: number]: { startBlock: number; gqlEndpoint?: string }
+  [chainId: number]: {
+    startBlock: number
+    gqlEndpoint?: string
+    nativeCurrency: { symbol: string }
+  }
 } = {
   [ChainId.MAINNET]: {
     startBlock: 14206768,
     gqlEndpoint:
       'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-ethereum',
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
   },
   3: {
     startBlock: 11962375,
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
   },
   4: {
     startBlock: 10163325,
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
   },
   [ChainId.GOERLI]: {
     startBlock: 6374540,
     gqlEndpoint:
       'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-goerli',
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
   },
   [ChainId.SEPOLIA]: {
     startBlock: 4836125,
     gqlEndpoint:
       'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-sepolia',
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
   },
   42: {
     startBlock: 29821123,
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
   },
   [ChainId.HOLESKY]: {
     startBlock: 148241,
     gqlEndpoint:
       'https://api.studio.thegraph.com/query/63614/splits-subgraph-holesky/version/latest',
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
   },
   [ChainId.POLYGON]: {
     startBlock: 25303316,
     gqlEndpoint:
       'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-polygon',
+    nativeCurrency: {
+      symbol: 'MATIC',
+    },
   },
   [ChainId.POLYGON_MUMBAI]: {
     startBlock: 25258326,
     gqlEndpoint:
       'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-mumbai',
+    nativeCurrency: {
+      symbol: 'MATIC',
+    },
   },
   [ChainId.OPTIMISM]: {
     startBlock: 24704537,
     gqlEndpoint:
       'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-optimism',
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
   },
   [ChainId.OPTIMISM_GOERLI]: {
     startBlock: 1324620,
     gqlEndpoint:
       'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-opt-goerli',
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
   },
   [ChainId.ARBITRUM]: {
     startBlock: 26082503,
     gqlEndpoint:
       'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-arbitrum',
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
   },
   [ChainId.ARBITRUM_GOERLI]: {
     startBlock: 383218,
     gqlEndpoint:
       'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-arb-goerli',
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
   },
   [ChainId.GNOSIS]: {
     startBlock: 26014830,
     gqlEndpoint:
       'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-gnosis',
+    nativeCurrency: {
+      symbol: 'xDai',
+    },
   },
   [ChainId.FANTOM]: {
     startBlock: 53993922,
     gqlEndpoint:
       'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-fantom',
+    nativeCurrency: {
+      symbol: 'FTM',
+    },
   },
   [ChainId.AVALANCHE]: {
     startBlock: 25125818,
     gqlEndpoint:
       'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-avalanche',
+    nativeCurrency: {
+      symbol: 'AVAX',
+    },
   },
   [ChainId.BSC]: {
     startBlock: 24962607,
     gqlEndpoint:
       'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-bsc',
+    nativeCurrency: {
+      symbol: 'BNB',
+    },
   },
   [ChainId.AURORA]: {
     startBlock: 83401794,
     gqlEndpoint:
       'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-aurora',
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
   },
   [ChainId.ZORA]: {
     startBlock: 1860322,
     gqlEndpoint:
       'https://api.goldsky.com/api/public/project_clhk16b61ay9t49vm6ntn4mkz/subgraphs/splits-zora-mainnet/1.1.0/gn',
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
   },
   [ChainId.ZORA_GOERLI]: {
     startBlock: 968023,
     gqlEndpoint:
       'https://api.goldsky.com/api/public/project_clhk16b61ay9t49vm6ntn4mkz/subgraphs/splits-zora-testnet/stable/gn',
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
   },
   [ChainId.ZORA_SEPOLIA]: {
     startBlock: 2296044,
     gqlEndpoint:
       'https://api.goldsky.com/api/public/project_clhk16b61ay9t49vm6ntn4mkz/subgraphs/splits-zora-sepolia/1.0/gn',
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
   },
   [ChainId.BASE]: {
     startBlock: 2293907,
     gqlEndpoint:
       'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-base',
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
   },
   [ChainId.BASE_GOERLI]: {
     startBlock: 8858512,
     gqlEndpoint:
       'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-base-goerli',
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
   },
   [ChainId.BASE_SEPOLIA]: {
     startBlock: 3324413,
     gqlEndpoint:
       'https://api.studio.thegraph.com/query/63614/splits-subgraph-base-sepolia/version/latest',
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
   },
 }
 

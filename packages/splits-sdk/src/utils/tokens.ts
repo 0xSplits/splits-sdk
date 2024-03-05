@@ -1,6 +1,6 @@
 import { Address, getContract, PublicClient } from 'viem'
 
-import { ADDRESS_ZERO, POLYGON_CHAIN_IDS } from '../constants'
+import { ADDRESS_ZERO, CHAIN_INFO } from '../constants'
 import { erc20Abi } from '../constants/abi/erc20'
 
 export const getTokenData = async (
@@ -12,14 +12,8 @@ export const getTokenData = async (
   decimals: number
 }> => {
   if (token === ADDRESS_ZERO) {
-    if (POLYGON_CHAIN_IDS.includes(chainId))
-      return {
-        symbol: 'MATIC',
-        decimals: 18,
-      }
-
     return {
-      symbol: 'ETH',
+      symbol: CHAIN_INFO[chainId].nativeCurrency.symbol,
       decimals: 18,
     }
   }
