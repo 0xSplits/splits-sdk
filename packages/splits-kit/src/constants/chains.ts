@@ -64,11 +64,6 @@ export type ChainInfo = {
   readonly [chainId in SupportedChainId]: L1ChainInfo
 }
 
-export const isAlchemyChainId = (chainId: SupportedChainId) => {
-  const rpcUrl = CHAIN_INFO[chainId].rpcUrls[0]
-  return rpcUrl.indexOf('.alchemy.') >= 0
-}
-
 // merge with @usedapp & own utils getExplorer etc
 export const CHAIN_INFO: ChainInfo = {
   [mainnet.id]: {

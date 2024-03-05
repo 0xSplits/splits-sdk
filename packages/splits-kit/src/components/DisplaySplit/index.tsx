@@ -1,12 +1,13 @@
 import { useEffect } from 'react'
-import { useSplitEarnings, useSplitMetadata } from '@0xsplits/splits-sdk-react'
+import { isLogsPublicClient } from '@0xsplits/splits-sdk/utils'
+import {
+  useSplitEarnings,
+  useSplitMetadata,
+  useSplitsClient,
+} from '@0xsplits/splits-sdk-react'
 import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
 
-import {
-  CHAIN_INFO,
-  SupportedChainId,
-  isAlchemyChainId,
-} from '../../constants/chains'
+import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
 import SplitRecipients from '../DisplaySplit/SplitRecipients'
 import SkeletonLoader from '../DisplaySplit/SkeletonLoader'
 import SplitBalances from '../DisplaySplit/SplitBalances'
@@ -38,6 +39,8 @@ const DisplaySplit = ({
   onSuccess,
   onError,
 }: IDisplaySplitProps) => {
+  const splitsClient = useSplitsClient()
+
   const {
     splitMetadata: split,
     error: metadataError,
@@ -45,8 +48,10 @@ const DisplaySplit = ({
   } = useSplitMetadata(address)
 
   const includeActiveBalances = true
-  const erc20TokenList = isAlchemyChainId(chainId)
-    ? undefined
+  const erc20TokenList = splitsClient._publicClient
+    ? isLogsPublicClient(splitsClient._publicClient)
+      ? undefined
+      : ERC20_TOKEN_LIST
     : ERC20_TOKEN_LIST
   const {
     formattedSplitEarnings,
