@@ -4,13 +4,14 @@ import { InjectedConnector } from 'wagmi/connectors/injected'
 import { publicProvider } from 'wagmi/providers/public'
 import { jsonRpcProvider } from 'wagmi/providers/jsonRpc'
 
-import { CHAIN_INFO, SupportedChains } from '../../src/constants/chains'
+import { SupportedChainsList } from '../../src/constants/chains'
+import { STORYBOOK_CHAIN_INFO } from '../constants/chains'
 
 if (process.env.STORYBOOK_ALCHEMY_API_KEY === undefined)
   throw new Error('STORYBOOK_ALCHEMY_API_KEY env variable is not set')
 
 const { chains, publicClient, webSocketPublicClient } = configureChains(
-  SupportedChains,
+  SupportedChainsList,
   [
     publicProvider(),
     jsonRpcProvider({
@@ -18,7 +19,7 @@ const { chains, publicClient, webSocketPublicClient } = configureChains(
         const chainId = chain.id
 
         return {
-          http: CHAIN_INFO[chainId].rpcUrls[0],
+          http: STORYBOOK_CHAIN_INFO[chainId].rpcUrls[0],
         }
       },
     }),
