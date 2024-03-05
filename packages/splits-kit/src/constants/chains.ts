@@ -64,6 +64,11 @@ export type ChainInfo = {
   readonly [chainId in SupportedChainId]: L1ChainInfo
 }
 
+export const isAlchemyChainId = (chainId: SupportedChainId) => {
+  const rpcUrl = CHAIN_INFO[chainId].rpcUrls[0]
+  return rpcUrl.indexOf('.alchemy.') >= 0
+}
+
 // merge with @usedapp & own utils getExplorer etc
 export const CHAIN_INFO: ChainInfo = {
   [mainnet.id]: {
@@ -82,7 +87,7 @@ export const CHAIN_INFO: ChainInfo = {
     label: 'Goerli',
     logoUrl: '/networks/ethereum_logo.svg',
     rpcUrls: [
-      `https://eth-goerli.g.alchemy.com/v2/${process.env.STORYBOOK_GOERLI_ALCHEMY_API_KEY}`,
+      `https://eth-goerli.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
     ],
     nativeCurrency: {
       symbol: 'ETH',
@@ -93,7 +98,7 @@ export const CHAIN_INFO: ChainInfo = {
     label: 'Polygon',
     logoUrl: '/networks/polygon_logo.svg',
     rpcUrls: [
-      `https://polygon-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_POLYGON_ALCHEMY_API_KEY}`,
+      `https://polygon-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
     ],
     nativeCurrency: {
       symbol: 'MATIC',
@@ -104,7 +109,7 @@ export const CHAIN_INFO: ChainInfo = {
     label: 'Polygon Mumbai',
     logoUrl: '/networks/polygon_logo.svg',
     rpcUrls: [
-      `https://polygon-mumbai.g.alchemy.com/v2/${process.env.STORYBOOK_MUMBAI_ALCHEMY_API_KEY}`,
+      `https://polygon-mumbai.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
     ],
     nativeCurrency: {
       symbol: 'MATIC',
@@ -115,7 +120,7 @@ export const CHAIN_INFO: ChainInfo = {
     label: 'Optimism',
     logoUrl: '/networks/optimism_logo.svg',
     rpcUrls: [
-      `https://opt-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_OPTIMISM_ALCHEMY_API_KEY}`,
+      `https://opt-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
     ],
     nativeCurrency: {
       symbol: 'ETH',
@@ -126,7 +131,7 @@ export const CHAIN_INFO: ChainInfo = {
     label: 'Optimism Goerli',
     logoUrl: '/networks/optimism_logo.svg',
     rpcUrls: [
-      `https://opt-goerli.g.alchemy.com/v2/${process.env.STORYBOOK_OPT_GOERLI_ALCHEMY_API_KEY}`,
+      `https://opt-goerli.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
     ],
     nativeCurrency: {
       symbol: 'ETH',
@@ -137,7 +142,7 @@ export const CHAIN_INFO: ChainInfo = {
     label: 'Arbitrum',
     logoUrl: '/networks/arbitrum_logo.svg',
     rpcUrls: [
-      `https://arb-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ARBITRUM_ALCHEMY_API_KEY}`,
+      `https://arb-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
     ],
     nativeCurrency: {
       symbol: 'ETH',
@@ -148,7 +153,7 @@ export const CHAIN_INFO: ChainInfo = {
     label: 'Arbitrum Goerli',
     logoUrl: '/networks/arbitrum_logo.svg',
     rpcUrls: [
-      `https://blissful-restless-butterfly.arbitrum-goerli.quiknode.pro/${process.env.STORYBOOK_ARBITRUM_GOERLI_QUICKNODE_API_KEY}/`,
+      `https://blissful-restless-butterfly.arbitrum-goerli.quiknode.pro/${process.env.ARBITRUM_GOERLI_QUICKNODE_API_KEY}/`,
     ],
     nativeCurrency: {
       symbol: 'ETH',
@@ -159,7 +164,7 @@ export const CHAIN_INFO: ChainInfo = {
     label: 'Gnosis',
     logoUrl: '/networks/gnosis_logo.svg',
     rpcUrls: [
-      `https://proud-cold-slug.xdai.quiknode.pro/${process.env.STORYBOOK_GNOSIS_QUICKNODE_API_KEY}/`,
+      `https://proud-cold-slug.xdai.quiknode.pro/${process.env.GNOSIS_QUICKNODE_API_KEY}/`,
     ],
     nativeCurrency: {
       symbol: 'xDai',
@@ -170,7 +175,7 @@ export const CHAIN_INFO: ChainInfo = {
     label: 'Fantom',
     logoUrl: '/networks/fantom_logo.svg',
     rpcUrls: [
-      `https://distinguished-light-scion.fantom.quiknode.pro/${process.env.STORYBOOK_FANTOM_QUICKNODE_API_KEY}/`,
+      `https://distinguished-light-scion.fantom.quiknode.pro/${process.env.FANTOM_QUICKNODE_API_KEY}/`,
     ],
     nativeCurrency: {
       symbol: 'FTM',
@@ -181,7 +186,7 @@ export const CHAIN_INFO: ChainInfo = {
     label: 'Avalanche',
     logoUrl: '/networks/avalanche_logo.svg',
     rpcUrls: [
-      `https://divine-convincing-lambo.avalanche-mainnet.quiknode.pro/${process.env.STORYBOOK_AVALANCHE_QUICKNODE_API_KEY}/ext/bc/C/rpc`,
+      `https://divine-convincing-lambo.avalanche-mainnet.quiknode.pro/${process.env.AVALANCHE_QUICKNODE_API_KEY}/ext/bc/C/rpc`,
     ],
     nativeCurrency: {
       symbol: 'AVAX',
@@ -192,7 +197,7 @@ export const CHAIN_INFO: ChainInfo = {
     label: 'BSC',
     logoUrl: '/networks/bsc_logo.svg',
     rpcUrls: [
-      `https://white-summer-dinghy.bsc.quiknode.pro/${process.env.STORYBOOK_BSC_QUICKNODE_API_KEY}/`,
+      `https://white-summer-dinghy.bsc.quiknode.pro/${process.env.BSC_QUICKNODE_API_KEY}/`,
     ],
     nativeCurrency: {
       symbol: 'BNB',
@@ -203,7 +208,7 @@ export const CHAIN_INFO: ChainInfo = {
     label: 'Aurora',
     logoUrl: '/networks/aurora_logo.svg',
     rpcUrls: [
-      `https://aurora-mainnet.infura.io/v3/${process.env.STORYBOOK_AURORA_INFURA_API_KEY}`,
+      `https://aurora-mainnet.infura.io/v3/${process.env.AURORA_INFURA_API_KEY}`,
     ],
     nativeCurrency: {
       symbol: 'ETH',
@@ -232,7 +237,7 @@ export const CHAIN_INFO: ChainInfo = {
     label: 'Base',
     logoUrl: '/networks/base_logo.svg',
     rpcUrls: [
-      `https://base-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_BASE_ALCHEMY_API_KEY}`,
+      `https://base-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
     ],
     nativeCurrency: {
       symbol: 'ETH',

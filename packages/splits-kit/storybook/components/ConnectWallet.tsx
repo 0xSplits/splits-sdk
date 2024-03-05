@@ -32,7 +32,7 @@ export default function ConnectWallet({
 
   const ensPublicClient = createPublicClient({
     chain: mainnet,
-    transport: http(CHAIN_INFO[1].rpcUrls[0]),
+    transport: http(CHAIN_INFO[mainnet.id].rpcUrls[0]),
   })
 
   const splitsConfig: SplitsClientConfig = {

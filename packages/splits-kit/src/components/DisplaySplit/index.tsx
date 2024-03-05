@@ -2,7 +2,11 @@ import { useEffect } from 'react'
 import { useSplitEarnings, useSplitMetadata } from '@0xsplits/splits-sdk-react'
 import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
 
-import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
+import {
+  CHAIN_INFO,
+  SupportedChainId,
+  isAlchemyChainId,
+} from '../../constants/chains'
 import SplitRecipients from '../DisplaySplit/SplitRecipients'
 import SkeletonLoader from '../DisplaySplit/SkeletonLoader'
 import SplitBalances from '../DisplaySplit/SplitBalances'
@@ -22,6 +26,8 @@ export interface IDisplaySplitProps {
   onError?: (error: RequestError) => void
 }
 
+const ERC20_TOKEN_LIST: string[] = []
+
 const DisplaySplit = ({
   address,
   chainId,
@@ -38,11 +44,15 @@ const DisplaySplit = ({
     isLoading: isLoadingMetadata,
   } = useSplitMetadata(address)
 
+  const includeActiveBalances = true
+  const erc20TokenList = isAlchemyChainId(chainId)
+    ? undefined
+    : ERC20_TOKEN_LIST
   const {
     formattedSplitEarnings,
     isLoading: isLoadingEarnings,
     error: earningsError,
-  } = useSplitEarnings(address)
+  } = useSplitEarnings(address, includeActiveBalances, erc20TokenList)
 
   useEffect(() => {
     if (earningsError) {
