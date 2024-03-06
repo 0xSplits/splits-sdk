@@ -10,6 +10,7 @@ postcss.config.ts
 tailwind.config.ts
 .babelrc.json
 .env
+.env.sample
 
 # Typescript files
 */tsconfig.tsbuildinfo

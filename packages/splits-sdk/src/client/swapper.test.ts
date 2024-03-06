@@ -157,8 +157,8 @@ describe('Client config validation', () => {
     expect(() => new SwapperClient({ chainId: 420 })).toThrow()
   })
 
-  test('Arbitrum chain ids fail', () => {
-    expect(() => new SwapperClient({ chainId: 42161 })).toThrow()
+  test('Arbitrum chain ids pass (test chain fails)', () => {
+    expect(() => new SwapperClient({ chainId: 42161 })).not.toThrow()
     expect(() => new SwapperClient({ chainId: 421613 })).toThrow()
   })
 

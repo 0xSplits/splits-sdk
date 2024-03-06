@@ -13,7 +13,7 @@ import {
   useSplitsClient,
 } from '@0xsplits/splits-sdk-react'
 import { Chain, createPublicClient, http } from 'viem'
-import { CHAIN_INFO } from '../../src/constants/chains'
+import { STORYBOOK_CHAIN_INFO } from '../constants/chains'
 import { SecondaryButton } from './Button'
 import { mainnet } from 'viem/chains'
 
@@ -24,15 +24,15 @@ export default function ConnectWallet({
   chainId: number
   children: React.ReactNode
 }) {
-  const chain: Chain = CHAIN_INFO[chainId].viemChain
-  const transport = http(CHAIN_INFO[chainId].rpcUrls[0])
+  const chain: Chain = STORYBOOK_CHAIN_INFO[chainId].viemChain
+  const transport = http(STORYBOOK_CHAIN_INFO[chainId].rpcUrls[0])
   const publicClient = createPublicClient({ chain, transport })
 
   const { data: walletClient } = useWalletClient({ chainId })
 
   const ensPublicClient = createPublicClient({
     chain: mainnet,
-    transport: http(CHAIN_INFO[1].rpcUrls[0]),
+    transport: http(STORYBOOK_CHAIN_INFO[mainnet.id].rpcUrls[0]),
   })
 
   const splitsConfig: SplitsClientConfig = {

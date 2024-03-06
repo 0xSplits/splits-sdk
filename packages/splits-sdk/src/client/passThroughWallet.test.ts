@@ -126,8 +126,8 @@ describe('Client config validation', () => {
     expect(() => new PassThroughWalletClient({ chainId: 420 })).toThrow()
   })
 
-  test('Arbitrum chain ids fail', () => {
-    expect(() => new PassThroughWalletClient({ chainId: 42161 })).toThrow()
+  test('Arbitrum chain ids pass (test chain fails)', () => {
+    expect(() => new PassThroughWalletClient({ chainId: 42161 })).not.toThrow()
     expect(() => new PassThroughWalletClient({ chainId: 421613 })).toThrow()
   })
 

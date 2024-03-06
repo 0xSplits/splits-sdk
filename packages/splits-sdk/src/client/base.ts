@@ -70,13 +70,11 @@ import { validateAddress } from '../utils/validation'
 
 class BaseClient {
   readonly _chainId: number
-  protected readonly _ensPublicClient:
-    | PublicClient<Transport, Chain>
-    | undefined
+  readonly _ensPublicClient: PublicClient<Transport, Chain> | undefined
   readonly _walletClient: WalletClient<Transport, Chain, Account> | undefined
   readonly _publicClient: PublicClient<Transport, Chain> | undefined
   private readonly _graphqlClient: GraphQLClient | undefined
-  protected readonly _includeEnsNames: boolean
+  readonly _includeEnsNames: boolean
 
   constructor({
     chainId,

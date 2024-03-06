@@ -1,5 +1,10 @@
 import { useEffect } from 'react'
-import { useSplitEarnings, useSplitMetadata } from '@0xsplits/splits-sdk-react'
+import { isLogsPublicClient } from '@0xsplits/splits-sdk/utils'
+import {
+  useSplitEarnings,
+  useSplitMetadata,
+  useSplitsClient,
+} from '@0xsplits/splits-sdk-react'
 import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
 
 import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
@@ -22,6 +27,8 @@ export interface IDisplaySplitProps {
   onError?: (error: RequestError) => void
 }
 
+const ERC20_TOKEN_LIST: string[] = []
+
 const DisplaySplit = ({
   address,
   chainId,
@@ -32,17 +39,25 @@ const DisplaySplit = ({
   onSuccess,
   onError,
 }: IDisplaySplitProps) => {
+  const splitsClient = useSplitsClient()
+
   const {
     splitMetadata: split,
     error: metadataError,
     isLoading: isLoadingMetadata,
   } = useSplitMetadata(address)
 
+  const includeActiveBalances = true
+  const erc20TokenList = splitsClient._publicClient
+    ? isLogsPublicClient(splitsClient._publicClient)
+      ? undefined
+      : ERC20_TOKEN_LIST
+    : ERC20_TOKEN_LIST
   const {
     formattedSplitEarnings,
     isLoading: isLoadingEarnings,
     error: earningsError,
-  } = useSplitEarnings(address)
+  } = useSplitEarnings(address, includeActiveBalances, erc20TokenList)
 
   useEffect(() => {
     if (earningsError) {

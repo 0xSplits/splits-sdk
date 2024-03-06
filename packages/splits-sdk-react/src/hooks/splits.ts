@@ -23,17 +23,32 @@ import { SplitsContext } from '../context'
 import { ContractExecutionStatus, DataLoadStatus, RequestError } from '../types'
 import { getSplitsClient } from '../utils'
 
-export const useSplitsClient = (config: SplitsClientConfig): SplitsClient => {
+export const useSplitsClient = (config?: SplitsClientConfig): SplitsClient => {
   const context = useContext(SplitsContext)
   if (context === undefined) {
     throw new Error('Make sure to include <SplitsProvider>')
   }
 
-  const chainId = config.chainId
-  const publicClient = config.publicClient
-  const walletClient = config.walletClient
-  const includeEnsNames = config.includeEnsNames
-  const ensPublicClient = config.ensPublicClient
+  const chainId =
+    config && 'chainId' in config
+      ? config.chainId
+      : context.splitsClient._chainId
+  const publicClient =
+    config && 'publicClient' in config
+      ? config.publicClient
+      : context.splitsClient._publicClient
+  const walletClient =
+    config && 'walletClient' in config
+      ? config.walletClient
+      : context.splitsClient._walletClient
+  const includeEnsNames =
+    config && 'includeEnsNames' in config
+      ? config.includeEnsNames
+      : context.splitsClient._includeEnsNames
+  const ensPublicClient =
+    config && 'ensPublicClient' in config
+      ? config.ensPublicClient
+      : context.splitsClient._ensPublicClient
   useEffect(() => {
     context.initClient({
       chainId,

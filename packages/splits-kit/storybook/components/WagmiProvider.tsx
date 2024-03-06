@@ -1,26 +1,29 @@
 import React from 'react'
 import { WagmiConfig, configureChains, createConfig } from 'wagmi'
-import {
-  arbitrum,
-  base,
-  goerli,
-  mainnet,
-  optimism,
-  polygon,
-  zora,
-} from 'viem/chains'
 import { InjectedConnector } from 'wagmi/connectors/injected'
-import { alchemyProvider } from 'wagmi/providers/alchemy'
 import { publicProvider } from 'wagmi/providers/public'
+import { jsonRpcProvider } from 'wagmi/providers/jsonRpc'
+
+import { SupportedChainsList } from '../../src/constants/chains'
+import { STORYBOOK_CHAIN_INFO } from '../constants/chains'
 
 if (process.env.STORYBOOK_ALCHEMY_API_KEY === undefined)
   throw new Error('STORYBOOK_ALCHEMY_API_KEY env variable is not set')
 
-export const alchemyApiKey = process.env.STORYBOOK_ALCHEMY_API_KEY
+const { chains, publicClient, webSocketPublicClient } = configureChains(
+  SupportedChainsList,
+  [
+    publicProvider(),
+    jsonRpcProvider({
+      rpc: (chain) => {
+        const chainId = chain.id
 
-export const { chains, publicClient, webSocketPublicClient } = configureChains(
-  [mainnet, goerli, polygon, optimism, arbitrum, zora, base],
-  [publicProvider(), alchemyProvider({ apiKey: alchemyApiKey })],
+        return {
+          http: STORYBOOK_CHAIN_INFO[chainId].rpcUrls[0],
+        }
+      },
+    }),
+  ],
 )
 
 const config = createConfig({
