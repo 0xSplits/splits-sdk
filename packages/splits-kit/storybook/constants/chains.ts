@@ -88,42 +88,42 @@ export const STORYBOOK_CHAIN_INFO: ChainInfo = {
     ...CHAIN_INFO[arbitrumGoerli.id],
     viemChain: arbitrumGoerli,
     rpcUrls: [
-      `https://blissful-restless-butterfly.arbitrum-goerli.quiknode.pro/${process.env.ARBITRUM_GOERLI_QUICKNODE_API_KEY}/`,
+      `https://blissful-restless-butterfly.arbitrum-goerli.quiknode.pro/${process.env.STORYBOOK_ARBITRUM_GOERLI_QUICKNODE_API_KEY}/`,
     ],
   },
   [gnosis.id]: {
     ...CHAIN_INFO[gnosis.id],
     viemChain: gnosis,
     rpcUrls: [
-      `https://proud-cold-slug.xdai.quiknode.pro/${process.env.GNOSIS_QUICKNODE_API_KEY}/`,
+      `https://proud-cold-slug.xdai.quiknode.pro/${process.env.STORYBOOK_GNOSIS_QUICKNODE_API_KEY}/`,
     ],
   },
   [fantom.id]: {
     ...CHAIN_INFO[fantom.id],
     viemChain: fantom,
     rpcUrls: [
-      `https://distinguished-light-scion.fantom.quiknode.pro/${process.env.FANTOM_QUICKNODE_API_KEY}/`,
+      `https://distinguished-light-scion.fantom.quiknode.pro/${process.env.STORYBOOK_FANTOM_QUICKNODE_API_KEY}/`,
     ],
   },
   [avalanche.id]: {
     ...CHAIN_INFO[avalanche.id],
     viemChain: avalanche,
     rpcUrls: [
-      `https://divine-convincing-lambo.avalanche-mainnet.quiknode.pro/${process.env.AVALANCHE_QUICKNODE_API_KEY}/ext/bc/C/rpc`,
+      `https://divine-convincing-lambo.avalanche-mainnet.quiknode.pro/${process.env.STORYBOOK_AVALANCHE_QUICKNODE_API_KEY}/ext/bc/C/rpc`,
     ],
   },
   [bsc.id]: {
     ...CHAIN_INFO[bsc.id],
     viemChain: bsc,
     rpcUrls: [
-      `https://white-summer-dinghy.bsc.quiknode.pro/${process.env.BSC_QUICKNODE_API_KEY}/`,
+      `https://white-summer-dinghy.bsc.quiknode.pro/${process.env.STORYBOOK_BSC_QUICKNODE_API_KEY}/`,
     ],
   },
   [aurora.id]: {
     ...CHAIN_INFO[aurora.id],
     viemChain: aurora,
     rpcUrls: [
-      `https://aurora-mainnet.infura.io/v3/${process.env.AURORA_INFURA_API_KEY}`,
+      `https://aurora-mainnet.infura.io/v3/${process.env.STORYBOOK_AURORA_INFURA_API_KEY}`,
     ],
   },
   [zora.id]: {
