@@ -87,27 +87,32 @@ export class OracleClient extends OracleTransactions {
     this._requirePublicClient()
     if (!this._publicClient) throw new Error()
 
+    // Construct via a loop as type safey is lost in a `.map`
+    const multicallParams = []
+    // eslint-disable-next-line no-loops/no-loops
+    for (const quoteParam of quoteParams) {
+      multicallParams.push({
+        address: getAddress(oracleAddress),
+        abi: uniV3OracleAbi,
+        functionName: 'getQuoteAmounts' as const,
+        args: [
+          [
+            [
+              [quoteParam.quotePair.base, quoteParam.quotePair.quote],
+              quoteParam.baseAmount,
+              quoteParam.data ?? '0x',
+            ],
+          ],
+        ],
+      })
+    }
+
     // It's possible to fetch all quotes in a single request to the oracle, but if the
     // oracle hits an error for just one pair there is no way to separate that out. So
     // instead we are making a multicall combining each individual quote request. This
     // allows us to easily filter out the failed quotes.
     const multicallResponse = await this._publicClient.multicall({
-      contracts: quoteParams.map((quoteParam) => {
-        return {
-          address: getAddress(oracleAddress),
-          abi: uniV3OracleAbi,
-          functionName: 'getQuoteAmounts',
-          args: [
-            [
-              [
-                [quoteParam.quotePair.base, quoteParam.quotePair.quote],
-                quoteParam.baseAmount,
-                quoteParam.data ?? '0x',
-              ],
-            ],
-          ],
-        }
-      }),
+      contracts: multicallParams,
     })
 
     const quoteAmounts = multicallResponse.map((data) => {
