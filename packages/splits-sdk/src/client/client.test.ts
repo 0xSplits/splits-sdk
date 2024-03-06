@@ -121,7 +121,8 @@ describe('Client config validation', () => {
 
   test('Including ens names with no provider fails', () => {
     expect(
-      () => new SplitsClient({ chainId: 1, includeEnsNames: true }),
+      () =>
+        new SplitsClient({ chainId: 1, includeEnsNames: true, publicClient }),
     ).toThrow(InvalidConfigError)
   })
 
@@ -132,6 +133,7 @@ describe('Client config validation', () => {
           chainId: 1,
           includeEnsNames: true,
           ensPublicClient: publicClient,
+          publicClient,
         }),
     ).not.toThrow()
   })
@@ -148,49 +150,63 @@ describe('Client config validation', () => {
   })
 
   test('Invalid chain id fails', () => {
-    expect(() => new SplitsClient({ chainId: 51 })).toThrow(
+    expect(() => new SplitsClient({ chainId: 51, publicClient })).toThrow(
       UnsupportedChainIdError,
     )
   })
 
   test('Ethereum chain ids pass', () => {
-    expect(() => new SplitsClient({ chainId: 1 })).not.toThrow()
-    expect(() => new SplitsClient({ chainId: 3 })).not.toThrow()
-    expect(() => new SplitsClient({ chainId: 4 })).not.toThrow()
-    expect(() => new SplitsClient({ chainId: 5 })).not.toThrow()
-    expect(() => new SplitsClient({ chainId: 42 })).not.toThrow()
+    expect(() => new SplitsClient({ chainId: 1, publicClient })).not.toThrow()
+    expect(() => new SplitsClient({ chainId: 3, publicClient })).not.toThrow()
+    expect(() => new SplitsClient({ chainId: 4, publicClient })).not.toThrow()
+    expect(() => new SplitsClient({ chainId: 5, publicClient })).not.toThrow()
+    expect(() => new SplitsClient({ chainId: 42, publicClient })).not.toThrow()
   })
 
   test('Polygon chain ids pass', () => {
-    expect(() => new SplitsClient({ chainId: 137 })).not.toThrow()
-    expect(() => new SplitsClient({ chainId: 80001 })).not.toThrow()
+    expect(() => new SplitsClient({ chainId: 137, publicClient })).not.toThrow()
+    expect(
+      () => new SplitsClient({ chainId: 80001, publicClient }),
+    ).not.toThrow()
   })
 
   test('Optimism chain ids pass', () => {
-    expect(() => new SplitsClient({ chainId: 10 })).not.toThrow()
-    expect(() => new SplitsClient({ chainId: 420 })).not.toThrow()
+    expect(() => new SplitsClient({ chainId: 10, publicClient })).not.toThrow()
+    expect(() => new SplitsClient({ chainId: 420, publicClient })).not.toThrow()
   })
 
   test('Arbitrum chain ids pass', () => {
-    expect(() => new SplitsClient({ chainId: 42161 })).not.toThrow()
-    expect(() => new SplitsClient({ chainId: 421613 })).not.toThrow()
+    expect(
+      () => new SplitsClient({ chainId: 42161, publicClient }),
+    ).not.toThrow()
+    expect(
+      () => new SplitsClient({ chainId: 421613, publicClient }),
+    ).not.toThrow()
   })
 
   test('Zora chain ids pass', () => {
-    expect(() => new SplitsClient({ chainId: 7777777 })).not.toThrow()
-    expect(() => new SplitsClient({ chainId: 999 })).not.toThrow()
+    expect(
+      () => new SplitsClient({ chainId: 7777777, publicClient }),
+    ).not.toThrow()
+    expect(() => new SplitsClient({ chainId: 999, publicClient })).not.toThrow()
   })
 
   test('Base chain ids pass', () => {
-    expect(() => new SplitsClient({ chainId: 8453 })).not.toThrow()
+    expect(
+      () => new SplitsClient({ chainId: 8453, publicClient }),
+    ).not.toThrow()
   })
 
   test('Other chain ids pass', () => {
-    expect(() => new SplitsClient({ chainId: 100 })).not.toThrow()
-    expect(() => new SplitsClient({ chainId: 250 })).not.toThrow()
-    expect(() => new SplitsClient({ chainId: 43114 })).not.toThrow()
-    expect(() => new SplitsClient({ chainId: 56 })).not.toThrow()
-    expect(() => new SplitsClient({ chainId: 1313161554 })).not.toThrow()
+    expect(() => new SplitsClient({ chainId: 100, publicClient })).not.toThrow()
+    expect(() => new SplitsClient({ chainId: 250, publicClient })).not.toThrow()
+    expect(
+      () => new SplitsClient({ chainId: 43114, publicClient }),
+    ).not.toThrow()
+    expect(() => new SplitsClient({ chainId: 56, publicClient })).not.toThrow()
+    expect(
+      () => new SplitsClient({ chainId: 1313161554, publicClient }),
+    ).not.toThrow()
   })
 })
 
@@ -238,6 +254,7 @@ describe('SplitMain writes', () => {
     test('Create split fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
+        publicClient,
       })
 
       await expect(
@@ -341,6 +358,7 @@ describe('SplitMain writes', () => {
     test('Update split fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
+        publicClient,
       })
 
       await expect(
@@ -455,6 +473,7 @@ describe('SplitMain writes', () => {
     test('Distribute token fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
+        publicClient,
       })
 
       await expect(
@@ -617,6 +636,7 @@ describe('SplitMain writes', () => {
     test('Update and distribute fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
+        publicClient,
       })
 
       await expect(
@@ -824,6 +844,7 @@ describe('SplitMain writes', () => {
     test('Withdraw fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
+        publicClient,
       })
 
       await expect(
@@ -904,6 +925,7 @@ describe('SplitMain writes', () => {
     test('Initiate transfer fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
+        publicClient,
       })
 
       await expect(
@@ -983,6 +1005,7 @@ describe('SplitMain writes', () => {
     test('Cancel transfer fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
+        publicClient,
       })
 
       await expect(
@@ -1053,6 +1076,7 @@ describe('SplitMain writes', () => {
     test('Accept transfer fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
+        publicClient,
       })
 
       await expect(
@@ -1136,6 +1160,7 @@ describe('SplitMain writes', () => {
     test('Make immutable fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
+        publicClient,
       })
 
       await expect(
@@ -1216,6 +1241,7 @@ describe('SplitMain reads', () => {
     test('Get balance fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
+        publicClient,
       })
 
       await expect(
@@ -1260,6 +1286,7 @@ describe('SplitMain reads', () => {
     test('Predict immutable address fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
+        publicClient,
       })
 
       await expect(
@@ -1303,6 +1330,7 @@ describe('SplitMain reads', () => {
     test('Get controller fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
+        publicClient,
       })
 
       await expect(
@@ -1332,6 +1360,7 @@ describe('SplitMain reads', () => {
     test('Get potential controller fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
+        publicClient,
       })
 
       await expect(
@@ -1364,6 +1393,7 @@ describe('SplitMain reads', () => {
     test('Get hash fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
+        publicClient,
       })
 
       await expect(
@@ -1405,7 +1435,7 @@ describe('Graphql reads', () => {
       },
     ],
   } as unknown as Split
-
+  const publicClient = new mockPublicClient()
   const mockFormatSplit = jest
     .spyOn(subgraph, 'protectedFormatSplit')
     .mockReturnValue(mockSplit)
@@ -1417,6 +1447,7 @@ describe('Graphql reads', () => {
   const userAddress = '0xuser'
   const splitsClient = new SplitsClient({
     chainId: 1,
+    publicClient,
   })
 
   beforeEach(() => {
@@ -1434,6 +1465,7 @@ describe('Graphql reads', () => {
     test('Invalid chain id', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 4,
+        publicClient,
       })
 
       expect(
@@ -1505,6 +1537,7 @@ describe('Graphql reads', () => {
     test('Invalid chain id', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 4,
+        publicClient,
       })
 
       expect(

@@ -42,10 +42,12 @@ class OracleTransactions extends BaseTransactions {
   protected _getOracleContract(
     oracle: string,
   ): GetContractReturnType<UniV3OracleAbi, PublicClient<Transport, Chain>> {
+    this._requirePublicClient()
+
     return getContract({
       address: getAddress(oracle),
       abi: uniV3OracleAbi,
-      publicClient: this._publicClient,
+      client: this._publicClient!,
     })
   }
 }
