@@ -292,10 +292,12 @@ class WaterfallTransactions extends BaseTransactions {
   protected _getWaterfallContract(
     waterfallModule: string,
   ): GetContractReturnType<WaterfallAbi, PublicClient<Transport, Chain>> {
+    this._requirePublicClient()
+
     return getContract({
       address: getAddress(waterfallModule),
       abi: waterfallAbi,
-      publicClient: this._publicClient,
+      client: this._publicClient!,
     })
   }
 }

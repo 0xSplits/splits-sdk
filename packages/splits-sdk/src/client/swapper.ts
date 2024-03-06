@@ -423,22 +423,26 @@ class SwapperTransactions extends BaseTransactions {
 
   protected _getUniV3SwapContract(): GetContractReturnType<
     UniV3SwapAbi,
-    PublicClient<Transport, Chain>
+    PublicClient
   > {
+    this._requirePublicClient()
+
     return getContract({
       address: getUniV3SwapAddress(this._chainId),
       abi: uniV3SwapAbi,
-      publicClient: this._publicClient,
+      client: this._publicClient!,
     })
   }
 
   protected _getSwapperContract(
     swapper: string,
   ): GetContractReturnType<SwapperAbi, PublicClient<Transport, Chain>> {
+    this._requirePublicClient()
+
     return getContract({
       address: getAddress(swapper),
       abi: swapperAbi,
-      publicClient: this._publicClient,
+      client: this._publicClient!,
     })
   }
 }

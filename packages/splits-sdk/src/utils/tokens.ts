@@ -27,7 +27,9 @@ export const getTokenData = async (
   const tokenContract = getContract({
     abi: erc20Abi,
     address: token,
-    publicClient,
+    client: {
+      public: publicClient,
+    },
   })
   // TODO: error handling? For bad erc20...
 

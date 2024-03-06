@@ -145,7 +145,7 @@ class SplitsTransactions extends BaseTransactions {
     this._splitMainContract = getContract({
       address: getSplitMainAddress(chainId),
       abi: splitMainEthereumAbi,
-      publicClient: this._publicClient,
+      client: this._publicClient!,
     })
 
     if (ETHEREUM_CHAIN_IDS.includes(chainId)) {

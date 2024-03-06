@@ -241,10 +241,12 @@ class LiquidSplitTransactions extends BaseTransactions {
   protected _getLiquidSplitContract(
     liquidSplit: string,
   ): GetContractReturnType<LS1155Abi, PublicClient<Transport, Chain>> {
+    this._requirePublicClient()
+
     return getContract({
       address: getAddress(liquidSplit),
       abi: ls1155CloneAbi,
-      publicClient: this._publicClient,
+      client: this._publicClient!,
     })
   }
 }

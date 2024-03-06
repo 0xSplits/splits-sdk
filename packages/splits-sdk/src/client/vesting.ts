@@ -131,10 +131,12 @@ class VestingTransactions extends BaseTransactions {
   protected _getVestingContract(
     vestingModule: string,
   ): GetContractReturnType<VestingAbi, PublicClient<Transport, Chain>> {
+    this._requirePublicClient()
+
     return getContract({
       address: getAddress(vestingModule),
       abi: vestingAbi,
-      publicClient: this._publicClient,
+      client: this._publicClient!,
     })
   }
 
@@ -142,10 +144,12 @@ class VestingTransactions extends BaseTransactions {
     VestingFactoryAbi,
     PublicClient<Transport, Chain>
   > {
+    this._requirePublicClient()
+
     return getContract({
       address: getVestingFactoryAddress(this._chainId),
       abi: vestingFactoryAbi,
-      publicClient: this._publicClient,
+      client: this._publicClient!,
     })
   }
 }

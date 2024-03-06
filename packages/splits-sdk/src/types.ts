@@ -34,7 +34,7 @@ export type MulticallConfig = {
 // Splits
 export type SplitsClientConfig = {
   chainId: number
-  publicClient?: PublicClient<Transport, Chain>
+  publicClient: PublicClient<Transport, Chain>
   walletClient?: WalletClient<Transport, Chain, Account>
   includeEnsNames?: boolean
   // ensPublicClient can be used to fetch ens names when publicClient is not on mainnet (reverseRecords

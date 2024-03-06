@@ -15,7 +15,8 @@ const fetchEnsNames = async (
   const reverseRecords = getContract({
     address: REVERSE_RECORDS_ADDRESS,
     abi: reverseRecordsAbi,
-    publicClient,
+
+    client: { public: publicClient },
   })
 
   const allNames = await reverseRecords.read.getNames([addresses])

@@ -200,10 +200,11 @@ class PassThroughWalletTransactions extends BaseTransactions {
     PassThroughWalletAbi,
     PublicClient<Transport, Chain>
   > {
+    this._requirePublicClient()
     return getContract({
       address: getAddress(passThroughWallet),
       abi: passThroughWalletAbi,
-      publicClient: this._publicClient,
+      client: this._publicClient!,
     })
   }
 }
