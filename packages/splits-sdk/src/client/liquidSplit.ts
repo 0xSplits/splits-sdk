@@ -91,7 +91,7 @@ class LiquidSplitTransactions extends BaseTransactions {
     validateSplitRecipients(recipients, LIQUID_SPLITS_MAX_PRECISION_DECIMALS)
     validateDistributorFeePercent(distributorFeePercent)
 
-    if (this._shouldRequreWalletClient) this._requireWalletClient()
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
     const ownerAddress = owner
       ? owner
       : this._walletClient?.account
@@ -123,7 +123,7 @@ class LiquidSplitTransactions extends BaseTransactions {
   }: DistributeLiquidSplitTokenConfig): Promise<TransactionFormat> {
     validateAddress(liquidSplitAddress)
     validateAddress(token)
-    if (this._shouldRequreWalletClient) this._requireWalletClient()
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const distributorPayoutAddress = distributorAddress
       ? distributorAddress
@@ -161,7 +161,7 @@ class LiquidSplitTransactions extends BaseTransactions {
   }: TransferLiquidSplitOwnershipConfig): Promise<TransactionFormat> {
     validateAddress(liquidSplitAddress)
     validateAddress(newOwner)
-    if (this._shouldRequreWalletClient) {
+    if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
       await this._requireOwner(liquidSplitAddress)
     }

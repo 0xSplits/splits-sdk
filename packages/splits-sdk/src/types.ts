@@ -2,6 +2,7 @@ import type {
   AccessList,
   Account,
   Address,
+  ByteArray,
   Chain,
   Hash,
   Hex,
@@ -116,6 +117,123 @@ export type GetSplitBalanceConfig = {
   splitAddress: string
   token?: string
 }
+
+// Warehouse
+export type WarehouseTransferConfig = {
+  receiver: Address
+  token: Address
+  amount: bigint
+} & TransactionOverridesDict
+
+export type WarehouseTransferFromConfig = {
+  sender: Address
+  receiver: Address
+  token: Address
+  amount: bigint
+} & TransactionOverridesDict
+
+export type WarehouseApproveConfig = {
+  spender: Address
+  token: Address
+  amount: bigint
+} & TransactionOverridesDict
+
+export type WarehouseSetOperatorConfig = {
+  operator: Address
+  approved: boolean
+} & TransactionOverridesDict
+
+export type WarehouseInvalidateNonceConfig = {
+  nonce: bigint
+} & TransactionOverridesDict
+
+export type WarehouseTemporaryApproveAndCallConfig = {
+  spender: Address
+  operator: boolean
+  token: Address
+  amount: bigint
+  target: Address
+  data: Hex
+} & TransactionOverridesDict
+
+export type WarehouseTemporaryApproveAndCallBySigConfig = {
+  owner: Address
+  spender: Address
+  operator: boolean
+  token: Address
+  amount: bigint
+  target: Address
+  data: Hex
+  nonce: bigint
+  deadline: number
+  signature: Hex
+} & TransactionOverridesDict
+
+export type WarehouseApproveBySig = {
+  spender: Address
+  operator: boolean
+  token: Address
+  amount: bigint
+  nonce: bigint
+  deadline: number
+}
+
+export type WarehouseTemporaryApproveAndCallBySig = {
+  spender: Address
+  operator: boolean
+  token: Address
+  amount: bigint
+  target: Address
+  data: Hex
+  nonce: bigint
+  deadline: number
+}
+
+export type WarehouseApproveBySigConfig = {
+  owner: Address
+  spender: Address
+  operator: boolean
+  token: Address
+  amount: bigint
+  nonce: bigint
+  deadline: number
+  signature: Hex
+} & TransactionOverridesDict
+
+export type WarehouseDepositConfig = {
+  receiver: Address
+  token: Address
+  amount: bigint
+} & TransactionOverridesDict
+
+export type WarehouseBatchDepositConfig = {
+  receivers: Address[]
+  token: Address
+  amounts: bigint[]
+} & TransactionOverridesDict
+
+export type WarehouseWithdrawConfig = {
+  owner: Address
+  token: Address
+} & TransactionOverridesDict
+
+export type WarehouseBatchWithdrawConfig = {
+  owner: Address
+  tokens: Address[]
+  amounts: bigint[]
+  withdrawer: Address
+} & TransactionOverridesDict
+
+export type WarehouseBatchTransferConfig = {
+  receivers: Address[]
+  token: Address
+  amounts: bigint[]
+} & TransactionOverridesDict
+
+export type WarehouseSetWithdrawConfig = {
+  incentive: number
+  paused: boolean
+} & TransactionOverridesDict
 
 // Waterfall
 export type WaterfallTrancheInput = {
