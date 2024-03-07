@@ -418,7 +418,7 @@ class BaseClient {
 
 export class BaseTransactions extends BaseClient {
   protected readonly _transactionType: TransactionType
-  protected readonly _shouldRequreWalletClient: boolean
+  protected readonly _shouldRequireWalletClient: boolean
 
   constructor({
     transactionType,
@@ -437,7 +437,7 @@ export class BaseTransactions extends BaseClient {
     })
 
     this._transactionType = transactionType
-    this._shouldRequreWalletClient = [
+    this._shouldRequireWalletClient = [
       TransactionType.GasEstimate,
       TransactionType.Transaction,
     ].includes(transactionType)
@@ -458,7 +458,7 @@ export class BaseTransactions extends BaseClient {
   }) {
     this._requirePublicClient()
     if (!this._publicClient) throw new Error()
-    if (this._shouldRequreWalletClient) {
+    if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
     }
 

@@ -88,7 +88,7 @@ class WaterfallTransactions extends BaseTransactions {
     validateWaterfallTranches(tranches)
     this._requirePublicClient()
     if (!this._publicClient) throw new Error('Public client required')
-    if (this._shouldRequreWalletClient) this._requireWalletClient()
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const formattedToken = getAddress(token)
     const formattedNonWaterfallRecipient = getAddress(nonWaterfallRecipient)
@@ -122,7 +122,7 @@ class WaterfallTransactions extends BaseTransactions {
     transactionOverrides = {},
   }: WaterfallFundsConfig): Promise<TransactionFormat> {
     validateAddress(waterfallModuleAddress)
-    if (this._shouldRequreWalletClient) this._requireWalletClient()
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const result = await this._executeContractFunction({
       contractAddress: getAddress(waterfallModuleAddress),

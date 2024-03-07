@@ -46,6 +46,9 @@ const RECOUP_ADDRESS_SEPOLIA = '0xCA64fab630cDB098e5a5d393058aa27163a14293'
 const DIVERSIFIER_FACTORY_ADDRESS_SEPOLIA =
   '0x15Cb41615d210f4c4E597BeCEcB8Ee9410B9837F'
 
+// TODO: update address
+const WAREHOUSE_ADDRESS = '0x15Cb41615d210f4c4E597BeCEcB8Ee9410B9837F'
+
 export const getSplitMainAddress = (chainId: number): Address => {
   if (chainId === ChainId.BSC || chainId === ChainId.SEPOLIA)
     return SPLIT_MAIN_ADDRESS_BSC
@@ -96,6 +99,10 @@ export const getDiversifierFactoryAddress = (chainId: number): Address => {
   if (chainId === ChainId.MAINNET) return DIVERSIFIER_FACTORY_ADDRESS_MAINNET
   if (chainId === ChainId.SEPOLIA) return DIVERSIFIER_FACTORY_ADDRESS_SEPOLIA
   return DIVERSIFIER_FACTORY_ADDRESS
+}
+
+export const getWarehouseAddress = (_chainId: number): Address => {
+  return WAREHOUSE_ADDRESS
 }
 
 enum ChainId {
@@ -168,6 +175,9 @@ const ALL_CHAIN_IDS = [
 ]
 
 export const SPLITS_SUPPORTED_CHAIN_IDS = [3, 4, 42, ...ALL_CHAIN_IDS]
+
+// TODO: Update chainids
+export const WAREHOUSE_SUPPORTED_CHAIN_IDS = [ChainId.MAINNET]
 
 export const SPLITS_SUBGRAPH_CHAIN_IDS = ALL_CHAIN_IDS.slice()
 export const WATERFALL_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(

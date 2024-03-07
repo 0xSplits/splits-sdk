@@ -163,7 +163,7 @@ class SplitsTransactions extends BaseTransactions {
     transactionOverrides = {},
   }: CreateSplitConfig): Promise<TransactionFormat> {
     validateSplitInputs({ recipients, distributorFeePercent, controller })
-    if (this._shouldRequreWalletClient) this._requireWalletClient()
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
@@ -189,7 +189,7 @@ class SplitsTransactions extends BaseTransactions {
     validateAddress(splitAddress)
     validateSplitInputs({ recipients, distributorFeePercent })
 
-    if (this._shouldRequreWalletClient) {
+    if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
       await this._requireController(splitAddress)
     }
@@ -222,7 +222,7 @@ class SplitsTransactions extends BaseTransactions {
   }: DistributeTokenConfig): Promise<TransactionFormat> {
     validateAddress(splitAddress)
     validateAddress(token)
-    if (this._shouldRequreWalletClient) this._requireWalletClient()
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const distributorPayoutAddress = distributorAddress
       ? distributorAddress
@@ -286,7 +286,7 @@ class SplitsTransactions extends BaseTransactions {
     validateAddress(token)
     validateSplitInputs({ recipients, distributorFeePercent })
 
-    if (this._shouldRequreWalletClient) {
+    if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
       await this._requireController(splitAddress)
     }
@@ -337,7 +337,7 @@ class SplitsTransactions extends BaseTransactions {
     transactionOverrides = {},
   }: WithdrawFundsConfig): Promise<TransactionFormat> {
     validateAddress(address)
-    if (this._shouldRequreWalletClient) this._requireWalletClient()
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const withdrawEth = tokens.includes(ADDRESS_ZERO) ? 1 : 0
     const erc20s = tokens.filter((token) => token !== ADDRESS_ZERO)
@@ -360,7 +360,7 @@ class SplitsTransactions extends BaseTransactions {
   }: InititateControlTransferConfig): Promise<TransactionFormat> {
     validateAddress(splitAddress)
 
-    if (this._shouldRequreWalletClient) {
+    if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
       await this._requireController(splitAddress)
     }
@@ -382,7 +382,7 @@ class SplitsTransactions extends BaseTransactions {
   }: CancelControlTransferConfig): Promise<TransactionFormat> {
     validateAddress(splitAddress)
 
-    if (this._shouldRequreWalletClient) {
+    if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
       await this._requireController(splitAddress)
     }
@@ -404,7 +404,7 @@ class SplitsTransactions extends BaseTransactions {
   }: AcceptControlTransferConfig): Promise<TransactionFormat> {
     validateAddress(splitAddress)
 
-    if (this._shouldRequreWalletClient) {
+    if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
       await this._requireNewPotentialController(splitAddress)
     }
@@ -426,7 +426,7 @@ class SplitsTransactions extends BaseTransactions {
   }: MakeSplitImmutableConfig): Promise<TransactionFormat> {
     validateAddress(splitAddress)
 
-    if (this._shouldRequreWalletClient) {
+    if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
       await this._requireController(splitAddress)
     }
@@ -456,7 +456,7 @@ class SplitsTransactions extends BaseTransactions {
     tokens.map((token) => validateAddress(token))
     recipientAddresses.map((address) => validateAddress(address))
 
-    if (this._shouldRequreWalletClient) {
+    if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
     }
 
@@ -500,7 +500,7 @@ class SplitsTransactions extends BaseTransactions {
     validateAddress(splitAddress)
     tokens.map((token) => validateAddress(token))
 
-    if (this._shouldRequreWalletClient) {
+    if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
     }
 

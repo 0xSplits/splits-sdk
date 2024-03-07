@@ -83,7 +83,7 @@ class TemplatesTransactions extends BaseTransactions {
 
     this._requirePublicClient()
     if (!this._publicClient) throw new Error('Public client required')
-    if (this._shouldRequreWalletClient) this._requireWalletClient()
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const [recoupTranches, trancheSizes] = await getRecoupTranchesAndSizes(
       this._chainId,
@@ -130,7 +130,7 @@ class TemplatesTransactions extends BaseTransactions {
 
     this._requirePublicClient()
     if (!this._publicClient) throw new Error('Public client required')
-    if (this._shouldRequreWalletClient) this._requireWalletClient()
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const diversifierRecipients = getDiversifierRecipients(recipients)
     const formattedOracleParams = getFormattedOracleParams(oracleParams)

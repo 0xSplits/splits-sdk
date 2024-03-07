@@ -107,7 +107,7 @@ class SwapperTransactions extends BaseTransactions {
     validateOracleParams(oracleParams)
     validateScaledOfferFactor(defaultScaledOfferFactorPercent)
     validateScaledOfferFactorOverrides(scaledOfferFactorOverrides)
-    if (this._shouldRequreWalletClient) this._requireWalletClient()
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const formattedOracleParams = getFormattedOracleParams(oracleParams)
     const formattedDefaultScaledOfferFactor = getFormattedScaledOfferFactor(
@@ -149,7 +149,7 @@ class SwapperTransactions extends BaseTransactions {
 
     this._requirePublicClient()
     if (!this._publicClient) throw new Error('Public client required')
-    if (this._shouldRequreWalletClient) this._requireWalletClient()
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const excessRecipientAddress = excessRecipient
       ? excessRecipient
@@ -208,7 +208,7 @@ class SwapperTransactions extends BaseTransactions {
   }: SwapperSetBeneficiaryConfig): Promise<TransactionFormat> {
     validateAddress(swapperAddress)
     validateAddress(beneficiary)
-    if (this._shouldRequreWalletClient) {
+    if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
       await this._requireOwner(swapperAddress)
     }
@@ -231,7 +231,7 @@ class SwapperTransactions extends BaseTransactions {
   }: SwapperSetTokenToBeneficiaryConfig): Promise<TransactionFormat> {
     validateAddress(swapperAddress)
     validateAddress(tokenToBeneficiary)
-    if (this._shouldRequreWalletClient) {
+    if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
       await this._requireOwner(swapperAddress)
     }
@@ -254,7 +254,7 @@ class SwapperTransactions extends BaseTransactions {
   }: SwapperSetOracleConfig): Promise<TransactionFormat> {
     validateAddress(swapperAddress)
     validateAddress(oracle)
-    if (this._shouldRequreWalletClient) {
+    if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
       await this._requireOwner(swapperAddress)
     }
@@ -277,7 +277,7 @@ class SwapperTransactions extends BaseTransactions {
   }: SwapperSetDefaultScaledOfferFactorConfig): Promise<TransactionFormat> {
     validateAddress(swapperAddress)
     validateScaledOfferFactor(defaultScaledOfferFactorPercent)
-    if (this._shouldRequreWalletClient) {
+    if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
       await this._requireOwner(swapperAddress)
     }
@@ -304,7 +304,7 @@ class SwapperTransactions extends BaseTransactions {
   }: SwapperSetScaledOfferFactorOverridesConfig): Promise<TransactionFormat> {
     validateAddress(swapperAddress)
     validateScaledOfferFactorOverrides(scaledOfferFactorOverrides)
-    if (this._shouldRequreWalletClient) {
+    if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
       await this._requireOwner(swapperAddress)
     }
@@ -330,7 +330,7 @@ class SwapperTransactions extends BaseTransactions {
   }: SwapperExecCallsConfig): Promise<TransactionFormat> {
     validateAddress(swapperAddress)
     calls.map((callData) => validateAddress(callData.to))
-    if (this._shouldRequreWalletClient) {
+    if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
       await this._requireOwner(swapperAddress)
     }
@@ -356,7 +356,7 @@ class SwapperTransactions extends BaseTransactions {
     transactionOverrides = {},
   }: SwapperPauseConfig): Promise<TransactionFormat> {
     validateAddress(swapperAddress)
-    if (this._shouldRequreWalletClient) {
+    if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
       await this._requireOwner(swapperAddress)
     }
