@@ -58,11 +58,18 @@
     "url": "https://github.com/0xSplits/splits-sdk/issues"
   },
   "homepage": "https://docs.splits.org/sdk",
+  "peerDependencies": {
+    "viem": "^1.0.0 || ^2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "viem": {
+      "optional": true
+    }
+  },
   "dependencies": {
     "base-64": "^1.0.0",
     "graphql": "^16.8.1",
-    "graphql-request": "^6.1.0",
-    "viem": "^1.16.6"
+    "graphql-request": "^6.1.0"
   },
   "devDependencies": {
     "@types/base-64": "^1.0.1"
