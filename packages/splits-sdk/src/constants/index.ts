@@ -350,7 +350,7 @@ export const CHAIN_INFO: {
   [ChainId.ZORA]: {
     startBlock: 1860322,
     gqlEndpoint:
-      'https://api.goldsky.com/api/public/project_clhk16b61ay9t49vm6ntn4mkz/subgraphs/splits-zora-mainnet/1.1.0/gn',
+      'https://api.goldsky.com/api/public/project_clhk16b61ay9t49vm6ntn4mkz/subgraphs/splits-zora-mainnet/stable/gn',
     nativeCurrency: {
       symbol: 'ETH',
     },
@@ -366,7 +366,7 @@ export const CHAIN_INFO: {
   [ChainId.ZORA_SEPOLIA]: {
     startBlock: 2296044,
     gqlEndpoint:
-      'https://api.goldsky.com/api/public/project_clhk16b61ay9t49vm6ntn4mkz/subgraphs/splits-zora-sepolia/1.0/gn',
+      'https://api.goldsky.com/api/public/project_clhk16b61ay9t49vm6ntn4mkz/subgraphs/splits-zora-sepolia/stable/gn',
     nativeCurrency: {
       symbol: 'ETH',
     },
