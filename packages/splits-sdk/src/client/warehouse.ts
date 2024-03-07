@@ -7,6 +7,7 @@ import {
   PublicClient,
   Transport,
   TypedDataDomain,
+  WalletClient,
   encodeEventTopics,
   fromHex,
   getContract,
@@ -422,12 +423,29 @@ class WarehouseTransactions extends BaseTransactions {
 
     return result
   }
+
+  protected async _eip712Domain(): Promise<{ domain: TypedDataDomain }> {
+    this._requirePublicClient()
+
+    const eip712Domain = await this._warehouseContract.read.eip712Domain()
+
+    return {
+      domain: {
+        chainId: Number(eip712Domain[3].toString()),
+        name: eip712Domain[1],
+        version: eip712Domain[2],
+        verifyingContract: eip712Domain[4],
+        salt: eip712Domain[5],
+      },
+    }
+  }
 }
 
 export class WarehouseClient extends WarehouseTransactions {
   readonly eventTopics: { [key: string]: Hex[] }
   readonly callData: WarehouseCallData
   readonly estimateGas: WarehouseGasEstimates
+  readonly sign: WarehouseSignature
 
   constructor({
     chainId,
@@ -496,6 +514,14 @@ export class WarehouseClient extends WarehouseTransactions {
     })
 
     this.estimateGas = new WarehouseGasEstimates({
+      chainId,
+      publicClient,
+      walletClient,
+      includeEnsNames,
+      ensPublicClient,
+    })
+
+    this.sign = new WarehouseSignature({
       chainId,
       publicClient,
       walletClient,
@@ -593,19 +619,7 @@ export class WarehouseClient extends WarehouseTransactions {
   }
 
   async eip712Domain(): Promise<{ domain: TypedDataDomain }> {
-    this._requirePublicClient()
-
-    const eip712Domain = await this._warehouseContract.read.eip712Domain()
-
-    return {
-      domain: {
-        chainId: Number(eip712Domain[3].toString()),
-        name: eip712Domain[1],
-        version: eip712Domain[2],
-        verifyingContract: eip712Domain[4],
-        salt: eip712Domain[5],
-      },
-    }
+    return this._eip712Domain()
   }
 
   // ERC6909 read
@@ -842,74 +856,6 @@ export class WarehouseClient extends WarehouseTransactions {
     }
 
     throw new TransactionFailedError()
-  }
-
-  async signApproveBySig(
-    approveBySigArgs: WarehouseApproveBySig,
-  ): Promise<WarehouseApproveBySigConfig> {
-    const { domain } = await this.eip712Domain()
-
-    this._requireWalletClient()
-
-    const signature = await this._walletClient?.signTypedData({
-      domain,
-      types: SigTypes,
-      primaryType: 'ERC6909XApproveAndCall',
-      message: {
-        owner: this._walletClient.account.address,
-        spender: approveBySigArgs.spender,
-        temporary: false,
-        operator: approveBySigArgs.operator,
-        id: fromHex(approveBySigArgs.token, 'bigint'),
-        amount: approveBySigArgs.amount,
-        target: zeroAddress,
-        data: '0x',
-        nonce: approveBySigArgs.nonce,
-        deadline: approveBySigArgs.deadline,
-      },
-    })
-
-    if (!signature) throw new Error('Error in signing data')
-
-    return {
-      owner: this._walletClient?.account.address as Address,
-      signature,
-      ...approveBySigArgs,
-    }
-  }
-
-  async signTemporaryApproveAndCallBySig(
-    temporaryApproveAndCallBySigArgs: WarehouseTemporaryApproveAndCallBySig,
-  ): Promise<WarehouseApproveBySigConfig> {
-    const { domain } = await this.eip712Domain()
-
-    this._requireWalletClient()
-
-    const signature = await this._walletClient?.signTypedData({
-      domain,
-      types: SigTypes,
-      primaryType: 'ERC6909XApproveAndCall',
-      message: {
-        owner: this._walletClient.account.address,
-        spender: temporaryApproveAndCallBySigArgs.spender,
-        temporary: true,
-        operator: temporaryApproveAndCallBySigArgs.operator,
-        id: fromHex(temporaryApproveAndCallBySigArgs.token, 'bigint'),
-        amount: temporaryApproveAndCallBySigArgs.amount,
-        target: temporaryApproveAndCallBySigArgs.target,
-        data: temporaryApproveAndCallBySigArgs.data,
-        nonce: temporaryApproveAndCallBySigArgs.nonce,
-        deadline: temporaryApproveAndCallBySigArgs.deadline,
-      },
-    })
-
-    if (!signature) throw new Error('Error in signing data')
-
-    return {
-      owner: this._walletClient?.account.address as Address,
-      signature,
-      ...temporaryApproveAndCallBySigArgs,
-    }
   }
 
   async deposit(depositArgs: WarehouseDepositConfig): Promise<{ event: Log }> {
@@ -1356,6 +1302,93 @@ class WarehouseCallData extends WarehouseTransactions {
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData
+  }
+}
+
+class WarehouseSignature extends WarehouseTransactions {
+  constructor({
+    chainId,
+    publicClient,
+    ensPublicClient,
+    walletClient,
+    includeEnsNames,
+  }: SplitsClientConfig) {
+    super({
+      transactionType: TransactionType.CallData,
+      chainId,
+      publicClient,
+      ensPublicClient,
+      walletClient,
+      includeEnsNames,
+    })
+  }
+
+  async approveBySig(
+    approveBySigArgs: WarehouseApproveBySig,
+  ): Promise<WarehouseApproveBySigConfig> {
+    const { domain } = await this._eip712Domain()
+
+    this._requireWalletClient()
+
+    const signature = await this._walletClient?.signTypedData({
+      domain,
+      types: SigTypes,
+      primaryType: 'ERC6909XApproveAndCall',
+      message: {
+        owner: this._walletClient.account.address,
+        spender: approveBySigArgs.spender,
+        temporary: false,
+        operator: approveBySigArgs.operator,
+        id: fromHex(approveBySigArgs.token, 'bigint'),
+        amount: approveBySigArgs.amount,
+        target: zeroAddress,
+        data: '0x',
+        nonce: approveBySigArgs.nonce,
+        deadline: approveBySigArgs.deadline,
+      },
+    })
+
+    if (!signature) throw new Error('Error in signing data')
+
+    return {
+      owner: this._walletClient?.account.address as Address,
+      signature,
+      ...approveBySigArgs,
+    }
+  }
+
+  async temporaryApproveAndCallBySig(
+    temporaryApproveAndCallBySigArgs: WarehouseTemporaryApproveAndCallBySig,
+  ): Promise<WarehouseApproveBySigConfig> {
+    const { domain } = await this._eip712Domain()
+
+    this._requireWalletClient()
+
+    const signature = await this._walletClient?.signTypedData({
+      domain,
+      types: SigTypes,
+      primaryType: 'ERC6909XApproveAndCall',
+      message: {
+        owner: this._walletClient.account.address,
+        spender: temporaryApproveAndCallBySigArgs.spender,
+        temporary: true,
+        operator: temporaryApproveAndCallBySigArgs.operator,
+        id: fromHex(temporaryApproveAndCallBySigArgs.token, 'bigint'),
+        amount: temporaryApproveAndCallBySigArgs.amount,
+        target: temporaryApproveAndCallBySigArgs.target,
+        data: temporaryApproveAndCallBySigArgs.data,
+        nonce: temporaryApproveAndCallBySigArgs.nonce,
+        deadline: temporaryApproveAndCallBySigArgs.deadline,
+      },
+    })
+
+    if (!signature) throw new Error('Error in signing data')
+
+    return {
+      owner: this._walletClient?.account.address as Address,
+      signature,
+      ...temporaryApproveAndCallBySigArgs,
+    }
   }
 }
 
