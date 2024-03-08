@@ -235,6 +235,57 @@ export type WarehouseSetWithdrawConfig = {
   paused: boolean
 } & TransactionOverridesDict
 
+export enum SplitV2Type {
+  Push,
+  Pull,
+}
+
+// Split V2
+export type CreateSplitV2Config = {
+  recipients: Address[]
+  allocations: bigint[]
+  distributionIncentive: number
+  splitType: SplitV2Type
+  owner: Address
+  creator?: Address
+  salt?: Hex
+} & TransactionOverridesDict
+
+export type UpdateSplitV2Config = {
+  split: Address
+  recipients: Address[]
+  allocations: bigint[]
+  distributionIncentive: number
+} & TransactionOverridesDict
+
+export type DistributeSplitConfig = {
+  split: Address
+  recipients: Address[]
+  allocations: bigint[]
+  distributionIncentive: number
+  token: Address
+  distributor: Address
+} & TransactionOverridesDict
+
+export type TransferOwnershipConfig = {
+  split: Address
+  newOwner: Address
+} & TransactionOverridesDict
+
+export type SetPausedConfig = {
+  split: Address
+  paused: boolean
+} & TransactionOverridesDict
+
+export type SplitV2ExecCallsConfig = {
+  splitAddress: Address
+  calls: {
+    to: Address
+    value: bigint
+    data: Hex
+  }[]
+} & TransactionOverridesDict
+
 // Waterfall
 export type WaterfallTrancheInput = {
   recipient: string

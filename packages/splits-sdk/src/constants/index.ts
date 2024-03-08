@@ -1,4 +1,5 @@
 import { Address } from 'viem'
+import { SplitV2Type } from '../types'
 
 export const PERCENTAGE_SCALE = BigInt(1e6)
 export const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000'
@@ -48,6 +49,8 @@ const DIVERSIFIER_FACTORY_ADDRESS_SEPOLIA =
 
 // TODO: update address
 const WAREHOUSE_ADDRESS = '0x15Cb41615d210f4c4E597BeCEcB8Ee9410B9837F'
+const PULL_SPLIT_FACTORY_ADDRESS = '0x15Cb41615d210f4c4E597BeCEcB8Ee9410B9837F'
+const PUSH_SPLIT_FACTORY_ADDRESS = '0x15Cb41615d210f4c4E597BeCEcB8Ee9410B9837F'
 
 export const getSplitMainAddress = (chainId: number): Address => {
   if (chainId === ChainId.BSC || chainId === ChainId.SEPOLIA)
@@ -103,6 +106,14 @@ export const getDiversifierFactoryAddress = (chainId: number): Address => {
 
 export const getWarehouseAddress = (_chainId: number): Address => {
   return WAREHOUSE_ADDRESS
+}
+
+export const getSplitV2FactoryAddress = (
+  _chainId: number,
+  type: SplitV2Type,
+): Address => {
+  if (type === SplitV2Type.Pull) return PULL_SPLIT_FACTORY_ADDRESS
+  else return PUSH_SPLIT_FACTORY_ADDRESS
 }
 
 enum ChainId {
