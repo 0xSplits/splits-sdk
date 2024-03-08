@@ -411,4 +411,5 @@ export enum TransactionType {
   Transaction = 'Transaction',
   CallData = 'CallData',
   GasEstimate = 'GasEstimate',
+  Signature = 'Signature',
 }
