@@ -10,6 +10,8 @@ import {
   encodeEventTopics,
   zeroAddress,
   getContract,
+  ByteArray,
+  TypedDataDomain,
 } from 'viem'
 import { splitV2ABI } from '../constants/abi/splitV2'
 import { splitV2FactoryABI } from '../constants/abi/splitV2Factory'
@@ -241,6 +243,25 @@ class SplitV2Transactions extends BaseTransactions {
       walletClient: this._walletClient,
     })
   }
+
+  protected async _eip712Domain(
+    split: Address,
+  ): Promise<{ domain: TypedDataDomain }> {
+    this._requirePublicClient()
+
+    const eip712Domain =
+      await this._getSplitV2Contract(split).read.eip712Domain()
+
+    return {
+      domain: {
+        chainId: Number(eip712Domain[3].toString()),
+        name: eip712Domain[1],
+        version: eip712Domain[2],
+        verifyingContract: eip712Domain[4],
+        salt: eip712Domain[5],
+      },
+    }
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
@@ -248,6 +269,7 @@ export class SplitV2Client extends SplitV2Transactions {
   readonly eventTopics: { [key: string]: Hex[] }
   readonly callData: SplitV2CallData
   readonly estimateGas: SplitV2GasEstimates
+  readonly sign: SplitV2Signature
 
   constructor({
     chainId,
@@ -315,6 +337,13 @@ export class SplitV2Client extends SplitV2Transactions {
       includeEnsNames,
     })
     this.estimateGas = new SplitV2GasEstimates({
+      chainId,
+      publicClient,
+      ensPublicClient,
+      walletClient,
+      includeEnsNames,
+    })
+    this.sign = new SplitV2Signature({
       chainId,
       publicClient,
       ensPublicClient,
@@ -534,6 +563,65 @@ export class SplitV2Client extends SplitV2Transactions {
       deployed,
     }
   }
+
+  async getSplitBalance(
+    split: Address,
+    token: Address,
+  ): Promise<{
+    splitBalance: bigint
+    warehouseBalance: bigint
+  }> {
+    validateAddress(split)
+
+    const splitContract = this._getSplitV2Contract(split)
+
+    const [splitBalance, warehouseBalance] =
+      await splitContract.read.getSplitBalance([token])
+
+    return {
+      splitBalance,
+      warehouseBalance,
+    }
+  }
+
+  async getReplaySafeHash(split: Address, hash: Hex): Promise<{ hash: Hex }> {
+    validateAddress(split)
+
+    const splitContract = this._getSplitV2Contract(split)
+
+    const replaySafeHash = await splitContract.read.replaySafeHash([hash])
+
+    return {
+      hash: replaySafeHash,
+    }
+  }
+
+  async isValidSignature(
+    split: Address,
+    hash: Hex,
+    signature: Hex,
+  ): Promise<boolean> {
+    validateAddress(split)
+
+    const splitContract = this._getSplitV2Contract(split)
+
+    return (
+      (await splitContract.read.isValidSignature([hash, signature])) ===
+      '0x1626ba7e'
+    )
+  }
+
+  async eip712Domain(split: Address): Promise<{ domain: TypedDataDomain }> {
+    return this._eip712Domain(split)
+  }
+
+  async paused(split: Address): Promise<boolean> {
+    return this._getSplitV2Contract(split).read.paused()
+  }
+
+  async owner(split: Address): Promise<Address> {
+    return this._getSplitV2Contract(split).read.owner()
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
@@ -669,4 +757,53 @@ class SplitV2CallData extends SplitV2Transactions {
 
     return callData
   }
+}
+
+class SplitV2Signature extends SplitV2Transactions {
+  constructor({
+    chainId,
+    publicClient,
+    ensPublicClient,
+    walletClient,
+    includeEnsNames,
+  }: SplitsClientConfig) {
+    super({
+      transactionType: TransactionType.Signature,
+      chainId,
+      publicClient,
+      ensPublicClient,
+      walletClient,
+      includeEnsNames,
+    })
+  }
+
+  async signData(split: Address, data: Hex): Promise<{ signature: Hex }> {
+    const { domain } = await this._eip712Domain(split)
+
+    this._requireWalletClient()
+
+    const signature = await this._walletClient?.signTypedData({
+      domain,
+      types: SigTypes,
+      primaryType: 'SplitWalletMessage',
+      message: {
+        hash: data,
+      },
+    })
+
+    if (!signature) throw new Error('Error in signing data')
+
+    return {
+      signature,
+    }
+  }
+}
+
+const SigTypes = {
+  SplitWalletMessage: [
+    {
+      name: 'hash',
+      type: 'bytes32',
+    },
+  ],
 }

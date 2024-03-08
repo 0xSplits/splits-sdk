@@ -8,13 +8,6 @@ export const splitV2ABI = [
   },
   {
     type: 'function',
-    name: 'DOMAIN_SEPARTOR',
-    inputs: [],
-    outputs: [{ name: '', type: 'bytes32', internalType: 'bytes32' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     name: 'FACTORY',
     inputs: [],
     outputs: [{ name: '', type: 'address', internalType: 'address' }],
@@ -232,6 +225,13 @@ export const splitV2ABI = [
   },
   {
     type: 'function',
+    name: 'replaySafeHash',
+    inputs: [{ name: 'hash', type: 'bytes32', internalType: 'bytes32' }],
+    outputs: [{ name: '', type: 'bytes32', internalType: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'setPaused',
     inputs: [{ name: '_paused', type: 'bool', internalType: 'bool' }],
     outputs: [],
@@ -281,6 +281,7 @@ export const splitV2ABI = [
     outputs: [],
     stateMutability: 'nonpayable',
   },
+  { type: 'event', name: 'EIP712DomainChanged', inputs: [], anonymous: false },
   {
     type: 'event',
     name: 'ExecCalls',
@@ -390,10 +391,16 @@ export const splitV2ABI = [
       },
     ],
   },
+  { type: 'error', name: 'InvalidShortString', inputs: [] },
   { type: 'error', name: 'InvalidSplit', inputs: [] },
   { type: 'error', name: 'InvalidSplit_LengthMismatch', inputs: [] },
   { type: 'error', name: 'InvalidSplit_TotalAllocationMismatch', inputs: [] },
   { type: 'error', name: 'Paused', inputs: [] },
+  {
+    type: 'error',
+    name: 'StringTooLong',
+    inputs: [{ name: 'str', type: 'string', internalType: 'string' }],
+  },
   { type: 'error', name: 'Unauthorized', inputs: [] },
   { type: 'error', name: 'UnauthorizedInitializer', inputs: [] },
 ] as const
