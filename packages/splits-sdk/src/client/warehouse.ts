@@ -1314,7 +1314,7 @@ class WarehouseSignature extends WarehouseTransactions {
     includeEnsNames,
   }: SplitsClientConfig) {
     super({
-      transactionType: TransactionType.CallData,
+      transactionType: TransactionType.Signature,
       chainId,
       publicClient,
       ensPublicClient,
