@@ -1,0 +1,808 @@
+import {
+  Address,
+  Chain,
+  GetContractReturnType,
+  Hex,
+  Log,
+  PublicClient,
+  Transport,
+  decodeEventLog,
+  encodeEventTopics,
+  zeroAddress,
+  getContract,
+  TypedDataDomain,
+} from 'viem'
+import { splitV2ABI } from '../constants/abi/splitV2'
+import { splitV2FactoryABI } from '../constants/abi/splitV2Factory'
+import {
+  CallData,
+  CreateSplitV2Config,
+  DistributeSplitConfig,
+  SetPausedConfig,
+  SplitV2ExecCallsConfig,
+  SplitV2Type,
+  SplitsClientConfig,
+  TransactionConfig,
+  TransactionFormat,
+  TransferOwnershipConfig,
+  UpdateSplitV2Config,
+} from '../types'
+import {
+  BaseClientMixin,
+  BaseGasEstimatesMixin,
+  BaseTransactions,
+} from './base'
+import { applyMixins } from './mixin'
+import {
+  SPLITS_SUPPORTED_CHAIN_IDS,
+  TransactionType,
+  getSplitV2FactoryAddress,
+} from '../constants'
+import { validateAddress } from '../utils'
+import { TransactionFailedError, UnsupportedChainIdError } from '../errors'
+
+type SplitFactoryABI = typeof splitV2FactoryABI
+type SplitV2ABI = typeof splitV2ABI
+
+// TODO:add validation to execute contract function
+class SplitV2Transactions extends BaseTransactions {
+  constructor({
+    transactionType,
+    chainId,
+    publicClient,
+    ensPublicClient,
+    walletClient,
+    includeEnsNames = false,
+  }: SplitsClientConfig & TransactionConfig) {
+    super({
+      transactionType,
+      chainId,
+      publicClient,
+      ensPublicClient,
+      walletClient,
+      includeEnsNames,
+    })
+  }
+
+  protected async _createSplit({
+    recipients,
+    allocations,
+    distributionIncentive,
+    splitType,
+    owner,
+    creator,
+    salt,
+    transactionOverrides = {},
+  }: CreateSplitV2Config): Promise<TransactionFormat> {
+    recipients.map((recipient) => validateAddress(recipient))
+    validateAddress(owner)
+    creator = creator ?? zeroAddress
+    validateAddress(creator)
+
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
+
+    const totalAllocation = allocations.reduce((a, b) => a + b)
+    const functionName = salt ? 'createSplitDeterministic' : 'createSplit'
+    const functionArgs = [
+      { recipients, allocations, totalAllocation, distributionIncentive },
+      owner,
+      creator,
+    ]
+    if (salt) functionArgs.push(salt)
+
+    return this._executeContractFunction({
+      contractAddress: getSplitV2FactoryAddress(this._chainId, splitType),
+      contractAbi: splitV2FactoryABI,
+      functionName,
+      functionArgs,
+      transactionOverrides,
+    })
+  }
+
+  protected async _transferOwnership({
+    split,
+    newOwner,
+    transactionOverrides = {},
+  }: TransferOwnershipConfig): Promise<TransactionFormat> {
+    validateAddress(split)
+    validateAddress(newOwner)
+
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
+
+    return this._executeContractFunction({
+      contractAddress: split,
+      contractAbi: splitV2ABI,
+      functionName: 'transferOwnership',
+      functionArgs: [newOwner],
+      transactionOverrides,
+    })
+  }
+
+  protected async _setPaused({
+    split,
+    paused,
+    transactionOverrides = {},
+  }: SetPausedConfig): Promise<TransactionFormat> {
+    validateAddress(split)
+
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
+
+    return this._executeContractFunction({
+      contractAddress: split,
+      contractAbi: splitV2ABI,
+      functionName: 'setPaused',
+      functionArgs: [paused],
+      transactionOverrides,
+    })
+  }
+
+  protected async _execCalls({
+    splitAddress,
+    calls,
+    transactionOverrides = {},
+  }: SplitV2ExecCallsConfig): Promise<TransactionFormat> {
+    validateAddress(splitAddress)
+    calls.map((call) => validateAddress(call.to))
+
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
+
+    return this._executeContractFunction({
+      contractAddress: splitAddress,
+      contractAbi: splitV2ABI,
+      functionName: 'execCalls',
+      functionArgs: [calls],
+      transactionOverrides,
+    })
+  }
+
+  protected async _updateSplit({
+    split,
+    recipients,
+    allocations,
+    distributionIncentive,
+    transactionOverrides = {},
+  }: UpdateSplitV2Config): Promise<TransactionFormat> {
+    validateAddress(split)
+    recipients.map((recipient) => validateAddress(recipient))
+
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
+
+    const totalAllocation = allocations.reduce((a, b) => a + b)
+
+    return this._executeContractFunction({
+      contractAddress: split,
+      contractAbi: splitV2FactoryABI,
+      functionName: 'updateSplit',
+      functionArgs: [
+        {
+          recipients,
+          allocations,
+          totalAllocation,
+          distributionIncentive,
+        },
+      ],
+      transactionOverrides,
+    })
+  }
+
+  protected async _distribute({
+    split,
+    recipients,
+    allocations,
+    distributionIncentive,
+    token,
+    distributor,
+    transactionOverrides = {},
+  }: DistributeSplitConfig): Promise<TransactionFormat> {
+    validateAddress(split)
+    validateAddress(token)
+    validateAddress(distributor)
+    recipients.map((recipient) => validateAddress(recipient))
+
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
+
+    const totalAllocation = allocations.reduce((a, b) => a + b)
+
+    return this._executeContractFunction({
+      contractAddress: split,
+      contractAbi: splitV2FactoryABI,
+      functionName: 'distribute',
+      functionArgs: [
+        {
+          recipients,
+          allocations,
+          totalAllocation,
+          distributionIncentive,
+        },
+        token,
+        distributor,
+      ],
+      transactionOverrides,
+    })
+  }
+
+  protected _getSplitV2Contract(
+    split: Address,
+  ): GetContractReturnType<SplitV2ABI, PublicClient<Transport, Chain>> {
+    return getContract({
+      address: split,
+      abi: splitV2ABI,
+      publicClient: this._publicClient,
+      walletClient: this._walletClient,
+    })
+  }
+
+  protected _getSplitV2FactoryContract(
+    splitType: SplitV2Type,
+  ): GetContractReturnType<SplitFactoryABI, PublicClient<Transport, Chain>> {
+    return getContract({
+      address: getSplitV2FactoryAddress(this._chainId, splitType),
+      abi: splitV2FactoryABI,
+      publicClient: this._publicClient,
+      walletClient: this._walletClient,
+    })
+  }
+
+  protected async _eip712Domain(
+    split: Address,
+  ): Promise<{ domain: TypedDataDomain }> {
+    this._requirePublicClient()
+
+    const eip712Domain =
+      await this._getSplitV2Contract(split).read.eip712Domain()
+
+    return {
+      domain: {
+        chainId: Number(eip712Domain[3].toString()),
+        name: eip712Domain[1],
+        version: eip712Domain[2],
+        verifyingContract: eip712Domain[4],
+        salt: eip712Domain[5],
+      },
+    }
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export class SplitV2Client extends SplitV2Transactions {
+  readonly eventTopics: { [key: string]: Hex[] }
+  readonly callData: SplitV2CallData
+  readonly estimateGas: SplitV2GasEstimates
+  readonly sign: SplitV2Signature
+
+  constructor({
+    chainId,
+    publicClient,
+    ensPublicClient,
+    walletClient,
+    includeEnsNames = false,
+  }: SplitsClientConfig) {
+    super({
+      transactionType: TransactionType.Transaction,
+      chainId,
+      publicClient,
+      ensPublicClient,
+      walletClient,
+      includeEnsNames,
+    })
+
+    if (!SPLITS_SUPPORTED_CHAIN_IDS.includes(chainId))
+      throw new UnsupportedChainIdError(chainId, SPLITS_SUPPORTED_CHAIN_IDS)
+
+    this.eventTopics = {
+      splitCreated: [
+        encodeEventTopics({
+          abi: splitV2FactoryABI,
+          eventName: 'SplitCreated',
+        })[0],
+      ],
+      splitUpdated: [
+        encodeEventTopics({
+          abi: splitV2ABI,
+          eventName: 'SplitUpdated',
+        })[0],
+      ],
+      splitDistributed: [
+        encodeEventTopics({
+          abi: splitV2ABI,
+          eventName: 'SplitDistributed',
+        })[0],
+      ],
+      ownershipTransferred: [
+        encodeEventTopics({
+          abi: splitV2ABI,
+          eventName: 'OwnershipTransferred',
+        })[0],
+      ],
+      setPaused: [
+        encodeEventTopics({
+          abi: splitV2ABI,
+          eventName: 'SetPaused',
+        })[0],
+      ],
+      execCalls: [
+        encodeEventTopics({
+          abi: splitV2ABI,
+          eventName: 'ExecCalls',
+        })[0],
+      ],
+    }
+
+    this.callData = new SplitV2CallData({
+      chainId,
+      publicClient,
+      ensPublicClient,
+      walletClient,
+      includeEnsNames,
+    })
+    this.estimateGas = new SplitV2GasEstimates({
+      chainId,
+      publicClient,
+      ensPublicClient,
+      walletClient,
+      includeEnsNames,
+    })
+    this.sign = new SplitV2Signature({
+      chainId,
+      publicClient,
+      ensPublicClient,
+      walletClient,
+      includeEnsNames,
+    })
+  }
+
+  async createsSplit(createSplitArgs: CreateSplitV2Config): Promise<{
+    splitAddress: Address
+    event: Log
+  }> {
+    const txHash = await this._createSplit(createSplitArgs)
+
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
+
+    const events = await this.getTransactionEvents({
+      txHash,
+      eventTopics: this.eventTopics.splitCreated,
+    })
+    const event = events.length > 0 ? events[0] : undefined
+    if (event) {
+      const log = decodeEventLog({
+        abi: splitV2FactoryABI,
+        data: event.data,
+        topics: event.topics,
+      })
+      return {
+        splitAddress: log.args.split,
+        event,
+      }
+    }
+
+    throw new TransactionFailedError()
+  }
+
+  async transferOwnership(
+    transferOwnershipArgs: TransferOwnershipConfig,
+  ): Promise<{
+    event: Log
+  }> {
+    const txHash = await this._transferOwnership(transferOwnershipArgs)
+
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
+
+    const events = await this.getTransactionEvents({
+      txHash,
+      eventTopics: this.eventTopics.ownershipTransferred,
+    })
+    const event = events.length > 0 ? events[0] : undefined
+    if (event) {
+      return {
+        event,
+      }
+    }
+
+    throw new TransactionFailedError()
+  }
+
+  async setPause(setPausedArgs: SetPausedConfig): Promise<{
+    event: Log
+  }> {
+    const txHash = await this._setPaused(setPausedArgs)
+
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
+
+    const events = await this.getTransactionEvents({
+      txHash,
+      eventTopics: this.eventTopics.setPaused,
+    })
+    const event = events.length > 0 ? events[0] : undefined
+    if (event) {
+      return {
+        event,
+      }
+    }
+
+    throw new TransactionFailedError()
+  }
+
+  async execCalls(execCallsArgs: SplitV2ExecCallsConfig): Promise<{
+    event: Log
+  }> {
+    const txHash = await this._execCalls(execCallsArgs)
+
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
+
+    const events = await this.getTransactionEvents({
+      txHash,
+      eventTopics: this.eventTopics.execCalls,
+    })
+    const event = events.length > 0 ? events[0] : undefined
+    if (event) {
+      return {
+        event,
+      }
+    }
+
+    throw new TransactionFailedError()
+  }
+
+  async distribute(distributeArgs: DistributeSplitConfig): Promise<{
+    event: Log
+  }> {
+    const txHash = await this._distribute(distributeArgs)
+
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
+
+    const events = await this.getTransactionEvents({
+      txHash,
+      eventTopics: this.eventTopics.splitDistributed,
+    })
+    const event = events.length > 0 ? events[0] : undefined
+    if (event) {
+      return {
+        event,
+      }
+    }
+
+    throw new TransactionFailedError()
+  }
+
+  async updateSplit(updateSplitArgs: UpdateSplitV2Config): Promise<{
+    event: Log
+  }> {
+    const txHash = await this._updateSplit(updateSplitArgs)
+
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
+
+    const events = await this.getTransactionEvents({
+      txHash,
+      eventTopics: this.eventTopics.splitUpdated,
+    })
+    const event = events.length > 0 ? events[0] : undefined
+    if (event) {
+      return {
+        event,
+      }
+    }
+
+    throw new TransactionFailedError()
+  }
+
+  async predictDeterministicAddress(
+    createSplitArgs: CreateSplitV2Config,
+  ): Promise<{
+    splitAddress: Address
+  }> {
+    validateAddress(createSplitArgs.owner)
+    createSplitArgs.recipients.map((recipient) => validateAddress(recipient))
+    this._requirePublicClient()
+
+    const factory = this._getSplitV2FactoryContract(createSplitArgs.splitType)
+
+    const totalAllocation = createSplitArgs.allocations.reduce((a, b) => a + b)
+    let splitAddress
+    if (createSplitArgs.salt) {
+      splitAddress = await factory.read.predictDeterministicAddress([
+        {
+          recipients: createSplitArgs.recipients,
+          allocations: createSplitArgs.allocations,
+          totalAllocation: totalAllocation,
+          distributionIncentive: createSplitArgs.distributionIncentive,
+        },
+        createSplitArgs.owner,
+        createSplitArgs.salt,
+      ])
+    } else {
+      splitAddress = await factory.read.predictDeterministicAddress([
+        {
+          recipients: createSplitArgs.recipients,
+          allocations: createSplitArgs.allocations,
+          totalAllocation: totalAllocation,
+          distributionIncentive: createSplitArgs.distributionIncentive,
+        },
+        createSplitArgs.owner,
+      ])
+    }
+
+    return {
+      splitAddress,
+    }
+  }
+
+  async isDeployed(createSplitArgs: CreateSplitV2Config): Promise<{
+    splitAddress: Address
+    deployed: boolean
+  }> {
+    validateAddress(createSplitArgs.owner)
+    createSplitArgs.recipients.map((recipient) => validateAddress(recipient))
+    this._requirePublicClient()
+
+    const factory = this._getSplitV2FactoryContract(createSplitArgs.splitType)
+
+    const totalAllocation = createSplitArgs.allocations.reduce((a, b) => a + b)
+
+    if (!createSplitArgs.salt) throw new Error('Salt required')
+    const [splitAddress, deployed] = await factory.read.isDeployed([
+      {
+        recipients: createSplitArgs.recipients,
+        allocations: createSplitArgs.allocations,
+        totalAllocation: totalAllocation,
+        distributionIncentive: createSplitArgs.distributionIncentive,
+      },
+      createSplitArgs.owner,
+      createSplitArgs.salt,
+    ])
+
+    return {
+      splitAddress,
+      deployed,
+    }
+  }
+
+  async getSplitBalance(
+    split: Address,
+    token: Address,
+  ): Promise<{
+    splitBalance: bigint
+    warehouseBalance: bigint
+  }> {
+    validateAddress(split)
+
+    const splitContract = this._getSplitV2Contract(split)
+
+    const [splitBalance, warehouseBalance] =
+      await splitContract.read.getSplitBalance([token])
+
+    return {
+      splitBalance,
+      warehouseBalance,
+    }
+  }
+
+  async getReplaySafeHash(split: Address, hash: Hex): Promise<{ hash: Hex }> {
+    validateAddress(split)
+
+    const splitContract = this._getSplitV2Contract(split)
+
+    const replaySafeHash = await splitContract.read.replaySafeHash([hash])
+
+    return {
+      hash: replaySafeHash,
+    }
+  }
+
+  async isValidSignature(
+    split: Address,
+    hash: Hex,
+    signature: Hex,
+  ): Promise<boolean> {
+    validateAddress(split)
+
+    const splitContract = this._getSplitV2Contract(split)
+
+    return (
+      (await splitContract.read.isValidSignature([hash, signature])) ===
+      '0x1626ba7e'
+    )
+  }
+
+  async eip712Domain(split: Address): Promise<{ domain: TypedDataDomain }> {
+    return this._eip712Domain(split)
+  }
+
+  async paused(split: Address): Promise<boolean> {
+    return this._getSplitV2Contract(split).read.paused()
+  }
+
+  async owner(split: Address): Promise<Address> {
+    return this._getSplitV2Contract(split).read.owner()
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface SplitV2Client extends BaseClientMixin {}
+applyMixins(SplitV2Client, [BaseClientMixin])
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+class SplitV2GasEstimates extends SplitV2Transactions {
+  constructor({
+    chainId,
+    publicClient,
+    ensPublicClient,
+    walletClient,
+    includeEnsNames = false,
+  }: SplitsClientConfig) {
+    super({
+      transactionType: TransactionType.GasEstimate,
+      chainId,
+      publicClient,
+      ensPublicClient,
+      walletClient,
+      includeEnsNames,
+    })
+  }
+
+  async createSplit(createSplitArgs: CreateSplitV2Config): Promise<bigint> {
+    const gasEstimate = await this._createSplit(createSplitArgs)
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+
+  async transferOwnership(
+    transferOwnershipArgs: TransferOwnershipConfig,
+  ): Promise<bigint> {
+    const gasEstimate = await this._transferOwnership(transferOwnershipArgs)
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+
+  async setPaused(setPausedArgs: SetPausedConfig): Promise<bigint> {
+    const gasEstimate = await this._setPaused(setPausedArgs)
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+
+  async execCalls(execCallsArgs: SplitV2ExecCallsConfig): Promise<bigint> {
+    const gasEstimate = await this._execCalls(execCallsArgs)
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+
+  async distribute(distributeArgs: DistributeSplitConfig): Promise<bigint> {
+    const gasEstimate = await this._distribute(distributeArgs)
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+
+  async updateSplit(updateSplitArgs: UpdateSplitV2Config): Promise<bigint> {
+    const gasEstimate = await this._updateSplit(updateSplitArgs)
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+interface SplitV2GasEstimates extends BaseGasEstimatesMixin {}
+applyMixins(SplitV2GasEstimates, [BaseGasEstimatesMixin])
+
+class SplitV2CallData extends SplitV2Transactions {
+  constructor({
+    chainId,
+    publicClient,
+    ensPublicClient,
+    walletClient,
+    includeEnsNames = false,
+  }: SplitsClientConfig) {
+    super({
+      transactionType: TransactionType.CallData,
+      chainId,
+      publicClient,
+      ensPublicClient,
+      walletClient,
+      includeEnsNames,
+    })
+  }
+
+  async createSplit(createSplitArgs: CreateSplitV2Config): Promise<CallData> {
+    const callData = await this._createSplit(createSplitArgs)
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
+
+    return callData
+  }
+
+  async transferOwnership(
+    transferOwnershipArgs: TransferOwnershipConfig,
+  ): Promise<CallData> {
+    const callData = await this._transferOwnership(transferOwnershipArgs)
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
+
+    return callData
+  }
+
+  async setPaused(setPausedArgs: SetPausedConfig): Promise<CallData> {
+    const callData = await this._setPaused(setPausedArgs)
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
+
+    return callData
+  }
+
+  async execCalls(execCallsArgs: SplitV2ExecCallsConfig): Promise<CallData> {
+    const callData = await this._execCalls(execCallsArgs)
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
+
+    return callData
+  }
+
+  async distribute(distributeArgs: DistributeSplitConfig): Promise<CallData> {
+    const callData = await this._distribute(distributeArgs)
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
+
+    return callData
+  }
+
+  async updateSplit(updateSplitArgs: UpdateSplitV2Config): Promise<CallData> {
+    const callData = await this._updateSplit(updateSplitArgs)
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
+
+    return callData
+  }
+}
+
+class SplitV2Signature extends SplitV2Transactions {
+  constructor({
+    chainId,
+    publicClient,
+    ensPublicClient,
+    walletClient,
+    includeEnsNames,
+  }: SplitsClientConfig) {
+    super({
+      transactionType: TransactionType.Signature,
+      chainId,
+      publicClient,
+      ensPublicClient,
+      walletClient,
+      includeEnsNames,
+    })
+  }
+
+  async signData(split: Address, data: Hex): Promise<{ signature: Hex }> {
+    const { domain } = await this._eip712Domain(split)
+
+    this._requireWalletClient()
+
+    const signature = await this._walletClient?.signTypedData({
+      domain,
+      types: SigTypes,
+      primaryType: 'SplitWalletMessage',
+      message: {
+        hash: data,
+      },
+    })
+
+    if (!signature) throw new Error('Error in signing data')
+
+    return {
+      signature,
+    }
+  }
+}
+
+const SigTypes = {
+  SplitWalletMessage: [
+    {
+      name: 'hash',
+      type: 'bytes32',
+    },
+  ],
+}
