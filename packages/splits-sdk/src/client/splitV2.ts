@@ -10,7 +10,6 @@ import {
   encodeEventTopics,
   zeroAddress,
   getContract,
-  ByteArray,
   TypedDataDomain,
 } from 'viem'
 import { splitV2ABI } from '../constants/abi/splitV2'
@@ -80,7 +79,7 @@ class SplitV2Transactions extends BaseTransactions {
     creator = creator ?? zeroAddress
     validateAddress(creator)
 
-    if (this._shouldRequreWalletClient) this._requireWalletClient()
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const totalAllocation = allocations.reduce((a, b) => a + b)
     const functionName = salt ? 'createSplitDeterministic' : 'createSplit'
@@ -108,7 +107,7 @@ class SplitV2Transactions extends BaseTransactions {
     validateAddress(split)
     validateAddress(newOwner)
 
-    if (this._shouldRequreWalletClient) this._requireWalletClient()
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     return this._executeContractFunction({
       contractAddress: split,
@@ -126,7 +125,7 @@ class SplitV2Transactions extends BaseTransactions {
   }: SetPausedConfig): Promise<TransactionFormat> {
     validateAddress(split)
 
-    if (this._shouldRequreWalletClient) this._requireWalletClient()
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     return this._executeContractFunction({
       contractAddress: split,
@@ -145,7 +144,7 @@ class SplitV2Transactions extends BaseTransactions {
     validateAddress(splitAddress)
     calls.map((call) => validateAddress(call.to))
 
-    if (this._shouldRequreWalletClient) this._requireWalletClient()
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     return this._executeContractFunction({
       contractAddress: splitAddress,
@@ -166,7 +165,7 @@ class SplitV2Transactions extends BaseTransactions {
     validateAddress(split)
     recipients.map((recipient) => validateAddress(recipient))
 
-    if (this._shouldRequreWalletClient) this._requireWalletClient()
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const totalAllocation = allocations.reduce((a, b) => a + b)
 
@@ -200,7 +199,7 @@ class SplitV2Transactions extends BaseTransactions {
     validateAddress(distributor)
     recipients.map((recipient) => validateAddress(recipient))
 
-    if (this._shouldRequreWalletClient) this._requireWalletClient()
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const totalAllocation = allocations.reduce((a, b) => a + b)
 
