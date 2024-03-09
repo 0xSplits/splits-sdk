@@ -6,6 +6,8 @@ import { SplitsClient } from './client'
 import { PassThroughWalletClient } from './client/passThroughWallet'
 import { SwapperClient } from './client/swapper'
 import { OracleClient } from './client/oracle'
+import { WarehouseClient } from './client/warehouse'
+import { SplitV2Client } from './client/splitV2'
 
 export {
   SplitsClient,
@@ -16,6 +18,8 @@ export {
   PassThroughWalletClient,
   SwapperClient,
   OracleClient,
+  SplitV2Client,
+  WarehouseClient,
 }
 export * from './errors'
 

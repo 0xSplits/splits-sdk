@@ -79,6 +79,7 @@ class SplitV2Transactions extends BaseTransactions {
     creator = creator ?? zeroAddress
     validateAddress(creator)
 
+    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const totalAllocation = allocations.reduce((a, b) => a + b)
@@ -107,6 +108,7 @@ class SplitV2Transactions extends BaseTransactions {
     validateAddress(split)
     validateAddress(newOwner)
 
+    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     return this._executeContractFunction({
@@ -125,6 +127,7 @@ class SplitV2Transactions extends BaseTransactions {
   }: SetPausedConfig): Promise<TransactionFormat> {
     validateAddress(split)
 
+    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     return this._executeContractFunction({
@@ -144,6 +147,7 @@ class SplitV2Transactions extends BaseTransactions {
     validateAddress(splitAddress)
     calls.map((call) => validateAddress(call.to))
 
+    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     return this._executeContractFunction({
@@ -165,6 +169,7 @@ class SplitV2Transactions extends BaseTransactions {
     validateAddress(split)
     recipients.map((recipient) => validateAddress(recipient))
 
+    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const totalAllocation = allocations.reduce((a, b) => a + b)
@@ -199,6 +204,7 @@ class SplitV2Transactions extends BaseTransactions {
     validateAddress(distributor)
     recipients.map((recipient) => validateAddress(recipient))
 
+    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const totalAllocation = allocations.reduce((a, b) => a + b)
@@ -351,7 +357,7 @@ export class SplitV2Client extends SplitV2Transactions {
     })
   }
 
-  async createsSplit(createSplitArgs: CreateSplitV2Config): Promise<{
+  async createSplit(createSplitArgs: CreateSplitV2Config): Promise<{
     splitAddress: Address
     event: Log
   }> {
@@ -571,6 +577,7 @@ export class SplitV2Client extends SplitV2Transactions {
     warehouseBalance: bigint
   }> {
     validateAddress(split)
+    this._requirePublicClient()
 
     const splitContract = this._getSplitV2Contract(split)
 
@@ -585,6 +592,7 @@ export class SplitV2Client extends SplitV2Transactions {
 
   async getReplaySafeHash(split: Address, hash: Hex): Promise<{ hash: Hex }> {
     validateAddress(split)
+    this._requirePublicClient()
 
     const splitContract = this._getSplitV2Contract(split)
 
@@ -601,6 +609,7 @@ export class SplitV2Client extends SplitV2Transactions {
     signature: Hex,
   ): Promise<boolean> {
     validateAddress(split)
+    this._requirePublicClient()
 
     const splitContract = this._getSplitV2Contract(split)
 
@@ -611,14 +620,17 @@ export class SplitV2Client extends SplitV2Transactions {
   }
 
   async eip712Domain(split: Address): Promise<{ domain: TypedDataDomain }> {
+    this._requirePublicClient()
     return this._eip712Domain(split)
   }
 
   async paused(split: Address): Promise<boolean> {
+    this._requirePublicClient()
     return this._getSplitV2Contract(split).read.paused()
   }
 
   async owner(split: Address): Promise<Address> {
+    this._requirePublicClient()
     return this._getSplitV2Contract(split).read.owner()
   }
 }
