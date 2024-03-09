@@ -4,11 +4,13 @@ import {
   ADDRESS_ZERO,
   LIQUID_SPLIT_NFT_COUNT,
   PERCENTAGE_SCALE,
+  getSplitV2FactoryAddress,
 } from '../constants'
-import type {
+import {
   ContractRecoupTranche,
   RecoupTrancheInput,
   SplitRecipient,
+  SplitV2Type,
   WaterfallTrancheInput,
 } from '../types'
 import {
@@ -172,4 +174,13 @@ export const getValidatedSplitV2Config = (
     distributionIncentive,
     totalAllocation: calculatedTotalAllocation,
   }
+}
+
+export const getSplitType = (
+  chainId: number,
+  factoryAddress: Address,
+): SplitV2Type => {
+  if (factoryAddress === getSplitV2FactoryAddress(chainId, SplitV2Type.Pull))
+    return SplitV2Type.Pull
+  return SplitV2Type.Push
 }
