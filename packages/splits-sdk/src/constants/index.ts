@@ -118,6 +118,11 @@ export const getSplitV2FactoryAddress = (
   else return PUSH_SPLIT_FACTORY_ADDRESS
 }
 
+// TODO: update start block
+export const getSplitV2FactoriesStartBlock = (_chainId: number): bigint => {
+  return BigInt(1)
+}
+
 enum ChainId {
   MAINNET = 1,
   GOERLI = 5,

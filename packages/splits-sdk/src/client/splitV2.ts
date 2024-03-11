@@ -37,6 +37,7 @@ import { applyMixins } from './mixin'
 import {
   SPLITS_SUPPORTED_CHAIN_IDS,
   TransactionType,
+  getSplitV2FactoriesStartBlock,
   getSplitV2FactoryAddress,
 } from '../constants'
 import {
@@ -708,23 +709,30 @@ export class SplitV2Client extends SplitV2Transactions {
   async getSplitMetadata(splitAddress: Address): Promise<{ split: SplitV2 }> {
     this._requirePublicClient()
 
-    const [updateLogs, createLogs, owner] = await Promise.all([
-      this._publicClient?.getLogs({
-        address: splitAddress,
-        event: splitUpdatedEvent,
-        strict: true,
-      }),
+    const [createLogs, owner] = await Promise.all([
       this._publicClient?.getLogs({
         event: splitCreatedEvent,
+        address: [
+          getSplitV2FactoryAddress(this._chainId, SplitV2Type.Pull),
+          getSplitV2FactoryAddress(this._chainId, SplitV2Type.Push),
+        ],
         args: {
           split: splitAddress,
         },
         strict: true,
+        fromBlock: getSplitV2FactoriesStartBlock(this._chainId),
       }),
       this.owner(splitAddress),
     ])
 
     if (!createLogs) throw new Error('Split not found')
+
+    const updateLogs = await this._publicClient?.getLogs({
+      address: splitAddress,
+      event: splitUpdatedEvent,
+      strict: true,
+      fromBlock: createLogs[0].blockNumber,
+    })
 
     let split: SplitV2 = {
       address: splitAddress,
@@ -740,7 +748,11 @@ export class SplitV2Client extends SplitV2Transactions {
 
     if (!updateLogs || updateLogs.length == 0) return { split }
 
-    updateLogs.sort((a, b) => (a.blockNumber > b.blockNumber ? -1 : 1))
+    updateLogs.sort((a, b) => {
+      if (a.blockNumber === b.blockNumber)
+        return a.blockNumber > b.blockNumber ? -1 : 1
+      else return a.logIndex > b.logIndex ? -1 : 1
+    })
 
     split.recipients = updateLogs[0].args._split.recipients as Address[]
     split.allocations = updateLogs[0].args._split.allocations as bigint[]
