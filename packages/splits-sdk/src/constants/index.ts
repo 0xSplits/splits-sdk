@@ -125,6 +125,7 @@ enum ChainId {
   POLYGON_MUMBAI = 80001,
   OPTIMISM = 10,
   OPTIMISM_GOERLI = 420,
+  OPTIMISM_SEPOLIA = 11155420,
   ARBITRUM = 42161,
   ARBITRUM_GOERLI = 421613,
   GNOSIS = 100,
@@ -187,8 +188,19 @@ const ALL_CHAIN_IDS = [
 
 export const SPLITS_SUPPORTED_CHAIN_IDS = [3, 4, 42, ...ALL_CHAIN_IDS]
 
-// TODO: Update chainids
-export const WAREHOUSE_SUPPORTED_CHAIN_IDS = [ChainId.MAINNET]
+export const SPLITS_V2_SUPPORTED_CHAIN_IDS = [
+  ChainId.MAINNET,
+  ChainId.OPTIMISM,
+  ChainId.BASE,
+  ChainId.ZORA,
+  ChainId.POLYGON,
+  ChainId.ARBITRUM,
+  ChainId.SEPOLIA,
+  ChainId.HOLESKY,
+  ChainId.BASE_SEPOLIA,
+  ChainId.ZORA_SEPOLIA,
+  ChainId.OPTIMISM_SEPOLIA,
+]
 
 export const SPLITS_SUBGRAPH_CHAIN_IDS = ALL_CHAIN_IDS.slice()
 export const WATERFALL_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(

@@ -40,7 +40,7 @@ export type {
   DistributeTokenConfig,
   UpdateSplitAndDistributeTokenConfig,
   WithdrawFundsConfig,
-  InititateControlTransferConfig,
+  InitiateControlTransferConfig,
   CancelControlTransferConfig,
   AcceptControlTransferConfig,
   MakeSplitImmutableConfig,

@@ -2,7 +2,6 @@ import type {
   AccessList,
   Account,
   Address,
-  ByteArray,
   Chain,
   Hash,
   Hex,
@@ -83,7 +82,7 @@ export type WithdrawFundsConfig = {
   tokens: string[]
 } & TransactionOverridesDict
 
-export type InititateControlTransferConfig = {
+export type InitiateControlTransferConfig = {
   splitAddress: string
   newController: string
 } & TransactionOverridesDict
@@ -242,38 +241,33 @@ export enum SplitV2Type {
 
 // Split V2
 export type CreateSplitV2Config = {
-  recipients: Address[]
-  allocations: bigint[]
-  distributionIncentive: number
-  splitType: SplitV2Type
-  owner: Address
+  recipients: SplitRecipient[]
+  distributorFeePercent: number
+  splitType?: SplitV2Type
+  controller?: Address
   creator?: Address
   salt?: Hex
 } & TransactionOverridesDict
 
 export type UpdateSplitV2Config = {
-  split: Address
-  recipients: Address[]
-  allocations: bigint[]
-  distributionIncentive: number
+  splitAddress: Address
+  recipients: SplitRecipient[]
+  distributorFeePercent: number
 } & TransactionOverridesDict
 
 export type DistributeSplitConfig = {
-  split: Address
-  recipients: Address[]
-  allocations: bigint[]
-  distributionIncentive: number
+  splitAddress: Address
   token: Address
   distributor: Address
 } & TransactionOverridesDict
 
 export type TransferOwnershipConfig = {
-  split: Address
+  splitAddress: Address
   newOwner: Address
 } & TransactionOverridesDict
 
 export type SetPausedConfig = {
-  split: Address
+  splitAddress: Address
   paused: boolean
 } & TransactionOverridesDict
 

@@ -115,3 +115,14 @@ export const getRecoupTranchesAndSizes = async (
 
   return [recoupTranches, sizes]
 }
+
+export const getAddressAndAllocationFromRecipients = (
+  recipients: SplitRecipient[],
+): { addresses: Address[]; allocations: bigint[] } => {
+  return {
+    addresses: recipients.map((recipient) => recipient.address) as Address[],
+    allocations: recipients.map((recipient) =>
+      getBigIntFromPercent(recipient.percentAllocation),
+    ),
+  }
+}

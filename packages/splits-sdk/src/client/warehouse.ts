@@ -7,11 +7,9 @@ import {
   PublicClient,
   Transport,
   TypedDataDomain,
-  WalletClient,
   encodeEventTopics,
   fromHex,
   getContract,
-  transactionType,
   zeroAddress,
 } from 'viem'
 import { warehouseAbi } from '../constants/abi/warehouse'
@@ -44,7 +42,7 @@ import {
 } from '../types'
 import {
   TransactionType,
-  WAREHOUSE_SUPPORTED_CHAIN_IDS,
+  SPLITS_V2_SUPPORTED_CHAIN_IDS,
   getWarehouseAddress,
 } from '../constants'
 import { TransactionFailedError, UnsupportedChainIdError } from '../errors'
@@ -94,6 +92,7 @@ class WarehouseTransactions extends BaseTransactions {
   }: WarehouseTransferConfig): Promise<TransactionFormat> {
     validateAddress(receiver)
     validateAddress(token)
+
     this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
@@ -118,6 +117,7 @@ class WarehouseTransactions extends BaseTransactions {
     validateAddress(sender)
     validateAddress(receiver)
     validateAddress(token)
+
     this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
@@ -140,6 +140,7 @@ class WarehouseTransactions extends BaseTransactions {
   }: WarehouseApproveConfig): Promise<TransactionFormat> {
     validateAddress(spender)
     validateAddress(token)
+
     this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
@@ -160,6 +161,7 @@ class WarehouseTransactions extends BaseTransactions {
     transactionOverrides = {},
   }: WarehouseSetOperatorConfig): Promise<TransactionFormat> {
     validateAddress(operator)
+
     this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
@@ -201,6 +203,10 @@ class WarehouseTransactions extends BaseTransactions {
     data,
     transactionOverrides = {},
   }: WarehouseTemporaryApproveAndCallConfig): Promise<TransactionFormat> {
+    validateAddress(spender)
+    validateAddress(token)
+    validateAddress(target)
+
     this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
@@ -235,6 +241,11 @@ class WarehouseTransactions extends BaseTransactions {
     signature,
     transactionOverrides = {},
   }: WarehouseTemporaryApproveAndCallBySigConfig): Promise<TransactionFormat> {
+    validateAddress(owner)
+    validateAddress(spender)
+    validateAddress(token)
+    validateAddress(target)
+
     this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
@@ -271,6 +282,10 @@ class WarehouseTransactions extends BaseTransactions {
     signature,
     transactionOverrides = {},
   }: WarehouseApproveBySigConfig): Promise<TransactionFormat> {
+    validateAddress(owner)
+    validateAddress(spender)
+    validateAddress(token)
+
     this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
@@ -302,6 +317,7 @@ class WarehouseTransactions extends BaseTransactions {
   }: WarehouseDepositConfig): Promise<TransactionFormat> {
     validateAddress(receiver)
     validateAddress(token)
+
     this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
@@ -324,6 +340,7 @@ class WarehouseTransactions extends BaseTransactions {
   }: WarehouseBatchDepositConfig): Promise<TransactionFormat> {
     receivers.map((receiver) => validateAddress(receiver))
     validateAddress(token)
+
     this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
@@ -345,6 +362,7 @@ class WarehouseTransactions extends BaseTransactions {
   }: WarehouseWithdrawConfig): Promise<TransactionFormat> {
     validateAddress(owner)
     validateAddress(token)
+
     this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
@@ -369,6 +387,7 @@ class WarehouseTransactions extends BaseTransactions {
     validateAddress(owner)
     tokens.map((token) => validateAddress(token))
     validateAddress(withdrawer)
+
     this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
@@ -391,6 +410,7 @@ class WarehouseTransactions extends BaseTransactions {
   }: WarehouseBatchTransferConfig): Promise<TransactionFormat> {
     receivers.map((receiver) => validateAddress(receiver))
     validateAddress(token)
+
     this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
@@ -463,8 +483,8 @@ export class WarehouseClient extends WarehouseTransactions {
       ensPublicClient,
     })
 
-    if (!WAREHOUSE_SUPPORTED_CHAIN_IDS.includes(chainId))
-      throw new UnsupportedChainIdError(chainId, WAREHOUSE_SUPPORTED_CHAIN_IDS)
+    if (!SPLITS_V2_SUPPORTED_CHAIN_IDS.includes(chainId))
+      throw new UnsupportedChainIdError(chainId, SPLITS_V2_SUPPORTED_CHAIN_IDS)
 
     this.eventTopics = {
       transfer: [
@@ -535,6 +555,7 @@ export class WarehouseClient extends WarehouseTransactions {
     name: string
   }> {
     validateAddress(tokenAddress)
+
     this._requirePublicClient()
 
     const name = await this._warehouseContract.read.name([
@@ -550,6 +571,7 @@ export class WarehouseClient extends WarehouseTransactions {
     symbol: string
   }> {
     validateAddress(tokenAddress)
+
     this._requirePublicClient()
 
     const symbol = await this._warehouseContract.read.symbol([
@@ -565,6 +587,7 @@ export class WarehouseClient extends WarehouseTransactions {
     decimals: number
   }> {
     validateAddress(tokenAddress)
+
     this._requirePublicClient()
 
     const decimals = await this._warehouseContract.read.decimals([
@@ -583,6 +606,7 @@ export class WarehouseClient extends WarehouseTransactions {
     userAddress: Address
   }): Promise<{ withdrawConfig: { incentive: number; paused: boolean } }> {
     validateAddress(userAddress)
+
     this._requirePublicClient()
 
     const config = await this._warehouseContract.read.withdrawConfig([
@@ -606,6 +630,7 @@ export class WarehouseClient extends WarehouseTransactions {
     userNonce: bigint
   }): Promise<{ isValidNonce: boolean }> {
     validateAddress(userAddress)
+
     this._requirePublicClient()
 
     const isValidNonce = await this._warehouseContract.read.isValidNonce([
@@ -632,6 +657,7 @@ export class WarehouseClient extends WarehouseTransactions {
   }): Promise<{ isOperator: boolean }> {
     validateAddress(ownerAddress)
     validateAddress(operatorAddress)
+
     this._requirePublicClient()
 
     const isOperator = await this._warehouseContract.read.isOperator([
@@ -653,6 +679,7 @@ export class WarehouseClient extends WarehouseTransactions {
   }): Promise<{ balance: bigint }> {
     validateAddress(ownerAddress)
     validateAddress(tokenAddress)
+
     this._requirePublicClient()
 
     const balance = await this._warehouseContract.read.balanceOf([
@@ -677,6 +704,7 @@ export class WarehouseClient extends WarehouseTransactions {
     validateAddress(ownerAddress)
     validateAddress(spenderAddress)
     validateAddress(tokenAddress)
+
     this._requirePublicClient()
 
     const allowance = await this._warehouseContract.read.allowance([
@@ -695,6 +723,7 @@ export class WarehouseClient extends WarehouseTransactions {
     transferArgs: WarehouseTransferConfig,
   ): Promise<{ event: Log }> {
     const txHash = await this._transfer(transferArgs)
+
     if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
@@ -718,6 +747,7 @@ export class WarehouseClient extends WarehouseTransactions {
     transferFromArgs: WarehouseTransferFromConfig,
   ): Promise<{ event: Log }> {
     const txHash = await this._transferFrom(transferFromArgs)
+
     if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
@@ -739,6 +769,7 @@ export class WarehouseClient extends WarehouseTransactions {
 
   async approve(approveArgs: WarehouseApproveConfig): Promise<{ event: Log }> {
     const txHash = await this._approve(approveArgs)
+
     if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
@@ -762,6 +793,7 @@ export class WarehouseClient extends WarehouseTransactions {
     setOperatorArgs: WarehouseSetOperatorConfig,
   ): Promise<{ event: Log }> {
     const txHash = await this._setOperator(setOperatorArgs)
+
     if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
@@ -785,6 +817,7 @@ export class WarehouseClient extends WarehouseTransactions {
     invalidateNonceArgs: WarehouseInvalidateNonceConfig,
   ): Promise<{ event: Log }> {
     const txHash = await this._invalidateNonce(invalidateNonceArgs)
+
     if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
@@ -810,6 +843,7 @@ export class WarehouseClient extends WarehouseTransactions {
     const txHash = await this._temporaryApproveAndCall(
       temporaryApproveAndCallArgs,
     )
+
     if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
@@ -822,6 +856,7 @@ export class WarehouseClient extends WarehouseTransactions {
     const txHash = await this._temporaryApproveAndCallBySig(
       temporaryApproveAndCallBySigArgs,
     )
+
     if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
@@ -832,6 +867,7 @@ export class WarehouseClient extends WarehouseTransactions {
     approveBySigArgs: WarehouseApproveBySigConfig,
   ): Promise<{ event: Log }> {
     const txHash = await this._approveBySig(approveBySigArgs)
+
     if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
@@ -860,6 +896,7 @@ export class WarehouseClient extends WarehouseTransactions {
 
   async deposit(depositArgs: WarehouseDepositConfig): Promise<{ event: Log }> {
     const txHash = await this._deposit(depositArgs)
+
     if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
@@ -883,6 +920,7 @@ export class WarehouseClient extends WarehouseTransactions {
     batchDepositArgs: WarehouseBatchDepositConfig,
   ): Promise<{ events: Log[] }> {
     const txHash = await this._batchDeposit(batchDepositArgs)
+
     if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
@@ -904,6 +942,7 @@ export class WarehouseClient extends WarehouseTransactions {
     withdrawArgs: WarehouseWithdrawConfig,
   ): Promise<{ event: Log }> {
     const txHash = await this._withdraw(withdrawArgs)
+
     if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
@@ -927,6 +966,7 @@ export class WarehouseClient extends WarehouseTransactions {
     batchWithdrawArgs: WarehouseBatchWithdrawConfig,
   ): Promise<{ events: Log[] }> {
     const txHash = await this._batchWithdraw(batchWithdrawArgs)
+
     if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
@@ -948,6 +988,7 @@ export class WarehouseClient extends WarehouseTransactions {
     batchTransferArgs: WarehouseBatchTransferConfig,
   ): Promise<{ events: Log[] }> {
     const txHash = await this._batchTransfer(batchTransferArgs)
+
     if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
@@ -969,6 +1010,7 @@ export class WarehouseClient extends WarehouseTransactions {
     setConfigArgs: WarehouseSetWithdrawConfig,
   ): Promise<{ event: Log }> {
     const txHash = await this._setWithdrawConfig(setConfigArgs)
+
     if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
@@ -1326,6 +1368,9 @@ class WarehouseSignature extends WarehouseTransactions {
   async approveBySig(
     approveBySigArgs: WarehouseApproveBySig,
   ): Promise<WarehouseApproveBySigConfig> {
+    validateAddress(approveBySigArgs.spender)
+    validateAddress(approveBySigArgs.token)
+
     const { domain } = await this._eip712Domain()
 
     this._requireWalletClient()
@@ -1360,6 +1405,10 @@ class WarehouseSignature extends WarehouseTransactions {
   async temporaryApproveAndCallBySig(
     temporaryApproveAndCallBySigArgs: WarehouseTemporaryApproveAndCallBySig,
   ): Promise<WarehouseApproveBySigConfig> {
+    validateAddress(temporaryApproveAndCallBySigArgs.spender)
+    validateAddress(temporaryApproveAndCallBySigArgs.token)
+    validateAddress(temporaryApproveAndCallBySigArgs.target)
+
     const { domain } = await this._eip712Domain()
 
     this._requireWalletClient()

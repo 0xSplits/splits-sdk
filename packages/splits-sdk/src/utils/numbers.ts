@@ -15,6 +15,10 @@ export const getBigIntFromPercent = (value: number): bigint => {
   return BigInt(Math.round(Number(PERCENTAGE_SCALE) * value) / 100)
 }
 
+export const getNumberFromPercent = (value: number): number => {
+  return Math.round(Number(PERCENTAGE_SCALE) * value) / 100
+}
+
 export const fromBigIntToPercent = (value: bigint | number): number => {
   const numberVal = Number(value)
   return (numberVal * 100) / Number(PERCENTAGE_SCALE)

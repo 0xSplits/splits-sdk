@@ -74,7 +74,7 @@ import type {
   UpdateSplitConfig,
   DistributeTokenConfig,
   WithdrawFundsConfig,
-  InititateControlTransferConfig,
+  InitiateControlTransferConfig,
   CancelControlTransferConfig,
   AcceptControlTransferConfig,
   MakeSplitImmutableConfig,
@@ -357,7 +357,7 @@ class SplitsTransactions extends BaseTransactions {
     splitAddress,
     newController,
     transactionOverrides = {},
-  }: InititateControlTransferConfig): Promise<TransactionFormat> {
+  }: InitiateControlTransferConfig): Promise<TransactionFormat> {
     validateAddress(splitAddress)
 
     if (this._shouldRequireWalletClient) {
@@ -943,7 +943,7 @@ export class SplitsClient extends SplitsTransactions {
   }
 
   async submitInitiateControlTransferTransaction(
-    initiateTransferArgs: InititateControlTransferConfig,
+    initiateTransferArgs: InitiateControlTransferConfig,
   ): Promise<{
     txHash: Hash
   }> {
@@ -956,7 +956,7 @@ export class SplitsClient extends SplitsTransactions {
   }
 
   async initiateControlTransfer(
-    initiateTransferArgs: InititateControlTransferConfig,
+    initiateTransferArgs: InitiateControlTransferConfig,
   ): Promise<{
     event: Log
   }> {
@@ -1549,7 +1549,7 @@ class SplitsGasEstimates extends SplitsTransactions {
   }
 
   async initiateControlTransfer(
-    initiateTransferArgs: InititateControlTransferConfig,
+    initiateTransferArgs: InitiateControlTransferConfig,
   ): Promise<bigint> {
     const gasEstimate =
       await this._initiateControlTransferTransaction(initiateTransferArgs)
@@ -1653,7 +1653,7 @@ class SplitsCallData extends SplitsTransactions {
   }
 
   async initiateControlTransfer(
-    initiateTransferArgs: InititateControlTransferConfig,
+    initiateTransferArgs: InitiateControlTransferConfig,
   ): Promise<CallData> {
     const callData =
       await this._initiateControlTransferTransaction(initiateTransferArgs)
