@@ -243,6 +243,7 @@ export enum SplitV2Type {
 export type CreateSplitV2Config = {
   recipients: SplitRecipient[]
   distributorFeePercent: number
+  totalAllocationPercent?: number
   splitType?: SplitV2Type
   controller?: Address
   creator?: Address
@@ -253,6 +254,7 @@ export type UpdateSplitV2Config = {
   splitAddress: Address
   recipients: SplitRecipient[]
   distributorFeePercent: number
+  totalAllocationPercent?: number
 } & TransactionOverridesDict
 
 export type DistributeSplitConfig = {

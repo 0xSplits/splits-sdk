@@ -11,7 +11,11 @@ import type {
   SplitRecipient,
   WaterfallTrancheInput,
 } from '../types'
-import { getBigIntFromPercent, getBigIntTokenValue } from './numbers'
+import {
+  getBigIntFromPercent,
+  getBigIntTokenValue,
+  getNumberFromPercent,
+} from './numbers'
 import { getTokenData } from './tokens'
 
 export * from './ens'
@@ -118,11 +122,54 @@ export const getRecoupTranchesAndSizes = async (
 
 export const getAddressAndAllocationFromRecipients = (
   recipients: SplitRecipient[],
-): { addresses: Address[]; allocations: bigint[] } => {
+): { recipientAddresses: Address[]; recipientAllocations: bigint[] } => {
   return {
-    addresses: recipients.map((recipient) => recipient.address) as Address[],
-    allocations: recipients.map((recipient) =>
+    recipientAddresses: recipients.map(
+      (recipient) => recipient.address,
+    ) as Address[],
+    recipientAllocations: recipients.map((recipient) =>
       getBigIntFromPercent(recipient.percentAllocation),
     ),
+  }
+}
+
+const MAX_DISTRIBUTION_INCENTIVE = 6.5535
+
+export const getValidatedSplitV2Config = (
+  recipients: SplitRecipient[],
+  distributorFeePercent: number,
+  totalAllocationPercent?: number,
+): {
+  recipientAddresses: Address[]
+  recipientAllocations: bigint[]
+  distributionIncentive: number
+  totalAllocation: bigint
+} => {
+  const { recipientAddresses, recipientAllocations } =
+    getAddressAndAllocationFromRecipients(recipients)
+
+  const distributionIncentive = getNumberFromPercent(distributorFeePercent)
+  if (distributionIncentive > MAX_DISTRIBUTION_INCENTIVE)
+    throw new Error(
+      `Invalid distribution incentive, it should be less than ${MAX_DISTRIBUTION_INCENTIVE}%`,
+    )
+
+  const calculatedTotalAllocation = recipientAllocations.reduce((a, b) => a + b)
+
+  if (
+    totalAllocationPercent &&
+    getBigIntFromPercent(totalAllocationPercent) !== calculatedTotalAllocation
+  )
+    throw new Error(
+      'Total allocation does not match sum of recipients allocation',
+    )
+  else if (calculatedTotalAllocation !== PERCENTAGE_SCALE)
+    throw new Error('Sum of recipient allocation should be 100%')
+
+  return {
+    recipientAddresses,
+    recipientAllocations,
+    distributionIncentive,
+    totalAllocation: calculatedTotalAllocation,
   }
 }

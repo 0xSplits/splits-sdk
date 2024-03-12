@@ -12,7 +12,7 @@ export const roundToDecimals: (arg0: number, arg1: number) => number = (
 }
 
 export const getBigIntFromPercent = (value: number): bigint => {
-  return BigInt(Math.round(Number(PERCENTAGE_SCALE) * value) / 100)
+  return BigInt(getNumberFromPercent(value))
 }
 
 export const getNumberFromPercent = (value: number): number => {

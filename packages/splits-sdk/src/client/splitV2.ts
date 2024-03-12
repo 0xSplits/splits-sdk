@@ -33,7 +33,6 @@ import {
 } from './base'
 import { applyMixins } from './mixin'
 import {
-  PERCENTAGE_SCALE,
   SPLITS_SUPPORTED_CHAIN_IDS,
   TransactionType,
   getSplitV2FactoryAddress,
@@ -41,7 +40,7 @@ import {
 import {
   validateAddress,
   getNumberFromPercent,
-  getAddressAndAllocationFromRecipients,
+  getValidatedSplitV2Config,
 } from '../utils'
 import { TransactionFailedError, UnsupportedChainIdError } from '../errors'
 
@@ -73,28 +72,39 @@ class SplitV2Transactions extends BaseTransactions {
   protected async _createSplit({
     recipients,
     distributorFeePercent,
+    totalAllocationPercent,
     splitType = SplitV2Type.Pull,
     controller = zeroAddress,
     creator = zeroAddress,
     salt,
     transactionOverrides = {},
   }: CreateSplitV2Config): Promise<TransactionFormat> {
-    const { addresses, allocations } =
-      getAddressAndAllocationFromRecipients(recipients)
-    const totalAllocation = PERCENTAGE_SCALE
+    const {
+      recipientAddresses,
+      recipientAllocations,
+      distributionIncentive,
+      totalAllocation,
+    } = getValidatedSplitV2Config(
+      recipients,
+      distributorFeePercent,
+      totalAllocationPercent,
+    )
 
-    addresses.map((recipient) => validateAddress(recipient))
+    recipientAddresses.map((recipient) => validateAddress(recipient))
     validateAddress(controller)
     validateAddress(creator)
 
     this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
-    const distributionIncentive = getNumberFromPercent(distributorFeePercent)
-
     const functionName = salt ? 'createSplitDeterministic' : 'createSplit'
     const functionArgs = [
-      { recipients, allocations, totalAllocation, distributionIncentive },
+      {
+        recipients: recipientAddresses,
+        allocations: recipientAllocations,
+        totalAllocation,
+        distributionIncentive,
+      },
       controller,
       creator,
     ]
@@ -172,19 +182,25 @@ class SplitV2Transactions extends BaseTransactions {
     splitAddress,
     recipients,
     distributorFeePercent,
+    totalAllocationPercent,
     transactionOverrides = {},
   }: UpdateSplitV2Config): Promise<TransactionFormat> {
-    const { addresses, allocations } =
-      getAddressAndAllocationFromRecipients(recipients)
+    const {
+      recipientAddresses,
+      recipientAllocations,
+      distributionIncentive,
+      totalAllocation,
+    } = getValidatedSplitV2Config(
+      recipients,
+      distributorFeePercent,
+      totalAllocationPercent,
+    )
 
     validateAddress(splitAddress)
-    addresses.map((recipient) => validateAddress(recipient))
+    recipientAddresses.map((recipient) => validateAddress(recipient))
 
     this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
-
-    const totalAllocation = PERCENTAGE_SCALE
-    const distributionIncentive = getNumberFromPercent(distributorFeePercent)
 
     return this._executeContractFunction({
       contractAddress: splitAddress,
@@ -192,8 +208,8 @@ class SplitV2Transactions extends BaseTransactions {
       functionName: 'updateSplit',
       functionArgs: [
         {
-          recipients,
-          allocations,
+          recipients: recipientAddresses,
+          allocations: recipientAllocations,
           totalAllocation,
           distributionIncentive,
         },
@@ -519,14 +535,20 @@ export class SplitV2Client extends SplitV2Transactions {
     if (!createSplitArgs.controller) createSplitArgs.controller = zeroAddress
     if (!createSplitArgs.creator) createSplitArgs.creator = zeroAddress
 
-    const { addresses, allocations } = getAddressAndAllocationFromRecipients(
+    const {
+      recipientAddresses,
+      recipientAllocations,
+      distributionIncentive,
+      totalAllocation,
+    } = getValidatedSplitV2Config(
       createSplitArgs.recipients,
+      createSplitArgs.distributorFeePercent,
+      createSplitArgs.totalAllocationPercent,
     )
-    const totalAllocation = PERCENTAGE_SCALE
 
     validateAddress(createSplitArgs.controller)
     validateAddress(createSplitArgs.creator)
-    addresses.map((recipient) => validateAddress(recipient))
+    recipientAddresses.map((recipient) => validateAddress(recipient))
 
     this._requirePublicClient()
 
@@ -538,12 +560,10 @@ export class SplitV2Client extends SplitV2Transactions {
     if (createSplitArgs.salt) {
       splitAddress = await factory.read.predictDeterministicAddress([
         {
-          recipients: addresses,
-          allocations,
-          totalAllocation: totalAllocation,
-          distributionIncentive: getNumberFromPercent(
-            createSplitArgs.distributorFeePercent,
-          ),
+          recipients: recipientAddresses,
+          allocations: recipientAllocations,
+          totalAllocation,
+          distributionIncentive,
         },
         createSplitArgs.controller,
         createSplitArgs.salt,
@@ -551,9 +571,9 @@ export class SplitV2Client extends SplitV2Transactions {
     } else {
       splitAddress = await factory.read.predictDeterministicAddress([
         {
-          recipients: addresses,
-          allocations,
-          totalAllocation: totalAllocation,
+          recipients: recipientAddresses,
+          allocations: recipientAllocations,
+          totalAllocation,
           distributionIncentive: getNumberFromPercent(
             createSplitArgs.distributorFeePercent,
           ),
@@ -574,29 +594,32 @@ export class SplitV2Client extends SplitV2Transactions {
     if (!createSplitArgs.controller) createSplitArgs.controller = zeroAddress
     if (!createSplitArgs.creator) createSplitArgs.creator = zeroAddress
 
-    const { addresses, allocations } = getAddressAndAllocationFromRecipients(
+    const {
+      recipientAddresses,
+      recipientAllocations,
+      distributionIncentive,
+      totalAllocation,
+    } = getValidatedSplitV2Config(
       createSplitArgs.recipients,
+      createSplitArgs.distributorFeePercent,
+      createSplitArgs.totalAllocationPercent,
     )
 
     validateAddress(createSplitArgs.controller)
-    addresses.map((recipient) => validateAddress(recipient))
+    recipientAddresses.map((recipient) => validateAddress(recipient))
     this._requirePublicClient()
 
     const factory = this._getSplitV2FactoryContract(
       createSplitArgs.splitType ?? SplitV2Type.Pull,
     )
 
-    const totalAllocation = PERCENTAGE_SCALE
-
     if (!createSplitArgs.salt) throw new Error('Salt required')
     const [splitAddress, deployed] = await factory.read.isDeployed([
       {
-        recipients: addresses,
-        allocations,
+        recipients: recipientAddresses,
+        allocations: recipientAllocations,
         totalAllocation: totalAllocation,
-        distributionIncentive: getNumberFromPercent(
-          createSplitArgs.distributorFeePercent,
-        ),
+        distributionIncentive,
       },
       createSplitArgs.controller,
       createSplitArgs.salt,
