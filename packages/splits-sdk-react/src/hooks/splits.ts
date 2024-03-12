@@ -9,7 +9,7 @@ import {
   DistributeTokenConfig,
   UpdateSplitAndDistributeTokenConfig,
   WithdrawFundsConfig,
-  InititateControlTransferConfig,
+  InitiateControlTransferConfig,
   CancelControlTransferConfig,
   AcceptControlTransferConfig,
   MakeSplitImmutableConfig,
@@ -293,7 +293,7 @@ export const useWithdrawFunds = (): {
 
 export const useInitiateControlTransfer = (): {
   initiateControlTransfer: (
-    arg0: InititateControlTransferConfig,
+    arg0: InitiateControlTransferConfig,
   ) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
@@ -307,7 +307,7 @@ export const useInitiateControlTransfer = (): {
   const [error, setError] = useState<RequestError>()
 
   const initiateControlTransfer = useCallback(
-    async (argsDict: InititateControlTransferConfig) => {
+    async (argsDict: InitiateControlTransferConfig) => {
       try {
         setStatus('pendingApproval')
         setError(undefined)
