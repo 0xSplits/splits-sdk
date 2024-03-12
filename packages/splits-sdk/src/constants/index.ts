@@ -49,8 +49,10 @@ const DIVERSIFIER_FACTORY_ADDRESS_SEPOLIA =
 
 // TODO: update address
 const WAREHOUSE_ADDRESS = '0x15Cb41615d210f4c4E597BeCEcB8Ee9410B9837F'
-const PULL_SPLIT_FACTORY_ADDRESS = '0x15Cb41615d210f4c4E597BeCEcB8Ee9410B9837F'
-const PUSH_SPLIT_FACTORY_ADDRESS = '0x15Cb41615d210f4c4E597BeCEcB8Ee9410B9837F'
+export const PULL_SPLIT_FACTORY_ADDRESS =
+  '0x15Cb41615d210f4c4E597BeCEcB8Ee9410B9837F'
+export const PUSH_SPLIT_FACTORY_ADDRESS =
+  '0x15Cb41615d210f4c4E597BeCEcB8Ee9410B9837F'
 
 export const getSplitMainAddress = (chainId: number): Address => {
   if (chainId === ChainId.BSC || chainId === ChainId.SEPOLIA)
@@ -114,6 +116,11 @@ export const getSplitV2FactoryAddress = (
 ): Address => {
   if (type === SplitV2Type.Pull) return PULL_SPLIT_FACTORY_ADDRESS
   else return PUSH_SPLIT_FACTORY_ADDRESS
+}
+
+// TODO: update start block
+export const getSplitV2FactoriesStartBlock = (_chainId: number): bigint => {
+  return BigInt(1)
 }
 
 enum ChainId {

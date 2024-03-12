@@ -11,6 +11,7 @@ import {
   zeroAddress,
   getContract,
   TypedDataDomain,
+  parseAbiItem,
 } from 'viem'
 import { splitV2ABI } from '../constants/abi/splitV2'
 import { splitV2FactoryABI } from '../constants/abi/splitV2Factory'
@@ -18,6 +19,7 @@ import {
   CallData,
   CreateSplitV2Config,
   SetPausedConfig,
+  SplitV2,
   SplitV2ExecCallsConfig,
   SplitV2Type,
   SplitsClientConfig,
@@ -35,12 +37,14 @@ import { applyMixins } from './mixin'
 import {
   SPLITS_SUPPORTED_CHAIN_IDS,
   TransactionType,
+  getSplitV2FactoriesStartBlock,
   getSplitV2FactoryAddress,
 } from '../constants'
 import {
   validateAddress,
   getNumberFromPercent,
   getValidatedSplitV2Config,
+  getSplitType,
 } from '../utils'
 import { TransactionFailedError, UnsupportedChainIdError } from '../errors'
 
@@ -701,6 +705,63 @@ export class SplitV2Client extends SplitV2Transactions {
     this._requirePublicClient()
     return this._getSplitV2Contract(splitAddress).read.owner()
   }
+
+  async getSplitMetadata(splitAddress: Address): Promise<{ split: SplitV2 }> {
+    this._requirePublicClient()
+
+    const [createLogs, owner] = await Promise.all([
+      this._publicClient?.getLogs({
+        event: splitCreatedEvent,
+        address: [
+          getSplitV2FactoryAddress(this._chainId, SplitV2Type.Pull),
+          getSplitV2FactoryAddress(this._chainId, SplitV2Type.Push),
+        ],
+        args: {
+          split: splitAddress,
+        },
+        strict: true,
+        fromBlock: getSplitV2FactoriesStartBlock(this._chainId),
+      }),
+      this.owner(splitAddress),
+    ])
+
+    if (!createLogs) throw new Error('Split not found')
+
+    const updateLogs = await this._publicClient?.getLogs({
+      address: splitAddress,
+      event: splitUpdatedEvent,
+      strict: true,
+      fromBlock: createLogs[0].blockNumber,
+    })
+
+    let split: SplitV2 = {
+      address: splitAddress,
+      recipients: createLogs[0].args.splitParams.recipients as Address[],
+      allocations: createLogs[0].args.splitParams.allocations as bigint[],
+      totalAllocation: createLogs[0].args.splitParams.totalAllocation,
+      distributionIncentive:
+        createLogs[0].args.splitParams.distributionIncentive,
+      type: getSplitType(this._chainId, createLogs[0].address),
+      owner,
+      creator: createLogs[0].args.creator,
+    }
+
+    if (!updateLogs || updateLogs.length == 0) return { split }
+
+    updateLogs.sort((a, b) => {
+      if (a.blockNumber === b.blockNumber)
+        return a.blockNumber > b.blockNumber ? -1 : 1
+      else return a.logIndex > b.logIndex ? -1 : 1
+    })
+
+    split.recipients = updateLogs[0].args._split.recipients as Address[]
+    split.allocations = updateLogs[0].args._split.allocations as bigint[]
+    split.totalAllocation = updateLogs[0].args._split.totalAllocation
+    split.distributionIncentive =
+      updateLogs[0].args._split.distributionIncentive
+
+    return { split }
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
@@ -880,6 +941,10 @@ class SplitV2Signature extends SplitV2Transactions {
     }
   }
 }
+
+const splitUpdatedEvent = splitV2ABI[28]
+
+const splitCreatedEvent = splitV2FactoryABI[8]
 
 const SigTypes = {
   SplitWalletMessage: [

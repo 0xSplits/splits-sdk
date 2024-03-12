@@ -240,6 +240,18 @@ export enum SplitV2Type {
 }
 
 // Split V2
+
+export type SplitV2 = {
+  address: Address
+  recipients: Address[]
+  allocations: bigint[]
+  distributionIncentive: number
+  totalAllocation: bigint
+  type: SplitV2Type
+  owner: Address
+  creator: Address
+}
+
 export type CreateSplitV2Config = {
   recipients: SplitRecipient[]
   distributorFeePercent: number
