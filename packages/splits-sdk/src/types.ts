@@ -247,6 +247,7 @@ export type SplitV2 = {
   allocations: bigint[]
   distributionIncentive: number
   totalAllocation: bigint
+  paused: boolean
   type: SplitV2Type
   owner: Address
   creator: Address

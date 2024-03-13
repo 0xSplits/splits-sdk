@@ -47,12 +47,11 @@ const RECOUP_ADDRESS_SEPOLIA = '0xCA64fab630cDB098e5a5d393058aa27163a14293'
 const DIVERSIFIER_FACTORY_ADDRESS_SEPOLIA =
   '0x15Cb41615d210f4c4E597BeCEcB8Ee9410B9837F'
 
-// TODO: update address
-const WAREHOUSE_ADDRESS = '0x15Cb41615d210f4c4E597BeCEcB8Ee9410B9837F'
+const WAREHOUSE_ADDRESS = '0x8fb66F38cF86A3d5e8768f8F1754A24A6c661Fb8'
 export const PULL_SPLIT_FACTORY_ADDRESS =
-  '0x15Cb41615d210f4c4E597BeCEcB8Ee9410B9837F'
+  '0x80f1B766817D04870f115fEBbcCADF8DBF75E017'
 export const PUSH_SPLIT_FACTORY_ADDRESS =
-  '0x15Cb41615d210f4c4E597BeCEcB8Ee9410B9837F'
+  '0xaDC87646f736d6A82e9a6539cddC488b2aA07f38'
 
 export const getSplitMainAddress = (chainId: number): Address => {
   if (chainId === ChainId.BSC || chainId === ChainId.SEPOLIA)
@@ -118,9 +117,9 @@ export const getSplitV2FactoryAddress = (
   else return PUSH_SPLIT_FACTORY_ADDRESS
 }
 
-// TODO: update start block
-export const getSplitV2FactoriesStartBlock = (_chainId: number): bigint => {
-  return BigInt(1)
+export const getSplitV2FactoriesStartBlock = (chainId: number): bigint => {
+  if (!CHAIN_INFO[chainId].startBlockV2) throw new Error('Chain not supported')
+  return BigInt(CHAIN_INFO[chainId].startBlockV2 as number)
 }
 
 enum ChainId {
@@ -247,6 +246,7 @@ export const CHAIN_INFO: {
     startBlock: number
     gqlEndpoint?: string
     nativeCurrency: { symbol: string }
+    startBlockV2?: number
   }
 } = {
   [ChainId.MAINNET]: {
@@ -284,6 +284,7 @@ export const CHAIN_INFO: {
     nativeCurrency: {
       symbol: 'ETH',
     },
+    startBlockV2: 5467056,
   },
   42: {
     startBlock: 29821123,
@@ -298,6 +299,7 @@ export const CHAIN_INFO: {
     nativeCurrency: {
       symbol: 'ETH',
     },
+    startBlockV2: 1121603,
   },
   [ChainId.POLYGON]: {
     startBlock: 25303316,
@@ -306,6 +308,7 @@ export const CHAIN_INFO: {
     nativeCurrency: {
       symbol: 'MATIC',
     },
+    startBlockV2: 54572664,
   },
   [ChainId.POLYGON_MUMBAI]: {
     startBlock: 25258326,
@@ -322,6 +325,7 @@ export const CHAIN_INFO: {
     nativeCurrency: {
       symbol: 'ETH',
     },
+    startBlockV2: 117327692,
   },
   [ChainId.OPTIMISM_GOERLI]: {
     startBlock: 1324620,
@@ -338,6 +342,7 @@ export const CHAIN_INFO: {
     nativeCurrency: {
       symbol: 'ETH',
     },
+    startBlockV2: 189649987,
   },
   [ChainId.ARBITRUM_GOERLI]: {
     startBlock: 383218,
@@ -394,6 +399,7 @@ export const CHAIN_INFO: {
     nativeCurrency: {
       symbol: 'ETH',
     },
+    startBlockV2: 11780035,
   },
   [ChainId.ZORA_GOERLI]: {
     startBlock: 968023,
@@ -410,6 +416,7 @@ export const CHAIN_INFO: {
     nativeCurrency: {
       symbol: 'ETH',
     },
+    startBlockV2: 6062586,
   },
   [ChainId.BASE]: {
     startBlock: 2293907,
@@ -418,6 +425,7 @@ export const CHAIN_INFO: {
     nativeCurrency: {
       symbol: 'ETH',
     },
+    startBlockV2: 11732477,
   },
   [ChainId.BASE_GOERLI]: {
     startBlock: 8858512,
@@ -434,6 +442,7 @@ export const CHAIN_INFO: {
     nativeCurrency: {
       symbol: 'ETH',
     },
+    startBlockV2: 7243250,
   },
 }
 

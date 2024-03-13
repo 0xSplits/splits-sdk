@@ -11,13 +11,13 @@ import {
   zeroAddress,
   getContract,
   TypedDataDomain,
-  parseAbiItem,
 } from 'viem'
 import { splitV2ABI } from '../constants/abi/splitV2'
 import { splitV2FactoryABI } from '../constants/abi/splitV2Factory'
 import {
   CallData,
   CreateSplitV2Config,
+  DistributeSplitConfig,
   SetPausedConfig,
   SplitV2,
   SplitV2ExecCallsConfig,
@@ -222,41 +222,107 @@ class SplitV2Transactions extends BaseTransactions {
     })
   }
 
-  // TODO: update this once metadata functions are merged
-  // protected async _distribute({
-  //   splitAddress,
-  //   token,
-  //   distributor,
-  //   transactionOverrides = {},
-  // }: DistributeSplitConfig): Promise<TransactionFormat> {
-  //   validateAddress(splitAddress)
-  //   validateAddress(token)
-  //   validateAddress(distributor)
-  //   recipients.map((recipient) => validateAddress(recipient))
+  protected async _distribute({
+    splitAddress,
+    token,
+    distributor,
+    transactionOverrides = {},
+  }: DistributeSplitConfig): Promise<TransactionFormat> {
+    validateAddress(splitAddress)
+    validateAddress(token)
+    validateAddress(distributor)
 
-  //   this._requirePublicClient()
-  //   if (this._shouldRequireWalletClient) this._requireWalletClient()
+    this._requirePublicClient()
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
 
-  //   const totalAllocation = PERCENTAGE_SCALE
-  //   const distributionIncentive = getNumberFromPercent(distributorFeePercent)
+    const { split } = await this._getSplitMetadata(splitAddress)
 
-  //   return this._executeContractFunction({
-  //     contractAddress: splitAddress,
-  //     contractAbi: splitV2FactoryABI,
-  //     functionName: 'distribute',
-  //     functionArgs: [
-  //       {
-  //         recipients,
-  //         allocations,
-  //         totalAllocation,
-  //         distributionIncentive,
-  //       },
-  //       token,
-  //       distributor,
-  //     ],
-  //     transactionOverrides,
-  //   })
-  // }
+    return this._executeContractFunction({
+      contractAddress: splitAddress,
+      contractAbi: splitV2FactoryABI,
+      functionName: 'distribute',
+      functionArgs: [
+        {
+          recipients: split.recipients,
+          allocations: split.allocations,
+          totalAllocation: split.totalAllocation,
+          distributionIncentive: split.distributionIncentive,
+        },
+        token,
+        distributor,
+      ],
+      transactionOverrides,
+    })
+  }
+
+  async _paused(splitAddress: Address): Promise<boolean> {
+    this._requirePublicClient()
+    return this._getSplitV2Contract(splitAddress).read.paused()
+  }
+
+  async _owner(splitAddress: Address): Promise<Address> {
+    this._requirePublicClient()
+    return this._getSplitV2Contract(splitAddress).read.owner()
+  }
+
+  async _getSplitMetadata(splitAddress: Address): Promise<{ split: SplitV2 }> {
+    this._requirePublicClient()
+
+    const [createLogs, owner, paused] = await Promise.all([
+      this._publicClient?.getLogs({
+        event: splitCreatedEvent,
+        address: [
+          getSplitV2FactoryAddress(this._chainId, SplitV2Type.Pull),
+          getSplitV2FactoryAddress(this._chainId, SplitV2Type.Push),
+        ],
+        args: {
+          split: splitAddress,
+        },
+        strict: true,
+        fromBlock: getSplitV2FactoriesStartBlock(this._chainId),
+      }),
+      this._owner(splitAddress),
+      this._paused(splitAddress),
+    ])
+
+    if (!createLogs) throw new Error('Split not found')
+
+    const updateLogs = await this._publicClient?.getLogs({
+      address: splitAddress,
+      event: splitUpdatedEvent,
+      strict: true,
+      fromBlock: createLogs[0].blockNumber,
+    })
+
+    let split: SplitV2 = {
+      address: splitAddress,
+      recipients: createLogs[0].args.splitParams.recipients as Address[],
+      allocations: createLogs[0].args.splitParams.allocations as bigint[],
+      totalAllocation: createLogs[0].args.splitParams.totalAllocation,
+      distributionIncentive:
+        createLogs[0].args.splitParams.distributionIncentive,
+      creator: createLogs[0].args.creator,
+      type: getSplitType(this._chainId, createLogs[0].address),
+      owner,
+      paused,
+    }
+
+    if (!updateLogs || updateLogs.length == 0) return { split }
+
+    updateLogs.sort((a, b) => {
+      if (a.blockNumber === b.blockNumber)
+        return a.blockNumber > b.blockNumber ? -1 : 1
+      else return a.logIndex > b.logIndex ? -1 : 1
+    })
+
+    split.recipients = updateLogs[0].args._split.recipients as Address[]
+    split.allocations = updateLogs[0].args._split.allocations as bigint[]
+    split.totalAllocation = updateLogs[0].args._split.totalAllocation
+    split.distributionIncentive =
+      updateLogs[0].args._split.distributionIncentive
+
+    return { split }
+  }
 
   protected _getSplitV2Contract(
     splitAddress: Address,
@@ -697,70 +763,15 @@ export class SplitV2Client extends SplitV2Transactions {
   }
 
   async paused(splitAddress: Address): Promise<boolean> {
-    this._requirePublicClient()
-    return this._getSplitV2Contract(splitAddress).read.paused()
+    return this._paused(splitAddress)
   }
 
   async owner(splitAddress: Address): Promise<Address> {
-    this._requirePublicClient()
-    return this._getSplitV2Contract(splitAddress).read.owner()
+    return this._owner(splitAddress)
   }
 
   async getSplitMetadata(splitAddress: Address): Promise<{ split: SplitV2 }> {
-    this._requirePublicClient()
-
-    const [createLogs, owner] = await Promise.all([
-      this._publicClient?.getLogs({
-        event: splitCreatedEvent,
-        address: [
-          getSplitV2FactoryAddress(this._chainId, SplitV2Type.Pull),
-          getSplitV2FactoryAddress(this._chainId, SplitV2Type.Push),
-        ],
-        args: {
-          split: splitAddress,
-        },
-        strict: true,
-        fromBlock: getSplitV2FactoriesStartBlock(this._chainId),
-      }),
-      this.owner(splitAddress),
-    ])
-
-    if (!createLogs) throw new Error('Split not found')
-
-    const updateLogs = await this._publicClient?.getLogs({
-      address: splitAddress,
-      event: splitUpdatedEvent,
-      strict: true,
-      fromBlock: createLogs[0].blockNumber,
-    })
-
-    let split: SplitV2 = {
-      address: splitAddress,
-      recipients: createLogs[0].args.splitParams.recipients as Address[],
-      allocations: createLogs[0].args.splitParams.allocations as bigint[],
-      totalAllocation: createLogs[0].args.splitParams.totalAllocation,
-      distributionIncentive:
-        createLogs[0].args.splitParams.distributionIncentive,
-      type: getSplitType(this._chainId, createLogs[0].address),
-      owner,
-      creator: createLogs[0].args.creator,
-    }
-
-    if (!updateLogs || updateLogs.length == 0) return { split }
-
-    updateLogs.sort((a, b) => {
-      if (a.blockNumber === b.blockNumber)
-        return a.blockNumber > b.blockNumber ? -1 : 1
-      else return a.logIndex > b.logIndex ? -1 : 1
-    })
-
-    split.recipients = updateLogs[0].args._split.recipients as Address[]
-    split.allocations = updateLogs[0].args._split.allocations as bigint[]
-    split.totalAllocation = updateLogs[0].args._split.totalAllocation
-    split.distributionIncentive =
-      updateLogs[0].args._split.distributionIncentive
-
-    return { split }
+    return await this._getSplitMetadata(splitAddress)
   }
 }
 
