@@ -51,6 +51,8 @@ import { validateAddress } from '../utils'
 
 type WarehouseAbiType = typeof warehouseAbi
 
+const nativeTokenAddress: Address = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
+
 class WarehouseTransactions extends BaseTransactions {
   protected readonly _warehouseAbi
   protected readonly _warehouseContract: GetContractReturnType<
@@ -326,6 +328,7 @@ class WarehouseTransactions extends BaseTransactions {
       contractAbi: warehouseAbi,
       functionName: 'deposit',
       functionArgs: [receiver, token, amount],
+      value: token === nativeTokenAddress ? amount : BigInt(0),
       transactionOverrides,
     })
 
@@ -349,6 +352,7 @@ class WarehouseTransactions extends BaseTransactions {
       contractAbi: warehouseAbi,
       functionName: 'batchDeposit',
       functionArgs: [receivers, token, amounts],
+      value: amounts.reduce((a, b) => a + b),
       transactionOverrides,
     })
 
@@ -437,7 +441,7 @@ class WarehouseTransactions extends BaseTransactions {
       contractAddress: this._warehouseContract.address,
       contractAbi: warehouseAbi,
       functionName: 'setWithdrawConfig',
-      functionArgs: [incentive, paused],
+      functionArgs: [{ incentive, paused }],
       transactionOverrides,
     })
 
@@ -1387,7 +1391,7 @@ class WarehouseSignature extends WarehouseTransactions {
         id: fromHex(approveBySigArgs.token, 'bigint'),
         amount: approveBySigArgs.amount,
         target: zeroAddress,
-        data: '0x',
+        data: '' as Hex,
         nonce: approveBySigArgs.nonce,
         deadline: approveBySigArgs.deadline,
       },

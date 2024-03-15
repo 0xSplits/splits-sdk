@@ -449,12 +449,14 @@ export class BaseTransactions extends BaseClient {
     functionName,
     functionArgs,
     transactionOverrides,
+    value,
   }: {
     contractAddress: Address
     contractAbi: Abi
     functionName: string
     functionArgs?: unknown[]
     transactionOverrides: TransactionOverrides
+    value?: bigint
   }) {
     this._requirePublicClient()
     if (!this._publicClient) throw new Error()
@@ -470,6 +472,7 @@ export class BaseTransactions extends BaseClient {
         functionName,
         account: this._walletClient.account,
         args: functionArgs ?? [],
+        value,
         ...transactionOverrides,
       })
       return gasEstimate
@@ -492,6 +495,7 @@ export class BaseTransactions extends BaseClient {
         functionName,
         account: this._walletClient.account,
         args: functionArgs ?? [],
+        value,
         ...transactionOverrides,
       })
       const txHash = await this._walletClient.writeContract(request)

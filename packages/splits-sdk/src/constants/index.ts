@@ -122,7 +122,7 @@ export const getSplitV2FactoriesStartBlock = (chainId: number): bigint => {
   return BigInt(CHAIN_INFO[chainId].startBlockV2 as number)
 }
 
-enum ChainId {
+export enum ChainId {
   MAINNET = 1,
   GOERLI = 5,
   SEPOLIA = 11155111,
@@ -145,6 +145,7 @@ enum ChainId {
   BASE = 8453,
   BASE_GOERLI = 84531,
   BASE_SEPOLIA = 84532,
+  FOUNDRY = 31337,
 }
 
 export const ETHEREUM_CHAIN_IDS = [
@@ -206,6 +207,7 @@ export const SPLITS_V2_SUPPORTED_CHAIN_IDS = [
   ChainId.BASE_SEPOLIA,
   ChainId.ZORA_SEPOLIA,
   ChainId.OPTIMISM_SEPOLIA,
+  ChainId.FOUNDRY,
 ]
 
 export const SPLITS_SUBGRAPH_CHAIN_IDS = ALL_CHAIN_IDS.slice()

@@ -19,6 +19,10 @@ import {
   getNumberFromPercent,
 } from './numbers'
 import { getTokenData } from './tokens'
+import {
+  InvalidDistributorFeePercentErrorV2,
+  InvalidTotalAllocation,
+} from '../errors'
 
 export * from './ens'
 export * from './numbers'
@@ -135,7 +139,7 @@ export const getAddressAndAllocationFromRecipients = (
   }
 }
 
-const MAX_DISTRIBUTION_INCENTIVE = 6.5535
+export const MAX_DISTRIBUTION_INCENTIVE = 6.5535
 
 export const getValidatedSplitV2Config = (
   recipients: SplitRecipient[],
@@ -150,11 +154,9 @@ export const getValidatedSplitV2Config = (
   const { recipientAddresses, recipientAllocations } =
     getAddressAndAllocationFromRecipients(recipients)
 
+  if (distributorFeePercent > MAX_DISTRIBUTION_INCENTIVE)
+    throw new InvalidDistributorFeePercentErrorV2(distributorFeePercent)
   const distributionIncentive = getNumberFromPercent(distributorFeePercent)
-  if (distributionIncentive > MAX_DISTRIBUTION_INCENTIVE)
-    throw new Error(
-      `Invalid distribution incentive, it should be less than ${MAX_DISTRIBUTION_INCENTIVE}%`,
-    )
 
   const calculatedTotalAllocation = recipientAllocations.reduce((a, b) => a + b)
 
@@ -162,11 +164,9 @@ export const getValidatedSplitV2Config = (
     totalAllocationPercent &&
     getBigIntFromPercent(totalAllocationPercent) !== calculatedTotalAllocation
   )
-    throw new Error(
-      'Total allocation does not match sum of recipients allocation',
-    )
+    throw new InvalidTotalAllocation(totalAllocationPercent)
   else if (calculatedTotalAllocation !== PERCENTAGE_SCALE)
-    throw new Error('Sum of recipient allocation should be 100%')
+    throw new InvalidTotalAllocation()
 
   return {
     recipientAddresses,

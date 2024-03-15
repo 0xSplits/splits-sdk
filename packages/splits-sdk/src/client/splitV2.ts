@@ -36,6 +36,7 @@ import {
 import { applyMixins } from './mixin'
 import {
   SPLITS_SUPPORTED_CHAIN_IDS,
+  SPLITS_V2_SUPPORTED_CHAIN_IDS,
   TransactionType,
   getSplitV2FactoriesStartBlock,
   getSplitV2FactoryAddress,
@@ -46,7 +47,11 @@ import {
   getValidatedSplitV2Config,
   getSplitType,
 } from '../utils'
-import { TransactionFailedError, UnsupportedChainIdError } from '../errors'
+import {
+  SaltRequired,
+  TransactionFailedError,
+  UnsupportedChainIdError,
+} from '../errors'
 
 type SplitFactoryABI = typeof splitV2FactoryABI
 type SplitV2ABI = typeof splitV2ABI
@@ -208,7 +213,7 @@ class SplitV2Transactions extends BaseTransactions {
 
     return this._executeContractFunction({
       contractAddress: splitAddress,
-      contractAbi: splitV2FactoryABI,
+      contractAbi: splitV2ABI,
       functionName: 'updateSplit',
       functionArgs: [
         {
@@ -237,9 +242,11 @@ class SplitV2Transactions extends BaseTransactions {
 
     const { split } = await this._getSplitMetadata(splitAddress)
 
+    console.log(split)
+
     return this._executeContractFunction({
       contractAddress: splitAddress,
-      contractAbi: splitV2FactoryABI,
+      contractAbi: splitV2ABI,
       functionName: 'distribute',
       functionArgs: [
         {
@@ -391,7 +398,7 @@ export class SplitV2Client extends SplitV2Transactions {
       includeEnsNames,
     })
 
-    if (!SPLITS_SUPPORTED_CHAIN_IDS.includes(chainId))
+    if (!SPLITS_V2_SUPPORTED_CHAIN_IDS.includes(chainId))
       throw new UnsupportedChainIdError(chainId, SPLITS_SUPPORTED_CHAIN_IDS)
 
     this.eventTopics = {
@@ -553,27 +560,27 @@ export class SplitV2Client extends SplitV2Transactions {
     throw new TransactionFailedError()
   }
 
-  // async distribute(distributeArgs: DistributeSplitConfig): Promise<{
-  //   event: Log
-  // }> {
-  //   const txHash = await this._distribute(distributeArgs)
+  async distribute(distributeArgs: DistributeSplitConfig): Promise<{
+    event: Log
+  }> {
+    const txHash = await this._distribute(distributeArgs)
 
-  //   if (!this._isContractTransaction(txHash))
-  //     throw new Error('Invalid response')
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
 
-  //   const events = await this.getTransactionEvents({
-  //     txHash,
-  //     eventTopics: this.eventTopics.splitDistributed,
-  //   })
-  //   const event = events.length > 0 ? events[0] : undefined
-  //   if (event) {
-  //     return {
-  //       event,
-  //     }
-  //   }
+    const events = await this.getTransactionEvents({
+      txHash,
+      eventTopics: this.eventTopics.splitDistributed,
+    })
+    const event = events.length > 0 ? events[0] : undefined
+    if (event) {
+      return {
+        event,
+      }
+    }
 
-  //   throw new TransactionFailedError()
-  // }
+    throw new TransactionFailedError()
+  }
 
   async updateSplit(updateSplitArgs: UpdateSplitV2Config): Promise<{
     event: Log
@@ -683,7 +690,7 @@ export class SplitV2Client extends SplitV2Transactions {
       createSplitArgs.splitType ?? SplitV2Type.Pull,
     )
 
-    if (!createSplitArgs.salt) throw new Error('Salt required')
+    if (!createSplitArgs.salt) throw new SaltRequired()
     const [splitAddress, deployed] = await factory.read.isDeployed([
       {
         recipients: recipientAddresses,
