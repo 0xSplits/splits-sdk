@@ -78,7 +78,7 @@ class WarehouseTransactions extends BaseTransactions {
     })
 
     this._warehouseContract = getContract({
-      address: getWarehouseAddress(chainId),
+      address: getWarehouseAddress(),
       abi: warehouseAbi,
       publicClient: this._publicClient,
     })
@@ -465,6 +465,7 @@ class WarehouseTransactions extends BaseTransactions {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class WarehouseClient extends WarehouseTransactions {
   readonly eventTopics: { [key: string]: Hex[] }
   readonly callData: WarehouseCallData
@@ -928,7 +929,7 @@ export class WarehouseClient extends WarehouseTransactions {
     if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
-    let events = await this.getTransactionEvents({
+    const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.transfer,
     })
@@ -974,7 +975,7 @@ export class WarehouseClient extends WarehouseTransactions {
     if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
-    let events = await this.getTransactionEvents({
+    const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.withdraw,
     })
@@ -996,7 +997,7 @@ export class WarehouseClient extends WarehouseTransactions {
     if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
 
-    let events = await this.getTransactionEvents({
+    const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.transfer,
     })
@@ -1035,9 +1036,11 @@ export class WarehouseClient extends WarehouseTransactions {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface WarehouseClient extends BaseClientMixin {}
 applyMixins(WarehouseClient, [BaseClientMixin])
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 class WarehouseGasEstimates extends WarehouseTransactions {
   constructor({
     chainId,
@@ -1193,6 +1196,7 @@ class WarehouseGasEstimates extends WarehouseTransactions {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 interface WarehouseGasEstimates extends BaseGasEstimatesMixin {}
 applyMixins(WarehouseGasEstimates, [BaseGasEstimatesMixin])
 

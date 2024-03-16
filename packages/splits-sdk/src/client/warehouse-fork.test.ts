@@ -302,7 +302,7 @@ describe('Warehouse writes', () => {
     test('passes', async () => {
       const spender = CHARLIE
       const caller = ALICE
-      let client = createClient(caller)
+      const client = createClient(caller)
 
       const { event } = await client.approve({
         spender,
@@ -364,7 +364,7 @@ describe('Warehouse writes', () => {
     test('passes', async () => {
       const operator = CHARLIE
       const owner = ALICE
-      let client = createClient(owner)
+      const client = createClient(owner)
 
       const { event } = await client.setOperator({
         operator,
@@ -418,7 +418,7 @@ describe('Warehouse writes', () => {
 
     test('passes', async () => {
       const caller = ALICE
-      let client = createClient(caller)
+      const client = createClient(caller)
 
       const { event } = await client.invalidateNonce({
         nonce: BigInt(0),
@@ -483,7 +483,7 @@ describe('Warehouse writes', () => {
     // test('passes', async () => {
     //   const spender = CHARLIE
     //   const caller = ALICE
-    //   let client = createClient(caller)
+    //   const client = createClient(caller)
     // })
   })
 
@@ -540,7 +540,7 @@ describe('Warehouse writes', () => {
     // test('passes', async () => {
     //   const spender = CHARLIE
     //   const caller = ALICE
-    //   let client = createClient(caller)
+    //   const client = createClient(caller)
     // })
   })
 
@@ -593,7 +593,7 @@ describe('Warehouse writes', () => {
     // test('passes', async () => {
     //   const spender = CHARLIE
     //   const owner = ALICE
-    //   let client = createClient(owner)
+    //   const client = createClient(owner)
 
     //   const config = await client.sign.approveBySig({
     //     spender,
@@ -664,7 +664,7 @@ describe('Warehouse writes', () => {
     test('passes', async () => {
       const receiver = ALICE
       const amount = parseEther('1')
-      let client = createClient(receiver)
+      const client = createClient(receiver)
 
       const { event } = await client.deposit({
         receiver,
@@ -728,7 +728,7 @@ describe('Warehouse writes', () => {
       const receiver_2 = BOB
 
       const amount = parseEther('1')
-      let client = createClient(caller)
+      const client = createClient(caller)
 
       const receivers = [receiver_1, receiver_2]
 
@@ -792,7 +792,7 @@ describe('Warehouse writes', () => {
       const caller = CHARLIE
       const amount = parseEther('1')
 
-      let client = createClient(caller)
+      const client = createClient(caller)
 
       await client.deposit({
         receiver: caller,
@@ -861,7 +861,7 @@ describe('Warehouse writes', () => {
       const caller = CHARLIE
       const amount = parseEther('1')
 
-      let client = createClient(caller)
+      const client = createClient(caller)
 
       await client.deposit({
         receiver: caller,
@@ -932,7 +932,7 @@ describe('Warehouse writes', () => {
       const caller = CHARLIE
       const amount = parseEther('1')
 
-      let client = createClient(caller)
+      const client = createClient(caller)
 
       await client.deposit({
         receiver: caller,
@@ -1002,7 +1002,7 @@ describe('Warehouse writes', () => {
     test('passes', async () => {
       const caller = CHARLIE
 
-      let client = createClient(caller)
+      const client = createClient(caller)
 
       const { event } = await client.setWithdrawConfig({
         paused: false,
@@ -1048,7 +1048,7 @@ describe('Warehouse reads', () => {
     })
 
     test('passes', async () => {
-      let client = createClient()
+      const client = createClient()
 
       const { name } = await client.getName({
         tokenAddress: nativeTokenAddress,
@@ -1073,7 +1073,7 @@ describe('Warehouse reads', () => {
     })
 
     test('passes', async () => {
-      let client = createClient()
+      const client = createClient()
 
       const { symbol } = await client.getSymbol({
         tokenAddress: nativeTokenAddress,
@@ -1098,7 +1098,7 @@ describe('Warehouse reads', () => {
     })
 
     test('passes', async () => {
-      let client = createClient()
+      const client = createClient()
 
       const { decimals } = await client.getDecimals({
         tokenAddress: nativeTokenAddress,
@@ -1123,7 +1123,7 @@ describe('Warehouse reads', () => {
     })
 
     test('passes', async () => {
-      let client = createClient()
+      const client = createClient()
 
       const { withdrawConfig } = await client.getWithdrawConfig({
         userAddress: ALICE,
@@ -1150,7 +1150,7 @@ describe('Warehouse reads', () => {
     })
 
     test('passes', async () => {
-      let client = createClient()
+      const client = createClient()
 
       const { isValidNonce } = await client.isValidNonce({
         userAddress: ALICE,
@@ -1173,7 +1173,7 @@ describe('Warehouse reads', () => {
     })
 
     test('passes', async () => {
-      let client = createClient()
+      const client = createClient()
 
       const { domain } = await client.eip712Domain()
 
@@ -1197,7 +1197,7 @@ describe('Warehouse reads', () => {
     })
 
     test('passes', async () => {
-      let client = createClient()
+      const client = createClient()
 
       const { isOperator } = await client.isOperator({
         operatorAddress: ALICE,
@@ -1224,7 +1224,7 @@ describe('Warehouse reads', () => {
     })
 
     test('passes', async () => {
-      let client = createClient()
+      const client = createClient()
 
       const { balance } = await client.balanceOf({
         ownerAddress: ALICE,
@@ -1251,7 +1251,7 @@ describe('Warehouse reads', () => {
       })
 
       test('passes', async () => {
-        let client = createClient()
+        const client = createClient()
 
         const { allowance } = await client.allowance({
           ownerAddress: ALICE,

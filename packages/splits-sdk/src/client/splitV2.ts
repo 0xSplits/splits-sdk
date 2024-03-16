@@ -242,8 +242,6 @@ class SplitV2Transactions extends BaseTransactions {
 
     const { split } = await this._getSplitMetadata(splitAddress)
 
-    console.log(split)
-
     return this._executeContractFunction({
       contractAddress: splitAddress,
       contractAbi: splitV2ABI,
@@ -301,7 +299,7 @@ class SplitV2Transactions extends BaseTransactions {
       fromBlock: createLogs[0].blockNumber,
     })
 
-    let split: SplitV2 = {
+    const split: SplitV2 = {
       address: splitAddress,
       recipients: createLogs[0].args.splitParams.recipients as Address[],
       allocations: createLogs[0].args.splitParams.allocations as bigint[],

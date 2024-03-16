@@ -117,7 +117,7 @@ class SwapperTransactions extends BaseTransactions {
       getFormattedScaledOfferFactorOverrides(scaledOfferFactorOverrides)
 
     const result = await this._executeContractFunction({
-      contractAddress: getSwapperFactoryAddress(this._chainId),
+      contractAddress: getSwapperFactoryAddress(),
       contractAbi: swapperFactoryAbi,
       functionName: 'createSwapper',
       functionArgs: [
@@ -163,7 +163,7 @@ class SwapperTransactions extends BaseTransactions {
       swapperAddress,
     })
 
-    const swapRecipient = getUniV3SwapAddress(this._chainId)
+    const swapRecipient = getUniV3SwapAddress()
     const deadlineTime = Math.floor(Date.now() / 1000) + transactionTimeLimit
 
     const quoteParams: ContractQuoteParams[] = []
@@ -191,7 +191,7 @@ class SwapperTransactions extends BaseTransactions {
     ]
 
     const result = await this._executeContractFunction({
-      contractAddress: getUniV3SwapAddress(this._chainId),
+      contractAddress: getUniV3SwapAddress(),
       contractAbi: uniV3SwapAbi,
       functionName: 'initFlash',
       functionArgs: [swapperAddress, flashParams],
@@ -426,7 +426,7 @@ class SwapperTransactions extends BaseTransactions {
     PublicClient<Transport, Chain>
   > {
     return getContract({
-      address: getUniV3SwapAddress(this._chainId),
+      address: getUniV3SwapAddress(),
       abi: uniV3SwapAbi,
       publicClient: this._publicClient,
     })

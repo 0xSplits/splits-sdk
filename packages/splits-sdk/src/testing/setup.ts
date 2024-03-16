@@ -13,6 +13,7 @@ afterEach(async () => {
 afterEach(async (context) => {
   context.onTestFailed(async () => {
     const logs = await fetchLogs('http://localhost:8545', pool)
+    // eslint-disable-next-line no-console
     console.log(...logs.slice(-20))
   })
 })

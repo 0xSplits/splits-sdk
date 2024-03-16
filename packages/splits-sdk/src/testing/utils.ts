@@ -7,7 +7,6 @@ import {
   Address,
 } from 'viem'
 import { base } from 'viem/chains'
-import { ALICE } from './constants'
 
 /**
  * The id of the current test worker.
