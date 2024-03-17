@@ -1,5 +1,5 @@
-import { FORK_BLOCK_NUMBER, FORK_URL } from './constants.js'
-import { pool, testClient } from './utils.js'
+import { FORK_BLOCK_NUMBER, FORK_URL } from './constants'
+import { pool, testClient } from '../utils.js'
 import { fetchLogs } from '@viem/anvil'
 import { afterEach } from 'vitest'
 

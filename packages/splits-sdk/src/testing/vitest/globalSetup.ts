@@ -1,4 +1,4 @@
-import { ChainId } from '../constants'
+import { ChainId } from '../../constants'
 import { FORK_BLOCK_NUMBER, FORK_URL } from './constants'
 import { startProxy } from '@viem/anvil'
 

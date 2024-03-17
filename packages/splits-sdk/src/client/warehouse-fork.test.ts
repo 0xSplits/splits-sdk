@@ -23,7 +23,12 @@ import { WarehouseClient } from './warehouse'
 import { base, foundry, mainnet } from 'viem/chains'
 import { warehouseAbi } from '../constants/abi/warehouse'
 import { describe, expect, test, beforeEach } from 'vitest'
-import { ALICE, BOB, CHARLIE, FORK_BLOCK_NUMBER } from '../testing/constants'
+import {
+  ALICE,
+  BOB,
+  CHARLIE,
+  FORK_BLOCK_NUMBER,
+} from '../testing/vitest/constants'
 import { publicClient, walletClient } from '../testing/utils'
 
 describe('Client config validation', () => {

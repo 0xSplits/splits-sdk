@@ -25,7 +25,7 @@ import {
 import { SplitV2Client } from './splitV2'
 import { base, mainnet } from 'viem/chains'
 import { describe, expect, test, beforeEach } from 'vitest'
-import { ALICE, BOB } from '../testing/constants'
+import { ALICE, BOB } from '../testing/vitest/constants'
 import { publicClient, testClient, walletClient } from '../testing/utils'
 import { SplitRecipient, SplitV2Type } from '../types'
 import { splitV2ABI } from '../constants/abi/splitV2'

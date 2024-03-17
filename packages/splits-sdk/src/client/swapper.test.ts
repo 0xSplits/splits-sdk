@@ -90,7 +90,7 @@ const mockPublicClient = jest.fn(() => {
         functionName: string
         args: unknown[]
       }) => {
-        if (address === getSwapperFactoryAddress(1)) {
+        if (address === getSwapperFactoryAddress()) {
           type writeActions = typeof factoryWriteActions
           type writeKeys = keyof writeActions
           factoryWriteActions[functionName as writeKeys].call(this, ...args)
