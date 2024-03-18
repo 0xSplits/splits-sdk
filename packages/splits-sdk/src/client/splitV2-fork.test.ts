@@ -111,7 +111,7 @@ describe('Split v2 writes', () => {
     const { splitAddress } = await client.createSplit({
       recipients: sampleRecipients,
       distributorFeePercent: 0,
-      controller: ALICE,
+      controllerAddress: ALICE,
     })
 
     return splitAddress
@@ -188,8 +188,8 @@ describe('Split v2 writes', () => {
       const { splitAddress, event } = await client.createSplit({
         recipients: sampleRecipients,
         distributorFeePercent: 6.5,
-        controller: ALICE,
-        creator: ALICE,
+        controllerAddress: ALICE,
+        creatorAddress: ALICE,
       })
 
       const decodedLog = decodeEventLog({
@@ -220,8 +220,8 @@ describe('Split v2 writes', () => {
       const { splitAddress, event } = await client.createSplit({
         recipients: sampleRecipients,
         distributorFeePercent: 6.5,
-        controller: ALICE,
-        creator: ALICE,
+        controllerAddress: ALICE,
+        creatorAddress: ALICE,
         splitType: SplitV2Type.Push,
       })
 
@@ -253,8 +253,8 @@ describe('Split v2 writes', () => {
       const { splitAddress, event } = await client.createSplit({
         recipients: sampleRecipients,
         distributorFeePercent: 6.5,
-        controller: ALICE,
-        creator: ALICE,
+        controllerAddress: ALICE,
+        creatorAddress: ALICE,
         splitType: SplitV2Type.Push,
         salt: '0x0000000000000000000000000000000000000000000000000000000000000000',
       })
@@ -289,8 +289,8 @@ describe('Split v2 writes', () => {
           await client.createSplit({
             recipients: sampleRecipients,
             distributorFeePercent: 7.5,
-            controller: ALICE,
-            creator: ALICE,
+            controllerAddress: ALICE,
+            creatorAddress: ALICE,
           }),
       ).rejects.toThrow(InvalidDistributorFeePercentErrorV2)
     })
@@ -306,8 +306,8 @@ describe('Split v2 writes', () => {
           await client.createSplit({
             recipients: sampleRecipients,
             distributorFeePercent: 6.5,
-            controller: ALICE,
-            creator: ALICE,
+            controllerAddress: ALICE,
+            creatorAddress: ALICE,
           }),
       ).rejects.toThrow(InvalidTotalAllocation)
 
@@ -323,8 +323,8 @@ describe('Split v2 writes', () => {
           await client.createSplit({
             recipients: sampleRecipients,
             distributorFeePercent: 6.5,
-            controller: ALICE,
-            creator: ALICE,
+            controllerAddress: ALICE,
+            creatorAddress: ALICE,
             totalAllocationPercent: 50,
           }),
       ).rejects.toThrow(InvalidTotalAllocation)
@@ -346,7 +346,7 @@ describe('Split v2 writes', () => {
         async () =>
           await badClient.transferOwnership({
             splitAddress: zeroAddress,
-            newOwner: zeroAddress,
+            newController: zeroAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
@@ -365,7 +365,7 @@ describe('Split v2 writes', () => {
         async () =>
           await badClient.transferOwnership({
             splitAddress: zeroAddress,
-            newOwner: zeroAddress,
+            newController: zeroAddress,
           }),
       ).rejects.toThrow(MissingWalletClientError)
     })
@@ -376,7 +376,7 @@ describe('Split v2 writes', () => {
 
       const { event } = await client.transferOwnership({
         splitAddress,
-        newOwner: zeroAddress,
+        newController: zeroAddress,
       })
 
       const decodedLog = decodeEventLog({
@@ -530,8 +530,8 @@ describe('Split v2 writes', () => {
         async () =>
           await badClient.distribute({
             splitAddress,
-            token: nativeTokenAddress,
-            distributor: zeroAddress,
+            tokenAddress: nativeTokenAddress,
+            distributorAddress: zeroAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
@@ -550,8 +550,8 @@ describe('Split v2 writes', () => {
         async () =>
           await badClient.distribute({
             splitAddress,
-            token: nativeTokenAddress,
-            distributor: zeroAddress,
+            tokenAddress: nativeTokenAddress,
+            distributorAddress: zeroAddress,
           }),
       ).rejects.toThrow(MissingWalletClientError)
     })
@@ -567,8 +567,8 @@ describe('Split v2 writes', () => {
 
       const { event } = await client.distribute({
         splitAddress,
-        distributor: zeroAddress,
-        token: nativeTokenAddress,
+        distributorAddress: zeroAddress,
+        tokenAddress: nativeTokenAddress,
       })
 
       const decodedLog = decodeEventLog({
@@ -730,7 +730,7 @@ describe('Split v2 reads', () => {
     const { splitAddress } = await client.createSplit({
       recipients: sampleRecipients,
       distributorFeePercent: 0,
-      controller: ALICE,
+      controllerAddress: ALICE,
     })
 
     return splitAddress
@@ -768,8 +768,8 @@ describe('Split v2 reads', () => {
       await client.predictDeterministicAddress({
         recipients: sampleRecipients,
         distributorFeePercent: 6.5,
-        controller: ALICE,
-        creator: ALICE,
+        controllerAddress: ALICE,
+        creatorAddress: ALICE,
       })
     })
 
@@ -780,8 +780,8 @@ describe('Split v2 reads', () => {
       await client.predictDeterministicAddress({
         recipients: sampleRecipients,
         distributorFeePercent: 6.5,
-        controller: ALICE,
-        creator: ALICE,
+        controllerAddress: ALICE,
+        creatorAddress: ALICE,
         splitType: SplitV2Type.Push,
         salt: '0x0000000000000000000000000000000000000000000000000000000000000000',
       })
@@ -796,8 +796,8 @@ describe('Split v2 reads', () => {
           await client.predictDeterministicAddress({
             recipients: sampleRecipients,
             distributorFeePercent: 7.5,
-            controller: ALICE,
-            creator: ALICE,
+            controllerAddress: ALICE,
+            creatorAddress: ALICE,
           }),
       ).rejects.toThrow(InvalidDistributorFeePercentErrorV2)
     })
@@ -813,8 +813,8 @@ describe('Split v2 reads', () => {
           await client.predictDeterministicAddress({
             recipients: sampleRecipients,
             distributorFeePercent: 6.5,
-            controller: ALICE,
-            creator: ALICE,
+            controllerAddress: ALICE,
+            creatorAddress: ALICE,
           }),
       ).rejects.toThrow(InvalidTotalAllocation)
 
@@ -830,8 +830,8 @@ describe('Split v2 reads', () => {
           await client.predictDeterministicAddress({
             recipients: sampleRecipients,
             distributorFeePercent: 6.5,
-            controller: ALICE,
-            creator: ALICE,
+            controllerAddress: ALICE,
+            creatorAddress: ALICE,
             totalAllocationPercent: 50,
           }),
       ).rejects.toThrow(InvalidTotalAllocation)
@@ -873,8 +873,8 @@ describe('Split v2 reads', () => {
       const { deployed } = await client.isDeployed({
         recipients: sampleRecipients,
         distributorFeePercent: 6.5,
-        controller: ALICE,
-        creator: ALICE,
+        controllerAddress: ALICE,
+        creatorAddress: ALICE,
         splitType: SplitV2Type.Push,
         salt: '0x0000000000000000000000000000000000000000000000000000000000000000',
       })
@@ -891,8 +891,8 @@ describe('Split v2 reads', () => {
           await client.isDeployed({
             recipients: sampleRecipients,
             distributorFeePercent: 7.5,
-            controller: ALICE,
-            creator: ALICE,
+            controllerAddress: ALICE,
+            creatorAddress: ALICE,
             salt: '0x0000000000000000000000000000000000000000000000000000000000000000',
           }),
       ).rejects.toThrow(InvalidDistributorFeePercentErrorV2)
@@ -909,8 +909,8 @@ describe('Split v2 reads', () => {
           await client.isDeployed({
             recipients: sampleRecipients,
             distributorFeePercent: 6.5,
-            controller: ALICE,
-            creator: ALICE,
+            controllerAddress: ALICE,
+            creatorAddress: ALICE,
             salt: '0x0000000000000000000000000000000000000000000000000000000000000000',
           }),
       ).rejects.toThrow(InvalidTotalAllocation)
@@ -927,8 +927,8 @@ describe('Split v2 reads', () => {
           await client.isDeployed({
             recipients: sampleRecipients,
             distributorFeePercent: 6.5,
-            controller: ALICE,
-            creator: ALICE,
+            controllerAddress: ALICE,
+            creatorAddress: ALICE,
             totalAllocationPercent: 50,
             salt: '0x0000000000000000000000000000000000000000000000000000000000000000',
           }),
@@ -957,10 +957,10 @@ describe('Split v2 reads', () => {
 
       const splitAddress = await createDefaultSplitWithOwner()
 
-      const { splitBalance, warehouseBalance } = await client.getSplitBalance(
+      const { splitBalance, warehouseBalance } = await client.getSplitBalance({
         splitAddress,
-        nativeTokenAddress,
-      )
+        tokenAddress: nativeTokenAddress,
+      })
 
       expect(splitBalance).toEqual(BigInt(0))
       expect(warehouseBalance).toEqual(BigInt(0))
@@ -974,7 +974,7 @@ describe('Split v2 reads', () => {
       })
 
       await expect(
-        async () => await badClient.paused(zeroAddress),
+        async () => await badClient.paused({ splitAddress: zeroAddress }),
       ).rejects.toThrow(MissingPublicClientError)
     })
 
@@ -984,7 +984,7 @@ describe('Split v2 reads', () => {
 
       const splitAddress = await createDefaultSplitWithOwner()
 
-      const paused = await client.paused(splitAddress)
+      const { paused } = await client.paused({ splitAddress })
 
       expect(paused).toEqual(false)
     })
@@ -997,7 +997,7 @@ describe('Split v2 reads', () => {
       })
 
       await expect(
-        async () => await badClient.owner(zeroAddress),
+        async () => await badClient.controller({ splitAddress: zeroAddress }),
       ).rejects.toThrow(MissingPublicClientError)
     })
 
@@ -1007,9 +1007,9 @@ describe('Split v2 reads', () => {
 
       const splitAddress = await createDefaultSplitWithOwner()
 
-      const owner = await client.owner(splitAddress)
+      const { controllerAddress } = await client.controller({ splitAddress })
 
-      expect(owner).toEqual(ALICE)
+      expect(controllerAddress).toEqual(ALICE)
     })
   })
 
@@ -1040,11 +1040,11 @@ describe('Split v2 reads', () => {
         distributorFeePercent: 1,
       })
 
-      const { split } = await client.getSplitMetadata(splitAddress)
+      const { split } = await client.getSplitMetadata({ splitAddress })
 
       expect(split.address).toEqual(splitAddress)
       expect(split.distributionIncentive).toEqual(10000)
-      expect(split.owner).toEqual(ALICE)
+      expect(split.controllerAddress).toEqual(ALICE)
     })
   })
 })

@@ -47,7 +47,7 @@ import {
 } from '../constants'
 import { TransactionFailedError, UnsupportedChainIdError } from '../errors'
 import { applyMixins } from './mixin'
-import { validateAddress } from '../utils'
+import { getNumberFromPercent, validateAddress } from '../utils'
 
 type WarehouseAbiType = typeof warehouseAbi
 
@@ -87,8 +87,8 @@ class WarehouseTransactions extends BaseTransactions {
   }
 
   protected async _transfer({
-    receiver,
-    token,
+    receiverAddress: receiver,
+    tokenAddress: token,
     amount,
     transactionOverrides = {},
   }: WarehouseTransferConfig): Promise<TransactionFormat> {
@@ -110,9 +110,9 @@ class WarehouseTransactions extends BaseTransactions {
   }
 
   protected async _transferFrom({
-    sender,
-    receiver,
-    token,
+    senderAddress: sender,
+    receiverAddress: receiver,
+    tokenAddress: token,
     amount,
     transactionOverrides = {},
   }: WarehouseTransferFromConfig): Promise<TransactionFormat> {
@@ -135,8 +135,8 @@ class WarehouseTransactions extends BaseTransactions {
   }
 
   protected async _approve({
-    spender,
-    token,
+    spenderAddress: spender,
+    tokenAddress: token,
     amount,
     transactionOverrides = {},
   }: WarehouseApproveConfig): Promise<TransactionFormat> {
@@ -158,7 +158,7 @@ class WarehouseTransactions extends BaseTransactions {
   }
 
   protected async _setOperator({
-    operator,
+    operatorAddress: operator,
     approved,
     transactionOverrides = {},
   }: WarehouseSetOperatorConfig): Promise<TransactionFormat> {
@@ -197,11 +197,11 @@ class WarehouseTransactions extends BaseTransactions {
   }
 
   protected async _temporaryApproveAndCall({
-    spender,
-    operator,
-    token,
+    spenderAddress: spender,
+    operator: operator,
+    tokenAddress: token,
     amount,
-    target,
+    targetAddress: target,
     data,
     transactionOverrides = {},
   }: WarehouseTemporaryApproveAndCallConfig): Promise<TransactionFormat> {
@@ -231,12 +231,12 @@ class WarehouseTransactions extends BaseTransactions {
   }
 
   protected async _temporaryApproveAndCallBySig({
-    owner,
-    spender,
+    ownerAddress: owner,
+    spenderAddress: spender,
     operator,
-    token,
+    tokenAddress: token,
     amount,
-    target,
+    targetAddress: target,
     data,
     nonce,
     deadline,
@@ -274,10 +274,10 @@ class WarehouseTransactions extends BaseTransactions {
   }
 
   protected async _approveBySig({
-    owner,
-    spender,
+    ownerAddress: owner,
+    spenderAddress: spender,
     operator,
-    token,
+    tokenAddress: token,
     amount,
     nonce,
     deadline,
@@ -312,8 +312,8 @@ class WarehouseTransactions extends BaseTransactions {
   }
 
   protected async _deposit({
-    receiver,
-    token,
+    receiverAddress: receiver,
+    tokenAddress: token,
     amount,
     transactionOverrides = {},
   }: WarehouseDepositConfig): Promise<TransactionFormat> {
@@ -336,8 +336,8 @@ class WarehouseTransactions extends BaseTransactions {
   }
 
   protected async _batchDeposit({
-    receivers,
-    token,
+    receiversAddresses: receivers,
+    tokenAddress: token,
     amounts,
     transactionOverrides = {},
   }: WarehouseBatchDepositConfig): Promise<TransactionFormat> {
@@ -360,8 +360,8 @@ class WarehouseTransactions extends BaseTransactions {
   }
 
   protected async _withdraw({
-    owner,
-    token,
+    ownerAddress: owner,
+    tokenAddress: token,
     transactionOverrides = {},
   }: WarehouseWithdrawConfig): Promise<TransactionFormat> {
     validateAddress(owner)
@@ -382,10 +382,10 @@ class WarehouseTransactions extends BaseTransactions {
   }
 
   protected async _batchWithdraw({
-    owner,
-    tokens,
+    ownerAddress: owner,
+    tokensAddresses: tokens,
     amounts,
-    withdrawer,
+    withdrawerAddress: withdrawer,
     transactionOverrides = {},
   }: WarehouseBatchWithdrawConfig): Promise<TransactionFormat> {
     validateAddress(owner)
@@ -407,8 +407,8 @@ class WarehouseTransactions extends BaseTransactions {
   }
 
   protected async _batchTransfer({
-    receivers,
-    token,
+    receiversAddresses: receivers,
+    tokenAddress: token,
     amounts,
     transactionOverrides = {},
   }: WarehouseBatchTransferConfig): Promise<TransactionFormat> {
@@ -430,7 +430,7 @@ class WarehouseTransactions extends BaseTransactions {
   }
 
   protected async _setWithdrawConfig({
-    incentive,
+    incentivePercent: incentive,
     paused,
     transactionOverrides = {},
   }: WarehouseSetWithdrawConfig): Promise<TransactionFormat> {
@@ -441,7 +441,7 @@ class WarehouseTransactions extends BaseTransactions {
       contractAddress: this._warehouseContract.address,
       contractAbi: warehouseAbi,
       functionName: 'setWithdrawConfig',
-      functionArgs: [{ incentive, paused }],
+      functionArgs: [{ incentive: getNumberFromPercent(incentive), paused }],
       transactionOverrides,
     })
 
@@ -1376,8 +1376,8 @@ class WarehouseSignature extends WarehouseTransactions {
   async approveBySig(
     approveBySigArgs: WarehouseApproveBySig,
   ): Promise<WarehouseApproveBySigConfig> {
-    validateAddress(approveBySigArgs.spender)
-    validateAddress(approveBySigArgs.token)
+    validateAddress(approveBySigArgs.spenderAddress)
+    validateAddress(approveBySigArgs.tokenAddress)
 
     const { domain } = await this._eip712Domain()
 
@@ -1389,10 +1389,10 @@ class WarehouseSignature extends WarehouseTransactions {
       primaryType: 'ERC6909XApproveAndCall',
       message: {
         owner: this._walletClient.account.address,
-        spender: approveBySigArgs.spender,
+        spender: approveBySigArgs.spenderAddress,
         temporary: false,
         operator: approveBySigArgs.operator,
-        id: fromHex(approveBySigArgs.token, 'bigint'),
+        id: fromHex(approveBySigArgs.tokenAddress, 'bigint'),
         amount: approveBySigArgs.amount,
         target: zeroAddress,
         data: '' as Hex,
@@ -1404,7 +1404,7 @@ class WarehouseSignature extends WarehouseTransactions {
     if (!signature) throw new Error('Error in signing data')
 
     return {
-      owner: this._walletClient?.account.address as Address,
+      ownerAddress: this._walletClient?.account.address as Address,
       signature,
       ...approveBySigArgs,
     }
@@ -1413,9 +1413,9 @@ class WarehouseSignature extends WarehouseTransactions {
   async temporaryApproveAndCallBySig(
     temporaryApproveAndCallBySigArgs: WarehouseTemporaryApproveAndCallBySig,
   ): Promise<WarehouseApproveBySigConfig> {
-    validateAddress(temporaryApproveAndCallBySigArgs.spender)
-    validateAddress(temporaryApproveAndCallBySigArgs.token)
-    validateAddress(temporaryApproveAndCallBySigArgs.target)
+    validateAddress(temporaryApproveAndCallBySigArgs.spenderAddress)
+    validateAddress(temporaryApproveAndCallBySigArgs.tokenAddress)
+    validateAddress(temporaryApproveAndCallBySigArgs.targetAddress)
 
     const { domain } = await this._eip712Domain()
 
@@ -1427,12 +1427,12 @@ class WarehouseSignature extends WarehouseTransactions {
       primaryType: 'ERC6909XApproveAndCall',
       message: {
         owner: this._walletClient.account.address,
-        spender: temporaryApproveAndCallBySigArgs.spender,
+        spender: temporaryApproveAndCallBySigArgs.spenderAddress,
         temporary: true,
         operator: temporaryApproveAndCallBySigArgs.operator,
-        id: fromHex(temporaryApproveAndCallBySigArgs.token, 'bigint'),
+        id: fromHex(temporaryApproveAndCallBySigArgs.tokenAddress, 'bigint'),
         amount: temporaryApproveAndCallBySigArgs.amount,
-        target: temporaryApproveAndCallBySigArgs.target,
+        target: temporaryApproveAndCallBySigArgs.targetAddress,
         data: temporaryApproveAndCallBySigArgs.data,
         nonce: temporaryApproveAndCallBySigArgs.nonce,
         deadline: temporaryApproveAndCallBySigArgs.deadline,
@@ -1442,7 +1442,7 @@ class WarehouseSignature extends WarehouseTransactions {
     if (!signature) throw new Error('Error in signing data')
 
     return {
-      owner: this._walletClient?.account.address as Address,
+      ownerAddress: this._walletClient?.account.address as Address,
       signature,
       ...temporaryApproveAndCallBySigArgs,
     }

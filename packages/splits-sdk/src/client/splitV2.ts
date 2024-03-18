@@ -48,6 +48,7 @@ import {
   getSplitType,
 } from '../utils'
 import {
+  InvalidAuthError,
   SaltRequired,
   TransactionFailedError,
   UnsupportedChainIdError,
@@ -83,8 +84,8 @@ class SplitV2Transactions extends BaseTransactions {
     distributorFeePercent,
     totalAllocationPercent,
     splitType = SplitV2Type.Pull,
-    controller = zeroAddress,
-    creator = zeroAddress,
+    controllerAddress = zeroAddress,
+    creatorAddress = zeroAddress,
     salt,
     transactionOverrides = {},
   }: CreateSplitV2Config): Promise<TransactionFormat> {
@@ -100,8 +101,8 @@ class SplitV2Transactions extends BaseTransactions {
     )
 
     recipientAddresses.map((recipient) => validateAddress(recipient))
-    validateAddress(controller)
-    validateAddress(creator)
+    validateAddress(controllerAddress)
+    validateAddress(creatorAddress)
 
     this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
@@ -114,8 +115,8 @@ class SplitV2Transactions extends BaseTransactions {
         totalAllocation,
         distributionIncentive,
       },
-      controller,
-      creator,
+      controllerAddress,
+      creatorAddress,
     ]
     if (salt) functionArgs.push(salt)
 
@@ -130,11 +131,11 @@ class SplitV2Transactions extends BaseTransactions {
 
   protected async _transferOwnership({
     splitAddress,
-    newOwner,
+    newController,
     transactionOverrides = {},
   }: TransferOwnershipConfig): Promise<TransactionFormat> {
     validateAddress(splitAddress)
-    validateAddress(newOwner)
+    validateAddress(newController)
 
     this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
@@ -143,7 +144,7 @@ class SplitV2Transactions extends BaseTransactions {
       contractAddress: splitAddress,
       contractAbi: splitV2ABI,
       functionName: 'transferOwnership',
-      functionArgs: [newOwner],
+      functionArgs: [newController],
       transactionOverrides,
     })
   }
@@ -229,13 +230,13 @@ class SplitV2Transactions extends BaseTransactions {
 
   protected async _distribute({
     splitAddress,
-    token,
-    distributor,
+    tokenAddress: token,
+    distributorAddress = this._walletClient?.account.address as Address,
     transactionOverrides = {},
   }: DistributeSplitConfig): Promise<TransactionFormat> {
     validateAddress(splitAddress)
     validateAddress(token)
-    validateAddress(distributor)
+    validateAddress(distributorAddress)
 
     this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
@@ -254,7 +255,7 @@ class SplitV2Transactions extends BaseTransactions {
           distributionIncentive: split.distributionIncentive,
         },
         token,
-        distributor,
+        distributorAddress,
       ],
       transactionOverrides,
     })
@@ -306,9 +307,9 @@ class SplitV2Transactions extends BaseTransactions {
       totalAllocation: createLogs[0].args.splitParams.totalAllocation,
       distributionIncentive:
         createLogs[0].args.splitParams.distributionIncentive,
-      creator: createLogs[0].args.creator,
+      creatorAddress: createLogs[0].args.creator,
       type: getSplitType(this._chainId, createLogs[0].address),
-      owner,
+      controllerAddress: owner,
       paused,
     }
 
@@ -607,8 +608,10 @@ export class SplitV2Client extends SplitV2Transactions {
   ): Promise<{
     splitAddress: Address
   }> {
-    if (!createSplitArgs.controller) createSplitArgs.controller = zeroAddress
-    if (!createSplitArgs.creator) createSplitArgs.creator = zeroAddress
+    if (!createSplitArgs.controllerAddress)
+      createSplitArgs.controllerAddress = zeroAddress
+    if (!createSplitArgs.creatorAddress)
+      createSplitArgs.creatorAddress = zeroAddress
 
     const {
       recipientAddresses,
@@ -621,8 +624,8 @@ export class SplitV2Client extends SplitV2Transactions {
       createSplitArgs.totalAllocationPercent,
     )
 
-    validateAddress(createSplitArgs.controller)
-    validateAddress(createSplitArgs.creator)
+    validateAddress(createSplitArgs.controllerAddress)
+    validateAddress(createSplitArgs.creatorAddress)
     recipientAddresses.map((recipient) => validateAddress(recipient))
 
     this._requirePublicClient()
@@ -640,7 +643,7 @@ export class SplitV2Client extends SplitV2Transactions {
           totalAllocation,
           distributionIncentive,
         },
-        createSplitArgs.controller,
+        createSplitArgs.controllerAddress,
         createSplitArgs.salt,
       ])
     } else {
@@ -653,7 +656,7 @@ export class SplitV2Client extends SplitV2Transactions {
             createSplitArgs.distributorFeePercent,
           ),
         },
-        createSplitArgs.controller,
+        createSplitArgs.controllerAddress,
       ])
     }
 
@@ -666,8 +669,10 @@ export class SplitV2Client extends SplitV2Transactions {
     splitAddress: Address
     deployed: boolean
   }> {
-    if (!createSplitArgs.controller) createSplitArgs.controller = zeroAddress
-    if (!createSplitArgs.creator) createSplitArgs.creator = zeroAddress
+    if (!createSplitArgs.controllerAddress)
+      createSplitArgs.controllerAddress = zeroAddress
+    if (!createSplitArgs.creatorAddress)
+      createSplitArgs.creatorAddress = zeroAddress
 
     const {
       recipientAddresses,
@@ -680,7 +685,7 @@ export class SplitV2Client extends SplitV2Transactions {
       createSplitArgs.totalAllocationPercent,
     )
 
-    validateAddress(createSplitArgs.controller)
+    validateAddress(createSplitArgs.controllerAddress)
     recipientAddresses.map((recipient) => validateAddress(recipient))
     this._requirePublicClient()
 
@@ -696,7 +701,7 @@ export class SplitV2Client extends SplitV2Transactions {
         totalAllocation: totalAllocation,
         distributionIncentive,
       },
-      createSplitArgs.controller,
+      createSplitArgs.controllerAddress,
       createSplitArgs.salt,
     ])
 
@@ -706,21 +711,24 @@ export class SplitV2Client extends SplitV2Transactions {
     }
   }
 
-  async getSplitBalance(
-    splitAddress: Address,
-    token: Address,
-  ): Promise<{
+  async getSplitBalance({
+    splitAddress,
+    tokenAddress,
+  }: {
+    splitAddress: Address
+    tokenAddress: Address
+  }): Promise<{
     splitBalance: bigint
     warehouseBalance: bigint
   }> {
-    validateAddress(token)
+    validateAddress(tokenAddress)
 
     this._requirePublicClient()
 
     const splitContract = this._getSplitV2Contract(splitAddress)
 
     const [splitBalance, warehouseBalance] =
-      await splitContract.read.getSplitBalance([token])
+      await splitContract.read.getSplitBalance([tokenAddress])
 
     return {
       splitBalance,
@@ -728,10 +736,13 @@ export class SplitV2Client extends SplitV2Transactions {
     }
   }
 
-  async getReplaySafeHash(
-    splitAddress: Address,
-    hash: Hex,
-  ): Promise<{ hash: Hex }> {
+  async getReplaySafeHash({
+    splitAddress,
+    hash,
+  }: {
+    splitAddress: Address
+    hash: Hex
+  }): Promise<{ hash: Hex }> {
     this._requirePublicClient()
 
     const splitContract = this._getSplitV2Contract(splitAddress)
@@ -743,39 +754,56 @@ export class SplitV2Client extends SplitV2Transactions {
     }
   }
 
-  async isValidSignature(
-    splitAddress: Address,
-    hash: Hex,
-    signature: Hex,
-  ): Promise<boolean> {
+  async isValidSignature({
+    splitAddress,
+    hash,
+    signature,
+  }: {
+    splitAddress: Address
+    hash: Hex
+    signature: Hex
+  }): Promise<{ isValid: boolean }> {
     validateAddress(splitAddress)
 
     this._requirePublicClient()
 
     const splitContract = this._getSplitV2Contract(splitAddress)
 
-    return (
-      (await splitContract.read.isValidSignature([hash, signature])) ===
-      VALID_ERC1271_SIG
-    )
+    return {
+      isValid:
+        (await splitContract.read.isValidSignature([hash, signature])) ===
+        VALID_ERC1271_SIG,
+    }
   }
 
-  async eip712Domain(
-    splitAddress: Address,
-  ): Promise<{ domain: TypedDataDomain }> {
+  async eip712Domain({
+    splitAddress,
+  }: {
+    splitAddress: Address
+  }): Promise<{ domain: TypedDataDomain }> {
     this._requirePublicClient()
     return this._eip712Domain(splitAddress)
   }
 
-  async paused(splitAddress: Address): Promise<boolean> {
-    return this._paused(splitAddress)
+  async paused({ splitAddress }: { splitAddress: Address }): Promise<{
+    paused: boolean
+  }> {
+    const paused = await this._paused(splitAddress)
+    return { paused }
   }
 
-  async owner(splitAddress: Address): Promise<Address> {
-    return this._owner(splitAddress)
+  async controller({ splitAddress }: { splitAddress: Address }): Promise<{
+    controllerAddress: Address
+  }> {
+    const controllerAddress = await this._owner(splitAddress)
+    return { controllerAddress }
   }
 
-  async getSplitMetadata(splitAddress: Address): Promise<{ split: SplitV2 }> {
+  async getSplitMetadata({
+    splitAddress,
+  }: {
+    splitAddress: Address
+  }): Promise<{ split: SplitV2 }> {
     return await this._getSplitMetadata(splitAddress)
   }
 }
@@ -833,12 +861,12 @@ class SplitV2GasEstimates extends SplitV2Transactions {
     return gasEstimate
   }
 
-  // async distribute(distributeArgs: DistributeSplitConfig): Promise<bigint> {
-  //   const gasEstimate = await this._distribute(distributeArgs)
-  //   if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
+  async distribute(distributeArgs: DistributeSplitConfig): Promise<bigint> {
+    const gasEstimate = await this._distribute(distributeArgs)
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
 
-  //   return gasEstimate
-  // }
+    return gasEstimate
+  }
 
   async updateSplit(updateSplitArgs: UpdateSplitV2Config): Promise<bigint> {
     const gasEstimate = await this._updateSplit(updateSplitArgs)
@@ -900,12 +928,12 @@ class SplitV2CallData extends SplitV2Transactions {
     return callData
   }
 
-  // async distribute(distributeArgs: DistributeSplitConfig): Promise<CallData> {
-  //   const callData = await this._distribute(distributeArgs)
-  //   if (!this._isCallData(callData)) throw new Error('Invalid response')
+  async distribute(distributeArgs: DistributeSplitConfig): Promise<CallData> {
+    const callData = await this._distribute(distributeArgs)
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
 
-  //   return callData
-  // }
+    return callData
+  }
 
   async updateSplit(updateSplitArgs: UpdateSplitV2Config): Promise<CallData> {
     const callData = await this._updateSplit(updateSplitArgs)

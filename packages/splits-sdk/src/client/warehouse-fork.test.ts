@@ -108,7 +108,7 @@ describe('Warehouse writes', () => {
   }
 
   describe('Transfer', () => {
-    const receiver = BOB
+    const receiverAddress = BOB
 
     beforeEach(() => {})
 
@@ -120,8 +120,8 @@ describe('Warehouse writes', () => {
       await expect(
         async () =>
           await badClient.transfer({
-            receiver,
-            token: nativeTokenAddress,
+            receiverAddress,
+            tokenAddress: nativeTokenAddress,
             amount: BigInt(0),
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -140,8 +140,8 @@ describe('Warehouse writes', () => {
       await expect(
         async () =>
           await badClient.transfer({
-            receiver,
-            token: nativeTokenAddress,
+            receiverAddress,
+            tokenAddress: nativeTokenAddress,
             amount: BigInt(0),
           }),
       ).rejects.toThrow(MissingWalletClientError)
@@ -156,14 +156,14 @@ describe('Warehouse writes', () => {
       const client = createClient(sender)
 
       await client.deposit({
-        receiver: sender,
+        receiverAddress: sender,
         amount: parseEther('1'),
-        token: nativeTokenAddress,
+        tokenAddress: nativeTokenAddress,
       })
 
       const { event } = await client.transfer({
-        token: nativeTokenAddress,
-        receiver,
+        tokenAddress: nativeTokenAddress,
+        receiverAddress: receiverAddress,
         amount: parseEther('1'),
       })
       const decodedLog = decodeEventLog({
@@ -175,7 +175,7 @@ describe('Warehouse writes', () => {
       expect(decodedLog.eventName).toEqual('Transfer')
       if (decodedLog.eventName === 'Transfer') {
         expect(decodedLog.args.sender).toEqual(sender)
-        expect(decodedLog.args.receiver).toEqual(receiver)
+        expect(decodedLog.args.receiver).toEqual(receiverAddress)
         expect(decodedLog.args.amount).toEqual(parseEther('1'))
         expect(decodedLog.args.id).toEqual(
           fromHex(nativeTokenAddress, 'bigint'),
@@ -185,8 +185,8 @@ describe('Warehouse writes', () => {
   })
 
   describe('Transfer from', () => {
-    const sender = ALICE
-    const receiver = BOB
+    const senderAddress = ALICE
+    const receiverAddress = BOB
 
     beforeEach(() => {})
 
@@ -198,9 +198,9 @@ describe('Warehouse writes', () => {
       await expect(
         async () =>
           await badClient.transferFrom({
-            sender,
-            receiver,
-            token: nativeTokenAddress,
+            senderAddress,
+            receiverAddress,
+            tokenAddress: nativeTokenAddress,
             amount: BigInt(0),
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -218,9 +218,9 @@ describe('Warehouse writes', () => {
       await expect(
         async () =>
           await badClient.transferFrom({
-            sender,
-            receiver,
-            token: nativeTokenAddress,
+            senderAddress,
+            receiverAddress,
+            tokenAddress: nativeTokenAddress,
             amount: BigInt(0),
           }),
       ).rejects.toThrow(MissingWalletClientError)
@@ -228,26 +228,26 @@ describe('Warehouse writes', () => {
 
     test('passes', async () => {
       const spender = CHARLIE
-      let client = createClient(sender)
+      let client = createClient(senderAddress)
 
       await client.deposit({
-        receiver: sender,
-        token: nativeTokenAddress,
+        receiverAddress: senderAddress,
+        tokenAddress: nativeTokenAddress,
         amount: parseEther('1'),
       })
 
       await client.approve({
-        spender,
-        token: nativeTokenAddress,
+        spenderAddress: spender,
+        tokenAddress: nativeTokenAddress,
         amount: parseEther('1'),
       })
 
       client = createClient(spender)
 
       const { event } = await client.transferFrom({
-        token: nativeTokenAddress,
-        sender,
-        receiver,
+        tokenAddress: nativeTokenAddress,
+        senderAddress,
+        receiverAddress,
         amount: parseEther('1'),
       })
       const decodedLog = decodeEventLog({
@@ -259,8 +259,8 @@ describe('Warehouse writes', () => {
       expect(decodedLog.eventName).toEqual('Transfer')
       if (decodedLog.eventName === 'Transfer') {
         expect(decodedLog.args.caller).toEqual(spender)
-        expect(decodedLog.args.sender).toEqual(sender)
-        expect(decodedLog.args.receiver).toEqual(receiver)
+        expect(decodedLog.args.sender).toEqual(senderAddress)
+        expect(decodedLog.args.receiver).toEqual(receiverAddress)
         expect(decodedLog.args.amount).toEqual(parseEther('1'))
         expect(decodedLog.args.id).toEqual(
           fromHex(nativeTokenAddress, 'bigint'),
@@ -278,8 +278,8 @@ describe('Warehouse writes', () => {
       await expect(
         async () =>
           await badClient.approve({
-            spender: ALICE,
-            token: nativeTokenAddress,
+            spenderAddress: ALICE,
+            tokenAddress: nativeTokenAddress,
             amount: BigInt(0),
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -297,8 +297,8 @@ describe('Warehouse writes', () => {
       await expect(
         async () =>
           await badClient.approve({
-            spender: ALICE,
-            token: nativeTokenAddress,
+            spenderAddress: ALICE,
+            tokenAddress: nativeTokenAddress,
             amount: BigInt(0),
           }),
       ).rejects.toThrow(MissingWalletClientError)
@@ -310,8 +310,8 @@ describe('Warehouse writes', () => {
       const client = createClient(caller)
 
       const { event } = await client.approve({
-        spender,
-        token: nativeTokenAddress,
+        spenderAddress: spender,
+        tokenAddress: nativeTokenAddress,
         amount: parseEther('1'),
       })
 
@@ -342,7 +342,7 @@ describe('Warehouse writes', () => {
       await expect(
         async () =>
           await badClient.setOperator({
-            operator: ALICE,
+            operatorAddress: ALICE,
             approved: true,
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -360,7 +360,7 @@ describe('Warehouse writes', () => {
       await expect(
         async () =>
           await badClient.setOperator({
-            operator: ALICE,
+            operatorAddress: ALICE,
             approved: true,
           }),
       ).rejects.toThrow(MissingWalletClientError)
@@ -372,7 +372,7 @@ describe('Warehouse writes', () => {
       const client = createClient(owner)
 
       const { event } = await client.setOperator({
-        operator,
+        operatorAddress: operator,
         approved: true,
       })
 
@@ -452,11 +452,11 @@ describe('Warehouse writes', () => {
       await expect(
         async () =>
           await badClient.temporaryApproveAndCall({
-            spender: ALICE,
+            spenderAddress: ALICE,
             operator: false,
-            token: nativeTokenAddress,
+            tokenAddress: nativeTokenAddress,
             amount: BigInt(0),
-            target: ALICE,
+            targetAddress: ALICE,
             data: '0x0',
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -474,11 +474,11 @@ describe('Warehouse writes', () => {
       await expect(
         async () =>
           await badClient.temporaryApproveAndCall({
-            spender: ALICE,
+            spenderAddress: ALICE,
             operator: false,
-            token: nativeTokenAddress,
+            tokenAddress: nativeTokenAddress,
             amount: BigInt(0),
-            target: ALICE,
+            targetAddress: ALICE,
             data: '0x0',
           }),
       ).rejects.toThrow(MissingWalletClientError)
@@ -501,12 +501,12 @@ describe('Warehouse writes', () => {
       await expect(
         async () =>
           await badClient.temporaryApproveAndCallBySig({
-            owner: BOB,
-            spender: ALICE,
+            ownerAddress: BOB,
+            spenderAddress: ALICE,
             operator: false,
-            token: nativeTokenAddress,
+            tokenAddress: nativeTokenAddress,
             amount: BigInt(0),
-            target: ALICE,
+            targetAddress: ALICE,
             data: '0x0',
             nonce: BigInt(0),
             deadline: 1,
@@ -527,12 +527,12 @@ describe('Warehouse writes', () => {
       await expect(
         async () =>
           await badClient.temporaryApproveAndCallBySig({
-            owner: BOB,
-            spender: ALICE,
+            ownerAddress: BOB,
+            spenderAddress: ALICE,
             operator: false,
-            token: nativeTokenAddress,
+            tokenAddress: nativeTokenAddress,
             amount: BigInt(0),
-            target: ALICE,
+            targetAddress: ALICE,
             data: '0x0',
             nonce: BigInt(0),
             deadline: 1,
@@ -558,9 +558,9 @@ describe('Warehouse writes', () => {
       await expect(
         async () =>
           await badClient.approveBySig({
-            owner: BOB,
-            spender: ALICE,
-            token: nativeTokenAddress,
+            ownerAddress: BOB,
+            spenderAddress: ALICE,
+            tokenAddress: nativeTokenAddress,
             amount: BigInt(0),
             operator: false,
             deadline: 1,
@@ -582,9 +582,9 @@ describe('Warehouse writes', () => {
       await expect(
         async () =>
           await badClient.approveBySig({
-            owner: BOB,
-            spender: ALICE,
-            token: nativeTokenAddress,
+            ownerAddress: BOB,
+            spenderAddress: ALICE,
+            tokenAddress: nativeTokenAddress,
             amount: BigInt(0),
             operator: false,
             deadline: 1,
@@ -640,8 +640,8 @@ describe('Warehouse writes', () => {
       await expect(
         async () =>
           await badClient.deposit({
-            receiver: zeroAddress,
-            token: nativeTokenAddress,
+            receiverAddress: zeroAddress,
+            tokenAddress: nativeTokenAddress,
             amount: BigInt(0),
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -659,8 +659,8 @@ describe('Warehouse writes', () => {
       await expect(
         async () =>
           await badClient.deposit({
-            receiver: zeroAddress,
-            token: nativeTokenAddress,
+            receiverAddress: zeroAddress,
+            tokenAddress: nativeTokenAddress,
             amount: BigInt(0),
           }),
       ).rejects.toThrow(MissingWalletClientError)
@@ -672,8 +672,8 @@ describe('Warehouse writes', () => {
       const client = createClient(receiver)
 
       const { event } = await client.deposit({
-        receiver,
-        token: nativeTokenAddress,
+        receiverAddress: receiver,
+        tokenAddress: nativeTokenAddress,
         amount,
       })
 
@@ -701,8 +701,8 @@ describe('Warehouse writes', () => {
       await expect(
         async () =>
           await badClient.batchDeposit({
-            receivers: [zeroAddress],
-            token: nativeTokenAddress,
+            receiversAddresses: [zeroAddress],
+            tokenAddress: nativeTokenAddress,
             amounts: [BigInt(0)],
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -720,8 +720,8 @@ describe('Warehouse writes', () => {
       await expect(
         async () =>
           await badClient.batchDeposit({
-            receivers: [zeroAddress],
-            token: nativeTokenAddress,
+            receiversAddresses: [zeroAddress],
+            tokenAddress: nativeTokenAddress,
             amounts: [BigInt(0)],
           }),
       ).rejects.toThrow(MissingWalletClientError)
@@ -738,8 +738,8 @@ describe('Warehouse writes', () => {
       const receivers = [receiver_1, receiver_2]
 
       const { events } = await client.batchDeposit({
-        receivers: receivers,
-        token: nativeTokenAddress,
+        receiversAddresses: receivers,
+        tokenAddress: nativeTokenAddress,
         amounts: [amount, amount],
       })
 
@@ -769,8 +769,8 @@ describe('Warehouse writes', () => {
       await expect(
         async () =>
           await badClient.withdraw({
-            owner: zeroAddress,
-            token: nativeTokenAddress,
+            ownerAddress: zeroAddress,
+            tokenAddress: nativeTokenAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
@@ -787,8 +787,8 @@ describe('Warehouse writes', () => {
       await expect(
         async () =>
           await badClient.withdraw({
-            owner: zeroAddress,
-            token: nativeTokenAddress,
+            ownerAddress: zeroAddress,
+            tokenAddress: nativeTokenAddress,
           }),
       ).rejects.toThrow(MissingWalletClientError)
     })
@@ -800,14 +800,14 @@ describe('Warehouse writes', () => {
       const client = createClient(caller)
 
       await client.deposit({
-        receiver: caller,
+        receiverAddress: caller,
         amount,
-        token: nativeTokenAddress,
+        tokenAddress: nativeTokenAddress,
       })
 
       const { event } = await client.withdraw({
-        owner: caller,
-        token: nativeTokenAddress,
+        ownerAddress: caller,
+        tokenAddress: nativeTokenAddress,
       })
 
       const decodedLog = decodeEventLog({
@@ -834,10 +834,10 @@ describe('Warehouse writes', () => {
       await expect(
         async () =>
           await badClient.batchWithdraw({
-            owner: zeroAddress,
-            tokens: [nativeTokenAddress],
+            ownerAddress: zeroAddress,
+            tokensAddresses: [nativeTokenAddress],
             amounts: [BigInt(0)],
-            withdrawer: zeroAddress,
+            withdrawerAddress: zeroAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
@@ -854,10 +854,10 @@ describe('Warehouse writes', () => {
       await expect(
         async () =>
           await badClient.batchWithdraw({
-            owner: zeroAddress,
-            tokens: [nativeTokenAddress],
+            ownerAddress: zeroAddress,
+            tokensAddresses: [nativeTokenAddress],
             amounts: [BigInt(0)],
-            withdrawer: zeroAddress,
+            withdrawerAddress: zeroAddress,
           }),
       ).rejects.toThrow(MissingWalletClientError)
     })
@@ -869,16 +869,16 @@ describe('Warehouse writes', () => {
       const client = createClient(caller)
 
       await client.deposit({
-        receiver: caller,
+        receiverAddress: caller,
         amount,
-        token: nativeTokenAddress,
+        tokenAddress: nativeTokenAddress,
       })
 
       const { events } = await client.batchWithdraw({
-        owner: caller,
-        tokens: [nativeTokenAddress],
+        ownerAddress: caller,
+        tokensAddresses: [nativeTokenAddress],
         amounts: [amount],
-        withdrawer: ALICE,
+        withdrawerAddress: ALICE,
       })
 
       events.map((event) => {
@@ -907,8 +907,8 @@ describe('Warehouse writes', () => {
       await expect(
         async () =>
           await badClient.batchTransfer({
-            receivers: [zeroAddress],
-            token: nativeTokenAddress,
+            receiversAddresses: [zeroAddress],
+            tokenAddress: nativeTokenAddress,
             amounts: [BigInt(0)],
           }),
       ).rejects.toThrow(MissingPublicClientError)
@@ -926,8 +926,8 @@ describe('Warehouse writes', () => {
       await expect(
         async () =>
           await badClient.batchTransfer({
-            receivers: [zeroAddress],
-            token: nativeTokenAddress,
+            receiversAddresses: [zeroAddress],
+            tokenAddress: nativeTokenAddress,
             amounts: [BigInt(0)],
           }),
       ).rejects.toThrow(MissingWalletClientError)
@@ -940,17 +940,17 @@ describe('Warehouse writes', () => {
       const client = createClient(caller)
 
       await client.deposit({
-        receiver: caller,
+        receiverAddress: caller,
         amount,
-        token: nativeTokenAddress,
+        tokenAddress: nativeTokenAddress,
       })
 
       const receivers = [ALICE, BOB]
       const amounts = [parseEther('0.5'), parseEther('0.5')]
 
       const { events } = await client.batchTransfer({
-        receivers,
-        token: nativeTokenAddress,
+        receiversAddresses: receivers,
+        tokenAddress: nativeTokenAddress,
         amounts,
       })
 
@@ -981,7 +981,7 @@ describe('Warehouse writes', () => {
         async () =>
           await badClient.setWithdrawConfig({
             paused: false,
-            incentive: 0,
+            incentivePercent: 0,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
@@ -999,7 +999,7 @@ describe('Warehouse writes', () => {
         async () =>
           await badClient.setWithdrawConfig({
             paused: false,
-            incentive: 0,
+            incentivePercent: 0,
           }),
       ).rejects.toThrow(MissingWalletClientError)
     })
@@ -1011,7 +1011,7 @@ describe('Warehouse writes', () => {
 
       const { event } = await client.setWithdrawConfig({
         paused: false,
-        incentive: 0,
+        incentivePercent: 0,
       })
 
       const decodedLog = decodeEventLog({
