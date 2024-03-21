@@ -428,6 +428,8 @@ class SwapperTransactions extends BaseTransactions {
     return getContract({
       address: getUniV3SwapAddress(this._chainId),
       abi: uniV3SwapAbi,
+      // @ts-expect-error v1/v2 viem support
+      client: this._publicClient,
       publicClient: this._publicClient,
     })
   }
@@ -438,6 +440,8 @@ class SwapperTransactions extends BaseTransactions {
     return getContract({
       address: getAddress(swapper),
       abi: swapperAbi,
+      // @ts-expect-error v1/v2 viem support
+      client: this._publicClient,
       publicClient: this._publicClient,
     })
   }
