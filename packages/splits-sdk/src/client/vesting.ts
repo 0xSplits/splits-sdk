@@ -31,8 +31,6 @@ import {
   UnsupportedChainIdError,
 } from '../errors'
 import { applyMixins } from './mixin'
-import { protectedFormatVestingModule, VESTING_MODULE_QUERY } from '../subgraph'
-import type { GqlVestingModule } from '../subgraph/types'
 import type {
   CallData,
   CreateVestingConfig,
@@ -45,6 +43,8 @@ import type {
 } from '../types'
 import { getTokenData, addEnsNames } from '../utils'
 import { validateAddress, validateVestingPeriod } from '../utils/validation'
+import { IVestingModule } from '../subgraphv2/types'
+import { protectedFormatVestingModule } from '../subgraphv2/vesting'
 
 type VestingAbi = typeof vestingAbi
 type VestingFactoryAbi = typeof vestingFactoryAbi
@@ -411,31 +411,27 @@ export class VestingClient extends VestingTransactions {
     validateAddress(vestingModuleAddress)
     const chainId = this._chainId
 
-    const response = await this._makeGqlRequest<{
-      vestingModule: GqlVestingModule
-    }>(VESTING_MODULE_QUERY, {
-      vestingModuleAddress: vestingModuleAddress.toLowerCase(),
-    })
+    const response = await this._loadAccount(vestingModuleAddress, chainId)
 
-    if (!response.vestingModule)
+    if (!response || response.type !== 'vesting')
       throw new AccountNotFoundError(
         'vesting module',
         vestingModuleAddress,
         chainId,
       )
 
-    return await this.formatVestingModule(response.vestingModule)
+    return await this.formatVestingModule(response)
   }
 
   async formatVestingModule(
-    gqlVestingModule: GqlVestingModule,
+    gqlVestingModule: IVestingModule,
   ): Promise<VestingModule> {
     this._requirePublicClient()
     const publicClient = this._publicClient
     if (!publicClient) throw new Error()
 
     const tokenIds = Array.from(
-      new Set(gqlVestingModule.streams?.map((stream) => stream.token.id) ?? []),
+      new Set(gqlVestingModule.streams?.map((stream) => stream.token) ?? []),
     )
 
     const tokenData: { [token: string]: { symbol: string; decimals: number } } =

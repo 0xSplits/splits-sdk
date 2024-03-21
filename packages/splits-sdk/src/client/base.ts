@@ -67,6 +67,13 @@ import {
   fetchERC20TransferredTokens,
 } from '../utils/balances'
 import { validateAddress } from '../utils/validation'
+import { IAccount, IAccountType } from '../subgraphv2/types'
+import {
+  ACCOUNTS_QUERY,
+  ACCOUNT_QUERY,
+  formatFullGqlAccount,
+  formatGqlAccount,
+} from '../subgraphv2'
 
 class BaseClient {
   readonly _chainId: number
@@ -81,6 +88,7 @@ class BaseClient {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiKey,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     if (includeEnsNames && !publicClient && !ensPublicClient)
@@ -92,7 +100,7 @@ class BaseClient {
     this._publicClient = publicClient
     this._chainId = chainId
     this._walletClient = walletClient
-    this._graphqlClient = getGraphqlClient(chainId)
+    this._graphqlClient = getGraphqlClient(apiKey)
     this._includeEnsNames = includeEnsNames
   }
 
@@ -129,6 +137,34 @@ class BaseClient {
       throw new MissingWalletClientError(
         'Wallet client must have an account attached to it to perform this action, please update your wallet client passed into the constructor',
       )
+  }
+
+  protected async _loadAccounts(accounts: IAccount[]): Promise<IAccountType[]> {
+    const result = await this._makeGqlRequest<{ accounts: GqlAccount[] }>(
+      ACCOUNTS_QUERY,
+      {
+        accounts: accounts.map((account) => ({
+          id: account.address.toLowerCase(),
+          chainId: account.chainId.toString(),
+        })),
+      },
+    )
+
+    return result.accounts.map((gqlAccount) => formatFullGqlAccount(gqlAccount))
+  }
+
+  protected async _loadAccount(
+    accountId: string,
+    chainId: number,
+  ): Promise<IAccountType | undefined> {
+    const result = await this._makeGqlRequest<{
+      account: GqlAccount
+    }>(ACCOUNT_QUERY, {
+      accountId: accountId.toLowerCase(),
+      chainId: chainId.toString(),
+    })
+    if (!result.account) return
+    return formatGqlAccount(result.account)
   }
 
   protected async _getUserBalancesByContract({

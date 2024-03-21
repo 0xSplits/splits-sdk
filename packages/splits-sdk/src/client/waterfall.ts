@@ -33,11 +33,6 @@ import {
   UnsupportedChainIdError,
 } from '../errors'
 import { applyMixins } from './mixin'
-import {
-  protectedFormatWaterfallModule,
-  WATERFALL_MODULE_QUERY,
-} from '../subgraph'
-import type { GqlWaterfallModule } from '../subgraph/types'
 import type {
   CallData,
   CreateWaterfallConfig,
@@ -55,6 +50,8 @@ import {
   addEnsNames,
 } from '../utils'
 import { validateAddress, validateWaterfallTranches } from '../utils/validation'
+import { IWaterfallModule } from '../subgraphv2/types'
+import { protectedFormatWaterfallModule } from '../subgraphv2/waterfall'
 
 type WaterfallAbi = typeof waterfallAbi
 
@@ -190,31 +187,27 @@ class WaterfallTransactions extends BaseTransactions {
     validateAddress(waterfallModuleAddress)
     const chainId = this._chainId
 
-    const response = await this._makeGqlRequest<{
-      waterfallModule: GqlWaterfallModule
-    }>(WATERFALL_MODULE_QUERY, {
-      waterfallModuleAddress: waterfallModuleAddress.toLowerCase(),
-    })
+    const response = await this._loadAccount(waterfallModuleAddress, chainId)
 
-    if (!response.waterfallModule)
+    if (!response || response.type != 'waterfall')
       throw new AccountNotFoundError(
         'waterfall module',
         waterfallModuleAddress,
         chainId,
       )
 
-    return await this.formatWaterfallModule(response.waterfallModule)
+    return await this.formatWaterfallModule(response)
   }
 
   async formatWaterfallModule(
-    gqlWaterfallModule: GqlWaterfallModule,
+    gqlWaterfallModule: IWaterfallModule,
   ): Promise<WaterfallModule> {
     this._requirePublicClient()
     if (!this._publicClient) throw new Error()
 
     const tokenData = await getTokenData(
       this._chainId,
-      getAddress(gqlWaterfallModule.token.id),
+      getAddress(gqlWaterfallModule.token),
       this._publicClient,
     )
 

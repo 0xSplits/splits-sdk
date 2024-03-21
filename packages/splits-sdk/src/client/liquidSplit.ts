@@ -37,8 +37,6 @@ import {
   UnsupportedChainIdError,
 } from '../errors'
 import { applyMixins } from './mixin'
-import { protectedFormatLiquidSplit, LIQUID_SPLIT_QUERY } from '../subgraph'
-import type { GqlLiquidSplit } from '../subgraph/types'
 import type {
   LiquidSplit,
   SplitsClientConfig,
@@ -60,6 +58,8 @@ import {
   validateDistributorFeePercent,
   validateSplitRecipients,
 } from '../utils/validation'
+import { ILiquidSplit } from '../subgraphv2/types'
+import { protectedFormatLiquidSplit } from '../subgraphv2/liquid'
 
 type LS1155Abi = typeof ls1155CloneAbi
 
@@ -186,25 +186,19 @@ class LiquidSplitTransactions extends BaseTransactions {
     validateAddress(liquidSplitAddress)
     const chainId = this._chainId
 
-    const response = await this._makeGqlRequest<{
-      liquidSplit: GqlLiquidSplit
-    }>(LIQUID_SPLIT_QUERY, {
-      liquidSplitAddress: liquidSplitAddress.toLowerCase(),
-    })
+    const response = await this._loadAccount(liquidSplitAddress, chainId)
 
-    if (!response.liquidSplit)
+    if (!response || response.type !== 'liquidSplit')
       throw new AccountNotFoundError(
         'liquid split',
         liquidSplitAddress,
         chainId,
       )
 
-    return await this.formatLiquidSplit(response.liquidSplit)
+    return await this.formatLiquidSplit(response)
   }
 
-  async formatLiquidSplit(
-    gqlLiquidSplit: GqlLiquidSplit,
-  ): Promise<LiquidSplit> {
+  async formatLiquidSplit(gqlLiquidSplit: ILiquidSplit): Promise<LiquidSplit> {
     this._requirePublicClient()
     if (!this._publicClient) throw new Error()
 

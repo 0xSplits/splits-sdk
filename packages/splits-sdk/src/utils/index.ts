@@ -1,4 +1,10 @@
-import { Address, PublicClient, getAddress } from 'viem'
+import {
+  Address,
+  PublicClient,
+  encodePacked,
+  getAddress,
+  keccak256,
+} from 'viem'
 
 import {
   ADDRESS_ZERO,
@@ -23,6 +29,7 @@ import {
   InvalidDistributorFeePercentErrorV2,
   InvalidTotalAllocation,
 } from '../errors'
+import { IAddress, IRecipient } from '../subgraphv2/types'
 
 export * from './ens'
 export * from './numbers'
@@ -183,4 +190,41 @@ export const getSplitType = (
   if (factoryAddress === getSplitV2FactoryAddress(chainId, SplitV2Type.Pull))
     return SplitV2Type.Pull
   return SplitV2Type.Push
+}
+
+export const getAccountsAndPercentAllocations: (
+  arg0: IRecipient[],
+  arg1?: boolean,
+) => [Address[], number[]] = (recipients, shouldSort = false) => {
+  const accounts: Address[] = []
+  const percentAllocations: number[] = []
+
+  const recipientsCopy = recipients.slice()
+
+  if (shouldSort) {
+    recipientsCopy.sort((a, b) => {
+      if (a.address.toLowerCase() > b.address.toLowerCase()) return 1
+      return -1
+    })
+  }
+
+  recipientsCopy.forEach((recipient) => {
+    accounts.push(recipient.address)
+    percentAllocations.push(recipient.ownership)
+  })
+
+  return [accounts, percentAllocations]
+}
+
+export const hashSplit: (
+  arg0: IAddress[],
+  arg1: number[],
+  arg2: number,
+) => string = (accounts, percentAllocations, distributorFee) => {
+  return keccak256(
+    encodePacked(
+      ['address[]', 'uint32[]', 'uint32'],
+      [accounts, percentAllocations, distributorFee],
+    ),
+  )
 }

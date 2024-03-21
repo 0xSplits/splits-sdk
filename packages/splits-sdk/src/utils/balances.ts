@@ -1,10 +1,12 @@
 import { Address, MulticallReturnType, PublicClient, getAddress } from 'viem'
 
-import { ADDRESS_ZERO, CHAIN_INFO } from '../constants'
+import { ADDRESS_ZERO, CHAIN_INFO, ZERO } from '../constants'
 import { erc20Abi } from '../constants/abi/erc20'
 import { Token, TokenBalances } from '../types'
 import { isAlchemyPublicClient } from '.'
 import { retryExponentialBackoff } from './requests'
+import { IBalance } from '../subgraphv2/types'
+import { mergeWith } from 'lodash'
 
 export const fetchERC20TransferredTokens = async (
   chainId: number,
@@ -233,4 +235,8 @@ const getTokenDataCalls = (tokens: Address[]) => {
       ]
     })
     .flat()
+}
+
+export const mergeBalances = (balances: IBalance[]): IBalance => {
+  return mergeWith({}, ...balances, (o: bigint, s: bigint) => (o ?? ZERO) + s)
 }

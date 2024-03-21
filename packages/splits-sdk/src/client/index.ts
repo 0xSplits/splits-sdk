@@ -102,6 +102,7 @@ import {
   getBigIntFromPercent,
 } from '../utils'
 import { validateAddress, validateSplitInputs } from '../utils/validation'
+import { IAccount, IAccountType } from '../subgraphv2/types'
 
 const polygonAbiChainIds = [
   ...POLYGON_CHAIN_IDS,
@@ -1454,31 +1455,26 @@ export class SplitsClient extends SplitsTransactions {
 
     const chainId = this._chainId
 
-    const response = await this._makeGqlRequest<{
-      account: GqlAccount
-    }>(ACCOUNT_QUERY, {
-      accountAddress: accountAddress.toLowerCase(),
-    })
+    const response = await this._loadAccount(accountAddress, chainId)
 
-    if (!response.account)
+    if (!response)
       throw new AccountNotFoundError('account', accountAddress, chainId)
 
-    return await this._formatAccount(response.account)
+    return await this._formatAccount(response)
   }
 
   // Helper functions
   private async _formatAccount(
-    gqlAccount: GqlAccount,
+    gqlAccount: IAccountType,
   ): Promise<SplitsContract | undefined> {
     if (!gqlAccount) return
 
-    if (gqlAccount.__typename === 'Split')
-      return await this._formatSplit(gqlAccount)
-    else if (gqlAccount.__typename === 'WaterfallModule' && this.waterfall)
+    if (gqlAccount.type === 'split') return await this._formatSplit(gqlAccount)
+    else if (gqlAccount.type === 'waterfall' && this.waterfall)
       return await this.waterfall.formatWaterfallModule(gqlAccount)
-    else if (gqlAccount.__typename === 'LiquidSplit' && this.liquidSplits)
+    else if (gqlAccount.type === 'liquidSplit' && this.liquidSplits)
       return await this.liquidSplits.formatLiquidSplit(gqlAccount)
-    else if (gqlAccount.__typename === 'Swapper' && this.swapper)
+    else if (gqlAccount.type === 'swapper' && this.swapper)
       return await this.swapper.formatSwapper(gqlAccount)
   }
 }

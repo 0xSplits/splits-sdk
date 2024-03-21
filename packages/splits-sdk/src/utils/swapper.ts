@@ -84,3 +84,10 @@ export const getFormattedScaledOfferFactorOverrides = (
     },
   )
 }
+
+export const getSwapBalanceId = (
+  inputToken: string,
+  outputToken: string,
+): string => {
+  return `${inputToken}-${outputToken}`
+}

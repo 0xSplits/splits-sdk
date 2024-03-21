@@ -66,8 +66,8 @@ import {
   validateScaledOfferFactorOverrides,
   validateUniV3SwapInputAssets,
 } from '../utils/validation'
-import { GqlSwapper } from '../subgraph/types'
-import { SWAPPER_QUERY, protectedFormatSwapper } from '../subgraph'
+import { ISwapper } from '../subgraphv2/types'
+import { protectedFormatSwapper } from '../subgraphv2/swapper'
 
 type SwapperAbi = typeof swapperAbi
 type UniV3SwapAbi = typeof uniV3SwapAbi
@@ -381,19 +381,15 @@ class SwapperTransactions extends BaseTransactions {
     validateAddress(swapperAddress)
     const chainId = this._chainId
 
-    const response = await this._makeGqlRequest<{
-      swapper: GqlSwapper
-    }>(SWAPPER_QUERY, {
-      swapperAddress: swapperAddress.toLowerCase(),
-    })
+    const response = await this._loadAccount(swapperAddress, chainId)
 
-    if (!response.swapper)
+    if (!response || response.type !== 'swapper')
       throw new AccountNotFoundError('swapper', swapperAddress, chainId)
 
-    return await this.formatSwapper(response.swapper)
+    return await this.formatSwapper(response)
   }
 
-  async formatSwapper(gqlSwapper: GqlSwapper): Promise<Swapper> {
+  async formatSwapper(gqlSwapper: ISwapper): Promise<Swapper> {
     const swapper = protectedFormatSwapper(gqlSwapper)
     if (this._includeEnsNames) {
       if (!this._ensPublicClient) throw new Error()

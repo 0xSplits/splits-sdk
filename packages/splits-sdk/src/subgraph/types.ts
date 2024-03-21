@@ -11,6 +11,26 @@ type GqlToken = {
   id: Scalars['ID']
 }
 
+export const AccountType = {
+  user: 'user',
+  split: 'split',
+  splitV2Push: 'splitV2Push',
+  splitV2Pull: 'splitV2Pull',
+  vesting: 'vesting',
+  waterfall: 'waterfall',
+  liquidSplit: 'liquidSplit',
+  swapper: 'swapper',
+  passThroughWallet: 'passThroughWallet',
+}
+export type AccountType = (typeof AccountType)[keyof typeof AccountType]
+
+export const DistributeDirection = {
+  pull: 'pull',
+  push: 'push',
+} as const
+export type DistributeDirection =
+  (typeof DistributeDirection)[keyof typeof DistributeDirection]
+
 export type GqlTokenBalance = {
   id: Scalars['ID']
   amount: Scalars['Int']
@@ -42,9 +62,13 @@ export type GqlRecipient = {
 export type GqlSplit = {
   __typename: 'Split'
   id: Scalars['ID']
+  type: AccountType
   recipients: GqlRecipient[]
   upstream?: GqlRecipient[]
   distributorFee: Scalars['Int']
+  distributionsPaused: Scalars['Boolean']
+  distributeDirection: DistributeDirection
+  creator: Scalars['String']
   controller: Scalars['String']
   newPotentialController: Scalars['String']
   createdBlock: Scalars['Int']
@@ -146,7 +170,6 @@ export type GqlContract = {
 }
 
 export type GqlAccount =
-  | GqlUser
   | GqlSplit
   | GqlWaterfallModule
   | GqlLiquidSplit
