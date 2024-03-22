@@ -37,7 +37,10 @@ export type SplitsClientConfig = {
   chainId: number
   publicClient?: PublicClient<Transport, Chain>
   walletClient?: WalletClient<Transport, Chain, Account>
-  apiKey?: string
+  apiConfig?: {
+    apiKey: string
+    serverURL: string
+  }
   includeEnsNames?: boolean
   // ensPublicClient can be used to fetch ens names when publicClient is not on mainnet (reverseRecords
   // only works on mainnet).
@@ -583,7 +586,6 @@ export type Split = {
   distributorFeePercent: number
   distributionsPaused: boolean
   distributeDirection: 'pull' | 'push'
-  creator: Recipient
   recipients: {
     percentAllocation: number
     recipient: Recipient

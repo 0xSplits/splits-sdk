@@ -29,7 +29,7 @@ import {
   InvalidDistributorFeePercentErrorV2,
   InvalidTotalAllocation,
 } from '../errors'
-import { IAddress, IRecipient } from '../subgraphv2/types'
+import { IAddress, IRecipient } from '../subgraph/types'
 
 export * from './ens'
 export * from './numbers'

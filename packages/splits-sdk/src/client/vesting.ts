@@ -43,8 +43,8 @@ import type {
 } from '../types'
 import { getTokenData, addEnsNames } from '../utils'
 import { validateAddress, validateVestingPeriod } from '../utils/validation'
-import { IVestingModule } from '../subgraphv2/types'
-import { protectedFormatVestingModule } from '../subgraphv2/vesting'
+import { IVestingModule } from '../subgraph/types'
+import { protectedFormatVestingModule } from '../subgraph/vesting'
 
 type VestingAbi = typeof vestingAbi
 type VestingFactoryAbi = typeof vestingFactoryAbi

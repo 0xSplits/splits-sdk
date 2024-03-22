@@ -29,19 +29,7 @@ import {
   MissingWalletClientError,
   UnsupportedSubgraphChainIdError,
 } from '../errors'
-import {
-  ACCOUNT_BALANCES_QUERY,
-  USER_BALANCES_BY_CONTRACT_FILTERED_QUERY,
-  USER_BALANCES_BY_CONTRACT_QUERY,
-  formatAccountBalances,
-  formatContractEarnings,
-  getGraphqlClient,
-} from '../subgraph'
-import {
-  GqlAccount,
-  GqlAccountBalances,
-  GqlContractEarnings,
-} from '../subgraph/types'
+import { GqlAccount } from '../subgraph/types'
 import type {
   CallData,
   ContractEarnings,
@@ -67,13 +55,32 @@ import {
   fetchERC20TransferredTokens,
 } from '../utils/balances'
 import { validateAddress } from '../utils/validation'
-import { IAccount, IAccountType } from '../subgraphv2/types'
 import {
-  ACCOUNTS_QUERY,
+  GqlLiquidSplit,
+  GqlPassThroughWallet,
+  GqlSplit,
+  GqlSwapper,
+  GqlVestingModule,
+  GqlWaterfallModule,
+  IAccount,
+  IAccountType,
+  ISubgraphAccount,
+} from '../subgraph/types'
+import { MAX_RELATED_ACCOUNTS } from '../subgraph/constants'
+import { formatGqlSplit } from '../subgraph/split'
+import { formatGqlWaterfallModule } from '../subgraph/waterfall'
+import { formatGqlVestingModule } from '../subgraph/vesting'
+import { formatGqlSwapper } from '../subgraph/swapper'
+import { formatGqlPassThroughWallet } from '../subgraph/pass-through-wallet'
+import { formatGqlLiquidSplit } from '../subgraph/liquid'
+import { formatAccountBalances, formatContractEarnings } from '../subgraph/user'
+import {
   ACCOUNT_QUERY,
+  FULL_ACCOUNT_QUERY,
   formatFullGqlAccount,
   formatGqlAccount,
-} from '../subgraphv2'
+  getGraphqlClient,
+} from '../subgraph'
 
 class BaseClient {
   readonly _chainId: number
@@ -88,7 +95,7 @@ class BaseClient {
     publicClient,
     ensPublicClient,
     walletClient,
-    apiKey,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     if (includeEnsNames && !publicClient && !ensPublicClient)
@@ -100,8 +107,9 @@ class BaseClient {
     this._publicClient = publicClient
     this._chainId = chainId
     this._walletClient = walletClient
-    this._graphqlClient = getGraphqlClient(apiKey)
     this._includeEnsNames = includeEnsNames
+
+    if (apiConfig) this._graphqlClient = getGraphqlClient(apiConfig)
   }
 
   protected async _makeGqlRequest<ResponseType>(
@@ -139,20 +147,6 @@ class BaseClient {
       )
   }
 
-  protected async _loadAccounts(accounts: IAccount[]): Promise<IAccountType[]> {
-    const result = await this._makeGqlRequest<{ accounts: GqlAccount[] }>(
-      ACCOUNTS_QUERY,
-      {
-        accounts: accounts.map((account) => ({
-          id: account.address.toLowerCase(),
-          chainId: account.chainId.toString(),
-        })),
-      },
-    )
-
-    return result.accounts.map((gqlAccount) => formatFullGqlAccount(gqlAccount))
-  }
-
   protected async _loadAccount(
     accountId: string,
     chainId: number,
@@ -167,6 +161,143 @@ class BaseClient {
     return formatGqlAccount(result.account)
   }
 
+  protected async _loadFullAccount(
+    accountId: string,
+    chainId: number,
+  ): Promise<ISubgraphAccount> {
+    const result = await this._makeGqlRequest<{
+      account: GqlAccount
+      relatedAccounts: {
+        controllingSplits: GqlSplit[]
+        pendingControlSplits: GqlSplit[]
+        ownedSwappers: GqlSwapper[]
+        ownedPassThroughWallets: GqlPassThroughWallet[]
+        upstreamSplits: GqlSplit[]
+        upstreamLiquidSplits: GqlLiquidSplit[]
+        upstreamWaterfalls: GqlWaterfallModule[]
+        upstreamVesting: GqlVestingModule[]
+        upstreamSwappers: GqlSwapper[]
+        upstreamPassThroughWallets: GqlPassThroughWallet[]
+      }
+    }>(FULL_ACCOUNT_QUERY, {
+      accountId: accountId.toLowerCase(),
+      chainId: chainId.toString(),
+      relatedAccountsLimit: MAX_RELATED_ACCOUNTS,
+    })
+
+    const response: ISubgraphAccount = {}
+
+    const relatedAccounts = result.relatedAccounts
+
+    if (result.account) {
+      // TODO: need to figure out how to ignore liquid split downstream splits
+      response.upstreamSplits =
+        relatedAccounts.upstreamSplits?.map((gqlSplit) =>
+          formatGqlSplit(gqlSplit),
+        ) ?? []
+      response.upstreamWaterfalls =
+        relatedAccounts.upstreamWaterfalls?.map((waterfallModule) =>
+          formatGqlWaterfallModule(waterfallModule),
+        ) ?? []
+      response.upstreamVesting =
+        relatedAccounts.upstreamVesting?.map((vestingModule) =>
+          formatGqlVestingModule(vestingModule),
+        ) ?? []
+      response.upstreamSwappers =
+        relatedAccounts.upstreamSwappers?.map((swapper) =>
+          formatGqlSwapper(swapper),
+        ) ?? []
+      response.upstreamPassThroughWallets =
+        relatedAccounts.upstreamPassThroughWallets?.map((passThroughWallet) =>
+          formatGqlPassThroughWallet(passThroughWallet),
+        ) ?? []
+      response.upstreamLiquidSplits =
+        relatedAccounts.upstreamLiquidSplits?.map((gqlLiquidSplit) =>
+          formatGqlLiquidSplit(gqlLiquidSplit),
+        ) ?? []
+      if (response.upstreamLiquidSplits.length > 0) {
+        response.upstreamSplits = response.upstreamSplits.concat(
+          relatedAccounts.upstreamLiquidSplits.map((gqlLiquidSplit) =>
+            formatGqlSplit(gqlLiquidSplit.split),
+          ),
+        )
+      }
+
+      response.controllingSplits =
+        relatedAccounts.controllingSplits?.map((split) =>
+          formatGqlSplit(split),
+        ) ?? []
+      response.pendingControlSplits =
+        relatedAccounts.pendingControlSplits?.map((split) =>
+          formatGqlSplit(split),
+        ) ?? []
+      response.ownedSwappers =
+        relatedAccounts.ownedSwappers?.map((swapper) =>
+          formatGqlSwapper(swapper),
+        ) ?? []
+      response.ownedPassThroughWallets =
+        relatedAccounts.ownedPassThroughWallets?.map((passThroughWallet) =>
+          formatGqlPassThroughWallet(passThroughWallet),
+        ) ?? []
+
+      response.account = formatFullGqlAccount(
+        result.account,
+        response.upstreamSplits,
+        response.upstreamVesting,
+        response.upstreamWaterfalls,
+        response.upstreamLiquidSplits,
+        response.upstreamSwappers,
+        response.upstreamPassThroughWallets,
+        relatedAccounts.controllingSplits,
+        relatedAccounts.pendingControlSplits,
+        relatedAccounts.ownedSwappers,
+        relatedAccounts.ownedPassThroughWallets,
+      )
+
+      const allPassThroughWallets = [...relatedAccounts.ownedPassThroughWallets]
+      if (result.account.__typename === 'PassThroughWallet') {
+        allPassThroughWallets.push(result.account)
+      }
+
+      if (result.account.__typename === 'LiquidSplit') {
+        // Not really an upstream split, but it's just used for loading. Should probably update that name. Maybe related splits?
+        response.upstreamSplits.push(formatGqlSplit(result.account.split))
+      } else if (result.account.__typename === 'WaterfallModule') {
+        result.account.tranches.map((gqlWaterfallTranche) => {
+          if (gqlWaterfallTranche.recipient.__typename === 'Split') {
+            response.upstreamSplits = response.upstreamSplits ?? []
+            response.upstreamSplits.push(
+              formatGqlSplit(gqlWaterfallTranche.recipient),
+            )
+          }
+        })
+      }
+
+      if (allPassThroughWallets.length > 0) {
+        allPassThroughWallets.map((gqlPassThroughWallet) => {
+          if (gqlPassThroughWallet.passThroughAccount.__typename === 'Split') {
+            response.upstreamSplits = response.upstreamSplits ?? []
+            response.upstreamSplits.push(
+              formatGqlSplit(gqlPassThroughWallet.passThroughAccount),
+            )
+            gqlPassThroughWallet.passThroughAccount.recipients.map(
+              (gqlRecipient) => {
+                if (gqlRecipient.account.__typename === 'Swapper') {
+                  response.upstreamSwappers = response.upstreamSwappers ?? []
+                  response.upstreamSwappers.push(
+                    formatGqlSwapper(gqlRecipient.account),
+                  )
+                }
+              },
+            )
+          }
+        })
+      }
+    }
+
+    return response
+  }
+
   protected async _getUserBalancesByContract({
     userAddress,
     contractAddresses,
@@ -178,31 +309,13 @@ class BaseClient {
   }> {
     const chainId = this._chainId
 
-    const gqlQuery =
-      contractAddresses === undefined
-        ? USER_BALANCES_BY_CONTRACT_QUERY
-        : USER_BALANCES_BY_CONTRACT_FILTERED_QUERY
-    const gqlArgs =
-      contractAddresses === undefined
-        ? { userAddress: userAddress.toLowerCase() }
-        : {
-            userAddress: userAddress.toLowerCase(),
-            contractIds: contractAddresses.map((contractAddress) =>
-              contractAddress.toLowerCase(),
-            ),
-          }
+    const response = await this._loadAccount(userAddress, chainId)
 
-    const response = await this._makeGqlRequest<{
-      userBalancesByContract: {
-        contractEarnings: GqlContractEarnings[]
-      }
-    }>(gqlQuery, gqlArgs)
-
-    if (!response.userBalancesByContract)
-      throw new AccountNotFoundError('user', userAddress, chainId)
+    if (!response) throw new AccountNotFoundError('user', userAddress, chainId)
 
     const contractEarnings = formatContractEarnings(
-      response.userBalancesByContract.contractEarnings,
+      response.contractEarnings,
+      contractAddresses,
     )
 
     return {
@@ -219,43 +332,33 @@ class BaseClient {
     includeActiveBalances: boolean
     erc20TokenList?: string[]
   }): Promise<{
-    type: GqlAccount['__typename']
     withdrawn: TokenBalances
     distributed: TokenBalances
     activeBalances?: TokenBalances
   }> {
     const chainId = this._chainId
 
-    const response = await this._makeGqlRequest<{
-      accountBalances: GqlAccountBalances
-    }>(ACCOUNT_BALANCES_QUERY, {
-      accountAddress: accountAddress.toLowerCase(),
-    })
+    const response = await this._loadAccount(accountAddress, chainId)
 
-    if (!response.accountBalances)
+    if (!response)
       throw new AccountNotFoundError('account', accountAddress, chainId)
 
-    const withdrawn = formatAccountBalances(
-      response.accountBalances.withdrawals,
-    )
-    const distributed = formatAccountBalances(
-      response.accountBalances.distributions,
-    )
+    if (response.type !== 'split' && response.type !== 'user')
+      throw new AccountNotFoundError('split & user', accountAddress, chainId)
+
+    const withdrawn = formatAccountBalances(response.withdrawn)
+    const distributed = formatAccountBalances(response.distributions)
     if (!includeActiveBalances) {
       return {
-        type: response.accountBalances.__typename,
         withdrawn,
         distributed,
       }
     }
 
-    const internalBalances = formatAccountBalances(
-      response.accountBalances.internalBalances,
-    )
-    if (response.accountBalances.__typename === 'User') {
+    const internalBalances = formatAccountBalances(response.balances)
+    if (response.type === 'user') {
       // Only including split main balance for users
       return {
-        type: response.accountBalances.__typename,
         withdrawn,
         distributed,
         activeBalances: internalBalances,
@@ -331,7 +434,6 @@ class BaseClient {
     }, {} as TokenBalances)
 
     return {
-      type: response.accountBalances.__typename,
       withdrawn,
       distributed,
       activeBalances: filteredBalances,
@@ -398,17 +500,11 @@ class BaseClient {
         'Public client required to get contract active balances. Please update your call to the SplitsClient constructor with a valid public client, or set includeActiveBalances to false',
       )
 
-    const { type, distributed, activeBalances } =
-      await this._getAccountBalances({
-        accountAddress: getAddress(contractAddress),
-        includeActiveBalances,
-        erc20TokenList,
-      })
-
-    if (type === 'User')
-      throw new Error(
-        'Cannot fetch contract earnings for a User, use getUserEarnings instead',
-      )
+    const { distributed, activeBalances } = await this._getAccountBalances({
+      accountAddress: getAddress(contractAddress),
+      includeActiveBalances,
+      erc20TokenList,
+    })
 
     if (!includeActiveBalances) return { distributed }
     return { distributed, activeBalances }

@@ -58,8 +58,8 @@ import {
   validateDistributorFeePercent,
   validateSplitRecipients,
 } from '../utils/validation'
-import { ILiquidSplit } from '../subgraphv2/types'
-import { protectedFormatLiquidSplit } from '../subgraphv2/liquid'
+import { ILiquidSplit } from '../subgraph/types'
+import { protectedFormatLiquidSplit } from '../subgraph/liquid'
 
 type LS1155Abi = typeof ls1155CloneAbi
 

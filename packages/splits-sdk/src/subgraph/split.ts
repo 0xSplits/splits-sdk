@@ -6,8 +6,14 @@ import {
 } from './token'
 import { GqlRecipient, GqlSplit, IRecipient, ISplit } from './types'
 import { getAddress, zeroAddress } from 'viem'
-import { getAccountsAndPercentAllocations, hashSplit } from '../utils'
+import {
+  fromBigIntToPercent,
+  getAccountsAndPercentAllocations,
+  hashSplit,
+} from '../utils'
 import { SupportedChainId } from './constants'
+import { Split } from '../types'
+import { formatRecipient } from './liquid'
 
 export const RECIPIENT_FIELDS_FRAGMENT = gql`
   fragment RecipientFieldsFragment on SplitRecipient {
@@ -38,6 +44,7 @@ export const SPLIT_FIELDS_FRAGMENT = gql`
     distributorFee
     distributeDirection
     distributionsPaused
+    createdBlock
     newPotentialController {
       id
     }
@@ -117,6 +124,7 @@ export const formatGqlSplit: (arg0: GqlSplit) => ISplit = (gqlSplit) => {
     address: getAddress(gqlSplit.id),
     chainId: parseInt(gqlSplit.chainId) as SupportedChainId,
     distributions: formatTokenBalances(gqlSplit.distributions),
+    withdrawn: formatTokenBalances(gqlSplit.withdrawals),
     distributorFee: parseInt(gqlSplit.distributorFee),
     distributeDirection: gqlSplit.distributeDirection,
     distributionsPaused: gqlSplit.distributionsPaused,
@@ -147,5 +155,35 @@ export const formatGqlSplit: (arg0: GqlSplit) => ISplit = (gqlSplit) => {
     parentEntityType: gqlSplit.parentEntityType,
     contractEarnings: formatGqlContractEarnings(gqlSplit.contractEarnings),
     warehouseWithdrawConfig: gqlSplit.warehouseWithdrawConfig,
+    createdBlock: gqlSplit.createdBlock,
+  }
+}
+
+// Should only be called by formatSplit on SplitsClient
+export const protectedFormatSplit = (gqlSplit: ISplit): Split => {
+  return {
+    type: gqlSplit.type === 'split' ? 'Split' : 'SplitV2',
+    address: gqlSplit.address,
+    controller:
+      gqlSplit.controller !== zeroAddress
+        ? {
+            address: gqlSplit.controller,
+          }
+        : null,
+    newPotentialController:
+      gqlSplit.newPotentialController !== zeroAddress
+        ? {
+            address: gqlSplit.newPotentialController,
+          }
+        : null,
+    distributorFeePercent: fromBigIntToPercent(gqlSplit.distributorFee),
+    distributeDirection: gqlSplit.distributeDirection,
+    distributionsPaused: gqlSplit.distributionsPaused,
+    createdBlock: gqlSplit.createdBlock,
+    recipients: gqlSplit.recipients
+      .map((gqlRecipient) => formatRecipient(gqlRecipient))
+      .sort((a, b) => {
+        return b.percentAllocation - a.percentAllocation
+      }),
   }
 }

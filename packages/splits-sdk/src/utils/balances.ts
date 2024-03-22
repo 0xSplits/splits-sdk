@@ -5,7 +5,7 @@ import { erc20Abi } from '../constants/abi/erc20'
 import { Token, TokenBalances } from '../types'
 import { isAlchemyPublicClient } from '.'
 import { retryExponentialBackoff } from './requests'
-import { IBalance } from '../subgraphv2/types'
+import { IBalance } from '../subgraph/types'
 import { mergeWith } from 'lodash'
 
 export const fetchERC20TransferredTokens = async (

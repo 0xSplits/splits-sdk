@@ -61,13 +61,6 @@ import {
   TransactionFailedError,
   UnsupportedChainIdError,
 } from '../errors'
-import {
-  ACCOUNT_QUERY,
-  protectedFormatSplit,
-  RELATED_SPLITS_QUERY,
-  SPLIT_QUERY,
-} from '../subgraph'
-import type { GqlAccount, GqlSplit } from '../subgraph/types'
 import type {
   SplitsClientConfig,
   CreateSplitConfig,
@@ -102,7 +95,8 @@ import {
   getBigIntFromPercent,
 } from '../utils'
 import { validateAddress, validateSplitInputs } from '../utils/validation'
-import { IAccount, IAccountType } from '../subgraphv2/types'
+import { IAccount, IAccountType, ISplit } from '../subgraph/types'
+import { protectedFormatSplit } from '../subgraph/split'
 
 const polygonAbiChainIds = [
   ...POLYGON_CHAIN_IDS,
@@ -535,20 +529,15 @@ class SplitsTransactions extends BaseTransactions {
     validateAddress(splitAddress)
     const chainId = this._chainId
 
-    const response = await this._makeGqlRequest<{ split: GqlSplit }>(
-      SPLIT_QUERY,
-      {
-        splitAddress: splitAddress.toLowerCase(),
-      },
-    )
+    const response = await this._loadAccount(splitAddress, chainId)
 
-    if (!response.split)
+    if (!response || response.type !== 'split')
       throw new AccountNotFoundError('split', splitAddress, chainId)
 
-    return await this._formatSplit(response.split)
+    return await this._formatSplit(response)
   }
 
-  protected async _formatSplit(gqlSplit: GqlSplit): Promise<Split> {
+  protected async _formatSplit(gqlSplit: ISplit): Promise<Split> {
     const split = protectedFormatSplit(gqlSplit)
 
     if (this._includeEnsNames) {
@@ -1213,27 +1202,29 @@ export class SplitsClient extends SplitsTransactions {
   }> {
     validateAddress(address)
 
-    const response = await this._makeGqlRequest<{
-      receivingFrom: { split: GqlSplit }[]
-      controlling: GqlSplit[]
-      pendingControl: GqlSplit[]
-    }>(RELATED_SPLITS_QUERY, { accountAddress: address.toLowerCase() })
+    const response = await this._loadFullAccount(address, this._chainId)
 
     const [receivingFrom, controlling, pendingControl] = await Promise.all([
       Promise.all(
-        response.receivingFrom.map(
-          async (recipient) => await this._formatSplit(recipient.split),
-        ),
+        response.upstreamSplits
+          ? response.upstreamSplits.map(async (recipient) =>
+              this._formatSplit(recipient),
+            )
+          : [],
       ),
       Promise.all(
-        response.controlling.map(
-          async (gqlSplit) => await this._formatSplit(gqlSplit),
-        ),
+        response.controllingSplits
+          ? response.controllingSplits.map(async (recipient) =>
+              this._formatSplit(recipient),
+            )
+          : [],
       ),
       Promise.all(
-        response.pendingControl.map(
-          async (gqlSplit) => await this._formatSplit(gqlSplit),
-        ),
+        response.pendingControlSplits
+          ? response.pendingControlSplits.map(async (recipient) =>
+              this._formatSplit(recipient),
+            )
+          : [],
       ),
     ])
 
@@ -1403,7 +1394,7 @@ export class SplitsClient extends SplitsTransactions {
   }): Promise<FormattedUserEarningsByContract> {
     if (!this._publicClient) {
       throw new MissingPublicClientError(
-        'Public client required to get formatted earnings. Please update your call to the SplitsClient contstructor with a valid public client.',
+        'Public client required to get formatted earnings. Please update your call to the SplitsClient constructor with a valid public client.',
       )
     }
 

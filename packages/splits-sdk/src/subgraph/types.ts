@@ -1,3 +1,7 @@
+import { Dictionary } from 'lodash'
+import { SupportedChainId } from './constants'
+
+/** All built-in and custom scalars, mapped to their actual values */
 type Scalars = {
   ID: string
   String: string
@@ -7,98 +11,57 @@ type Scalars = {
   DateTime: string
 }
 
-type GqlToken = {
+export type GqlRecipient = {
   id: Scalars['ID']
-}
-
-export const AccountType = {
-  user: 'user',
-  split: 'split',
-  splitV2Push: 'splitV2Push',
-  splitV2Pull: 'splitV2Pull',
-  vesting: 'vesting',
-  waterfall: 'waterfall',
-  liquidSplit: 'liquidSplit',
-  swapper: 'swapper',
-  passThroughWallet: 'passThroughWallet',
-}
-export type AccountType = (typeof AccountType)[keyof typeof AccountType]
-
-export const DistributeDirection = {
-  pull: 'pull',
-  push: 'push',
-} as const
-export type DistributeDirection =
-  (typeof DistributeDirection)[keyof typeof DistributeDirection]
-
-export type GqlTokenBalance = {
-  id: Scalars['ID']
-  amount: Scalars['Int']
-  token: GqlToken
   account: GqlAccount
+  ownership: Scalars['String']
 }
 
-export type GqlAccountBalances = {
-  __typename: GqlAccount['__typename']
-  withdrawals: GqlTokenBalance[]
-  internalBalances: GqlTokenBalance[]
+type GqlAccountSharedFields = {
+  chainId: Scalars['String']
   distributions: GqlTokenBalance[]
+  latestBlock: Scalars['Int']
+  latestActivity: Scalars['String']
+  parentEntityType?: Scalars['String']
+  internalBalances: GqlTokenBalance[]
+  warehouseBalances: GqlTokenBalance[]
+  contractEarnings: GqlContractEarnings[]
+  warehouseWithdrawConfig: GqlWarehouseWithdrawConfig
+}
+
+export type GqlSplit = GqlAccountSharedFields & {
+  __typename: 'Split'
+  id: Scalars['ID']
+  recipients: GqlRecipient[]
+  type: 'split' | 'splitV2Pull' | 'splitV2Push'
+  distributorFee: Scalars['String']
+  distributeDirection: 'push' | 'pull'
+  distributionsPaused: Scalars['Boolean']
+  controller?: { id: Scalars['String'] }
+  newPotentialController?: { id: Scalars['String'] }
+  liquidSplit?: GqlLiquidSplit
+  createdBlock: Scalars['Int']
+  withdrawals: GqlTokenBalance[]
+}
+
+type GqlContractEarningsBalance = GqlTokenBalanceSharedData & {
+  contract: GqlAccount
 }
 
 export type GqlContractEarnings = {
-  id: Scalars['ID']
   contract: GqlAccount
-  internalBalances: GqlTokenBalance[]
-  withdrawals: GqlTokenBalance[]
+  internalBalances: GqlContractEarningsBalance[]
+  withdrawals: GqlContractEarningsBalance[]
 }
 
-export type GqlRecipient = {
-  id: Scalars['ID']
-  split: GqlSplit
-  account: GqlAccount
-  ownership: Scalars['Int']
-}
-
-export type GqlSplit = {
-  __typename: 'Split'
-  id: Scalars['ID']
-  type: AccountType
-  recipients: GqlRecipient[]
-  upstream?: GqlRecipient[]
-  distributorFee: Scalars['Int']
-  distributionsPaused: Scalars['Boolean']
-  distributeDirection: DistributeDirection
-  creator: Scalars['String']
-  controller: Scalars['String']
-  newPotentialController: Scalars['String']
-  createdBlock: Scalars['Int']
-}
-
-export type GqlUser = {
+export type GqlUser = GqlAccountSharedFields & {
   __typename: 'User'
   id: Scalars['ID']
-  upstream?: GqlRecipient[]
+  withdrawals: GqlTokenBalance[]
+  contractEarnings: GqlContractEarnings[]
 }
 
-export type GqlWaterfallModule = {
-  __typename: 'WaterfallModule'
-  id: Scalars['ID']
-  token: GqlToken
-  nonWaterfallRecipient: Scalars['String']
-  tranches: GqlWaterfallTranche[]
-  latestBlock: Scalars['Int']
-}
-
-export type GqlWaterfallTranche = {
-  id: Scalars['ID']
-  startAmount: Scalars['Int']
-  size?: Scalars['Int']
-  claimedAmount: Scalars['Int']
-  account: GqlWaterfallModule
-  recipient: GqlAccount
-}
-
-export type GqlVestingModule = {
+export type GqlVestingModule = GqlAccountSharedFields & {
   __typename: 'VestingModule'
   id: Scalars['ID']
   vestingPeriod: Scalars['String']
@@ -116,32 +79,99 @@ export type GqlVestingStream = {
   account: GqlVestingModule
 }
 
-export type GqlLiquidSplit = {
+export type GqlWaterfallModule = GqlAccountSharedFields & {
+  __typename: 'WaterfallModule'
+  id: Scalars['ID']
+  token: GqlToken
+  tranches: GqlWaterfallTranche[]
+  distributions: GqlTokenBalance[]
+  nonWaterfallRecipient: GqlAccount
+}
+
+export type GqlWaterfallTranche = {
+  id: Scalars['ID']
+  startAmount: Scalars['Int']
+  size?: Scalars['Int']
+  claimedAmount: Scalars['Int']
+  account: GqlWaterfallModule
+  recipient: GqlAccount
+}
+
+export type GqlLiquidSplit = GqlAccountSharedFields & {
   __typename: 'LiquidSplit'
   id: Scalars['ID']
-  distributorFee: Scalars['Int']
+  distributorFee: Scalars['String']
   holders: GqlHolder[]
-  latestBlock: Scalars['Int']
   split: GqlSplit
   isFactoryGenerated: Scalars['Boolean']
 }
 
-type GqlHolder = {
+export type GqlHolder = {
   id: Scalars['ID']
-  liquidSplit: GqlLiquidSplit
-  account: GqlAccount
-  ownership: Scalars['Int']
+  ownership: Scalars['String']
 }
 
-export type GqlSwapper = {
-  __typename: 'Swapper'
+type GqlUniswapV3TWAPPairDetail = {
+  base: GqlToken
+  quote: GqlToken
+  pool: Scalars['String']
+  fee: Scalars['Int']
+  period: Scalars['String']
+}
+
+type GqlChainlinkFeed = {
+  aggregatorV3: Scalars['String']
+  decimals: Scalars['Int']
+  staleAfter: Scalars['Int']
+  mul: Scalars['Boolean']
+}
+
+type GqlChainlinkPairDetail = {
+  base: GqlToken
+  quote: GqlToken
+  inverted: Scalars['Boolean']
+  feeds: GqlChainlinkFeed[]
+}
+
+type GqlUnknownOracle = {
   id: Scalars['ID']
-  beneficiary: GqlAccount
-  tokenToBeneficiary: GqlToken
+  type: 'unknown'
+}
+
+type GqlUniswapV3TWAPOracle = {
+  id: Scalars['ID']
+  type: 'uniswapV3TWAP'
+  createdBlock: Scalars['Int']
+  latestBlock: Scalars['Int']
+  latestActivity: Scalars['String']
   owner: GqlAccount
   paused: Scalars['Boolean']
-  defaultScaledOfferFactor: Scalars['String']
-  scaledOfferFactorPairOverrides: GqlSwapperScaledOfferFactorOverride[]
+  defaultPeriod: Scalars['String']
+  pairDetails: GqlUniswapV3TWAPPairDetail[]
+}
+
+type GqlChainlinkOracle = {
+  id: Scalars['ID']
+  type: 'chainlink'
+  createdBlock: Scalars['Int']
+  latestBlock: Scalars['Int']
+  latestActivity: Scalars['String']
+  owner: GqlAccount
+  paused: Scalars['Boolean']
+  sequencerFeed: Scalars['String']
+  chainlinkPairDetails: GqlChainlinkPairDetail[]
+}
+
+export type GqlOracle =
+  | GqlUnknownOracle
+  | GqlUniswapV3TWAPOracle
+  | GqlChainlinkOracle
+
+export type GqlSwapBalance = {
+  inputToken: GqlToken
+  inputAmount: Scalars['String']
+  outputToken: GqlToken
+  outputAmount: Scalars['String']
 }
 
 type GqlSwapperScaledOfferFactorOverride = {
@@ -150,27 +180,617 @@ type GqlSwapperScaledOfferFactorOverride = {
   scaledOfferFactor: Scalars['String']
 }
 
-export type GqlContractAccountBalance = {
+export type GqlSwapper = GqlAccountSharedFields & {
+  __typename: 'Swapper'
+  id: Scalars['ID']
+  owner: GqlAccount
+  paused: Scalars['Boolean']
+  beneficiary: GqlAccount
+  tokenToBeneficiary: GqlToken
+  oracle: GqlOracle
+  defaultScaledOfferFactor: Scalars['String']
+  scaledOfferFactorPairOverrides: GqlSwapperScaledOfferFactorOverride[]
+  swapperSwapBalances: GqlSwapBalance[]
+}
+
+export type GqlPassThroughBalance = {
+  id: Scalars['ID']
+  amount: Scalars['Int']
+  token: GqlToken
+  account: GqlAccount
+}
+
+export type GqlPassThroughWalletSwapBalanceOutput = {
   id: Scalars['ID']
   token: GqlToken
   amount: Scalars['Int']
-  account: GqlAccount
-  contract: GqlContract
+  passThroughWalletSwapBalance: GqlPassThroughWalletSwapBalance
 }
 
-export type GqlContractAccountDeposits = GqlAccountBalances
+export type GqlPassThroughWalletSwapBalance = {
+  id: Scalars['ID']
+  inputToken: GqlToken
+  inputAmount: Scalars['Int']
+  outputs: GqlPassThroughWalletSwapBalanceOutput[]
+  passThroughWallet: GqlPassThroughWallet
+}
 
-export type GqlContractAccountWithdrawal = GqlAccountBalances
+export type GqlPassThroughWallet = GqlAccountSharedFields & {
+  __typename: 'PassThroughWallet'
+  id: Scalars['ID']
+  owner: GqlAccount
+  paused: Scalars['Boolean']
+  passThroughAccount: GqlAccount
+  passThroughSwapBalances: GqlPassThroughWalletSwapBalance[]
+}
 
-export type GqlContractAccountEarnings = GqlAccountBalances
+type GqlToken = {
+  id: Scalars['ID']
+  withdrawals: GqlTokenBalance[]
+  internalBalances: GqlTokenBalance[]
+}
 
-export type GqlContract = {
+export type GqlTokenBalanceSharedData = {
+  id: Scalars['ID']
+  amount: Scalars['Int']
+}
+
+export type GqlTokenBalance = GqlTokenBalanceSharedData & {
   id: Scalars['ID']
   account: GqlAccount
 }
 
+export type GqlWarehouseWithdrawConfig = {
+  paused: Scalars['Boolean']
+  incentive: Scalars['Int']
+}
+
+type GqlTransaction = {
+  id: Scalars['ID']
+}
+
+type GqlBaseEventData = {
+  id: Scalars['ID']
+  timestamp: Scalars['Int']
+  logIndex: Scalars['Int']
+  account: GqlAccount
+}
+
+type GqlRecieveDistributionEvent = GqlBaseEventData & {
+  __typename: 'ReceiveDistributionEvent'
+  token: GqlToken
+  amount: Scalars['Int']
+  distributionEvent: GqlDistributionEvent
+}
+
+type GqlDistributeDistributionEvent = GqlBaseEventData & {
+  __typename: 'DistributeDistributionEvent'
+  token: GqlToken
+  amount: Scalars['Int']
+  distributionEvent: GqlDistributionEvent
+}
+
+type GqlDistributionEvent = GqlBaseEventData & {
+  __typename: 'DistributionEvent'
+  amount: Scalars['Int']
+  token: GqlToken
+  transaction: GqlTransaction
+  receiveDistributionEvents: GqlRecieveDistributionEvent[]
+  distributeDistributionEvent: GqlDistributeDistributionEvent
+}
+
+type GqlWithdrawalEvent = GqlBaseEventData & {
+  __typename: 'WithdrawalEvent'
+  transaction: GqlTransaction
+  tokenWithdrawalEvents: GqlTokenWithdrawalEvent[]
+}
+
+type GqlTokenWithdrawalEvent = GqlBaseEventData & {
+  __typename: 'TokenWithdrawalEvent'
+  token: GqlToken
+  amount: Scalars['Int']
+  withdrawalEvent: GqlWithdrawalEvent
+}
+
+type GqlControlTransferEvent = GqlBaseEventData & {
+  __typename: 'ControlTransferEvent'
+  controlTransferType: 'initiate' | 'cancel' | 'transfer'
+  transaction: GqlTransaction
+  fromUserEvent: GqlFromUserGqlControlTransferEvent
+  toUserEvent?: GqlToUserGqlControlTransferEvent
+}
+
+type GqlFromUserGqlControlTransferEvent = GqlBaseEventData & {
+  __typename: 'FromUserControlTransferEvent'
+  controlTransferEvent: GqlControlTransferEvent
+}
+
+type GqlToUserGqlControlTransferEvent = GqlBaseEventData & {
+  __typename: 'ToUserControlTransferEvent'
+  controlTransferEvent: GqlControlTransferEvent
+}
+
+type GqlSetSplitEvent = GqlBaseEventData & {
+  __typename: 'SetSplitEvent'
+  transaction: GqlTransaction
+  setSplitType: 'create' | 'update'
+  recipientAddedEvents: GqlRecipientAddedEvent[]
+  recipientRemovedEvents: GqlRecipientRemovedEvent[]
+}
+
+type GqlRecipientAddedEvent = GqlBaseEventData & {
+  __typename: 'RecipientAddedEvent'
+  setSplitEvent: GqlSetSplitEvent
+  ownership: Scalars['Int']
+}
+
+type GqlRecipientRemovedEvent = GqlBaseEventData & {
+  __typename: 'RecipientRemovedEvent'
+  setSplitEvent: GqlSetSplitEvent
+}
+
+type GqlCreateVestingModuleEvent = GqlBaseEventData & {
+  __typename: 'CreateVestingModuleEvent'
+  transaction: GqlTransaction
+}
+
+type GqlCreateVestingStreamEvent = GqlBaseEventData & {
+  __typename: 'CreateVestingStreamEvent'
+  transaction: GqlTransaction
+  token: GqlToken
+  amount: Scalars['Int']
+}
+
+type GqlReleaseVestingFundsEvent = GqlBaseEventData & {
+  __typename: 'ReleaseVestingFundsEvent'
+  account: GqlVestingModule
+  transaction: GqlTransaction
+  token: GqlToken
+  amount: Scalars['Int']
+}
+
+type GqlReceiveVestedFundsEvent = GqlBaseEventData & {
+  __typename: 'ReceiveVestedFundsEvent'
+  releaseVestingFundsEvent: GqlReleaseVestingFundsEvent
+}
+
+type GqlCreateWaterfallModuleEvent = GqlBaseEventData & {
+  __typename: 'CreateWaterfallModuleEvent'
+  transaction: GqlTransaction
+  recipientAddedEvents: GqlWaterfallRecipientAddedEvent[]
+}
+
+type GqlWaterfallRecipientAddedEvent = GqlBaseEventData & {
+  __typename: 'WaterfallRecipientAddedEvent'
+  createWaterfallEvent: GqlCreateWaterfallModuleEvent
+}
+
+type GqlWaterfallFundsEvent = GqlBaseEventData & {
+  __typename: 'WaterfallFundsEvent'
+  account: GqlWaterfallModule
+  transaction: GqlTransaction
+  amount: Scalars['Int']
+  receiveFundsEvents: GqlReceiveWaterfallFundsEvent[]
+}
+
+type GqlReceiveWaterfallFundsEvent = GqlBaseEventData & {
+  __typename: 'ReceiveWaterfallFundsEvent'
+  amount: Scalars['Int']
+  waterfallFundsEvent: GqlWaterfallFundsEvent
+}
+
+type GqlRecoverNonWaterfallFundsEvent = GqlBaseEventData & {
+  __typename: 'RecoverNonWaterfallFundsEvent'
+  account: GqlWaterfallModule
+  transaction: GqlTransaction
+  amount: Scalars['Int']
+  nonWaterfallToken: GqlToken
+  receiveNonWaterfallFundsEvent: GqlReceiveNonWaterfallFundsEvent
+}
+
+type GqlReceiveNonWaterfallFundsEvent = GqlBaseEventData & {
+  __typename: 'ReceiveNonWaterfallFundsEvent'
+  recoverNonWaterfallFundsEvent: GqlRecoverNonWaterfallFundsEvent
+}
+
+type GqlCreateLiquidSplitEvent = GqlBaseEventData & {
+  __typename: 'CreateLiquidSplitEvent'
+  transaction: GqlTransaction
+}
+
+type GqlLiquidSplitNFTTransferEvent = GqlBaseEventData & {
+  __typename: 'LiquidSplitNFTTransferEvent'
+  transaction: GqlTransaction
+  nftTransferAmount?: Scalars['String']
+  transferType: Scalars['String']
+  nftAddedEvent?: GqlLiquidSplitNFTAddedEvent
+  nftRemovedEvent?: GqlLiquidSplitNFTRemovedEvent
+}
+
+type GqlLiquidSplitNFTAddedEvent = GqlBaseEventData & {
+  __typename: 'LiquidSplitNFTAddedEvent'
+  nftTransferEvent: GqlLiquidSplitNFTTransferEvent
+}
+
+type GqlLiquidSplitNFTRemovedEvent = GqlBaseEventData & {
+  __typename: 'LiquidSplitNFTRemovedEvent'
+  nftTransferEvent: GqlLiquidSplitNFTTransferEvent
+}
+
+type GqlCreateSwapperEvent = GqlBaseEventData & {
+  __typename: 'CreateSwapperEvent'
+  transaction: GqlTransaction
+  token: GqlToken
+  beneficiaryAddedEvent: GqlSwapperBeneficiaryAddedEvent
+}
+
+type GqlSwapperBeneficiaryAddedEvent = GqlBaseEventData & {
+  __typename: 'SwapperBeneficiaryAddedEvent'
+  createSwapperEvent: GqlCreateSwapperEvent
+  addedUpdateSwapperEvent: GqlUpdatePassThroughAccountEvent
+}
+
+type GqlSwapperBeneficiaryRemovedEvent = GqlBaseEventData & {
+  __typename: 'SwapperBeneficiaryRemovedEvent'
+  removedUpdateSwapperEvent: GqlUpdatePassThroughAccountEvent
+}
+
+type GqlUpdateSwapperBeneficiaryEvent = GqlBaseEventData & {
+  __typename: 'UpdateSwapperBeneficiaryEvent'
+  transaction: GqlTransaction
+  beneficiaryAddedEvent: GqlSwapperBeneficiaryAddedEvent
+  beneficiaryRemovedEvent: GqlSwapperBeneficiaryRemovedEvent
+}
+
+type GqlUpdateSwapperTokenEvent = GqlBaseEventData & {
+  __typename: 'UpdateSwapperTokenEvent'
+  transaction: GqlTransaction
+  oldToken: GqlToken
+  newToken: GqlToken
+}
+
+type GqlSwapFundsEvent = GqlBaseEventData & {
+  __typename: 'SwapFundsEvent'
+  transaction: GqlTransaction
+  inputAmount: Scalars['String']
+  inputToken: GqlToken
+  outputAmount: Scalars['String']
+  outputToken: GqlToken
+  recipient: GqlReceiveSwappedFundsEvent
+}
+
+type GqlReceiveSwappedFundsEvent = GqlBaseEventData & {
+  __typename: 'ReceiveSwappedFundsEvent'
+  swapFundsEvent: GqlSwapFundsEvent
+}
+
+type GqlCreatePassThroughWalletEvent = GqlBaseEventData & {
+  __typename: 'CreatePassThroughWalletEvent'
+  transaction: GqlTransaction
+  passThroughAccount: GqlAccount
+}
+
+type GqlUpdatePassThroughAccountEvent = GqlBaseEventData & {
+  __typename: 'UpdatePassThroughAccountEvent'
+  transaction: GqlTransaction
+  oldPassThroughAccount: GqlAccount
+  newPassThroughAccount: GqlAccount
+}
+
+type GqlPassThroughFundsBalance = {
+  token: GqlToken
+  amount: Scalars['String']
+}
+
+type GqlPassThroughFundsEvent = GqlBaseEventData & {
+  __typename: 'PassThroughFundsEvent'
+  transaction: GqlTransaction
+  passThroughBalances: GqlPassThroughFundsBalance[]
+  recipient: GqlReceivePassThroughFundsEvent
+}
+
+type GqlReceivePassThroughFundsEvent = GqlBaseEventData & {
+  __typename: 'ReceivePassThroughFundsEvent'
+  passThroughFundsEvent: GqlPassThroughFundsEvent
+}
+
+type GqlReceiveOwnerSwappedDiversifierFundsEvent = GqlBaseEventData & {
+  __typename: 'ReceiveOwnerSwappedDiversifierFundsEvent'
+  swapDiversifierFundsBalance: GqlSwapDiversifierFundsBalance
+}
+
+type GqlSwapDiversifierFundsBalance = {
+  inputToken: GqlToken
+  inputAmount: Scalars['String']
+  outputToken: GqlToken
+  outputAmount: Scalars['String']
+  recipient: GqlReceiveOwnerSwappedDiversifierFundsEvent
+  ownerSwapDiversifierFundsEvent: GqlOwnerSwapDiversifierFundsEvent
+}
+
+type GqlOwnerSwapDiversifierFundsEvent = GqlBaseEventData & {
+  __typename: 'OwnerSwapDiversifierFundsEvent'
+  transaction: GqlTransaction
+  swapDiversifierFundsBalances: GqlSwapDiversifierFundsBalance[]
+}
+
+export type GqlAccountEvent =
+  | GqlDistributionEvent
+  | GqlRecieveDistributionEvent
+  | GqlDistributeDistributionEvent
+  | GqlWithdrawalEvent
+  | GqlControlTransferEvent
+  | GqlToUserGqlControlTransferEvent
+  | GqlFromUserGqlControlTransferEvent
+  | GqlSetSplitEvent
+  | GqlRecipientAddedEvent
+  | GqlRecipientRemovedEvent
+  | GqlCreateVestingModuleEvent
+  | GqlCreateVestingStreamEvent
+  | GqlReleaseVestingFundsEvent
+  | GqlReceiveVestedFundsEvent
+  | GqlCreateWaterfallModuleEvent
+  | GqlWaterfallRecipientAddedEvent
+  | GqlWaterfallFundsEvent
+  | GqlReceiveWaterfallFundsEvent
+  | GqlRecoverNonWaterfallFundsEvent
+  | GqlReceiveNonWaterfallFundsEvent
+  | GqlCreateLiquidSplitEvent
+  | GqlLiquidSplitNFTTransferEvent
+  | GqlLiquidSplitNFTAddedEvent
+  | GqlLiquidSplitNFTRemovedEvent
+  | GqlCreateSwapperEvent
+  | GqlSwapperBeneficiaryAddedEvent
+  | GqlSwapperBeneficiaryRemovedEvent
+  | GqlUpdateSwapperBeneficiaryEvent
+  | GqlUpdateSwapperTokenEvent
+  | GqlSwapFundsEvent
+  | GqlReceiveSwappedFundsEvent
+  | GqlCreatePassThroughWalletEvent
+  | GqlUpdatePassThroughAccountEvent
+  | GqlPassThroughFundsEvent
+  | GqlReceivePassThroughFundsEvent
+  | GqlOwnerSwapDiversifierFundsEvent
+  | GqlReceiveOwnerSwappedDiversifierFundsEvent
+
+export type GqlAccountEventName = GqlAccountEvent['__typename']
+
 export type GqlAccount =
+  | GqlUser
   | GqlSplit
+  | GqlVestingModule
   | GqlWaterfallModule
   | GqlLiquidSplit
   | GqlSwapper
+  | GqlPassThroughWallet
+
+export type GqlAccountType = GqlAccount['__typename']
+
+export type IAddress = `0x${string}`
+export type IBalance = Dictionary<bigint>
+export type ISplitType = 'immutable' | 'mutable' | 'liquid'
+export type IContractEarnings = Dictionary<{
+  total: IBalance
+  withdrawals: IBalance
+  internalBalances: IBalance
+}>
+
+export type IAccount = {
+  address: IAddress
+  chainId: SupportedChainId
+}
+
+type IAccountSharedFields = IAccount & {
+  distributions: IBalance
+  latestBlock: number
+  latestActivity: number
+  parentEntityType?: string
+  controllingSplits?: IAddress[]
+  pendingControlSplits?: IAddress[]
+  ownedSwappers?: IAddress[]
+  ownedPassThroughWallets?: IAddress[]
+  upstreamSplits?: IAddress[]
+  upstreamWaterfalls?: IAddress[]
+  upstreamLiquidSplits?: IAddress[]
+  upstreamSwappers?: IAddress[]
+  upstreamPassThroughWallets?: IAddress[]
+  upstreamVesting?: IAddress[]
+  contractEarnings: IContractEarnings
+  warehouseWithdrawConfig?: {
+    paused: boolean
+    incentive: number
+  }
+}
+
+export type ISplit = IAccountSharedFields & {
+  type: 'split' | 'splitV2Push' | 'splitV2Pull'
+  balances: IBalance
+  distributed: IBalance
+  withdrawn: IBalance
+  recipients: IRecipient[]
+  distributorFee: number
+  distributionsPaused: boolean
+  distributeDirection: 'push' | 'pull'
+  controller: IAddress
+  newPotentialController: IAddress
+  hash: string
+  internalBalances: IBalance
+  warehouseBalances: IBalance
+  liquidSplitId?: IAddress
+  createdBlock: number
+}
+
+export type IRecipient = {
+  address: IAddress
+  ownership: number
+  ens?: string
+}
+
+export type IUser = IAccountSharedFields & {
+  type: 'user'
+  withdrawn: IBalance
+  balances: IBalance
+  warehouseBalances: IBalance
+}
+
+export type IVestingStream = {
+  streamId: number
+  startTime: number
+  totalAmount: bigint
+  claimedAmount: bigint
+  token: IAddress
+}
+
+export type IVestingModule = IAccountSharedFields & {
+  type: 'vesting'
+  balances: IBalance
+  internalBalances: IBalance
+  beneficiary: IAddress
+  vestingPeriod: number
+  streams?: IVestingStream[]
+}
+
+export type IWaterfallTranche = {
+  startAmount: bigint
+  size?: bigint
+  fundedAmount: bigint
+  claimedAmount: bigint
+  recipient: IAddress
+}
+
+export type IWaterfallModule = IAccountSharedFields & {
+  type: 'waterfall'
+  balances: IBalance
+  distributed: IBalance
+  token: IAddress
+  internalBalances: IBalance
+  tranches: IWaterfallTranche[]
+  nonWaterfallRecipient: IAddress
+}
+
+export type IHolder = {
+  address: IAddress
+  ownership: number
+}
+
+export type ILiquidSplit = IAccountSharedFields & {
+  type: 'liquidSplit'
+  balances: IBalance
+  distributed: IBalance
+  internalBalances: IBalance
+  splitId: IAddress
+  distributorFee: number
+  holders: IHolder[]
+  isFactoryGenerated: boolean
+  encodedSvgLogo?: string
+}
+
+export type IUniswapV3TWAPPairDetails = Dictionary<{
+  base: IAddress
+  quote: IAddress
+  pool: string
+  fee: number
+  period: number
+}>
+
+export type IChainlinkPairDetails = Dictionary<{
+  base: IAddress
+  quote: IAddress
+}>
+
+type IBaseOracle = {
+  address: IAddress
+}
+
+type IUnknownOracle = IBaseOracle & {
+  type: 'unknown'
+}
+
+export type IUniswapV3TWAPOracle = IBaseOracle & {
+  type: 'uniswapV3TWAP'
+  defaultPeriod: number
+  pairDetails: IUniswapV3TWAPPairDetails
+}
+
+type IChainlinkOracle = IBaseOracle & {
+  type: 'chainlink'
+  sequencerFeed?: string
+  chainlinkPairDetails: IChainlinkPairDetails
+}
+
+export type IOracle = IUnknownOracle | IUniswapV3TWAPOracle | IChainlinkOracle
+
+export type ISwapBalance = Dictionary<{
+  inputAmount: bigint
+  outputAmount: bigint
+}>
+
+export type ISwapperScaledOfferFactorOverrides = Dictionary<{
+  base: IAddress
+  quote: IAddress
+  scaledOfferFactor: number
+}>
+
+export type ISwapper = IAccountSharedFields & {
+  type: 'swapper'
+  balances: IBalance
+  balanceQuoteAmounts: ISwapBalance
+  swapBalances: ISwapBalance
+  internalBalances: IBalance
+  owner: IAddress
+  beneficiary: IAddress
+  tokenToBeneficiary: IAddress
+  defaultScaledOfferFactor: number
+  scaledOfferFactorOverrides: ISwapperScaledOfferFactorOverrides
+  oracle: IOracle
+  paused: boolean
+}
+
+export type IDiversifierSwapBalance = Dictionary<
+  Dictionary<{
+    inputAmount: bigint
+    outputToken: IAddress
+    outputAmount: bigint
+  }>
+>
+
+export type IPassThroughWalletSwapBalance = Dictionary<{
+  inputAmount: bigint
+  outputs: IBalance
+}>
+
+export type IPassThroughWallet = IAccountSharedFields & {
+  type: 'passThroughWallet'
+  balances: IBalance
+  internalBalances: IBalance
+  passThroughBalances: IBalance
+  owner: IAddress
+  passThroughAccount: IAddress
+  balanceQuoteAmounts: IDiversifierSwapBalance
+  paused: boolean
+  swapBalances: IPassThroughWalletSwapBalance
+}
+
+// TODO: better name???
+export type IAccountType =
+  | ISplit
+  | IWaterfallModule
+  | IVestingModule
+  | ILiquidSplit
+  | ISwapper
+  | IPassThroughWallet
+  | IUser
+
+export type ISubgraphAccount = {
+  account?: IAccountType
+  upstreamSplits?: ISplit[]
+  upstreamWaterfalls?: IWaterfallModule[]
+  upstreamVesting?: IVestingModule[]
+  upstreamLiquidSplits?: ILiquidSplit[]
+  upstreamSwappers?: ISwapper[]
+  upstreamPassThroughWallets?: IPassThroughWallet[]
+  controllingSplits?: ISplit[]
+  pendingControlSplits?: ISplit[]
+  ownedSwappers?: ISwapper[]
+  ownedPassThroughWallets?: IPassThroughWallet[]
+}

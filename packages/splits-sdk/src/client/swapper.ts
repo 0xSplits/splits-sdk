@@ -66,8 +66,8 @@ import {
   validateScaledOfferFactorOverrides,
   validateUniV3SwapInputAssets,
 } from '../utils/validation'
-import { ISwapper } from '../subgraphv2/types'
-import { protectedFormatSwapper } from '../subgraphv2/swapper'
+import { ISwapper } from '../subgraph/types'
+import { protectedFormatSwapper } from '../subgraph/swapper'
 
 type SwapperAbi = typeof swapperAbi
 type UniV3SwapAbi = typeof uniV3SwapAbi

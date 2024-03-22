@@ -76,7 +76,7 @@ export const formatGqlLiquidSplit: (arg0: GqlLiquidSplit) => ILiquidSplit = (
   }
 }
 
-const formatRecipient = (gqlRecipient: IHolder) => {
+export const formatRecipient = (gqlRecipient: IHolder) => {
   return {
     recipient: {
       address: gqlRecipient.address,

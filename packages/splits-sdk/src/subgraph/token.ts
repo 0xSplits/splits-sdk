@@ -39,7 +39,11 @@ export const formatTokenBalances: (
 }
 
 export const formatGqlContractEarnings: (arg0: GqlContractEarnings[]) => {
-  [address: string]: IBalance
+  [address: string]: {
+    total: IBalance
+    withdrawals: IBalance
+    internalBalances: IBalance
+  }
 } = (gqlContractEarnings) => {
   return gqlContractEarnings.reduce(
     (acc, gqlContractEarnings) => {
@@ -48,9 +52,19 @@ export const formatGqlContractEarnings: (arg0: GqlContractEarnings[]) => {
       const internalBalances = formatTokenBalances(
         gqlContractEarnings.internalBalances,
       )
-      acc[contractAddress] = mergeBalances([withdrawals, internalBalances])
+      acc[contractAddress] = {
+        total: mergeBalances([withdrawals, internalBalances]),
+        withdrawals,
+        internalBalances,
+      }
       return acc
     },
-    {} as { [address: string]: IBalance },
+    {} as {
+      [address: string]: {
+        total: IBalance
+        withdrawals: IBalance
+        internalBalances: IBalance
+      }
+    },
   )
 }

@@ -50,8 +50,8 @@ import {
   addEnsNames,
 } from '../utils'
 import { validateAddress, validateWaterfallTranches } from '../utils/validation'
-import { IWaterfallModule } from '../subgraphv2/types'
-import { protectedFormatWaterfallModule } from '../subgraphv2/waterfall'
+import { IWaterfallModule } from '../subgraph/types'
+import { protectedFormatWaterfallModule } from '../subgraph/waterfall'
 
 type WaterfallAbi = typeof waterfallAbi
 
