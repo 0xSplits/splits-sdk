@@ -48,7 +48,6 @@ import {
   getSplitType,
 } from '../utils'
 import {
-  InvalidAuthError,
   SaltRequired,
   TransactionFailedError,
   UnsupportedChainIdError,

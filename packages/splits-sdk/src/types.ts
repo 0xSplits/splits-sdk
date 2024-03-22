@@ -10,7 +10,6 @@ import type {
   WalletClient,
 } from 'viem'
 import { TransactionType } from './constants'
-import { Dictionary } from 'lodash'
 
 // INPUTS
 

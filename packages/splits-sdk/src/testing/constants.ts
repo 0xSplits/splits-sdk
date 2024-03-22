@@ -1,4 +1,4 @@
-import { Address, Hex } from 'viem'
+import { Address } from 'viem'
 
 import {
   ContractDiversifierRecipient,
@@ -8,6 +8,7 @@ import {
 } from '../types'
 import { ADDRESS_ZERO } from '../constants'
 
+// eslint-disable-next-line
 require('dotenv').config()
 
 const SAMPLE_ADDRESSES: Address[] = [

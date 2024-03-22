@@ -1,15 +1,4 @@
-import { DocumentNode } from 'graphql'
-
-import {
-  GqlAccount,
-  GqlLiquidSplit,
-  GqlPassThroughWallet,
-  GqlSplit,
-  GqlSwapper,
-  GqlVestingModule,
-  GqlWaterfallModule,
-  ISubgraphAccount,
-} from './types'
+import { GqlAccount, GqlPassThroughWallet, GqlSplit, GqlSwapper } from './types'
 import {
   IAccountType,
   ILiquidSplit,
@@ -41,7 +30,6 @@ import { formatGqlSwapper, SWAPPER_FIELDS_FRAGMENT } from './swapper'
 import { USER_FIELDS_FRAGMENT, formatGqlUser } from './user'
 import { GraphQLClient, gql } from 'graphql-request'
 import { getAddress } from 'viem'
-import { MAX_RELATED_ACCOUNTS } from './constants'
 import { RequestConfig } from 'graphql-request/build/esm/types'
 
 export const MAX_UNIX_TIME = 2147480000 // Max unix time is roughly Jan 19 2038

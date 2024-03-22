@@ -5,7 +5,7 @@ import {
   formatTokenBalances,
 } from './token'
 import { GqlUser, IBalance, IContractEarnings, IUser } from './types'
-import { Address, getAddress } from 'viem'
+import { getAddress } from 'viem'
 import { SupportedChainId } from './constants'
 import { EarningsByContract, TokenBalances } from '../types'
 import _ from 'lodash'

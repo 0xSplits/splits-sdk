@@ -62,7 +62,6 @@ import {
   GqlSwapper,
   GqlVestingModule,
   GqlWaterfallModule,
-  IAccount,
   IAccountType,
   ISubgraphAccount,
 } from '../subgraph/types'

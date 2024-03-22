@@ -95,7 +95,7 @@ import {
   getBigIntFromPercent,
 } from '../utils'
 import { validateAddress, validateSplitInputs } from '../utils/validation'
-import { IAccount, IAccountType, ISplit } from '../subgraph/types'
+import { IAccountType, ISplit } from '../subgraph/types'
 import { protectedFormatSplit } from '../subgraph/split'
 
 const polygonAbiChainIds = [
