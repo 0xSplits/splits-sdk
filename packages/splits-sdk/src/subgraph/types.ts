@@ -1,5 +1,6 @@
 import { Dictionary } from 'lodash'
 import { SupportedChainId } from './constants'
+import { Address } from 'viem'
 
 /** All built-in and custom scalars, mapped to their actual values */
 type Scalars = {
@@ -566,7 +567,6 @@ export type GqlAccount =
 
 export type GqlAccountType = GqlAccount['__typename']
 
-export type IAddress = `0x${string}`
 export type IBalance = Dictionary<bigint>
 export type ISplitType = 'immutable' | 'mutable' | 'liquid'
 export type IContractEarnings = Dictionary<{
@@ -576,7 +576,7 @@ export type IContractEarnings = Dictionary<{
 }>
 
 export type IAccount = {
-  address: IAddress
+  address: Address
   chainId: SupportedChainId
 }
 
@@ -585,16 +585,16 @@ type IAccountSharedFields = IAccount & {
   latestBlock: number
   latestActivity: number
   parentEntityType?: string
-  controllingSplits?: IAddress[]
-  pendingControlSplits?: IAddress[]
-  ownedSwappers?: IAddress[]
-  ownedPassThroughWallets?: IAddress[]
-  upstreamSplits?: IAddress[]
-  upstreamWaterfalls?: IAddress[]
-  upstreamLiquidSplits?: IAddress[]
-  upstreamSwappers?: IAddress[]
-  upstreamPassThroughWallets?: IAddress[]
-  upstreamVesting?: IAddress[]
+  controllingSplits?: Address[]
+  pendingControlSplits?: Address[]
+  ownedSwappers?: Address[]
+  ownedPassThroughWallets?: Address[]
+  upstreamSplits?: Address[]
+  upstreamWaterfalls?: Address[]
+  upstreamLiquidSplits?: Address[]
+  upstreamSwappers?: Address[]
+  upstreamPassThroughWallets?: Address[]
+  upstreamVesting?: Address[]
   contractEarnings: IContractEarnings
   warehouseWithdrawConfig?: {
     paused: boolean
@@ -611,17 +611,17 @@ export type ISplit = IAccountSharedFields & {
   distributorFee: number
   distributionsPaused: boolean
   distributeDirection: 'push' | 'pull'
-  controller: IAddress
-  newPotentialController: IAddress
+  controller: Address
+  newPotentialController: Address
   hash: string
   internalBalances: IBalance
   warehouseBalances: IBalance
-  liquidSplitId?: IAddress
+  liquidSplitId?: Address
   createdBlock: number
 }
 
 export type IRecipient = {
-  address: IAddress
+  address: Address
   ownership: number
   ens?: string
 }
@@ -638,14 +638,14 @@ export type IVestingStream = {
   startTime: number
   totalAmount: bigint
   claimedAmount: bigint
-  token: IAddress
+  token: Address
 }
 
 export type IVestingModule = IAccountSharedFields & {
   type: 'vesting'
   balances: IBalance
   internalBalances: IBalance
-  beneficiary: IAddress
+  beneficiary: Address
   vestingPeriod: number
   streams?: IVestingStream[]
 }
@@ -655,21 +655,21 @@ export type IWaterfallTranche = {
   size?: bigint
   fundedAmount: bigint
   claimedAmount: bigint
-  recipient: IAddress
+  recipient: Address
 }
 
 export type IWaterfallModule = IAccountSharedFields & {
   type: 'waterfall'
   balances: IBalance
   distributed: IBalance
-  token: IAddress
+  token: Address
   internalBalances: IBalance
   tranches: IWaterfallTranche[]
-  nonWaterfallRecipient: IAddress
+  nonWaterfallRecipient: Address
 }
 
 export type IHolder = {
-  address: IAddress
+  address: Address
   ownership: number
 }
 
@@ -678,7 +678,7 @@ export type ILiquidSplit = IAccountSharedFields & {
   balances: IBalance
   distributed: IBalance
   internalBalances: IBalance
-  splitId: IAddress
+  splitId: Address
   distributorFee: number
   holders: IHolder[]
   isFactoryGenerated: boolean
@@ -686,20 +686,20 @@ export type ILiquidSplit = IAccountSharedFields & {
 }
 
 export type IUniswapV3TWAPPairDetails = Dictionary<{
-  base: IAddress
-  quote: IAddress
+  base: Address
+  quote: Address
   pool: string
   fee: number
   period: number
 }>
 
 export type IChainlinkPairDetails = Dictionary<{
-  base: IAddress
-  quote: IAddress
+  base: Address
+  quote: Address
 }>
 
 type IBaseOracle = {
-  address: IAddress
+  address: Address
 }
 
 type IUnknownOracle = IBaseOracle & {
@@ -726,8 +726,8 @@ export type ISwapBalance = Dictionary<{
 }>
 
 export type ISwapperScaledOfferFactorOverrides = Dictionary<{
-  base: IAddress
-  quote: IAddress
+  base: Address
+  quote: Address
   scaledOfferFactor: number
 }>
 
@@ -737,9 +737,9 @@ export type ISwapper = IAccountSharedFields & {
   balanceQuoteAmounts: ISwapBalance
   swapBalances: ISwapBalance
   internalBalances: IBalance
-  owner: IAddress
-  beneficiary: IAddress
-  tokenToBeneficiary: IAddress
+  owner: Address
+  beneficiary: Address
+  tokenToBeneficiary: Address
   defaultScaledOfferFactor: number
   scaledOfferFactorOverrides: ISwapperScaledOfferFactorOverrides
   oracle: IOracle
@@ -749,7 +749,7 @@ export type ISwapper = IAccountSharedFields & {
 export type IDiversifierSwapBalance = Dictionary<
   Dictionary<{
     inputAmount: bigint
-    outputToken: IAddress
+    outputToken: Address
     outputAmount: bigint
   }>
 >
@@ -764,8 +764,8 @@ export type IPassThroughWallet = IAccountSharedFields & {
   balances: IBalance
   internalBalances: IBalance
   passThroughBalances: IBalance
-  owner: IAddress
-  passThroughAccount: IAddress
+  owner: Address
+  passThroughAccount: Address
   balanceQuoteAmounts: IDiversifierSwapBalance
   paused: boolean
   swapBalances: IPassThroughWalletSwapBalance

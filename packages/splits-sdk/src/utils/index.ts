@@ -29,7 +29,7 @@ import {
   InvalidDistributorFeePercentErrorV2,
   InvalidTotalAllocation,
 } from '../errors'
-import { IAddress, IRecipient } from '../subgraph/types'
+import { IRecipient } from '../subgraph/types'
 
 export * from './ens'
 export * from './numbers'
@@ -217,7 +217,7 @@ export const getAccountsAndPercentAllocations: (
 }
 
 export const hashSplit: (
-  arg0: IAddress[],
+  arg0: Address[],
   arg1: number[],
   arg2: number,
 ) => string = (accounts, percentAllocations, distributorFee) => {
