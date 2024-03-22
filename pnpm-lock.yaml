@@ -177,6 +177,9 @@ importers:
       graphql-request:
         specifier: ^6.1.0
         version: 6.1.0(graphql@16.8.1)
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
       viem:
         specifier: ^1.0.0 || ^2.0.0
         version: 1.18.9(typescript@5.2.2)
@@ -184,6 +187,9 @@ importers:
       '@types/base-64':
         specifier: ^1.0.1
         version: 1.0.2
+      '@types/lodash':
+        specifier: ^4.14.200
+        version: 4.14.201
       '@viem/anvil':
         specifier: ^0.0.9
         version: 0.0.9
