@@ -31,6 +31,18 @@ export type MulticallConfig = {
   calls: CallData[]
 } & TransactionOverridesDict
 
+export type DataClientConfig = {
+  publicClient?: PublicClient<Transport, Chain>
+  apiConfig: {
+    apiKey: string
+    serverURL: string
+  }
+  includeEnsNames?: boolean
+  // ensPublicClient can be used to fetch ens names when publicClient is not on mainnet (reverseRecords
+  // only works on mainnet).
+  ensPublicClient?: PublicClient<Transport, Chain>
+}
+
 // Splits
 export type SplitsClientConfig = {
   chainId: number

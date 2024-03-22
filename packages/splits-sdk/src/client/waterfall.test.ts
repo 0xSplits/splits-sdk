@@ -9,7 +9,7 @@ import {
 } from 'viem'
 
 import { WaterfallClient } from './waterfall'
-import { ADDRESS_ZERO, getWaterfallFactoryAddress } from '../constants'
+import { getWaterfallFactoryAddress } from '../constants'
 import {
   InvalidArgumentError,
   InvalidConfigError,
@@ -255,7 +255,7 @@ describe('Waterfall writes', () => {
       )
       expect(factoryWriteActions.createWaterfallModule).toBeCalledWith(
         token,
-        ADDRESS_ZERO,
+        zeroAddress,
         TRANCHE_RECIPIENTS,
         TRANCHE_SIZES,
       )

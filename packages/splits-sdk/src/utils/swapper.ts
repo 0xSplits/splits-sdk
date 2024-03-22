@@ -1,4 +1,4 @@
-import { ADDRESS_ZERO } from '../constants'
+import { zeroAddress } from 'viem'
 import type {
   ContractDiversifierRecipient,
   ContractOracleParams,
@@ -22,13 +22,13 @@ export const getDiversifierRecipients = (
     if (recipientData.address)
       return [
         recipientData.address,
-        [ADDRESS_ZERO, ADDRESS_ZERO, BigInt(0), []],
+        [zeroAddress, zeroAddress, BigInt(0), []],
         getBigIntFromPercent(recipientData.percentAllocation),
       ]
 
     if (!recipientData.swapperParams) throw new Error()
     return [
-      ADDRESS_ZERO,
+      zeroAddress,
       [
         recipientData.swapperParams.beneficiary,
         recipientData.swapperParams.tokenToBeneficiary,
@@ -49,11 +49,11 @@ export const getFormattedOracleParams = (
 ): ContractOracleParams => {
   validateOracleParams(oracleParams)
   if (oracleParams.address)
-    return [oracleParams.address, [ADDRESS_ZERO, ADDRESS_ZERO]]
+    return [oracleParams.address, [zeroAddress, zeroAddress]]
 
   if (!oracleParams.createOracleParams) throw new Error()
   return [
-    ADDRESS_ZERO,
+    zeroAddress,
     [
       oracleParams.createOracleParams.factory,
       oracleParams.createOracleParams.data,

@@ -25,11 +25,7 @@ import {
 } from '../constants'
 import { vestingFactoryAbi } from '../constants/abi/vestingFactory'
 import { vestingAbi } from '../constants/abi/vesting'
-import {
-  AccountNotFoundError,
-  TransactionFailedError,
-  UnsupportedChainIdError,
-} from '../errors'
+import { TransactionFailedError, UnsupportedChainIdError } from '../errors'
 import { applyMixins } from './mixin'
 import type {
   CallData,
@@ -39,12 +35,8 @@ import type {
   StartVestConfig,
   TransactionConfig,
   TransactionFormat,
-  VestingModule,
 } from '../types'
-import { getTokenData, addEnsNames } from '../utils'
 import { validateAddress, validateVestingPeriod } from '../utils/validation'
-import { IVestingModule } from '../subgraph/types'
-import { protectedFormatVestingModule } from '../subgraph/vesting'
 
 type VestingAbi = typeof vestingAbi
 type VestingFactoryAbi = typeof vestingFactoryAbi
@@ -400,65 +392,6 @@ export class VestingClient extends VestingTransactions {
     ])
 
     return { amount }
-  }
-
-  // Graphql read actions
-  async getVestingMetadata({
-    vestingModuleAddress,
-  }: {
-    vestingModuleAddress: string
-  }): Promise<VestingModule> {
-    validateAddress(vestingModuleAddress)
-    const chainId = this._chainId
-
-    const response = await this._loadAccount(vestingModuleAddress, chainId)
-
-    if (!response || response.type !== 'vesting')
-      throw new AccountNotFoundError(
-        'vesting module',
-        vestingModuleAddress,
-        chainId,
-      )
-
-    return await this.formatVestingModule(response)
-  }
-
-  async formatVestingModule(
-    gqlVestingModule: IVestingModule,
-  ): Promise<VestingModule> {
-    this._requirePublicClient()
-    const publicClient = this._publicClient
-    if (!publicClient) throw new Error()
-
-    const tokenIds = Array.from(
-      new Set(gqlVestingModule.streams?.map((stream) => stream.token) ?? []),
-    )
-
-    const tokenData: { [token: string]: { symbol: string; decimals: number } } =
-      {}
-    await Promise.all(
-      tokenIds.map(async (token) => {
-        const result = await getTokenData(
-          this._chainId,
-          getAddress(token),
-          publicClient,
-        )
-
-        tokenData[token] = result
-      }),
-    )
-
-    const vestingModule = protectedFormatVestingModule(
-      gqlVestingModule,
-      tokenData,
-    )
-    if (this._includeEnsNames) {
-      await addEnsNames(this._ensPublicClient ?? publicClient, [
-        vestingModule.beneficiary,
-      ])
-    }
-
-    return vestingModule
   }
 }
 

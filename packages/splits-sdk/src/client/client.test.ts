@@ -7,7 +7,7 @@ import {
   WalletClient,
 } from 'viem'
 
-import { ADDRESS_ZERO } from '../constants'
+import { zeroAddress } from '../constants'
 import { SplitsClient } from './index'
 import {
   InvalidAuthError,
@@ -284,7 +284,7 @@ describe('SplitMain writes', () => {
         SORTED_ADDRESSES,
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
-        ADDRESS_ZERO,
+        zeroAddress,
       )
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
@@ -461,7 +461,7 @@ describe('SplitMain writes', () => {
         async () =>
           await badSplitsClient.distributeToken({
             splitAddress,
-            token: ADDRESS_ZERO,
+            token: zeroAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
@@ -476,7 +476,7 @@ describe('SplitMain writes', () => {
         async () =>
           await badSplitsClient.distributeToken({
             splitAddress,
-            token: ADDRESS_ZERO,
+            token: zeroAddress,
           }),
       ).rejects.toThrow(MissingWalletClientError)
     })
@@ -484,12 +484,12 @@ describe('SplitMain writes', () => {
     test('Distribute eth passes', async () => {
       const { event } = await splitsClient.distributeToken({
         splitAddress,
-        token: ADDRESS_ZERO,
+        token: zeroAddress,
       })
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitAddress)
-      expect(validateAddress).toBeCalledWith(ADDRESS_ZERO)
+      expect(validateAddress).toBeCalledWith(zeroAddress)
       expect(validateAddress).toBeCalledWith(CONTROLLER_ADDRESS)
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigIntMock).toBeCalledWith(distributorFeePercent)
@@ -537,13 +537,13 @@ describe('SplitMain writes', () => {
       const distributorAddress = '0xdistributor'
       const { event } = await splitsClient.distributeToken({
         splitAddress,
-        token: ADDRESS_ZERO,
+        token: zeroAddress,
         distributorAddress,
       })
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitAddress)
-      expect(validateAddress).toBeCalledWith(ADDRESS_ZERO)
+      expect(validateAddress).toBeCalledWith(zeroAddress)
       expect(validateAddress).toBeCalledWith(distributorAddress)
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigIntMock).toBeCalledWith(distributorFeePercent)
@@ -625,7 +625,7 @@ describe('SplitMain writes', () => {
             splitAddress,
             recipients,
             distributorFeePercent,
-            token: ADDRESS_ZERO,
+            token: zeroAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
@@ -642,7 +642,7 @@ describe('SplitMain writes', () => {
             splitAddress,
             recipients,
             distributorFeePercent,
-            token: ADDRESS_ZERO,
+            token: zeroAddress,
           }),
       ).rejects.toThrow(MissingWalletClientError)
     })
@@ -661,7 +661,7 @@ describe('SplitMain writes', () => {
             splitAddress,
             recipients,
             distributorFeePercent,
-            token: ADDRESS_ZERO,
+            token: zeroAddress,
           }),
       ).rejects.toThrow(InvalidAuthError)
     })
@@ -671,12 +671,12 @@ describe('SplitMain writes', () => {
         splitAddress,
         recipients,
         distributorFeePercent,
-        token: ADDRESS_ZERO,
+        token: zeroAddress,
       })
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitAddress)
-      expect(validateAddress).toBeCalledWith(ADDRESS_ZERO)
+      expect(validateAddress).toBeCalledWith(zeroAddress)
       expect(validateAddress).toBeCalledWith(CONTROLLER_ADDRESS)
       expect(validateSplitInputs).toBeCalledWith(
         expect.objectContaining({
@@ -742,13 +742,13 @@ describe('SplitMain writes', () => {
         splitAddress,
         recipients,
         distributorFeePercent,
-        token: ADDRESS_ZERO,
+        token: zeroAddress,
         distributorAddress,
       })
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitAddress)
-      expect(validateAddress).toBeCalledWith(ADDRESS_ZERO)
+      expect(validateAddress).toBeCalledWith(zeroAddress)
       expect(validateAddress).toBeCalledWith(distributorAddress)
       expect(validateSplitInputs).toBeCalledWith({
         recipients,
@@ -830,7 +830,7 @@ describe('SplitMain writes', () => {
         async () =>
           await badSplitsClient.withdrawFunds({
             address,
-            tokens: [ADDRESS_ZERO],
+            tokens: [zeroAddress],
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
@@ -845,13 +845,13 @@ describe('SplitMain writes', () => {
         async () =>
           await badSplitsClient.withdrawFunds({
             address,
-            tokens: [ADDRESS_ZERO],
+            tokens: [zeroAddress],
           }),
       ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Withdraw passes with erc20 and eth', async () => {
-      const tokens = [ADDRESS_ZERO, '0xerc20']
+      const tokens = [zeroAddress, '0xerc20']
 
       const { event } = await splitsClient.withdrawFunds({
         address,

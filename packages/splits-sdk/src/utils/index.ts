@@ -4,10 +4,10 @@ import {
   encodePacked,
   getAddress,
   keccak256,
+  zeroAddress,
 } from 'viem'
 
 import {
-  ADDRESS_ZERO,
   LIQUID_SPLIT_NFT_COUNT,
   PERCENTAGE_SCALE,
   getSplitV2FactoryAddress,
@@ -106,7 +106,7 @@ export const getRecoupTranchesAndSizes = async (
       recoupTranches.push([
         [tranche.recipient],
         [PERCENTAGE_SCALE],
-        ADDRESS_ZERO,
+        zeroAddress,
         BigInt(0),
       ])
     } else {
@@ -118,7 +118,7 @@ export const getRecoupTranchesAndSizes = async (
       recoupTranches.push([
         addresses,
         percentAllocations,
-        tranche.recipient.controller ?? ADDRESS_ZERO,
+        tranche.recipient.controller ?? zeroAddress,
         distributorFee,
       ])
     }

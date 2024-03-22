@@ -6,6 +6,7 @@ import {
   decodeEventLog,
   encodeEventTopics,
   getAddress,
+  zeroAddress,
 } from 'viem'
 
 import {
@@ -19,7 +20,6 @@ import {
   TEMPLATES_CHAIN_IDS,
   getDiversifierFactoryAddress,
   DIVERSIFIER_CHAIN_IDS,
-  ADDRESS_ZERO,
 } from '../constants'
 import { recoupFactoryAbi } from '../constants/abi/recoupFactory'
 import { diversifierFactoryAbi } from '../constants/abi/diversifierFactory'
@@ -68,7 +68,7 @@ class TemplatesTransactions extends BaseTransactions {
   protected async _createRecoupTransaction({
     token,
     tranches,
-    nonWaterfallRecipientAddress = ADDRESS_ZERO,
+    nonWaterfallRecipientAddress = zeroAddress,
     nonWaterfallRecipientTrancheIndex = undefined,
     transactionOverrides = {},
   }: CreateRecoupConfig): Promise<TransactionFormat> {

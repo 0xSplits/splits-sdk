@@ -2,7 +2,7 @@ import { LiquidSplitClient } from './client/liquidSplit'
 import { WaterfallClient } from './client/waterfall'
 import { VestingClient } from './client/vesting'
 import { TemplatesClient } from './client/templates'
-import { SplitsClient } from './client'
+import { SplitV1Client } from './client/splitV1'
 import { PassThroughWalletClient } from './client/passThroughWallet'
 import { SwapperClient } from './client/swapper'
 import { OracleClient } from './client/oracle'
@@ -10,7 +10,7 @@ import { WarehouseClient } from './client/warehouse'
 import { SplitV2Client } from './client/splitV2'
 
 export {
-  SplitsClient,
+  SplitV1Client,
   WaterfallClient,
   LiquidSplitClient,
   VestingClient,

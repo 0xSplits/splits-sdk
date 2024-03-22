@@ -14,7 +14,7 @@ import {
   LIQUID_SPLITS_MAX_PRECISION_DECIMALS,
   getLiquidSplitFactoryAddress,
   LIQUID_SPLIT_URI_BASE_64_HEADER,
-  ADDRESS_ZERO,
+  zeroAddress,
 } from '../constants'
 import {
   InvalidAuthError,
@@ -405,15 +405,15 @@ describe('Liquid split writes', () => {
     test('Distribute token for eth passes', async () => {
       const { event } = await liquidSplitClient.distributeToken({
         liquidSplitAddress,
-        token: ADDRESS_ZERO,
+        token: zeroAddress,
       })
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(liquidSplitAddress)
-      expect(validateAddress).toBeCalledWith(ADDRESS_ZERO)
+      expect(validateAddress).toBeCalledWith(zeroAddress)
       expect(validateAddress).toBeCalledWith(CONTROLLER_ADDRESS)
       expect(moduleWriteActions.distributeFunds).toBeCalledWith(
-        ADDRESS_ZERO,
+        zeroAddress,
         holders.map((h) => h.recipient.address),
         CONTROLLER_ADDRESS,
       )

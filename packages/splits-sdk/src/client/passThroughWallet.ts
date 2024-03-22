@@ -183,10 +183,9 @@ class PassThroughWalletTransactions extends BaseTransactions {
       passThroughWalletAddress,
     )
     const owner = await passThroughWalletContract.read.owner()
-    // TODO: how to get rid of this, needed for typescript check
-    if (!this._walletClient?.account) throw new Error()
 
-    const walletAddress = this._walletClient.account?.address
+    this._requireWalletClient()
+    const walletAddress = this._walletClient!.account?.address
 
     if (owner !== walletAddress)
       throw new InvalidAuthError(

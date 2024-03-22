@@ -6,7 +6,7 @@ import {
   ContractRecoupTranche,
   ContractScaledOfferFactorOverride,
 } from '../types'
-import { ADDRESS_ZERO } from '../constants'
+import { zeroAddress } from '../constants'
 
 // eslint-disable-next-line
 require('dotenv').config()
@@ -32,8 +32,8 @@ export const GET_TOKEN_DATA = {
 }
 
 export const RECOUP_TRANCHE_RECIPIENTS: ContractRecoupTranche[] = [
-  [['0x1'], [BigInt(1000000)], ADDRESS_ZERO, BigInt(0)],
-  [['0x2'], [BigInt(1000000)], ADDRESS_ZERO, BigInt(1000)],
+  [['0x1'], [BigInt(1000000)], zeroAddress, BigInt(0)],
+  [['0x2'], [BigInt(1000000)], zeroAddress, BigInt(1000)],
 ]
 
 export const OWNER_ADDRESS = '0xowner'
@@ -46,4 +46,4 @@ export const FORMATTED_SCALED_OFFER_FACTOR_OVERRIDES: ContractScaledOfferFactorO
   [[['0xtoken1', '0xtoken2'], BigInt(999000)]]
 
 export const FORMATTED_DIVERSIFIER_RECIPIENTS: ContractDiversifierRecipient[] =
-  [['0xrecipient', [ADDRESS_ZERO, ADDRESS_ZERO, BigInt(0), []], BigInt(1)]]
+  [['0xrecipient', [zeroAddress, zeroAddress, BigInt(0), []], BigInt(1)]]

@@ -11,6 +11,7 @@ import {
   encodeEventTopics,
   getAddress,
   getContract,
+  zeroAddress,
 } from 'viem'
 
 import {
@@ -19,7 +20,6 @@ import {
   BaseTransactions,
 } from './base'
 import {
-  ADDRESS_ZERO,
   TransactionType,
   WATERFALL_CHAIN_IDS,
   getWaterfallFactoryAddress,
@@ -27,7 +27,6 @@ import {
 import { waterfallFactoryAbi } from '../constants/abi/waterfallFactory'
 import { waterfallAbi } from '../constants/abi/waterfall'
 import {
-  AccountNotFoundError,
   InvalidArgumentError,
   TransactionFailedError,
   UnsupportedChainIdError,
@@ -41,17 +40,10 @@ import type {
   TransactionConfig,
   TransactionFormat,
   WaterfallFundsConfig,
-  WaterfallModule,
   WithdrawWaterfallPullFundsConfig,
 } from '../types'
-import {
-  getTrancheRecipientsAndSizes,
-  getTokenData,
-  addEnsNames,
-} from '../utils'
+import { getTrancheRecipientsAndSizes } from '../utils'
 import { validateAddress, validateWaterfallTranches } from '../utils/validation'
-import { IWaterfallModule } from '../subgraph/types'
-import { protectedFormatWaterfallModule } from '../subgraph/waterfall'
 
 type WaterfallAbi = typeof waterfallAbi
 
@@ -77,7 +69,7 @@ class WaterfallTransactions extends BaseTransactions {
   protected async _createWaterfallModuleTransaction({
     token,
     tranches,
-    nonWaterfallRecipient = ADDRESS_ZERO,
+    nonWaterfallRecipient = zeroAddress,
     transactionOverrides = {},
   }: CreateWaterfallConfig): Promise<TransactionFormat> {
     validateAddress(token)
@@ -134,7 +126,7 @@ class WaterfallTransactions extends BaseTransactions {
   protected async _recoverNonWaterfallFundsTransaction({
     waterfallModuleAddress,
     token,
-    recipient = ADDRESS_ZERO,
+    recipient = zeroAddress,
     transactionOverrides = {},
   }: RecoverNonWaterfallFundsConfig): Promise<TransactionFormat> {
     validateAddress(waterfallModuleAddress)
@@ -178,63 +170,6 @@ class WaterfallTransactions extends BaseTransactions {
     return result
   }
 
-  // Graphql read actions
-  async getWaterfallMetadata({
-    waterfallModuleAddress,
-  }: {
-    waterfallModuleAddress: string
-  }): Promise<WaterfallModule> {
-    validateAddress(waterfallModuleAddress)
-    const chainId = this._chainId
-
-    const response = await this._loadAccount(waterfallModuleAddress, chainId)
-
-    if (!response || response.type != 'waterfall')
-      throw new AccountNotFoundError(
-        'waterfall module',
-        waterfallModuleAddress,
-        chainId,
-      )
-
-    return await this.formatWaterfallModule(response)
-  }
-
-  async formatWaterfallModule(
-    gqlWaterfallModule: IWaterfallModule,
-  ): Promise<WaterfallModule> {
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error()
-
-    const tokenData = await getTokenData(
-      this._chainId,
-      getAddress(gqlWaterfallModule.token),
-      this._publicClient,
-    )
-
-    const waterfallModule = protectedFormatWaterfallModule(
-      gqlWaterfallModule,
-      tokenData.symbol,
-      tokenData.decimals,
-    )
-    if (this._includeEnsNames) {
-      const ensRecipients = waterfallModule.tranches
-        .map((tranche) => {
-          return tranche.recipient
-        })
-        .concat(
-          waterfallModule.nonWaterfallRecipient
-            ? [waterfallModule.nonWaterfallRecipient]
-            : [],
-        )
-      await addEnsNames(
-        this._ensPublicClient ?? this._publicClient,
-        ensRecipients,
-      )
-    }
-
-    return waterfallModule
-  }
-
   private async _validateRecoverTokensWaterfallData({
     waterfallModuleAddress,
     token,
@@ -244,7 +179,9 @@ class WaterfallTransactions extends BaseTransactions {
     token: string
     recipient: string
   }) {
-    const waterfallMetadata = await this.getWaterfallMetadata({
+    this._requireDataClient()
+    const waterfallMetadata = await this._dataClient!.getWaterfallMetadata({
+      chainId: this._chainId,
       waterfallModuleAddress,
     })
 
@@ -255,7 +192,7 @@ class WaterfallTransactions extends BaseTransactions {
 
     if (
       waterfallMetadata.nonWaterfallRecipient &&
-      waterfallMetadata.nonWaterfallRecipient.address !== ADDRESS_ZERO
+      waterfallMetadata.nonWaterfallRecipient.address !== zeroAddress
     ) {
       if (
         recipient.toLowerCase() !==

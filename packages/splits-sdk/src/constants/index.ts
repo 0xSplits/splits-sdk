@@ -2,7 +2,6 @@ import { Address } from 'viem'
 import { SplitV2Type } from '../types'
 
 export const PERCENTAGE_SCALE = BigInt(1e6)
-export const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000'
 
 // https://github.com/mds1/multicall
 export const MULTICALL_3_ADDRESS = '0xca11bde05977b3631167028862be2a173976ca11'

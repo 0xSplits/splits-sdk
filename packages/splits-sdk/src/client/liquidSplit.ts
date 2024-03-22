@@ -12,6 +12,7 @@ import {
   encodeEventTopics,
   getAddress,
   getContract,
+  zeroAddress,
 } from 'viem'
 
 import {
@@ -25,20 +26,17 @@ import {
   getLiquidSplitFactoryAddress,
   LIQUID_SPLIT_URI_BASE_64_HEADER,
   TransactionType,
-  ADDRESS_ZERO,
 } from '../constants'
 import { liquidSplitFactoryAbi } from '../constants/abi/liquidSplitFactory'
 import { ls1155CloneAbi } from '../constants/abi/ls1155Clone'
 import { splitMainPolygonAbi } from '../constants/abi/splitMain'
 import {
-  AccountNotFoundError,
   InvalidAuthError,
   TransactionFailedError,
   UnsupportedChainIdError,
 } from '../errors'
 import { applyMixins } from './mixin'
 import type {
-  LiquidSplit,
   SplitsClientConfig,
   CreateLiquidSplitConfig,
   DistributeLiquidSplitTokenConfig,
@@ -51,15 +49,12 @@ import {
   getBigIntFromPercent,
   getRecipientSortedAddressesAndAllocations,
   getNftCountsFromPercents,
-  addEnsNames,
 } from '../utils'
 import {
   validateAddress,
   validateDistributorFeePercent,
   validateSplitRecipients,
 } from '../utils/validation'
-import { ILiquidSplit } from '../subgraph/types'
-import { protectedFormatLiquidSplit } from '../subgraph/liquid'
 
 type LS1155Abi = typeof ls1155CloneAbi
 
@@ -96,7 +91,7 @@ class LiquidSplitTransactions extends BaseTransactions {
       ? owner
       : this._walletClient?.account
       ? this._walletClient.account.address
-      : ADDRESS_ZERO
+      : zeroAddress
     validateAddress(ownerAddress)
 
     const [accounts, percentAllocations] =
@@ -129,11 +124,13 @@ class LiquidSplitTransactions extends BaseTransactions {
       ? distributorAddress
       : this._walletClient?.account
       ? this._walletClient.account.address
-      : ADDRESS_ZERO
+      : zeroAddress
     validateAddress(distributorPayoutAddress)
 
-    // TO DO: handle bad split id/no metadata found
-    const { holders } = await this.getLiquidSplitMetadata({
+    this._requireDataClient()
+
+    const { holders } = await this._dataClient!.getLiquidSplitMetadata({
+      chainId: this._chainId,
       liquidSplitAddress,
     })
     const accounts = holders
@@ -177,54 +174,13 @@ class LiquidSplitTransactions extends BaseTransactions {
     return result
   }
 
-  // Graphql read actions
-  async getLiquidSplitMetadata({
-    liquidSplitAddress,
-  }: {
-    liquidSplitAddress: string
-  }): Promise<LiquidSplit> {
-    validateAddress(liquidSplitAddress)
-    const chainId = this._chainId
-
-    const response = await this._loadAccount(liquidSplitAddress, chainId)
-
-    if (!response || response.type !== 'liquidSplit')
-      throw new AccountNotFoundError(
-        'liquid split',
-        liquidSplitAddress,
-        chainId,
-      )
-
-    return await this.formatLiquidSplit(response)
-  }
-
-  async formatLiquidSplit(gqlLiquidSplit: ILiquidSplit): Promise<LiquidSplit> {
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error()
-
-    const liquidSplit = protectedFormatLiquidSplit(gqlLiquidSplit)
-    if (this._includeEnsNames) {
-      await addEnsNames(
-        this._ensPublicClient ?? this._publicClient,
-        liquidSplit.holders.map((holder) => {
-          return holder.recipient
-        }),
-      )
-    }
-
-    return liquidSplit
-  }
-
   private async _requireOwner(liquidSplitAddress: string) {
     this._requireWalletClient()
 
     const liquidSplitContract = this._getLiquidSplitContract(liquidSplitAddress)
     const owner = await liquidSplitContract.read.owner()
 
-    // TODO: how to get rid of this, needed for typescript check
-    if (!this._walletClient?.account) throw new Error()
-
-    const walletAddress = this._walletClient.account.address
+    const walletAddress = this._walletClient!.account.address
 
     if (owner !== walletAddress)
       throw new InvalidAuthError(
@@ -386,7 +342,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
 
     const { token } = distributeTokenArgs
     const eventTopic =
-      token === ADDRESS_ZERO
+      token === zeroAddress
         ? this.eventTopics.distributeToken[1]
         : this.eventTopics.distributeToken[2]
     const events = await this.getTransactionEvents({
