@@ -288,7 +288,7 @@ export const formatGqlAccount: (arg0: GqlAccount) => IAccountType = (
   }
 }
 
-const SPLITS_GRAPHQL_URL = 'api.splits.org/graphql'
+const SPLITS_GRAPHQL_URL = 'http://localhost:8080/graphql'
 
 export const getGraphqlClient = ({
   apiKey,

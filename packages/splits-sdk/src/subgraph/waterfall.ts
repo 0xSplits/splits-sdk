@@ -27,10 +27,9 @@ const WATERFALL_TRANCHE_FIELDS_FRAGMENT = gql`
         ...SplitFieldsFragment
       }
     }
-
-    ${ACCOUNT_FIELDS_FRAGMENT}
-    ${SPLIT_FIELDS_FRAGMENT}
   }
+  ${ACCOUNT_FIELDS_FRAGMENT}
+  ${SPLIT_FIELDS_FRAGMENT}
 `
 
 export const WATERFALL_MODULE_FIELDS_FRAGMENT = gql`

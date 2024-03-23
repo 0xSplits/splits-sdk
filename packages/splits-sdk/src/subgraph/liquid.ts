@@ -21,7 +21,7 @@ const LIQUID_SPLIT_HOLDERS_FRAGMENT = gql`
 
 export const LIQUID_SPLIT_FIELDS_FRAGMENT = gql`
   fragment LiquidSplitFieldsFragment on LiquidSplit {
-    holders {
+    holders(first: 1000, where: { ownership_gt: "0" }) {
       ...LiquidSplitHoldersFragment
     }
     distributorFee

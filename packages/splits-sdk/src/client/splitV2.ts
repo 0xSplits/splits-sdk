@@ -19,7 +19,7 @@ import {
   CreateSplitV2Config,
   DistributeSplitConfig,
   SetPausedConfig,
-  SplitV2,
+  Split,
   SplitV2ExecCallsConfig,
   SplitV2Type,
   SplitsClientConfig,
@@ -46,6 +46,7 @@ import {
   getNumberFromPercent,
   getValidatedSplitV2Config,
   getSplitType,
+  fromBigIntToPercent,
 } from '../utils'
 import {
   SaltRequired,
@@ -239,8 +240,29 @@ class SplitV2Transactions extends BaseTransactions {
 
     this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
+    let split: Split
 
-    const { split } = await this._getSplitMetadata(splitAddress)
+    if (this._dataClient)
+      split = await this._dataClient.getSplitMetadata({
+        chainId: this._chainId,
+        splitAddress,
+      })
+    else split = (await this._getSplitMetadata(splitAddress)).split
+
+    const {
+      recipientAddresses,
+      recipientAllocations,
+      totalAllocation,
+      distributionIncentive,
+    } = getValidatedSplitV2Config(
+      split.recipients.map((recipient) => {
+        return {
+          address: recipient.recipient.address,
+          percentAllocation: recipient.percentAllocation,
+        }
+      }),
+      split.distributorFeePercent,
+    )
 
     return this._executeContractFunction({
       contractAddress: splitAddress,
@@ -248,10 +270,10 @@ class SplitV2Transactions extends BaseTransactions {
       functionName: 'distribute',
       functionArgs: [
         {
-          recipients: split.recipients,
-          allocations: split.allocations,
-          totalAllocation: split.totalAllocation,
-          distributionIncentive: split.distributionIncentive,
+          recipients: recipientAddresses,
+          allocations: recipientAllocations,
+          totalAllocation,
+          distributionIncentive,
         },
         token,
         distributorAddress,
@@ -270,7 +292,7 @@ class SplitV2Transactions extends BaseTransactions {
     return this._getSplitV2Contract(splitAddress).read.owner()
   }
 
-  async _getSplitMetadata(splitAddress: Address): Promise<{ split: SplitV2 }> {
+  async _getSplitMetadata(splitAddress: Address): Promise<{ split: Split }> {
     this._requirePublicClient()
 
     const [createLogs, owner, paused] = await Promise.all([
@@ -299,17 +321,36 @@ class SplitV2Transactions extends BaseTransactions {
       fromBlock: createLogs[0].blockNumber,
     })
 
-    const split: SplitV2 = {
+    const recipients = createLogs[0].args.splitParams.recipients.map(
+      (recipient, i) => {
+        return {
+          recipient: {
+            address: recipient,
+          },
+          percentAllocation: fromBigIntToPercent(
+            createLogs[0].args.splitParams.allocations[i],
+            createLogs[0].args.splitParams.totalAllocation,
+          ),
+        }
+      },
+    )
+
+    const split: Split = {
       address: splitAddress,
-      recipients: createLogs[0].args.splitParams.recipients as Address[],
-      allocations: createLogs[0].args.splitParams.allocations as bigint[],
-      totalAllocation: createLogs[0].args.splitParams.totalAllocation,
-      distributionIncentive:
+      recipients,
+      distributorFeePercent: fromBigIntToPercent(
         createLogs[0].args.splitParams.distributionIncentive,
-      creatorAddress: createLogs[0].args.creator,
-      type: getSplitType(this._chainId, createLogs[0].address),
-      controllerAddress: owner,
-      paused,
+      ),
+      distributeDirection: getSplitType(this._chainId, createLogs[0].address),
+      type: 'SplitV2',
+      controller: {
+        address: owner,
+      },
+      distributionsPaused: paused,
+      newPotentialController: {
+        address: zeroAddress,
+      },
+      createdBlock: Number(createLogs[0].blockNumber),
     }
 
     if (!updateLogs || updateLogs.length == 0) return { split }
@@ -320,11 +361,24 @@ class SplitV2Transactions extends BaseTransactions {
       else return a.logIndex > b.logIndex ? -1 : 1
     })
 
-    split.recipients = updateLogs[0].args._split.recipients as Address[]
-    split.allocations = updateLogs[0].args._split.allocations as bigint[]
-    split.totalAllocation = updateLogs[0].args._split.totalAllocation
-    split.distributionIncentive =
-      updateLogs[0].args._split.distributionIncentive
+    const updatedRecipients = updateLogs[0].args._split.recipients.map(
+      (recipient, i) => {
+        return {
+          recipient: {
+            address: recipient,
+          },
+          percentAllocation: fromBigIntToPercent(
+            updateLogs[0].args._split.allocations[i],
+            updateLogs[0].args._split.totalAllocation,
+          ),
+        }
+      },
+    )
+
+    split.recipients = updatedRecipients
+    split.distributorFeePercent = fromBigIntToPercent(
+      updateLogs[0].args._split.distributionIncentive,
+    )
 
     return { split }
   }
@@ -796,14 +850,6 @@ export class SplitV2Client extends SplitV2Transactions {
   }> {
     const controllerAddress = await this._owner(splitAddress)
     return { controllerAddress }
-  }
-
-  async getSplitMetadata({
-    splitAddress,
-  }: {
-    splitAddress: Address
-  }): Promise<{ split: SplitV2 }> {
-    return await this._getSplitMetadata(splitAddress)
   }
 }
 

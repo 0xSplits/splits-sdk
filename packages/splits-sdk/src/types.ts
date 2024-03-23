@@ -35,7 +35,7 @@ export type DataClientConfig = {
   publicClient?: PublicClient<Transport, Chain>
   apiConfig: {
     apiKey: string
-    serverURL: string
+    serverURL?: string
   }
   includeEnsNames?: boolean
   // ensPublicClient can be used to fetch ens names when publicClient is not on mainnet (reverseRecords
@@ -251,8 +251,8 @@ export type WarehouseSetWithdrawConfig = {
 } & TransactionOverridesDict
 
 export enum SplitV2Type {
-  Push,
-  Pull,
+  Push = 'push',
+  Pull = 'pull',
 }
 
 // Split V2
