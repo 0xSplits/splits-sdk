@@ -27,6 +27,7 @@ export const formatInternalTokenBalances: (
 export const formatTokenBalances: (
   arg0: GqlTokenBalanceSharedData[],
 ) => IBalance = (gqlTokenBalances) => {
+  if (gqlTokenBalances === undefined) return {}
   return gqlTokenBalances.reduce((acc, tokenBalance) => {
     const idParts = tokenBalance.id.split('-')
     const token = getAddress(idParts[idParts.length - 1])

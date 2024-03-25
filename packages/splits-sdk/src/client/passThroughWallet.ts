@@ -53,6 +53,7 @@ class PassThroughWalletTransactions extends BaseTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
@@ -61,6 +62,7 @@ class PassThroughWalletTransactions extends BaseTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }
@@ -218,6 +220,7 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -226,6 +229,7 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
 
@@ -473,6 +477,7 @@ class PassThroughWalletGasEstimates extends PassThroughWalletTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -481,6 +486,7 @@ class PassThroughWalletGasEstimates extends PassThroughWalletTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }
@@ -533,6 +539,7 @@ class PassThroughWalletCallData extends PassThroughWalletTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -541,6 +548,7 @@ class PassThroughWalletCallData extends PassThroughWalletTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }

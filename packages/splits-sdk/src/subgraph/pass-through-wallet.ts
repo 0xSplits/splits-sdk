@@ -15,7 +15,7 @@ import {
   SPLIT_FIELDS_FRAGMENT,
 } from './split'
 import { SWAPPER_FIELDS_FRAGMENT } from './swapper'
-import { gql } from 'graphql-request'
+import { gql } from '@urql/core'
 import { getAddress } from 'viem'
 import { SupportedChainId } from './constants'
 

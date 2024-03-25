@@ -28,9 +28,8 @@ import {
 } from './split'
 import { formatGqlSwapper, SWAPPER_FIELDS_FRAGMENT } from './swapper'
 import { USER_FIELDS_FRAGMENT, formatGqlUser } from './user'
-import { GraphQLClient, gql } from 'graphql-request'
+import { gql, createClient, Client, fetchExchange } from '@urql/core'
 import { getAddress } from 'viem'
-import { RequestConfig } from 'graphql-request/build/esm/types'
 
 export const MAX_UNIX_TIME = 2147480000 // Max unix time is roughly Jan 19 2038
 
@@ -290,21 +289,29 @@ export const formatGqlAccount: (arg0: GqlAccount) => IAccountType = (
 
 const SPLITS_GRAPHQL_URL = 'http://localhost:8080/graphql'
 
+export type GqlVariables = {
+  [key: string]: string | number | boolean | undefined | string[] | object
+}
+
 export const getGraphqlClient = ({
   apiKey,
   serverURL,
 }: {
   apiKey: string
   serverURL?: string
-}): GraphQLClient => {
+}): Client => {
   if (!serverURL) {
     serverURL = SPLITS_GRAPHQL_URL
   }
 
-  const requestConfig: RequestConfig = {
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-    },
+  const headers = {
+    Authorization: `Bearer ${apiKey}`,
   }
-  return new GraphQLClient(serverURL, requestConfig)
+  return createClient({
+    url: serverURL,
+    exchanges: [fetchExchange],
+    fetchOptions: {
+      headers,
+    },
+  })
 }

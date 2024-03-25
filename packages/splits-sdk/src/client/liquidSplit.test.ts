@@ -7,6 +7,7 @@ import {
   PublicClient,
   Transport,
   WalletClient,
+  zeroAddress,
 } from 'viem'
 
 import { LiquidSplitClient } from './liquidSplit'
@@ -14,7 +15,6 @@ import {
   LIQUID_SPLITS_MAX_PRECISION_DECIMALS,
   getLiquidSplitFactoryAddress,
   LIQUID_SPLIT_URI_BASE_64_HEADER,
-  zeroAddress,
 } from '../constants'
 import {
   InvalidAuthError,
@@ -23,10 +23,8 @@ import {
   MissingWalletClientError,
   UnsupportedChainIdError,
 } from '../errors'
-import * as subgraph from '../subgraph'
 import * as utils from '../utils'
 import * as numberUtils from '../utils/numbers'
-import * as ensUtils from '../utils/ens'
 import {
   validateAddress,
   validateDistributorFeePercent,
@@ -39,7 +37,6 @@ import {
   CONTROLLER_ADDRESS,
   NFT_COUNTS,
 } from '../testing/constants'
-import { MockGraphqlClient } from '../testing/mocks/graphql'
 import { writeActions as factoryWriteActions } from '../testing/mocks/liquidSplitFactory'
 import {
   writeActions as moduleWriteActions,
@@ -47,6 +44,7 @@ import {
 } from '../testing/mocks/liquidSplit'
 import type { LiquidSplit } from '../types'
 import { MockViemContract } from '../testing/mocks/viemContract'
+import { DataClient } from './data'
 
 jest.mock('viem', () => {
   const originalModule = jest.requireActual('viem')
@@ -68,6 +66,8 @@ jest.mock('viem', () => {
 })
 
 jest.mock('../utils/validation')
+
+jest.mock('./data')
 
 const getSortedRecipientsMock = jest
   .spyOn(utils, 'getRecipientSortedAddressesAndAllocations')
@@ -188,6 +188,9 @@ describe('Liquid split writes', () => {
   const walletClient = new mockWalletClient()
   const liquidSplitClient = new LiquidSplitClient({
     chainId: 1,
+    apiConfig: {
+      apiKey: '1',
+    },
     publicClient,
     walletClient,
   })
@@ -338,18 +341,23 @@ describe('Liquid split writes', () => {
       wait: 'wait',
     }
 
+    const mockedDataClient = DataClient as jest.MockedClass<typeof DataClient>
+
     beforeEach(() => {
-      jest
-        .spyOn(liquidSplitClient, 'getLiquidSplitMetadata')
-        .mockImplementationOnce(async () => {
+      mockedDataClient.prototype.getLiquidSplitMetadata.mockImplementationOnce(
+        async () => {
           return {
             holders,
           } as LiquidSplit
-        })
+        },
+      )
       moduleWriteActions.distributeFunds.mockClear()
       moduleWriteActions.distributeFunds.mockReturnValueOnce(
         distributeFundsResult,
       )
+    })
+    afterEach(() => {
+      mockedDataClient.mockClear()
     })
 
     test('Distribute token fails with no provider', async () => {
@@ -732,119 +740,6 @@ describe('Liquid split reads', () => {
       expect(image).toEqual('testImage')
       expect(validateAddress).toBeCalledWith(liquidSplitAddress)
       expect(readActions.uri).toBeCalled()
-    })
-  })
-})
-
-const mockGqlClient = new MockGraphqlClient()
-jest.mock('graphql-request', () => {
-  return {
-    GraphQLClient: jest.fn().mockImplementation(() => {
-      return mockGqlClient
-    }),
-    gql: jest.fn(),
-  }
-})
-
-describe('Graphql reads', () => {
-  const SAMPLE_LIQUID_SPLIT = {
-    holders: [
-      {
-        recipient: {
-          address: '0xholder1',
-        },
-      },
-    ],
-  } as unknown as LiquidSplit
-
-  const mockFormatLiquidSplit = jest
-    .spyOn(subgraph, 'protectedFormatLiquidSplit')
-    .mockReturnValue(SAMPLE_LIQUID_SPLIT)
-  const mockAddEnsNames = jest
-    .spyOn(ensUtils, 'addEnsNames')
-    .mockImplementation()
-  const mockGqlLiquidSplit = {
-    token: {
-      id: '0xliquidSplitToken',
-    },
-  }
-
-  const liquidSplitAddress = '0xliquidSplit'
-  const publicClient = new mockPublicClient()
-  const liquidSplitClient = new LiquidSplitClient({
-    chainId: 1,
-    publicClient,
-  })
-
-  beforeEach(() => {
-    ;(validateAddress as jest.Mock).mockClear()
-    mockGqlClient.request.mockClear()
-    mockFormatLiquidSplit.mockClear()
-    mockAddEnsNames.mockClear()
-  })
-
-  describe('Get liquid split metadata tests', () => {
-    beforeEach(() => {
-      mockGqlClient.request.mockReturnValue({
-        liquidSplit: {
-          token: {
-            id: '0xliquidSplitToken',
-          },
-        },
-      })
-    })
-
-    test('Get liquid split metadata fails with no provider', async () => {
-      const badClient = new LiquidSplitClient({
-        chainId: 1,
-      })
-      await expect(
-        async () =>
-          await badClient.getLiquidSplitMetadata({
-            liquidSplitAddress,
-          }),
-      ).rejects.toThrow(MissingPublicClientError)
-    })
-
-    test('Get liquid split metadata passes', async () => {
-      const liquidSplit = await liquidSplitClient.getLiquidSplitMetadata({
-        liquidSplitAddress,
-      })
-
-      expect(validateAddress).toBeCalledWith(liquidSplitAddress)
-      expect(mockGqlClient.request).toBeCalledWith(
-        subgraph.LIQUID_SPLIT_QUERY,
-        {
-          liquidSplitAddress: liquidSplitAddress.toLowerCase(),
-        },
-      )
-      expect(mockFormatLiquidSplit).toBeCalledWith(mockGqlLiquidSplit)
-      expect(liquidSplit).toEqual(SAMPLE_LIQUID_SPLIT)
-      expect(mockAddEnsNames).not.toBeCalled()
-    })
-
-    test('Adds ens names', async () => {
-      const publicClient = new mockPublicClient()
-      const ensLiquidSplitClient = new LiquidSplitClient({
-        chainId: 1,
-        publicClient,
-        includeEnsNames: true,
-      })
-
-      const liquidSplit = await ensLiquidSplitClient.getLiquidSplitMetadata({
-        liquidSplitAddress,
-      })
-
-      expect(validateAddress).toBeCalledWith(liquidSplitAddress)
-      expect(mockGqlClient.request).toBeCalledWith(
-        subgraph.LIQUID_SPLIT_QUERY,
-        {
-          liquidSplitAddress: liquidSplitAddress.toLowerCase(),
-        },
-      )
-      expect(mockFormatLiquidSplit).toBeCalledWith(mockGqlLiquidSplit)
-      expect(liquidSplit).toEqual(SAMPLE_LIQUID_SPLIT)
-      expect(mockAddEnsNames).toBeCalled()
     })
   })
 })

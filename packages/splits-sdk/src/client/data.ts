@@ -1,4 +1,5 @@
-import { GraphQLClient, Variables } from 'graphql-request'
+import { Client } from '@urql/core'
+import { DocumentNode } from 'graphql'
 import {
   Address,
   Chain,
@@ -36,6 +37,7 @@ import {
 import {
   ACCOUNT_QUERY,
   FULL_ACCOUNT_QUERY,
+  GqlVariables,
   formatFullGqlAccount,
   formatGqlAccount,
   getGraphqlClient,
@@ -88,7 +90,7 @@ import {
 export class DataClient {
   readonly _ensPublicClient: PublicClient<Transport, Chain> | undefined
   readonly _publicClient: PublicClient<Transport, Chain> | undefined
-  private readonly _graphqlClient: GraphQLClient | undefined
+  private readonly _graphqlClient: Client | undefined
   readonly _includeEnsNames: boolean
 
   constructor({
@@ -117,18 +119,21 @@ export class DataClient {
   }
 
   protected async _makeGqlRequest<ResponseType>(
-    query: string,
-    variables?: Variables,
+    query: DocumentNode,
+    variables?: GqlVariables,
   ): Promise<ResponseType> {
     if (!this._graphqlClient) {
       throw new UnsupportedSubgraphChainIdError()
     }
 
-    const result = await this._graphqlClient.request<ResponseType>(
-      query,
-      variables,
-    )
-    return result
+    const response = await this._graphqlClient
+      .query(query, variables)
+      .toPromise()
+    if (response.error) {
+      throw response.error
+    }
+
+    return response.data
   }
 
   protected async _loadAccount(

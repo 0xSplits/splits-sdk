@@ -58,13 +58,14 @@ class BaseClient {
     this._walletClient = walletClient
     this._includeEnsNames = includeEnsNames
 
-    if (apiConfig)
+    if (apiConfig) {
       this._dataClient = new DataClient({
         publicClient,
         ensPublicClient,
         apiConfig,
         includeEnsNames,
       })
+    }
   }
 
   protected _requireDataClient() {
@@ -104,6 +105,7 @@ export class BaseTransactions extends BaseClient {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
@@ -111,6 +113,7 @@ export class BaseTransactions extends BaseClient {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
 

@@ -1,4 +1,4 @@
-import { Address } from 'viem'
+import { Address, zeroAddress } from 'viem'
 
 import {
   ContractDiversifierRecipient,
@@ -6,7 +6,6 @@ import {
   ContractRecoupTranche,
   ContractScaledOfferFactorOverride,
 } from '../types'
-import { zeroAddress } from '../constants'
 
 // eslint-disable-next-line
 require('dotenv').config()

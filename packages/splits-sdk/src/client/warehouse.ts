@@ -66,6 +66,7 @@ class WarehouseTransactions extends BaseTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
@@ -74,6 +75,7 @@ class WarehouseTransactions extends BaseTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
 
@@ -476,6 +478,7 @@ export class WarehouseClient extends WarehouseTransactions {
     chainId,
     publicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
     ensPublicClient,
   }: SplitsClientConfig) {
@@ -484,6 +487,7 @@ export class WarehouseClient extends WarehouseTransactions {
       chainId,
       publicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
       ensPublicClient,
     })
@@ -1047,6 +1051,7 @@ class WarehouseGasEstimates extends WarehouseTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -1055,6 +1060,7 @@ class WarehouseGasEstimates extends WarehouseTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }
@@ -1206,6 +1212,7 @@ class WarehouseCallData extends WarehouseTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames,
   }: SplitsClientConfig) {
     super({
@@ -1214,6 +1221,7 @@ class WarehouseCallData extends WarehouseTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }
@@ -1361,6 +1369,7 @@ class WarehouseSignature extends WarehouseTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames,
   }: SplitsClientConfig) {
     super({
@@ -1369,6 +1378,7 @@ class WarehouseSignature extends WarehouseTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }

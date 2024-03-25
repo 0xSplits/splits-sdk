@@ -15,26 +15,20 @@ import {
 } from 'viem'
 
 import {
-  BaseClientMixin,
-  BaseGasEstimatesMixin,
-  BaseTransactions,
-} from './base'
-import { applyMixins } from './mixin'
-import {
   ARBITRUM_CHAIN_IDS,
   AURORA_CHAIN_IDS,
   AVALANCHE_CHAIN_IDS,
+  BASE_CHAIN_IDS,
   BSC_CHAIN_IDS,
   ETHEREUM_CHAIN_IDS,
   FANTOM_CHAIN_IDS,
   GNOSIS_CHAIN_IDS,
   OPTIMISM_CHAIN_IDS,
   POLYGON_CHAIN_IDS,
-  ZORA_CHAIN_IDS,
   SPLITS_SUPPORTED_CHAIN_IDS,
-  getSplitMainAddress,
   TransactionType,
-  BASE_CHAIN_IDS,
+  ZORA_CHAIN_IDS,
+  getSplitMainAddress,
 } from '../constants'
 import {
   splitMainEthereumAbi,
@@ -46,29 +40,35 @@ import {
   UnsupportedChainIdError,
 } from '../errors'
 import type {
-  SplitsClientConfig,
-  CreateSplitConfig,
-  UpdateSplitConfig,
-  DistributeTokenConfig,
-  WithdrawFundsConfig,
-  InitiateControlTransferConfig,
-  CancelControlTransferConfig,
   AcceptControlTransferConfig,
-  MakeSplitImmutableConfig,
-  GetSplitBalanceConfig,
-  UpdateSplitAndDistributeTokenConfig,
-  SplitRecipient,
-  CallData,
-  TransactionConfig,
-  TransactionFormat,
   BatchDistributeAndWithdrawConfig,
   BatchDistributeAndWithdrawForAllConfig,
+  CallData,
+  CancelControlTransferConfig,
+  CreateSplitConfig,
+  DistributeTokenConfig,
+  GetSplitBalanceConfig,
+  InitiateControlTransferConfig,
+  MakeSplitImmutableConfig,
+  SplitRecipient,
+  SplitsClientConfig,
+  TransactionConfig,
+  TransactionFormat,
+  UpdateSplitAndDistributeTokenConfig,
+  UpdateSplitConfig,
+  WithdrawFundsConfig,
 } from '../types'
 import {
-  getRecipientSortedAddressesAndAllocations,
   getBigIntFromPercent,
+  getRecipientSortedAddressesAndAllocations,
 } from '../utils'
 import { validateAddress, validateSplitInputs } from '../utils/validation'
+import {
+  BaseClientMixin,
+  BaseGasEstimatesMixin,
+  BaseTransactions,
+} from './base'
+import { applyMixins } from './mixin'
 
 const polygonAbiChainIds = [
   ...POLYGON_CHAIN_IDS,
@@ -98,6 +98,7 @@ class SplitV1Transactions extends BaseTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
@@ -106,6 +107,7 @@ class SplitV1Transactions extends BaseTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
 
@@ -536,6 +538,7 @@ export class SplitV1Client extends SplitV1Transactions {
     chainId,
     publicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
     ensPublicClient,
   }: SplitsClientConfig) {
@@ -545,6 +548,7 @@ export class SplitV1Client extends SplitV1Transactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
 
@@ -1072,6 +1076,7 @@ class SplitV1GasEstimates extends SplitV1Transactions {
     chainId,
     publicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
     ensPublicClient,
   }: SplitsClientConfig) {
@@ -1080,6 +1085,7 @@ class SplitV1GasEstimates extends SplitV1Transactions {
       chainId,
       publicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
       ensPublicClient,
     })
@@ -1177,6 +1183,7 @@ class SplitV1CallData extends SplitV1Transactions {
     chainId,
     publicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
     ensPublicClient,
   }: SplitsClientConfig) {
@@ -1185,6 +1192,7 @@ class SplitV1CallData extends SplitV1Transactions {
       chainId,
       publicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
       ensPublicClient,
     })

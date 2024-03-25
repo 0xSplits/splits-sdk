@@ -50,7 +50,7 @@ export type SplitsClientConfig = {
   walletClient?: WalletClient<Transport, Chain, Account>
   apiConfig?: {
     apiKey: string
-    serverURL: string
+    serverURL?: string
   }
   includeEnsNames?: boolean
   // ensPublicClient can be used to fetch ens names when publicClient is not on mainnet (reverseRecords

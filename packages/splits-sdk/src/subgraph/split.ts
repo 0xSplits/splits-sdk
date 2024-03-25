@@ -1,19 +1,18 @@
-import { gql } from 'graphql-request'
-import {
-  formatGqlContractEarnings,
-  formatInternalTokenBalances,
-  formatTokenBalances,
-} from './token'
-import { GqlRecipient, GqlSplit, IRecipient, ISplit } from './types'
+import { gql } from '@urql/core'
 import { getAddress, zeroAddress } from 'viem'
+import { Split } from '../types'
 import {
   fromBigIntToPercent,
   getAccountsAndPercentAllocations,
   hashSplit,
 } from '../utils'
 import { SupportedChainId } from './constants'
-import { Split } from '../types'
-import { formatRecipient } from './liquid'
+import {
+  formatGqlContractEarnings,
+  formatInternalTokenBalances,
+  formatTokenBalances,
+} from './token'
+import { GqlRecipient, GqlSplit, IHolder, IRecipient, ISplit } from './types'
 
 export const RECIPIENT_FIELDS_FRAGMENT = gql`
   fragment RecipientFieldsFragment on SplitRecipient {
@@ -185,5 +184,14 @@ export const protectedFormatSplit = (gqlSplit: ISplit): Split => {
       .sort((a, b) => {
         return b.percentAllocation - a.percentAllocation
       }),
+  }
+}
+
+export const formatRecipient = (gqlRecipient: IHolder) => {
+  return {
+    recipient: {
+      address: gqlRecipient.address,
+    },
+    percentAllocation: fromBigIntToPercent(gqlRecipient.ownership),
   }
 }

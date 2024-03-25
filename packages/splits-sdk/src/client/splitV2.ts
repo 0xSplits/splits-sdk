@@ -6,14 +6,26 @@ import {
   Log,
   PublicClient,
   Transport,
+  TypedDataDomain,
   decodeEventLog,
   encodeEventTopics,
-  zeroAddress,
   getContract,
-  TypedDataDomain,
+  zeroAddress,
 } from 'viem'
+import {
+  SPLITS_SUPPORTED_CHAIN_IDS,
+  SPLITS_V2_SUPPORTED_CHAIN_IDS,
+  TransactionType,
+  getSplitV2FactoriesStartBlock,
+  getSplitV2FactoryAddress,
+} from '../constants'
 import { splitV2ABI } from '../constants/abi/splitV2'
 import { splitV2FactoryABI } from '../constants/abi/splitV2Factory'
+import {
+  SaltRequired,
+  TransactionFailedError,
+  UnsupportedChainIdError,
+} from '../errors'
 import {
   CallData,
   CreateSplitV2Config,
@@ -29,30 +41,18 @@ import {
   UpdateSplitV2Config,
 } from '../types'
 import {
+  fromBigIntToPercent,
+  getNumberFromPercent,
+  getSplitType,
+  getValidatedSplitV2Config,
+  validateAddress,
+} from '../utils'
+import {
   BaseClientMixin,
   BaseGasEstimatesMixin,
   BaseTransactions,
 } from './base'
 import { applyMixins } from './mixin'
-import {
-  SPLITS_SUPPORTED_CHAIN_IDS,
-  SPLITS_V2_SUPPORTED_CHAIN_IDS,
-  TransactionType,
-  getSplitV2FactoriesStartBlock,
-  getSplitV2FactoryAddress,
-} from '../constants'
-import {
-  validateAddress,
-  getNumberFromPercent,
-  getValidatedSplitV2Config,
-  getSplitType,
-  fromBigIntToPercent,
-} from '../utils'
-import {
-  SaltRequired,
-  TransactionFailedError,
-  UnsupportedChainIdError,
-} from '../errors'
 
 type SplitFactoryABI = typeof splitV2FactoryABI
 type SplitV2ABI = typeof splitV2ABI
@@ -67,6 +67,7 @@ class SplitV2Transactions extends BaseTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
@@ -75,6 +76,7 @@ class SplitV2Transactions extends BaseTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }
@@ -439,6 +441,7 @@ export class SplitV2Client extends SplitV2Transactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -447,6 +450,7 @@ export class SplitV2Client extends SplitV2Transactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
 
@@ -864,6 +868,7 @@ class SplitV2GasEstimates extends SplitV2Transactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -872,6 +877,7 @@ class SplitV2GasEstimates extends SplitV2Transactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }
@@ -931,6 +937,7 @@ class SplitV2CallData extends SplitV2Transactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -939,6 +946,7 @@ class SplitV2CallData extends SplitV2Transactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }
@@ -994,6 +1002,7 @@ class SplitV2Signature extends SplitV2Transactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames,
   }: SplitsClientConfig) {
     super({
@@ -1002,6 +1011,7 @@ class SplitV2Signature extends SplitV2Transactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }

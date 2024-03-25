@@ -1,4 +1,4 @@
-import { gql } from 'graphql-request'
+import { gql } from '@urql/core'
 
 import { ACCOUNT_FIELDS_FRAGMENT, SPLIT_FIELDS_FRAGMENT } from './split'
 import {

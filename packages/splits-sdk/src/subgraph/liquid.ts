@@ -1,4 +1,4 @@
-import { gql } from 'graphql-request'
+import { gql } from '@urql/core'
 import { ACCOUNT_FIELDS_FRAGMENT, SPLIT_FIELDS_FRAGMENT } from './split'
 import {
   formatGqlContractEarnings,
@@ -21,7 +21,7 @@ const LIQUID_SPLIT_HOLDERS_FRAGMENT = gql`
 
 export const LIQUID_SPLIT_FIELDS_FRAGMENT = gql`
   fragment LiquidSplitFieldsFragment on LiquidSplit {
-    holders(first: 1000, where: { ownership_gt: "0" }) {
+    holders {
       ...LiquidSplitHoldersFragment
     }
     distributorFee

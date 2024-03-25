@@ -65,6 +65,7 @@ class LiquidSplitTransactions extends BaseTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
@@ -73,6 +74,7 @@ class LiquidSplitTransactions extends BaseTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }
@@ -210,6 +212,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -218,6 +221,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
 
@@ -520,6 +524,7 @@ class LiquidSplitGasEstimates extends LiquidSplitTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -528,6 +533,7 @@ class LiquidSplitGasEstimates extends LiquidSplitTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }
@@ -575,6 +581,7 @@ class LiquidSplitCallData extends LiquidSplitTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -583,6 +590,7 @@ class LiquidSplitCallData extends LiquidSplitTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }

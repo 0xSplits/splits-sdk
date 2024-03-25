@@ -168,15 +168,15 @@ importers:
 
   packages/splits-sdk:
     dependencies:
+      '@urql/core':
+        specifier: ^4.3.0
+        version: 4.3.0(graphql@16.8.1)
       base-64:
         specifier: ^1.0.0
         version: 1.0.0
       graphql:
         specifier: ^16.8.1
         version: 16.8.1
-      graphql-request:
-        specifier: ^6.1.0
-        version: 6.1.0(graphql@16.8.1)
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
@@ -214,6 +214,17 @@ importers:
         version: 18.2.37
 
 packages:
+
+  /@0no-co/graphql.web@1.0.4(graphql@16.8.1):
+    resolution: {integrity: sha512-W3ezhHGfO0MS1PtGloaTpg0PbaT8aZSmmaerL7idtU5F7oCI+uu25k+MsMS31BVFlp4aMkHSrNRxiD72IlK8TA==}
+    peerDependencies:
+      graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
+    peerDependenciesMeta:
+      graphql:
+        optional: true
+    dependencies:
+      graphql: 16.8.1
+    dev: false
 
   /@0xsplits/splits-sdk@3.3.1(typescript@5.2.2):
     resolution: {integrity: sha512-Avw9+4kmAEwmCNrwiJZnwI0yW1+31R7ow88Bi9EDpYDUNMNEkLGkH3BaD/wugm97c5FwMXGJB+6NZlhg2VzqHw==}
@@ -5736,6 +5747,15 @@ packages:
   /@ungap/structured-clone@1.2.0:
     resolution: {integrity: sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==}
     dev: true
+
+  /@urql/core@4.3.0(graphql@16.8.1):
+    resolution: {integrity: sha512-wT+FeL8DG4x5o6RfHEnONNFVDM3616ouzATMYUClB6CB+iIu2mwfBKd7xSUxYOZmwtxna5/hDRQdMl3nbQZlnw==}
+    dependencies:
+      '@0no-co/graphql.web': 1.0.4(graphql@16.8.1)
+      wonka: 6.3.4
+    transitivePeerDependencies:
+      - graphql
+    dev: false
 
   /@viem/anvil@0.0.9:
     resolution: {integrity: sha512-JPy/w1A39PI59fbRU+pWC0Zadou4tu5rk3QUQBAWe6bdkQh05MfMkNKeRQKwI12Rrb37tfnR4V5bD3gcqRMY0Q==}
@@ -15146,6 +15166,10 @@ packages:
     dependencies:
       string-width: 4.2.3
     dev: true
+
+  /wonka@6.3.4:
+    resolution: {integrity: sha512-CjpbqNtBGNAeyNS/9W6q3kSkKE52+FjIj7AkFlLr11s/VWGUu6a2CdYSdGxocIhIVjaW/zchesBQUKPVU69Cqg==}
+    dev: false
 
   /wordwrap@1.0.0:
     resolution: {integrity: sha512-gvVzJFlPycKc5dZN4yPkP8w7Dc37BtP1yczEneOb4uq34pXZcvrtRTmWV8W+Ume+XCxKgbjM+nevkyFPMybd4Q==}
