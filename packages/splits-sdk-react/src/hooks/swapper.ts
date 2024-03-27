@@ -483,7 +483,9 @@ export const useSwapperMetadata = (
 
     const fetchMetadata = async () => {
       try {
-        const swapper = await swapperClient.getSwapperMetadata({ swapperAddress })
+        const swapper = await swapperClient.getSwapperMetadata({
+          swapperAddress,
+        })
         if (!isActive) return
         setSwapperMetadata(swapper)
         setStatus('success')

@@ -418,7 +418,7 @@ class BaseClient {
 
 export class BaseTransactions extends BaseClient {
   protected readonly _transactionType: TransactionType
-  protected readonly _shouldRequreWalletClient: boolean
+  protected readonly _shouldRequireWalletClient: boolean
 
   constructor({
     transactionType,
@@ -437,7 +437,7 @@ export class BaseTransactions extends BaseClient {
     })
 
     this._transactionType = transactionType
-    this._shouldRequreWalletClient = [
+    this._shouldRequireWalletClient = [
       TransactionType.GasEstimate,
       TransactionType.Transaction,
     ].includes(transactionType)
@@ -449,16 +449,18 @@ export class BaseTransactions extends BaseClient {
     functionName,
     functionArgs,
     transactionOverrides,
+    value,
   }: {
     contractAddress: Address
     contractAbi: Abi
     functionName: string
     functionArgs?: unknown[]
     transactionOverrides: TransactionOverrides
+    value?: bigint
   }) {
     this._requirePublicClient()
     if (!this._publicClient) throw new Error()
-    if (this._shouldRequreWalletClient) {
+    if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
     }
 
@@ -470,6 +472,7 @@ export class BaseTransactions extends BaseClient {
         functionName,
         account: this._walletClient.account,
         args: functionArgs ?? [],
+        value,
         ...transactionOverrides,
       })
       return gasEstimate
@@ -492,6 +495,7 @@ export class BaseTransactions extends BaseClient {
         functionName,
         account: this._walletClient.account,
         args: functionArgs ?? [],
+        value,
         ...transactionOverrides,
       })
       const txHash = await this._walletClient.writeContract(request)

@@ -73,7 +73,7 @@ class PassThroughWalletTransactions extends BaseTransactions {
   }: CreatePassThroughWalletConfig): Promise<TransactionFormat> {
     validateAddress(owner)
     validateAddress(passThrough)
-    if (this._shouldRequreWalletClient) this._requireWalletClient()
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const result = await this._executeContractFunction({
       contractAddress: getPassThroughWalletFactoryAddress(this._chainId),
@@ -93,7 +93,7 @@ class PassThroughWalletTransactions extends BaseTransactions {
   }: PassThroughTokensConfig): Promise<TransactionFormat> {
     validateAddress(passThroughWalletAddress)
     tokens.map((token) => validateAddress(token))
-    if (this._shouldRequreWalletClient) this._requireWalletClient()
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const result = await this._executeContractFunction({
       contractAddress: getAddress(passThroughWalletAddress),
@@ -113,7 +113,7 @@ class PassThroughWalletTransactions extends BaseTransactions {
   }: SetPassThroughConfig): Promise<TransactionFormat> {
     validateAddress(passThroughWalletAddress)
     validateAddress(passThrough)
-    if (this._shouldRequreWalletClient) {
+    if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
       await this._requireOwner(passThroughWalletAddress)
     }
@@ -135,7 +135,7 @@ class PassThroughWalletTransactions extends BaseTransactions {
     transactionOverrides = {},
   }: PassThroughWalletPauseConfig): Promise<TransactionFormat> {
     validateAddress(passThroughWalletAddress)
-    if (this._shouldRequreWalletClient) {
+    if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
       await this._requireOwner(passThroughWalletAddress)
     }
@@ -158,7 +158,7 @@ class PassThroughWalletTransactions extends BaseTransactions {
   }: PassThroughWalletExecCallsConfig): Promise<TransactionFormat> {
     validateAddress(passThroughWalletAddress)
     calls.map((callData) => validateAddress(callData.to))
-    if (this._shouldRequreWalletClient) {
+    if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
       await this._requireOwner(passThroughWalletAddress)
     }

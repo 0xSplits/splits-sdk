@@ -84,6 +84,17 @@ const CONTRACT_EARNINGS_FRAGMENT = gql`
   }
 `
 
+const CONTRACT_ACCOUNT_TOKEN_BALANCE_FRAGMENT = gql`
+  fragment ContractAccountTokenBalanceFragment on ContractAccountTokenBalance {
+    amount
+    token {
+      id
+      symbol
+      decimals
+    }
+  }
+`
+
 const ACCOUNT_FIELDS_FRAGMENT = gql`
   fragment AccountFieldsFragment on Account {
     id
@@ -597,6 +608,24 @@ export const USER_BALANCES_BY_CONTRACT_FILTERED_QUERY = gql`
   }
 
   ${CONTRACT_EARNINGS_FRAGMENT}
+`
+
+export const CONTRACT_BALANCES_BY_ACCOUNT_QUERY = gql`
+  query contractBalancesByAccount($userAddress: ID!, $contractId: ID!) {
+    contractBalancesByAccount: account(id: $userAddress) {
+      balances(first: 1000, where: { contract: $contractId }) {
+        ...ContractAccountTokenBalanceFragment
+      }
+      withdrawals(first: 1000, where: { contract: $contractId }) {
+        ...ContractAccountTokenBalanceFragment
+      }
+      deposits(first: 1000, where: { contract: $contractId }) {
+        ...ContractAccountTokenBalanceFragment
+      }
+    }
+  }
+
+  ${CONTRACT_ACCOUNT_TOKEN_BALANCE_FRAGMENT}
 `
 
 export const getGraphqlClient = (

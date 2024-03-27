@@ -4,15 +4,25 @@ import {
   ADDRESS_ZERO,
   LIQUID_SPLIT_NFT_COUNT,
   PERCENTAGE_SCALE,
+  getSplitV2FactoryAddress,
 } from '../constants'
-import type {
+import {
   ContractRecoupTranche,
   RecoupTrancheInput,
   SplitRecipient,
+  SplitV2Type,
   WaterfallTrancheInput,
 } from '../types'
-import { getBigIntFromPercent, getBigIntTokenValue } from './numbers'
+import {
+  getBigIntFromPercent,
+  getBigIntTokenValue,
+  getNumberFromPercent,
+} from './numbers'
 import { getTokenData } from './tokens'
+import {
+  InvalidDistributorFeePercentErrorV2,
+  InvalidTotalAllocation,
+} from '../errors'
 
 export * from './ens'
 export * from './numbers'
@@ -114,4 +124,63 @@ export const getRecoupTranchesAndSizes = async (
   })
 
   return [recoupTranches, sizes]
+}
+
+export const getAddressAndAllocationFromRecipients = (
+  recipients: SplitRecipient[],
+): { recipientAddresses: Address[]; recipientAllocations: bigint[] } => {
+  return {
+    recipientAddresses: recipients.map(
+      (recipient) => recipient.address,
+    ) as Address[],
+    recipientAllocations: recipients.map((recipient) =>
+      getBigIntFromPercent(recipient.percentAllocation),
+    ),
+  }
+}
+
+export const MAX_DISTRIBUTION_INCENTIVE = 6.5535
+
+export const getValidatedSplitV2Config = (
+  recipients: SplitRecipient[],
+  distributorFeePercent: number,
+  totalAllocationPercent?: number,
+): {
+  recipientAddresses: Address[]
+  recipientAllocations: bigint[]
+  distributionIncentive: number
+  totalAllocation: bigint
+} => {
+  const { recipientAddresses, recipientAllocations } =
+    getAddressAndAllocationFromRecipients(recipients)
+
+  if (distributorFeePercent > MAX_DISTRIBUTION_INCENTIVE)
+    throw new InvalidDistributorFeePercentErrorV2(distributorFeePercent)
+  const distributionIncentive = getNumberFromPercent(distributorFeePercent)
+
+  const calculatedTotalAllocation = recipientAllocations.reduce((a, b) => a + b)
+
+  if (
+    totalAllocationPercent &&
+    getBigIntFromPercent(totalAllocationPercent) !== calculatedTotalAllocation
+  )
+    throw new InvalidTotalAllocation(totalAllocationPercent)
+  else if (calculatedTotalAllocation !== PERCENTAGE_SCALE)
+    throw new InvalidTotalAllocation()
+
+  return {
+    recipientAddresses,
+    recipientAllocations,
+    distributionIncentive,
+    totalAllocation: calculatedTotalAllocation,
+  }
+}
+
+export const getSplitType = (
+  chainId: number,
+  factoryAddress: Address,
+): SplitV2Type => {
+  if (factoryAddress === getSplitV2FactoryAddress(chainId, SplitV2Type.Pull))
+    return SplitV2Type.Pull
+  return SplitV2Type.Push
 }

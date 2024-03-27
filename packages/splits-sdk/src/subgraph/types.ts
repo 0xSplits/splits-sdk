@@ -126,6 +126,25 @@ type GqlSwapperScaledOfferFactorOverride = {
   scaledOfferFactor: Scalars['String']
 }
 
+export type GqlContractAccountBalance = {
+  id: Scalars['ID']
+  token: GqlToken
+  amount: Scalars['Int']
+  account: GqlAccount
+  contract: GqlContract
+}
+
+export type GqlContractAccountDeposits = GqlAccountBalances
+
+export type GqlContractAccountWithdrawal = GqlAccountBalances
+
+export type GqlContractAccountEarnings = GqlAccountBalances
+
+export type GqlContract = {
+  id: Scalars['ID']
+  account: GqlAccount
+}
+
 export type GqlAccount =
   | GqlUser
   | GqlSplit

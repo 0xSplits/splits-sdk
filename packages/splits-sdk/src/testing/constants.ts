@@ -1,4 +1,4 @@
-import { Address } from 'viem'
+import { Address, Hex } from 'viem'
 
 import {
   ContractDiversifierRecipient,
@@ -7,6 +7,8 @@ import {
   ContractScaledOfferFactorOverride,
 } from '../types'
 import { ADDRESS_ZERO } from '../constants'
+
+require('dotenv').config()
 
 const SAMPLE_ADDRESSES: Address[] = [
   '0xD57f3Fa0b49E91eaA20e739c874Ae273Bcf2D7Aa',

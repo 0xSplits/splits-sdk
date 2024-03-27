@@ -76,7 +76,7 @@ class VestingTransactions extends BaseTransactions {
     validateAddress(beneficiary)
     validateVestingPeriod(vestingPeriodSeconds)
 
-    if (this._shouldRequreWalletClient) this._requireWalletClient()
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const result = await this._executeContractFunction({
       contractAddress: getVestingFactoryAddress(this._chainId),
@@ -96,7 +96,7 @@ class VestingTransactions extends BaseTransactions {
   }: StartVestConfig): Promise<TransactionFormat> {
     validateAddress(vestingModuleAddress)
     tokens.map((token) => validateAddress(token))
-    if (this._shouldRequreWalletClient) this._requireWalletClient()
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const result = await this._executeContractFunction({
       contractAddress: getAddress(vestingModuleAddress),
@@ -115,7 +115,7 @@ class VestingTransactions extends BaseTransactions {
     transactionOverrides = {},
   }: ReleaseVestedFundsConfig): Promise<TransactionFormat> {
     validateAddress(vestingModuleAddress)
-    if (this._shouldRequreWalletClient) this._requireWalletClient()
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const result = await this._executeContractFunction({
       contractAddress: getAddress(vestingModuleAddress),

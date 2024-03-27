@@ -1,4 +1,5 @@
 import { Address } from 'viem'
+import { SplitV2Type } from '../types'
 
 export const PERCENTAGE_SCALE = BigInt(1e6)
 export const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000'
@@ -49,6 +50,12 @@ const RECOUP_ADDRESS_SEPOLIA = '0x8Cbb4e187ce8A29BACC13Fd999a107f3c4b46D3B'
 const DIVERSIFIER_FACTORY_ADDRESS_SEPOLIA =
   '0x0eAeAfD1c82563B6005c7D09031462D9FF68Adab'
 
+const WAREHOUSE_ADDRESS = '0x8fb66F38cF86A3d5e8768f8F1754A24A6c661Fb8'
+export const PULL_SPLIT_FACTORY_ADDRESS =
+  '0x80f1B766817D04870f115fEBbcCADF8DBF75E017'
+export const PUSH_SPLIT_FACTORY_ADDRESS =
+  '0xaDC87646f736d6A82e9a6539cddC488b2aA07f38'
+
 export const getSplitMainAddress = (chainId: number): Address => {
   if (chainId === ChainId.BSC) return SPLIT_MAIN_ADDRESS_BSC
   if (chainId === ChainId.HOLESKY) return SPLIT_MAIN_ADDRESS_HOLESKY
@@ -88,11 +95,11 @@ export const getPassThroughWalletFactoryAddress = (
   return PASS_THROUGH_WALLET_FACTORY_ADDRESS
 }
 
-export const getSwapperFactoryAddress = (_chainId: number): Address => {
+export const getSwapperFactoryAddress = (): Address => {
   return SWAPPER_FACTORY_ADDRESS
 }
 
-export const getUniV3SwapAddress = (_chainId: number): Address => {
+export const getUniV3SwapAddress = (): Address => {
   return UNI_V3_SWAP_ADDRESS
 }
 
@@ -102,7 +109,24 @@ export const getDiversifierFactoryAddress = (chainId: number): Address => {
   return DIVERSIFIER_FACTORY_ADDRESS
 }
 
-enum ChainId {
+export const getWarehouseAddress = (): Address => {
+  return WAREHOUSE_ADDRESS
+}
+
+export const getSplitV2FactoryAddress = (
+  _chainId: number,
+  type: SplitV2Type,
+): Address => {
+  if (type === SplitV2Type.Pull) return PULL_SPLIT_FACTORY_ADDRESS
+  else return PUSH_SPLIT_FACTORY_ADDRESS
+}
+
+export const getSplitV2FactoriesStartBlock = (chainId: number): bigint => {
+  if (!CHAIN_INFO[chainId].startBlockV2) throw new Error('Chain not supported')
+  return BigInt(CHAIN_INFO[chainId].startBlockV2 as number)
+}
+
+export enum ChainId {
   MAINNET = 1,
   GOERLI = 5,
   SEPOLIA = 11155111,
@@ -111,6 +135,7 @@ enum ChainId {
   POLYGON_MUMBAI = 80001,
   OPTIMISM = 10,
   OPTIMISM_GOERLI = 420,
+  OPTIMISM_SEPOLIA = 11155420,
   ARBITRUM = 42161,
   ARBITRUM_GOERLI = 421613,
   GNOSIS = 100,
@@ -124,6 +149,7 @@ enum ChainId {
   BASE = 8453,
   BASE_GOERLI = 84531,
   BASE_SEPOLIA = 84532,
+  FOUNDRY = 31337,
 }
 
 export const ETHEREUM_CHAIN_IDS = [
@@ -173,6 +199,21 @@ const ALL_CHAIN_IDS = [
 
 export const SPLITS_SUPPORTED_CHAIN_IDS = [3, 4, 42, ...ALL_CHAIN_IDS]
 
+export const SPLITS_V2_SUPPORTED_CHAIN_IDS = [
+  ChainId.MAINNET,
+  ChainId.OPTIMISM,
+  ChainId.BASE,
+  ChainId.ZORA,
+  ChainId.POLYGON,
+  ChainId.ARBITRUM,
+  ChainId.SEPOLIA,
+  ChainId.HOLESKY,
+  ChainId.BASE_SEPOLIA,
+  ChainId.ZORA_SEPOLIA,
+  ChainId.OPTIMISM_SEPOLIA,
+  ChainId.FOUNDRY,
+]
+
 export const SPLITS_SUBGRAPH_CHAIN_IDS = ALL_CHAIN_IDS.slice()
 export const WATERFALL_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
   (id) => id !== ChainId.ZORA_SEPOLIA && id !== ChainId.BASE_SEPOLIA,
@@ -211,6 +252,7 @@ export const CHAIN_INFO: {
     startBlock: number
     gqlEndpoint?: string
     nativeCurrency: { symbol: string }
+    startBlockV2?: number
   }
 } = {
   [ChainId.MAINNET]: {
@@ -248,6 +290,7 @@ export const CHAIN_INFO: {
     nativeCurrency: {
       symbol: 'ETH',
     },
+    startBlockV2: 5467056,
   },
   42: {
     startBlock: 29821123,
@@ -262,6 +305,7 @@ export const CHAIN_INFO: {
     nativeCurrency: {
       symbol: 'ETH',
     },
+    startBlockV2: 1121603,
   },
   [ChainId.POLYGON]: {
     startBlock: 25303316,
@@ -270,6 +314,7 @@ export const CHAIN_INFO: {
     nativeCurrency: {
       symbol: 'MATIC',
     },
+    startBlockV2: 54572664,
   },
   [ChainId.POLYGON_MUMBAI]: {
     startBlock: 25258326,
@@ -286,6 +331,7 @@ export const CHAIN_INFO: {
     nativeCurrency: {
       symbol: 'ETH',
     },
+    startBlockV2: 117327692,
   },
   [ChainId.OPTIMISM_GOERLI]: {
     startBlock: 1324620,
@@ -302,6 +348,7 @@ export const CHAIN_INFO: {
     nativeCurrency: {
       symbol: 'ETH',
     },
+    startBlockV2: 189649987,
   },
   [ChainId.ARBITRUM_GOERLI]: {
     startBlock: 383218,
@@ -358,6 +405,7 @@ export const CHAIN_INFO: {
     nativeCurrency: {
       symbol: 'ETH',
     },
+    startBlockV2: 11780035,
   },
   [ChainId.ZORA_GOERLI]: {
     startBlock: 968023,
@@ -374,6 +422,7 @@ export const CHAIN_INFO: {
     nativeCurrency: {
       symbol: 'ETH',
     },
+    startBlockV2: 6062586,
   },
   [ChainId.BASE]: {
     startBlock: 2293907,
@@ -382,6 +431,7 @@ export const CHAIN_INFO: {
     nativeCurrency: {
       symbol: 'ETH',
     },
+    startBlockV2: 11732477,
   },
   [ChainId.BASE_GOERLI]: {
     startBlock: 8858512,
@@ -398,6 +448,7 @@ export const CHAIN_INFO: {
     nativeCurrency: {
       symbol: 'ETH',
     },
+    startBlockV2: 7243250,
   },
 }
 
@@ -405,4 +456,5 @@ export enum TransactionType {
   Transaction = 'Transaction',
   CallData = 'CallData',
   GasEstimate = 'GasEstimate',
+  Signature = 'Signature',
 }

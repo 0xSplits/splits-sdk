@@ -82,7 +82,7 @@ export type WithdrawFundsConfig = {
   tokens: string[]
 } & TransactionOverridesDict
 
-export type InititateControlTransferConfig = {
+export type InitiateControlTransferConfig = {
   splitAddress: string
   newController: string
 } & TransactionOverridesDict
@@ -116,6 +116,184 @@ export type GetSplitBalanceConfig = {
   splitAddress: string
   token?: string
 }
+
+// Warehouse
+export type WarehouseTransferConfig = {
+  receiverAddress: Address
+  tokenAddress: Address
+  amount: bigint
+} & TransactionOverridesDict
+
+export type WarehouseTransferFromConfig = {
+  senderAddress: Address
+  receiverAddress: Address
+  tokenAddress: Address
+  amount: bigint
+} & TransactionOverridesDict
+
+export type WarehouseApproveConfig = {
+  spenderAddress: Address
+  tokenAddress: Address
+  amount: bigint
+} & TransactionOverridesDict
+
+export type WarehouseSetOperatorConfig = {
+  operatorAddress: Address
+  approved: boolean
+} & TransactionOverridesDict
+
+export type WarehouseInvalidateNonceConfig = {
+  nonce: bigint
+} & TransactionOverridesDict
+
+export type WarehouseTemporaryApproveAndCallConfig = {
+  spenderAddress: Address
+  operator: boolean
+  tokenAddress: Address
+  amount: bigint
+  targetAddress: Address
+  data: Hex
+} & TransactionOverridesDict
+
+export type WarehouseTemporaryApproveAndCallBySigConfig = {
+  ownerAddress: Address
+  spenderAddress: Address
+  operator: boolean
+  tokenAddress: Address
+  amount: bigint
+  targetAddress: Address
+  data: Hex
+  nonce: bigint
+  deadline: number
+  signature: Hex
+} & TransactionOverridesDict
+
+export type WarehouseApproveBySig = {
+  spenderAddress: Address
+  operator: boolean
+  tokenAddress: Address
+  amount: bigint
+  nonce: bigint
+  deadline: number
+}
+
+export type WarehouseTemporaryApproveAndCallBySig = {
+  spenderAddress: Address
+  operator: boolean
+  tokenAddress: Address
+  amount: bigint
+  targetAddress: Address
+  data: Hex
+  nonce: bigint
+  deadline: number
+}
+
+export type WarehouseApproveBySigConfig = {
+  ownerAddress: Address
+  spenderAddress: Address
+  operator: boolean
+  tokenAddress: Address
+  amount: bigint
+  nonce: bigint
+  deadline: number
+  signature: Hex
+} & TransactionOverridesDict
+
+export type WarehouseDepositConfig = {
+  receiverAddress: Address
+  tokenAddress: Address
+  amount: bigint
+} & TransactionOverridesDict
+
+export type WarehouseBatchDepositConfig = {
+  receiversAddresses: Address[]
+  tokenAddress: Address
+  amounts: bigint[]
+} & TransactionOverridesDict
+
+export type WarehouseWithdrawConfig = {
+  ownerAddress: Address
+  tokenAddress: Address
+} & TransactionOverridesDict
+
+export type WarehouseBatchWithdrawConfig = {
+  ownerAddress: Address
+  tokensAddresses: Address[]
+  amounts: bigint[]
+  withdrawerAddress: Address
+} & TransactionOverridesDict
+
+export type WarehouseBatchTransferConfig = {
+  receiversAddresses: Address[]
+  tokenAddress: Address
+  amounts: bigint[]
+} & TransactionOverridesDict
+
+export type WarehouseSetWithdrawConfig = {
+  incentivePercent: number
+  paused: boolean
+} & TransactionOverridesDict
+
+export enum SplitV2Type {
+  Push,
+  Pull,
+}
+
+// Split V2
+
+export type SplitV2 = {
+  address: Address
+  recipients: Address[]
+  allocations: bigint[]
+  distributionIncentive: number
+  totalAllocation: bigint
+  paused: boolean
+  type: SplitV2Type
+  controllerAddress: Address
+  creatorAddress: Address
+}
+
+export type CreateSplitV2Config = {
+  recipients: SplitRecipient[]
+  distributorFeePercent: number
+  totalAllocationPercent?: number
+  splitType?: SplitV2Type
+  controllerAddress?: Address
+  creatorAddress?: Address
+  salt?: Hex
+} & TransactionOverridesDict
+
+export type UpdateSplitV2Config = {
+  splitAddress: Address
+  recipients: SplitRecipient[]
+  distributorFeePercent: number
+  totalAllocationPercent?: number
+} & TransactionOverridesDict
+
+export type DistributeSplitConfig = {
+  splitAddress: Address
+  tokenAddress: Address
+  distributorAddress?: Address
+} & TransactionOverridesDict
+
+export type TransferOwnershipConfig = {
+  splitAddress: Address
+  newController: Address
+} & TransactionOverridesDict
+
+export type SetPausedConfig = {
+  splitAddress: Address
+  paused: boolean
+} & TransactionOverridesDict
+
+export type SplitV2ExecCallsConfig = {
+  splitAddress: Address
+  calls: {
+    to: Address
+    value: bigint
+    data: Hex
+  }[]
+} & TransactionOverridesDict
 
 // Waterfall
 export type WaterfallTrancheInput = {

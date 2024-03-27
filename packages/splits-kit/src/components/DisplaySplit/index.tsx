@@ -61,10 +61,12 @@ const DisplaySplit = ({
 
   useEffect(() => {
     if (earningsError) {
+      // eslint-disable-next-line no-console
       console.error(earningsError)
       onError && onError(earningsError)
     }
     if (metadataError) {
+      // eslint-disable-next-line no-console
       console.error(metadataError)
       onError && onError(metadataError)
     }
