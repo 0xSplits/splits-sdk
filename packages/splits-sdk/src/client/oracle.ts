@@ -45,6 +45,8 @@ class OracleTransactions extends BaseTransactions {
     return getContract({
       address: getAddress(oracle),
       abi: uniV3OracleAbi,
+      // @ts-expect-error v1/v2 viem support
+      client: this._publicClient,
       publicClient: this._publicClient,
     })
   }

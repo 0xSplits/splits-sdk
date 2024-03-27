@@ -145,6 +145,8 @@ class SplitsTransactions extends BaseTransactions {
     this._splitMainContract = getContract({
       address: getSplitMainAddress(chainId),
       abi: splitMainEthereumAbi,
+      // @ts-expect-error v1/v2 viem support
+      client: this._publicClient,
       publicClient: this._publicClient,
     })
 
