@@ -8,6 +8,7 @@ import { SwapperClient } from './client/swapper'
 import { OracleClient } from './client/oracle'
 import { WarehouseClient } from './client/warehouse'
 import { SplitV2Client } from './client/splitV2'
+import { DataClient } from './client/data'
 
 export {
   SplitV1Client,
@@ -20,6 +21,7 @@ export {
   OracleClient,
   SplitV2Client,
   WarehouseClient,
+  DataClient,
 }
 export * from './errors'
 
@@ -97,6 +99,29 @@ export type {
   PassThroughTokensConfig,
   PassThroughWalletPauseConfig,
   PassThroughWalletExecCallsConfig,
+  WarehouseApproveBySig,
+  WarehouseApproveConfig,
+  WarehouseApproveBySigConfig,
+  WarehouseBatchDepositConfig,
+  WarehouseBatchTransferConfig,
+  WarehouseBatchWithdrawConfig,
+  WarehouseDepositConfig,
+  WarehouseInvalidateNonceConfig,
+  WarehouseSetOperatorConfig,
+  WarehouseSetWithdrawConfig,
+  WarehouseTemporaryApproveAndCallBySig,
+  WarehouseTemporaryApproveAndCallBySigConfig,
+  WarehouseTemporaryApproveAndCallConfig,
+  WarehouseTransferConfig,
+  WarehouseTransferFromConfig,
+  WarehouseWithdrawConfig,
+  SplitV2,
+  CreateSplitV2Config,
+  UpdateSplitV2Config,
+  DistributeSplitConfig,
+  TransferOwnershipConfig,
+  SetPausedConfig,
+  SplitV2ExecCallsConfig,
 } from './types'
 
 export { roundToDecimals } from './utils'

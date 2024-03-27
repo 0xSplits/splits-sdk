@@ -2,36 +2,36 @@
   "name": "@0xsplits/splits-sdk",
   "version": "4.0.1-alpha.0",
   "description": "SDK for the 0xSplits protocol",
-  "main": "./dist/index.js",
-  "typings": "./dist/index.d.ts",
+  "main": "./dist/src/index.js",
+  "typings": "./dist/src/index.d.ts",
   "exports": {
-    ".": "./dist/index.js",
-    "./constants": "./dist/constants/index.js",
-    "./constants/abi": "./dist/constants/abi/index.js",
-    "./errors": "./dist/errors.js",
-    "./types": "./dist/types.js",
-    "./utils": "./dist/utils/index.js",
-    "./utils/validation": "./dist/utils/validation.js"
+    ".": "./dist/src/index.js",
+    "./constants": "./dist/src/constants/index.js",
+    "./constants/abi": "./dist/src/constants/abi/index.js",
+    "./errors": "./dist/src/errors.js",
+    "./types": "./dist/src/types.js",
+    "./utils": "./dist/src/utils/index.js",
+    "./utils/validation": "./dist/src/utils/validation.js"
   },
   "typesVersions": {
     "*": {
       "constants": [
-        "./dist/constants/index.d.ts"
+        "./dist/src/constants/index.d.ts"
       ],
       "constants/abi": [
-        "./dist/constants/abi/index.d.ts"
+        "./dist/src/constants/abi/index.d.ts"
       ],
       "errors": [
-        "./dist/errors.d.ts"
+        "./dist/src/errors.d.ts"
       ],
       "types": [
-        "./dist/types.d.ts"
+        "./dist/src/types.d.ts"
       ],
       "utils": [
-        "./dist/utils/index.d.ts"
+        "./dist/src/utils/index.d.ts"
       ],
       "utils/validation": [
-        "./dist/utils/validation.d.ts"
+        "./dist/src/utils/validation.d.ts"
       ]
     }
   },
