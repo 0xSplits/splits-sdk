@@ -21,7 +21,9 @@ export const useCreateWaterfallModule = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context)
+  const splitsClient = getSplitsClient(context).waterfall
+
+  if (!splitsClient) throw new Error('Invalid chain id for waterfall')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -29,27 +31,20 @@ export const useCreateWaterfallModule = (): {
 
   const createWaterfallModule = useCallback(
     async (argsDict: CreateWaterfallConfig) => {
-      if (!splitsClient.waterfall)
-        throw new Error('Invalid chain id for waterfall')
-      if (!splitsClient._publicClient)
-        throw new Error('Invalid chain id for waterfall')
-
       try {
         setStatus('pendingApproval')
         setError(undefined)
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.waterfall.submitCreateWaterfallModuleTransaction(
-            argsDict,
-          )
+          await splitsClient.submitCreateWaterfallModuleTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics: splitsClient.waterfall.eventTopics.createWaterfallModule,
+          eventTopics: splitsClient.eventTopics.createWaterfallModule,
         })
 
         setStatus('complete')
@@ -73,7 +68,9 @@ export const useWaterfallFunds = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context)
+  const splitsClient = getSplitsClient(context).waterfall
+
+  if (!splitsClient) throw new Error('Invalid chain id for waterfall')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -81,23 +78,20 @@ export const useWaterfallFunds = (): {
 
   const waterfallFunds = useCallback(
     async (argsDict: WaterfallFundsConfig) => {
-      if (!splitsClient.waterfall)
-        throw new Error('Invalid chain id for waterfall')
-
       try {
         setStatus('pendingApproval')
         setError(undefined)
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.waterfall.submitWaterfallFundsTransaction(argsDict)
+          await splitsClient.submitWaterfallFundsTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics: splitsClient.waterfall.eventTopics.waterfallFunds,
+          eventTopics: splitsClient.eventTopics.waterfallFunds,
         })
 
         setStatus('complete')
@@ -123,7 +117,9 @@ export const useRecoverNonWaterfallFunds = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context)
+  const splitsClient = getSplitsClient(context).waterfall
+
+  if (!splitsClient) throw new Error('Invalid chain id for waterfall')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -131,26 +127,20 @@ export const useRecoverNonWaterfallFunds = (): {
 
   const recoverNonWaterfallFunds = useCallback(
     async (argsDict: RecoverNonWaterfallFundsConfig) => {
-      if (!splitsClient.waterfall)
-        throw new Error('Invalid chain id for waterfall')
-
       try {
         setStatus('pendingApproval')
         setError(undefined)
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.waterfall.submitRecoverNonWaterfallFundsTransaction(
-            argsDict,
-          )
+          await splitsClient.submitRecoverNonWaterfallFundsTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics:
-            splitsClient.waterfall.eventTopics.recoverNonWaterfallFunds,
+          eventTopics: splitsClient.eventTopics.recoverNonWaterfallFunds,
         })
 
         setStatus('complete')
@@ -176,7 +166,9 @@ export const useWithdrawWaterfallPullFunds = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context)
+  const splitsClient = getSplitsClient(context).waterfall
+
+  if (!splitsClient) throw new Error('Invalid chain id for waterfall')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -184,25 +176,20 @@ export const useWithdrawWaterfallPullFunds = (): {
 
   const withdrawPullFunds = useCallback(
     async (argsDict: WithdrawWaterfallPullFundsConfig) => {
-      if (!splitsClient.waterfall)
-        throw new Error('Invalid chain id for waterfall')
-
       try {
         setStatus('pendingApproval')
         setError(undefined)
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.waterfall.submitWithdrawPullFundsTransaction(
-            argsDict,
-          )
+          await splitsClient.submitWithdrawPullFundsTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics: splitsClient.waterfall.eventTopics.withdrawPullFunds,
+          eventTopics: splitsClient.eventTopics.withdrawPullFunds,
         })
 
         setStatus('complete')
@@ -220,6 +207,7 @@ export const useWithdrawWaterfallPullFunds = (): {
 }
 
 export const useWaterfallMetadata = (
+  chainId: number,
   waterfallModuleAddress: string,
 ): {
   isLoading: boolean
@@ -228,11 +216,8 @@ export const useWaterfallMetadata = (
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context)
-  const waterfallClient = splitsClient.waterfall
-  if (!waterfallClient) {
-    throw new Error('Invalid chain id for waterfall')
-  }
+  const splitsClient = getSplitsClient(context).dataClient
+  if (!splitsClient) throw new Error('Missing api key for data client')
 
   const [waterfallMetadata, setWaterfallMetadata] = useState<
     WaterfallModule | undefined
@@ -248,7 +233,8 @@ export const useWaterfallMetadata = (
 
     const fetchMetadata = async () => {
       try {
-        const waterfall = await waterfallClient.getWaterfallMetadata({
+        const waterfall = await splitsClient.getWaterfallMetadata({
+          chainId,
           waterfallModuleAddress,
         })
         if (!isActive) return
@@ -278,7 +264,7 @@ export const useWaterfallMetadata = (
     return () => {
       isActive = false
     }
-  }, [waterfallClient, waterfallModuleAddress])
+  }, [splitsClient, waterfallModuleAddress])
 
   return {
     isLoading,

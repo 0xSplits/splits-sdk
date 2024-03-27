@@ -18,7 +18,8 @@ export const useCreateVestingModule = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context)
+  const splitsClient = getSplitsClient(context).vesting
+  if (!splitsClient) throw new Error('Invalid chain id for vesting')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -26,24 +27,20 @@ export const useCreateVestingModule = (): {
 
   const createVestingModule = useCallback(
     async (argsDict: CreateVestingConfig) => {
-      if (!splitsClient.vesting) throw new Error('Invalid chain id for vesting')
-
       try {
         setStatus('pendingApproval')
         setError(undefined)
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.vesting.submitCreateVestingModuleTransaction(
-            argsDict,
-          )
+          await splitsClient.submitCreateVestingModuleTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics: splitsClient.vesting.eventTopics.createVestingModule,
+          eventTopics: splitsClient.eventTopics.createVestingModule,
         })
 
         setStatus('complete')
@@ -67,7 +64,8 @@ export const useStartVest = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context)
+  const splitsClient = getSplitsClient(context).vesting
+  if (!splitsClient) throw new Error('Invalid chain id for vesting')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -75,22 +73,20 @@ export const useStartVest = (): {
 
   const startVest = useCallback(
     async (argsDict: StartVestConfig) => {
-      if (!splitsClient.vesting) throw new Error('Invalid chain id for vesting')
-
       try {
         setStatus('pendingApproval')
         setError(undefined)
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.vesting.submitStartVestTransaction(argsDict)
+          await splitsClient.submitStartVestTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics: splitsClient.vesting.eventTopics.startVest,
+          eventTopics: splitsClient.eventTopics.startVest,
         })
 
         setStatus('complete')
@@ -116,7 +112,9 @@ export const useReleaseVestedFunds = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context)
+  const splitsClient = getSplitsClient(context).vesting
+
+  if (!splitsClient) throw new Error('Invalid chain id for vesting')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -124,24 +122,20 @@ export const useReleaseVestedFunds = (): {
 
   const releaseVestedFunds = useCallback(
     async (argsDict: ReleaseVestedFundsConfig) => {
-      if (!splitsClient.vesting) throw new Error('Invalid chain id for vesting')
-
       try {
         setStatus('pendingApproval')
         setError(undefined)
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.vesting.submitReleaseVestedFundsTransaction(
-            argsDict,
-          )
+          await splitsClient.submitReleaseVestedFundsTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics: splitsClient.vesting.eventTopics.releaseVestedFunds,
+          eventTopics: splitsClient.eventTopics.releaseVestedFunds,
         })
 
         setStatus('complete')
@@ -159,6 +153,7 @@ export const useReleaseVestedFunds = (): {
 }
 
 export const useVestingMetadata = (
+  chainId: number,
   vestingModuleAddress: string,
 ): {
   isLoading: boolean
@@ -167,11 +162,8 @@ export const useVestingMetadata = (
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context)
-  const vestingClient = splitsClient.vesting
-  if (!vestingClient) {
-    throw new Error('Invalid chain id for vesting')
-  }
+  const splitsClient = getSplitsClient(context).dataClient
+  if (!splitsClient) throw new Error('Missing api key for data client')
 
   const [vestingMetadata, setVestingMetadata] = useState<
     VestingModule | undefined
@@ -187,7 +179,8 @@ export const useVestingMetadata = (
 
     const fetchMetadata = async () => {
       try {
-        const vesting = await vestingClient.getVestingMetadata({
+        const vesting = await splitsClient.getVestingMetadata({
+          chainId,
           vestingModuleAddress,
         })
         if (!isActive) return
@@ -217,7 +210,7 @@ export const useVestingMetadata = (
     return () => {
       isActive = false
     }
-  }, [vestingClient, vestingModuleAddress])
+  }, [splitsClient, vestingModuleAddress])
 
   return {
     isLoading,

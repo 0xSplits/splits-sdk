@@ -2,6 +2,7 @@ import {
   Address,
   Chain,
   GetContractReturnType,
+  Hash,
   Hex,
   Log,
   PublicClient,
@@ -947,13 +948,22 @@ export class WarehouseClient extends WarehouseTransactions {
     throw new TransactionFailedError()
   }
 
+  async submitWithdrawTransaction(
+    withdrawArgs: WarehouseWithdrawConfig,
+  ): Promise<{
+    txHash: Hash
+  }> {
+    const txHash = await this._withdraw(withdrawArgs)
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
+
+    return { txHash }
+  }
+
   async withdraw(
     withdrawArgs: WarehouseWithdrawConfig,
   ): Promise<{ event: Log }> {
-    const txHash = await this._withdraw(withdrawArgs)
-
-    if (!this._isContractTransaction(txHash))
-      throw new Error('Invalid response')
+    const { txHash } = await this.submitWithdrawTransaction(withdrawArgs)
 
     const events = await this.getTransactionEvents({
       txHash,
@@ -971,13 +981,23 @@ export class WarehouseClient extends WarehouseTransactions {
     throw new TransactionFailedError()
   }
 
+  async submitBatchWithdrawTransaction(
+    batchWithdrawArgs: WarehouseBatchWithdrawConfig,
+  ): Promise<{
+    txHash: Hash
+  }> {
+    const txHash = await this._batchWithdraw(batchWithdrawArgs)
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
+
+    return { txHash }
+  }
+
   async batchWithdraw(
     batchWithdrawArgs: WarehouseBatchWithdrawConfig,
   ): Promise<{ events: Log[] }> {
-    const txHash = await this._batchWithdraw(batchWithdrawArgs)
-
-    if (!this._isContractTransaction(txHash))
-      throw new Error('Invalid response')
+    const { txHash } =
+      await this.submitBatchWithdrawTransaction(batchWithdrawArgs)
 
     const events = await this.getTransactionEvents({
       txHash,

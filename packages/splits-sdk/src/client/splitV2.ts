@@ -2,6 +2,7 @@ import {
   Address,
   Chain,
   GetContractReturnType,
+  Hash,
   Hex,
   Log,
   PublicClient,
@@ -519,15 +520,23 @@ export class SplitV2Client extends SplitV2Transactions {
     })
   }
 
+  async submitCreateSplitTransaction(
+    createSplitArgs: CreateSplitV2Config,
+  ): Promise<{
+    txHash: Hash
+  }> {
+    const txHash = await this._createSplit(createSplitArgs)
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
+
+    return { txHash }
+  }
+
   async createSplit(createSplitArgs: CreateSplitV2Config): Promise<{
     splitAddress: Address
     event: Log
   }> {
-    const txHash = await this._createSplit(createSplitArgs)
-
-    if (!this._isContractTransaction(txHash))
-      throw new Error('Invalid response')
-
+    const { txHash } = await this.submitCreateSplitTransaction(createSplitArgs)
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.splitCreated,
@@ -548,15 +557,26 @@ export class SplitV2Client extends SplitV2Transactions {
     throw new TransactionFailedError()
   }
 
+  async submitTransferOwnershipTransaction(
+    transferOwnershipArgs: TransferOwnershipConfig,
+  ): Promise<{
+    txHash: Hash
+  }> {
+    const txHash = await this._transferOwnership(transferOwnershipArgs)
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
+
+    return { txHash }
+  }
+
   async transferOwnership(
     transferOwnershipArgs: TransferOwnershipConfig,
   ): Promise<{
     event: Log
   }> {
-    const txHash = await this._transferOwnership(transferOwnershipArgs)
-
-    if (!this._isContractTransaction(txHash))
-      throw new Error('Invalid response')
+    const { txHash } = await this.submitTransferOwnershipTransaction(
+      transferOwnershipArgs,
+    )
 
     const events = await this.getTransactionEvents({
       txHash,
@@ -572,13 +592,20 @@ export class SplitV2Client extends SplitV2Transactions {
     throw new TransactionFailedError()
   }
 
+  async submitSetPauseTransaction(setPausedArgs: SetPausedConfig): Promise<{
+    txHash: Hash
+  }> {
+    const txHash = await this._setPaused(setPausedArgs)
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
+
+    return { txHash }
+  }
+
   async setPause(setPausedArgs: SetPausedConfig): Promise<{
     event: Log
   }> {
-    const txHash = await this._setPaused(setPausedArgs)
-
-    if (!this._isContractTransaction(txHash))
-      throw new Error('Invalid response')
+    const { txHash } = await this.submitSetPauseTransaction(setPausedArgs)
 
     const events = await this.getTransactionEvents({
       txHash,
@@ -594,13 +621,22 @@ export class SplitV2Client extends SplitV2Transactions {
     throw new TransactionFailedError()
   }
 
+  async submitExecCallsTransaction(
+    execCallsArgs: SplitV2ExecCallsConfig,
+  ): Promise<{
+    txHash: Hash
+  }> {
+    const txHash = await this._execCalls(execCallsArgs)
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
+
+    return { txHash }
+  }
+
   async execCalls(execCallsArgs: SplitV2ExecCallsConfig): Promise<{
     event: Log
   }> {
-    const txHash = await this._execCalls(execCallsArgs)
-
-    if (!this._isContractTransaction(txHash))
-      throw new Error('Invalid response')
+    const { txHash } = await this.submitExecCallsTransaction(execCallsArgs)
 
     const events = await this.getTransactionEvents({
       txHash,
@@ -616,13 +652,22 @@ export class SplitV2Client extends SplitV2Transactions {
     throw new TransactionFailedError()
   }
 
+  async submitDistributeTransaction(
+    distributeArgs: DistributeSplitConfig,
+  ): Promise<{
+    txHash: Hash
+  }> {
+    const txHash = await this._distribute(distributeArgs)
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
+
+    return { txHash }
+  }
+
   async distribute(distributeArgs: DistributeSplitConfig): Promise<{
     event: Log
   }> {
-    const txHash = await this._distribute(distributeArgs)
-
-    if (!this._isContractTransaction(txHash))
-      throw new Error('Invalid response')
+    const { txHash } = await this.submitDistributeTransaction(distributeArgs)
 
     const events = await this.getTransactionEvents({
       txHash,
@@ -638,13 +683,22 @@ export class SplitV2Client extends SplitV2Transactions {
     throw new TransactionFailedError()
   }
 
+  async submitUpdateSplitTransaction(
+    updateSplitArgs: UpdateSplitV2Config,
+  ): Promise<{
+    txHash: Hash
+  }> {
+    const txHash = await this._updateSplit(updateSplitArgs)
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
+
+    return { txHash }
+  }
+
   async updateSplit(updateSplitArgs: UpdateSplitV2Config): Promise<{
     event: Log
   }> {
-    const txHash = await this._updateSplit(updateSplitArgs)
-
-    if (!this._isContractTransaction(txHash))
-      throw new Error('Invalid response')
+    const { txHash } = await this.submitUpdateSplitTransaction(updateSplitArgs)
 
     const events = await this.getTransactionEvents({
       txHash,

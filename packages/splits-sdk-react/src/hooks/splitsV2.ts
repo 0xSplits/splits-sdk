@@ -1,8 +1,6 @@
 import { Log } from 'viem'
 import { useCallback, useContext, useEffect, useState } from 'react'
 import {
-  SplitsClient,
-  SplitsClientConfig,
   Split,
   CreateSplitConfig,
   UpdateSplitConfig,
@@ -17,81 +15,36 @@ import {
   FormattedSplitEarnings,
   ContractEarnings,
   FormattedContractEarnings,
+  CreateSplitV2Config,
 } from '@0xsplits/splits-sdk'
 
 import { SplitsContext } from '../context'
 import { ContractExecutionStatus, DataLoadStatus, RequestError } from '../types'
 import { getSplitsClient } from '../utils'
 
-export const useSplitsClient = (config?: SplitsClientConfig): SplitsClient => {
-  const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
-
-  const apiConfig = config && config.apiConfig
-  const chainId = config && (config.chainId as number)
-  const publicClient =
-    config && 'publicClient' in config
-      ? config.publicClient
-      : context.splitsClient.splitV1?._publicClient
-  const walletClient =
-    config && 'walletClient' in config
-      ? config.walletClient
-      : context.splitsClient.splitV1?._walletClient
-  const includeEnsNames =
-    config && 'includeEnsNames' in config
-      ? config.includeEnsNames
-      : context.splitsClient.splitV1?._includeEnsNames
-  const ensPublicClient =
-    config && 'ensPublicClient' in config
-      ? config.ensPublicClient
-      : context.splitsClient.splitV1?._ensPublicClient
-  useEffect(() => {
-    context.initClient({
-      chainId: chainId!,
-      publicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-      ensPublicClient,
-    })
-  }, [
-    chainId,
-    publicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames,
-    ensPublicClient,
-  ])
-
-  return context.splitsClient as SplitsClient
-}
-
-export const useCreateSplit = (): {
-  createSplit: (arg0: CreateSplitConfig) => Promise<Log[] | undefined>
+export const useCreateSplitV2 = (): {
+  createSplit: (arg0: CreateSplitV2Config) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context).splitV1
+  const splitsClient = getSplitsClient(context).splitV2
 
-  if (!splitsClient) throw new Error('Invalid chain id for split v1')
+  if (!splitsClient) throw new Error('Invalid chain id for split v2')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
   const [error, setError] = useState<RequestError>()
 
   const createSplit = useCallback(
-    async (argsDict: CreateSplitConfig) => {
+    async (argsDict: CreateSplitV2Config) => {
       try {
         setStatus('pendingApproval')
         setError(undefined)
         setTxHash(undefined)
 
-        const { txHash: hash } =
-          await splitsClient.submitCreateSplitTransaction(argsDict)
+        const { event } = await splitsClient.createSplit(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
