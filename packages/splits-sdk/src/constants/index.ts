@@ -149,6 +149,7 @@ export enum ChainId {
   BASE_GOERLI = 84531,
   BASE_SEPOLIA = 84532,
   FOUNDRY = 31337,
+  BLAST = 81457,
 }
 
 export const ETHEREUM_CHAIN_IDS = [ChainId.MAINNET, 3, 4, ChainId.GOERLI, 42]
@@ -171,6 +172,7 @@ export const BASE_CHAIN_IDS = [
   ChainId.BASE_GOERLI,
   ChainId.BASE_SEPOLIA,
 ]
+export const BLAST_CHAIN_IDS = [ChainId.BLAST]
 
 const ALL_CHAIN_IDS = [
   ChainId.MAINNET,
@@ -187,6 +189,7 @@ const ALL_CHAIN_IDS = [
   ...AURORA_CHAIN_IDS,
   ...ZORA_CHAIN_IDS,
   ...BASE_CHAIN_IDS,
+  ...BLAST_CHAIN_IDS,
 ]
 
 export const SPLITS_SUPPORTED_CHAIN_IDS = [3, 4, 42, ...ALL_CHAIN_IDS]
@@ -210,16 +213,28 @@ export const SPLITS_V2_SUPPORTED_CHAIN_IDS = [
 
 export const SPLITS_SUBGRAPH_CHAIN_IDS = ALL_CHAIN_IDS.slice()
 export const WATERFALL_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
-  (id) => id !== ChainId.ZORA_SEPOLIA && id !== ChainId.BASE_SEPOLIA,
+  (id) =>
+    id !== ChainId.ZORA_SEPOLIA &&
+    id !== ChainId.BASE_SEPOLIA &&
+    id !== ChainId.BLAST,
 )
 export const LIQUID_SPLIT_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
-  (id) => id !== ChainId.ZORA_SEPOLIA && id !== ChainId.BASE_SEPOLIA,
+  (id) =>
+    id !== ChainId.ZORA_SEPOLIA &&
+    id !== ChainId.BASE_SEPOLIA &&
+    id !== ChainId.BLAST,
 )
 export const VESTING_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
-  (id) => id !== ChainId.ZORA_SEPOLIA && id !== ChainId.BASE_SEPOLIA,
+  (id) =>
+    id !== ChainId.ZORA_SEPOLIA &&
+    id !== ChainId.BASE_SEPOLIA &&
+    id !== ChainId.BLAST,
 )
 export const TEMPLATES_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
-  (id) => id !== ChainId.ZORA_SEPOLIA && id !== ChainId.BASE_SEPOLIA,
+  (id) =>
+    id !== ChainId.ZORA_SEPOLIA &&
+    id !== ChainId.BASE_SEPOLIA &&
+    id !== ChainId.BLAST,
 )
 
 export const SWAPPER_CHAIN_IDS = [
@@ -443,6 +458,12 @@ export const CHAIN_INFO: {
       symbol: 'ETH',
     },
     startBlockV2: 7243250,
+  },
+  [ChainId.BLAST]: {
+    startBlock: 220516,
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
   },
 }
 
