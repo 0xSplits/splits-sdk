@@ -19,6 +19,7 @@ import { SplitV2Client } from './splitV2'
 import { SwapperClient } from './swapper'
 import { TemplatesClient } from './templates'
 import { VestingClient } from './vesting'
+import { WarehouseClient } from './warehouse'
 import { WaterfallClient } from './waterfall'
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
@@ -32,6 +33,7 @@ export class SplitsClient {
   readonly templates: TemplatesClient | undefined
   readonly splitV1: SplitV1Client | undefined
   readonly splitV2: SplitV2Client | undefined
+  readonly warehouse: WarehouseClient | undefined
   readonly dataClient: DataClient | undefined
 
   constructor({
@@ -124,6 +126,14 @@ export class SplitsClient {
     }
     if (SPLITS_V2_SUPPORTED_CHAIN_IDS.includes(chainId)) {
       this.splitV2 = new SplitV2Client({
+        chainId,
+        publicClient,
+        ensPublicClient,
+        walletClient,
+        apiConfig,
+        includeEnsNames,
+      })
+      this.warehouse = new WarehouseClient({
         chainId,
         publicClient,
         ensPublicClient,
