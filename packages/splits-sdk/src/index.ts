@@ -9,6 +9,7 @@ import { OracleClient } from './client/oracle'
 import { WarehouseClient } from './client/warehouse'
 import { SplitV2Client } from './client/splitV2'
 import { DataClient } from './client/data'
+import { SplitsClient } from './client'
 
 export {
   SplitV1Client,
@@ -22,10 +23,12 @@ export {
   SplitV2Client,
   WarehouseClient,
   DataClient,
+  SplitsClient,
 }
 export * from './errors'
 
 export {
+  SPLITS_V2_SUPPORTED_CHAIN_IDS,
   SPLITS_SUPPORTED_CHAIN_IDS,
   SPLITS_SUBGRAPH_CHAIN_IDS,
   WATERFALL_CHAIN_IDS,
