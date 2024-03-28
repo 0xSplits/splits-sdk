@@ -1,4 +1,5 @@
-import { ADDRESS_ZERO, SPLITS_MAX_PRECISION_DECIMALS } from '../constants'
+import { zeroAddress } from 'viem'
+import { SPLITS_MAX_PRECISION_DECIMALS } from '../constants'
 import {
   InvalidRecipientsError,
   InvalidDistributorFeePercentError,
@@ -215,13 +216,13 @@ describe('Recoup non waterfall recipient validation', () => {
     ).not.toThrow()
 
     expect(() =>
-      validateRecoupNonWaterfallRecipient(3, ADDRESS_ZERO, undefined),
+      validateRecoupNonWaterfallRecipient(3, zeroAddress, undefined),
     ).not.toThrow()
   })
 
   test('Valid index passes', () => {
     expect(() =>
-      validateRecoupNonWaterfallRecipient(3, ADDRESS_ZERO, 1),
+      validateRecoupNonWaterfallRecipient(3, zeroAddress, 1),
     ).not.toThrow()
   })
 })

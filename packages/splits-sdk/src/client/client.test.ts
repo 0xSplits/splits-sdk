@@ -5,22 +5,18 @@ import {
   PublicClient,
   Transport,
   WalletClient,
+  zeroAddress,
 } from 'viem'
-
-import { ADDRESS_ZERO } from '../constants'
-import { SplitsClient } from './index'
+import { SplitV1Client as SplitsClient } from './splitV1'
 import {
   InvalidAuthError,
   InvalidConfigError,
   MissingPublicClientError,
   MissingWalletClientError,
   UnsupportedChainIdError,
-  UnsupportedSubgraphChainIdError,
 } from '../errors'
-import * as subgraph from '../subgraph'
 import * as utils from '../utils'
 import * as numberUtils from '../utils/numbers'
-import * as ensUtils from '../utils/ens'
 import { validateSplitInputs, validateAddress } from '../utils/validation'
 import {
   SORTED_ADDRESSES,
@@ -33,6 +29,9 @@ import { MockGraphqlClient } from '../testing/mocks/graphql'
 import { readActions, writeActions } from '../testing/mocks/splitMain'
 import type { Split } from '../types'
 import { MockViemContract } from '../testing/mocks/viemContract'
+import { DataClient } from './data'
+
+jest.mock('./data')
 
 jest.mock('viem', () => {
   const originalModule = jest.requireActual('viem')
@@ -199,6 +198,9 @@ describe('SplitMain writes', () => {
   const walletClient = new mockWalletClient()
   const splitsClient = new SplitsClient({
     chainId: 1,
+    apiConfig: {
+      apiKey: '1',
+    },
     publicClient,
     walletClient,
   })
@@ -284,7 +286,7 @@ describe('SplitMain writes', () => {
         SORTED_ADDRESSES,
         SORTED_ALLOCATIONS,
         DISTRIBUTOR_FEE,
-        ADDRESS_ZERO,
+        zeroAddress,
       )
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
@@ -430,10 +432,11 @@ describe('SplitMain writes', () => {
       wait: 'wait',
     }
 
+    const mockedDataClient = DataClient as jest.MockedClass<typeof DataClient>
+
     beforeEach(() => {
-      jest
-        .spyOn(splitsClient, 'getSplitMetadata')
-        .mockImplementationOnce(async () => {
+      mockedDataClient.prototype.getSplitMetadata.mockImplementationOnce(
+        async () => {
           return {
             recipients: recipients.map((r) => {
               return {
@@ -445,7 +448,8 @@ describe('SplitMain writes', () => {
             }),
             distributorFeePercent,
           } as unknown as Split
-        })
+        },
+      )
       writeActions.distributeETH.mockClear()
       writeActions.distributeERC20.mockClear()
       writeActions.distributeETH.mockReturnValueOnce(distributeETHResult)
@@ -461,7 +465,7 @@ describe('SplitMain writes', () => {
         async () =>
           await badSplitsClient.distributeToken({
             splitAddress,
-            token: ADDRESS_ZERO,
+            token: zeroAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
@@ -476,7 +480,7 @@ describe('SplitMain writes', () => {
         async () =>
           await badSplitsClient.distributeToken({
             splitAddress,
-            token: ADDRESS_ZERO,
+            token: zeroAddress,
           }),
       ).rejects.toThrow(MissingWalletClientError)
     })
@@ -484,12 +488,12 @@ describe('SplitMain writes', () => {
     test('Distribute eth passes', async () => {
       const { event } = await splitsClient.distributeToken({
         splitAddress,
-        token: ADDRESS_ZERO,
+        token: zeroAddress,
       })
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitAddress)
-      expect(validateAddress).toBeCalledWith(ADDRESS_ZERO)
+      expect(validateAddress).toBeCalledWith(zeroAddress)
       expect(validateAddress).toBeCalledWith(CONTROLLER_ADDRESS)
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigIntMock).toBeCalledWith(distributorFeePercent)
@@ -537,13 +541,13 @@ describe('SplitMain writes', () => {
       const distributorAddress = '0xdistributor'
       const { event } = await splitsClient.distributeToken({
         splitAddress,
-        token: ADDRESS_ZERO,
+        token: zeroAddress,
         distributorAddress,
       })
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitAddress)
-      expect(validateAddress).toBeCalledWith(ADDRESS_ZERO)
+      expect(validateAddress).toBeCalledWith(zeroAddress)
       expect(validateAddress).toBeCalledWith(distributorAddress)
       expect(getSortedRecipientsMock).toBeCalledWith(recipients)
       expect(getBigIntMock).toBeCalledWith(distributorFeePercent)
@@ -625,7 +629,7 @@ describe('SplitMain writes', () => {
             splitAddress,
             recipients,
             distributorFeePercent,
-            token: ADDRESS_ZERO,
+            token: zeroAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
@@ -642,7 +646,7 @@ describe('SplitMain writes', () => {
             splitAddress,
             recipients,
             distributorFeePercent,
-            token: ADDRESS_ZERO,
+            token: zeroAddress,
           }),
       ).rejects.toThrow(MissingWalletClientError)
     })
@@ -661,7 +665,7 @@ describe('SplitMain writes', () => {
             splitAddress,
             recipients,
             distributorFeePercent,
-            token: ADDRESS_ZERO,
+            token: zeroAddress,
           }),
       ).rejects.toThrow(InvalidAuthError)
     })
@@ -671,12 +675,12 @@ describe('SplitMain writes', () => {
         splitAddress,
         recipients,
         distributorFeePercent,
-        token: ADDRESS_ZERO,
+        token: zeroAddress,
       })
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitAddress)
-      expect(validateAddress).toBeCalledWith(ADDRESS_ZERO)
+      expect(validateAddress).toBeCalledWith(zeroAddress)
       expect(validateAddress).toBeCalledWith(CONTROLLER_ADDRESS)
       expect(validateSplitInputs).toBeCalledWith(
         expect.objectContaining({
@@ -742,13 +746,13 @@ describe('SplitMain writes', () => {
         splitAddress,
         recipients,
         distributorFeePercent,
-        token: ADDRESS_ZERO,
+        token: zeroAddress,
         distributorAddress,
       })
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(splitAddress)
-      expect(validateAddress).toBeCalledWith(ADDRESS_ZERO)
+      expect(validateAddress).toBeCalledWith(zeroAddress)
       expect(validateAddress).toBeCalledWith(distributorAddress)
       expect(validateSplitInputs).toBeCalledWith({
         recipients,
@@ -830,7 +834,7 @@ describe('SplitMain writes', () => {
         async () =>
           await badSplitsClient.withdrawFunds({
             address,
-            tokens: [ADDRESS_ZERO],
+            tokens: [zeroAddress],
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
@@ -845,13 +849,13 @@ describe('SplitMain writes', () => {
         async () =>
           await badSplitsClient.withdrawFunds({
             address,
-            tokens: [ADDRESS_ZERO],
+            tokens: [zeroAddress],
           }),
       ).rejects.toThrow(MissingWalletClientError)
     })
 
     test('Withdraw passes with erc20 and eth', async () => {
-      const tokens = [ADDRESS_ZERO, '0xerc20']
+      const tokens = [zeroAddress, '0xerc20']
 
       const { event } = await splitsClient.withdrawFunds({
         address,
@@ -1393,173 +1397,4 @@ jest.mock('graphql-request', () => {
     }),
     gql: jest.fn(),
   }
-})
-
-describe('Graphql reads', () => {
-  const mockSplit = {
-    recipients: [
-      {
-        recipient: {
-          address: '0xrecipient',
-        },
-      },
-    ],
-  } as unknown as Split
-
-  const mockFormatSplit = jest
-    .spyOn(subgraph, 'protectedFormatSplit')
-    .mockReturnValue(mockSplit)
-  const mockAddEnsNames = jest
-    .spyOn(ensUtils, 'addEnsNames')
-    .mockImplementation()
-
-  const splitAddress = '0xsplit'
-  const userAddress = '0xuser'
-  const splitsClient = new SplitsClient({
-    chainId: 1,
-  })
-
-  beforeEach(() => {
-    ;(validateAddress as jest.Mock).mockClear()
-    mockGqlClient.request.mockClear()
-    mockFormatSplit.mockClear()
-    mockAddEnsNames.mockClear()
-  })
-
-  describe('Get split metadata tests', () => {
-    beforeEach(() => {
-      mockGqlClient.request.mockReturnValue({ split: 'gqlSplit' })
-    })
-
-    test('Invalid chain id', async () => {
-      const badSplitsClient = new SplitsClient({
-        chainId: 4,
-      })
-
-      expect(
-        async () => await badSplitsClient.getSplitMetadata({ splitAddress }),
-      ).rejects.toThrow(UnsupportedSubgraphChainIdError)
-    })
-
-    test('Get split metadata passes', async () => {
-      const split = await splitsClient.getSplitMetadata({ splitAddress })
-
-      expect(validateAddress).toBeCalledWith(splitAddress)
-      expect(mockGqlClient.request).toBeCalledWith(subgraph.SPLIT_QUERY, {
-        splitAddress,
-      })
-      expect(mockFormatSplit).toBeCalledWith('gqlSplit')
-      expect(split).toEqual(mockSplit)
-      expect(mockAddEnsNames).not.toBeCalled()
-    })
-
-    test('Adds ens names', async () => {
-      const publicClient = new mockPublicClient()
-      const ensSplitsClient = new SplitsClient({
-        chainId: 1,
-        publicClient,
-        includeEnsNames: true,
-      })
-
-      const split = await ensSplitsClient.getSplitMetadata({ splitAddress })
-
-      expect(validateAddress).toBeCalledWith(splitAddress)
-      expect(mockGqlClient.request).toBeCalledWith(subgraph.SPLIT_QUERY, {
-        splitAddress,
-      })
-      expect(mockFormatSplit).toBeCalledWith('gqlSplit')
-      expect(split).toEqual(mockSplit)
-      expect(mockAddEnsNames).toBeCalled()
-    })
-  })
-
-  describe('Get related splits tests', () => {
-    const mockReceivingSplit = {
-      ...mockSplit,
-      address: '0xReceivingSplit',
-    }
-    const mockControllingSplit1 = {
-      ...mockSplit,
-      address: '0xControllingSplit1',
-    }
-    const mockControllingSplit2 = {
-      ...mockSplit,
-      address: '0xControllingSplit2',
-    }
-    const mockPendingControlSplit = {
-      ...mockSplit,
-      address: '0xPendingControlSplit',
-    }
-
-    beforeEach(() => {
-      mockGqlClient.request.mockReturnValueOnce({
-        receivingFrom: [{ split: mockReceivingSplit }],
-        controlling: [mockControllingSplit1, mockControllingSplit2],
-        pendingControl: [mockPendingControlSplit],
-      })
-      mockFormatSplit.mockImplementation((input) => {
-        return input as unknown as Split
-      })
-    })
-
-    test('Invalid chain id', async () => {
-      const badSplitsClient = new SplitsClient({
-        chainId: 4,
-      })
-
-      expect(
-        async () =>
-          await badSplitsClient.getRelatedSplits({ address: userAddress }),
-      ).rejects.toThrow(UnsupportedSubgraphChainIdError)
-    })
-
-    test('Get related splits passes', async () => {
-      const { receivingFrom, controlling, pendingControl } =
-        await splitsClient.getRelatedSplits({ address: userAddress })
-
-      expect(validateAddress).toBeCalledWith(userAddress)
-      expect(mockGqlClient.request).toBeCalledWith(
-        subgraph.RELATED_SPLITS_QUERY,
-        {
-          accountAddress: userAddress,
-        },
-      )
-      expect(mockFormatSplit).toBeCalledTimes(4)
-      expect(receivingFrom).toEqual([mockReceivingSplit])
-      expect(controlling).toEqual([
-        mockControllingSplit1,
-        mockControllingSplit2,
-      ])
-      expect(pendingControl).toEqual([mockPendingControlSplit])
-      expect(mockAddEnsNames).not.toBeCalled()
-    })
-
-    test('Adds ens names', async () => {
-      const publicClient = new mockPublicClient()
-      const ensSplitsClient = new SplitsClient({
-        chainId: 1,
-        publicClient,
-        includeEnsNames: true,
-      })
-
-      const { receivingFrom, controlling, pendingControl } =
-        await ensSplitsClient.getRelatedSplits({ address: userAddress })
-
-      expect(validateAddress).toBeCalledWith(userAddress)
-      expect(mockGqlClient.request).toBeCalledWith(
-        subgraph.RELATED_SPLITS_QUERY,
-        {
-          accountAddress: userAddress,
-        },
-      )
-      expect(mockFormatSplit).toBeCalledTimes(4)
-      expect(receivingFrom).toEqual([mockReceivingSplit])
-      expect(controlling).toEqual([
-        mockControllingSplit1,
-        mockControllingSplit2,
-      ])
-      expect(pendingControl).toEqual([mockPendingControlSplit])
-      expect(mockAddEnsNames).toBeCalledTimes(4)
-    })
-  })
 })

@@ -1,7 +1,7 @@
 export class MockGraphqlClient {
-  request: jest.Mock
+  query: jest.Mock
 
   constructor() {
-    this.request = jest.fn()
+    this.query = jest.fn()
   }
 }

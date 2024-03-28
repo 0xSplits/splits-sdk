@@ -13,7 +13,9 @@ export const useMulticall = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context)
+  const splitsClient = getSplitsClient(context).splitV1
+
+  if (!splitsClient) throw new Error('Invalid chain id for liquid splits')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()

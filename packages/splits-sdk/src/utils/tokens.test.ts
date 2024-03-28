@@ -1,6 +1,5 @@
-import { Chain, PublicClient, Transport } from 'viem'
+import { Chain, PublicClient, Transport, zeroAddress } from 'viem'
 
-import { ADDRESS_ZERO } from '../constants'
 import { getTokenData } from './tokens'
 import {
   avalanche,
@@ -19,7 +18,7 @@ describe('Token data validatoin', () => {
     test('Polygon', async () => {
       const { symbol } = await getTokenData(
         polygon.id,
-        ADDRESS_ZERO,
+        zeroAddress,
         mockPublicClient,
       )
       expect(symbol).toEqual('MATIC')
@@ -27,7 +26,7 @@ describe('Token data validatoin', () => {
     test('Gnosis', async () => {
       const { symbol } = await getTokenData(
         gnosis.id,
-        ADDRESS_ZERO,
+        zeroAddress,
         mockPublicClient,
       )
       expect(symbol).toEqual('xDai')
@@ -35,7 +34,7 @@ describe('Token data validatoin', () => {
     test('Avalanche', async () => {
       const { symbol } = await getTokenData(
         avalanche.id,
-        ADDRESS_ZERO,
+        zeroAddress,
         mockPublicClient,
       )
       expect(symbol).toEqual('AVAX')
@@ -43,7 +42,7 @@ describe('Token data validatoin', () => {
     test('Bsc', async () => {
       const { symbol } = await getTokenData(
         bsc.id,
-        ADDRESS_ZERO,
+        zeroAddress,
         mockPublicClient,
       )
       expect(symbol).toEqual('BNB')
@@ -51,7 +50,7 @@ describe('Token data validatoin', () => {
     test('Fantom', async () => {
       const { symbol } = await getTokenData(
         fantom.id,
-        ADDRESS_ZERO,
+        zeroAddress,
         mockPublicClient,
       )
       expect(symbol).toEqual('FTM')
@@ -59,7 +58,7 @@ describe('Token data validatoin', () => {
     test('Mainnet', async () => {
       const { symbol } = await getTokenData(
         mainnet.id,
-        ADDRESS_ZERO,
+        zeroAddress,
         mockPublicClient,
       )
       expect(symbol).toEqual('ETH')
@@ -67,7 +66,7 @@ describe('Token data validatoin', () => {
     test('Base', async () => {
       const { symbol } = await getTokenData(
         base.id,
-        ADDRESS_ZERO,
+        zeroAddress,
         mockPublicClient,
       )
       expect(symbol).toEqual('ETH')

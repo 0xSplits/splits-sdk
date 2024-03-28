@@ -1,90 +1,40 @@
 import { Log } from 'viem'
 import { useCallback, useContext, useEffect, useState } from 'react'
 import {
-  SplitsClient,
-  SplitsClientConfig,
   Split,
-  CreateSplitConfig,
-  UpdateSplitConfig,
-  DistributeTokenConfig,
-  UpdateSplitAndDistributeTokenConfig,
-  WithdrawFundsConfig,
-  InitiateControlTransferConfig,
-  CancelControlTransferConfig,
-  AcceptControlTransferConfig,
-  MakeSplitImmutableConfig,
   SplitEarnings,
   FormattedSplitEarnings,
   ContractEarnings,
   FormattedContractEarnings,
+  CreateSplitV2Config,
+  UpdateSplitV2Config,
+  DistributeSplitConfig,
+  TransferOwnershipConfig,
+  SetPausedConfig,
+  SplitV2ExecCallsConfig,
 } from '@0xsplits/splits-sdk'
 
 import { SplitsContext } from '../context'
 import { ContractExecutionStatus, DataLoadStatus, RequestError } from '../types'
 import { getSplitsClient } from '../utils'
 
-export const useSplitsClient = (config?: SplitsClientConfig): SplitsClient => {
-  const context = useContext(SplitsContext)
-  if (context === undefined) {
-    throw new Error('Make sure to include <SplitsProvider>')
-  }
-
-  const apiConfig = config && config.apiConfig
-  const chainId = config && (config.chainId as number)
-  const publicClient =
-    config && 'publicClient' in config
-      ? config.publicClient
-      : context.splitsClient.splitV1?._publicClient
-  const walletClient =
-    config && 'walletClient' in config
-      ? config.walletClient
-      : context.splitsClient.splitV1?._walletClient
-  const includeEnsNames =
-    config && 'includeEnsNames' in config
-      ? config.includeEnsNames
-      : context.splitsClient.splitV1?._includeEnsNames
-  const ensPublicClient =
-    config && 'ensPublicClient' in config
-      ? config.ensPublicClient
-      : context.splitsClient.splitV1?._ensPublicClient
-  useEffect(() => {
-    context.initClient({
-      chainId: chainId!,
-      publicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-      ensPublicClient,
-    })
-  }, [
-    chainId,
-    publicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames,
-    ensPublicClient,
-  ])
-
-  return context.splitsClient as SplitsClient
-}
-
-export const useCreateSplit = (): {
-  createSplit: (arg0: CreateSplitConfig) => Promise<Log[] | undefined>
+export const useCreateSplitV2 = (): {
+  createSplit: (arg0: CreateSplitV2Config) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context).splitV1
+  const splitsClient = getSplitsClient(context).splitV2
 
-  if (!splitsClient) throw new Error('Invalid chain id for split v1')
+  if (!splitsClient) throw new Error('Invalid chain id for split v2')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
   const [error, setError] = useState<RequestError>()
 
   const createSplit = useCallback(
-    async (argsDict: CreateSplitConfig) => {
+    async (argsDict: CreateSplitV2Config) => {
       try {
         setStatus('pendingApproval')
         setError(undefined)
@@ -98,7 +48,7 @@ export const useCreateSplit = (): {
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics: splitsClient.eventTopics.createSplit,
+          eventTopics: splitsClient.eventTopics.splitCreated,
         })
 
         setStatus('complete')
@@ -116,21 +66,21 @@ export const useCreateSplit = (): {
 }
 
 export const useUpdateSplit = (): {
-  updateSplit: (arg0: UpdateSplitConfig) => Promise<Log[] | undefined>
+  updateSplit: (arg0: UpdateSplitV2Config) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context).splitV1
-  if (!splitsClient) throw new Error('Invalid chain id for split v1')
+  const splitsClient = getSplitsClient(context).splitV2
+  if (!splitsClient) throw new Error('Invalid chain id for split v2')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
   const [error, setError] = useState<RequestError>()
 
   const updateSplit = useCallback(
-    async (argsDict: UpdateSplitConfig) => {
+    async (argsDict: UpdateSplitV2Config) => {
       try {
         setStatus('pendingApproval')
         setError(undefined)
@@ -144,7 +94,7 @@ export const useUpdateSplit = (): {
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics: splitsClient.eventTopics.updateSplit,
+          eventTopics: splitsClient.eventTopics.splitUpdated,
         })
 
         setStatus('complete')
@@ -162,35 +112,35 @@ export const useUpdateSplit = (): {
 }
 
 export const useDistributeToken = (): {
-  distributeToken: (arg0: DistributeTokenConfig) => Promise<Log[] | undefined>
+  distributeToken: (arg0: DistributeSplitConfig) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context).splitV1
-  if (!splitsClient) throw new Error('Invalid chain id for split v1')
+  const splitsClient = getSplitsClient(context).splitV2
+  if (!splitsClient) throw new Error('Invalid chain id for split v2')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
   const [error, setError] = useState<RequestError>()
 
   const distributeToken = useCallback(
-    async (argsDict: DistributeTokenConfig) => {
+    async (argsDict: DistributeSplitConfig) => {
       try {
         setStatus('pendingApproval')
         setError(undefined)
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitDistributeTokenTransaction(argsDict)
+          await splitsClient.submitDistributeTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics: splitsClient.eventTopics.distributeToken,
+          eventTopics: splitsClient.eventTopics.splitDistributed,
         })
 
         setStatus('complete')
@@ -207,40 +157,38 @@ export const useDistributeToken = (): {
   return { distributeToken, status, txHash, error }
 }
 
-export const useUpdateSplitAndDistributeToken = (): {
-  updateSplitAndDistributeToken: (
-    arg0: UpdateSplitAndDistributeTokenConfig,
+export const useTransferOwnership = (): {
+  transferOwnership: (
+    arg0: TransferOwnershipConfig,
   ) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context).splitV1
-  if (!splitsClient) throw new Error('Invalid chain id for split v1')
+  const splitsClient = getSplitsClient(context).splitV2
+  if (!splitsClient) throw new Error('Invalid chain id for split v2')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
   const [error, setError] = useState<RequestError>()
 
-  const updateSplitAndDistributeToken = useCallback(
-    async (argsDict: UpdateSplitAndDistributeTokenConfig) => {
+  const transferOwnership = useCallback(
+    async (argsDict: TransferOwnershipConfig) => {
       try {
         setStatus('pendingApproval')
         setError(undefined)
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitUpdateSplitAndDistributeTokenTransaction(
-            argsDict,
-          )
+          await splitsClient.submitTransferOwnershipTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics: splitsClient.eventTopics.updateSplitAndDistributeToken,
+          eventTopics: splitsClient.eventTopics.ownershipTransferred,
         })
 
         setStatus('complete')
@@ -254,39 +202,39 @@ export const useUpdateSplitAndDistributeToken = (): {
     [splitsClient],
   )
 
-  return { updateSplitAndDistributeToken, status, txHash, error }
+  return { transferOwnership, status, txHash, error }
 }
 
-export const useWithdrawFunds = (): {
-  withdrawFunds: (arg0: WithdrawFundsConfig) => Promise<Log[] | undefined>
+export const useSetPause = (): {
+  setPause: (arg0: SetPausedConfig) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context).splitV1
-  if (!splitsClient) throw new Error('Invalid chain id for split v1')
+  const splitsClient = getSplitsClient(context).splitV2
+  if (!splitsClient) throw new Error('Invalid chain id for split v2')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
   const [error, setError] = useState<RequestError>()
 
-  const withdrawFunds = useCallback(
-    async (argsDict: WithdrawFundsConfig) => {
+  const setPause = useCallback(
+    async (argsDict: SetPausedConfig) => {
       try {
         setStatus('pendingApproval')
         setError(undefined)
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitWithdrawFundsTransaction(argsDict)
+          await splitsClient.submitSetPauseTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics: splitsClient.eventTopics.withdrawFunds,
+          eventTopics: splitsClient.eventTopics.setPaused,
         })
 
         setStatus('complete')
@@ -300,41 +248,39 @@ export const useWithdrawFunds = (): {
     [splitsClient],
   )
 
-  return { withdrawFunds, status, txHash, error }
+  return { setPause, status, txHash, error }
 }
 
-export const useInitiateControlTransfer = (): {
-  initiateControlTransfer: (
-    arg0: InitiateControlTransferConfig,
-  ) => Promise<Log[] | undefined>
+export const useExecCalls = (): {
+  execCalls: (arg0: SplitV2ExecCallsConfig) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context).splitV1
-  if (!splitsClient) throw new Error('Invalid chain id for split v1')
+  const splitsClient = getSplitsClient(context).splitV2
+  if (!splitsClient) throw new Error('Invalid chain id for split v2')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
   const [error, setError] = useState<RequestError>()
 
-  const initiateControlTransfer = useCallback(
-    async (argsDict: InitiateControlTransferConfig) => {
+  const execCalls = useCallback(
+    async (argsDict: SplitV2ExecCallsConfig) => {
       try {
         setStatus('pendingApproval')
         setError(undefined)
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitInitiateControlTransferTransaction(argsDict)
+          await splitsClient.submitExecCallsTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics: splitsClient.eventTopics.initiateControlTransfer,
+          eventTopics: splitsClient.eventTopics.execCalls,
         })
 
         setStatus('complete')
@@ -348,151 +294,7 @@ export const useInitiateControlTransfer = (): {
     [splitsClient],
   )
 
-  return { initiateControlTransfer, status, txHash, error }
-}
-
-export const useCancelControlTransfer = (): {
-  cancelControlTransfer: (
-    arg0: CancelControlTransferConfig,
-  ) => Promise<Log[] | undefined>
-  status?: ContractExecutionStatus
-  txHash?: string
-  error?: RequestError
-} => {
-  const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context).splitV1
-  if (!splitsClient) throw new Error('Invalid chain id for split v1')
-
-  const [status, setStatus] = useState<ContractExecutionStatus>()
-  const [txHash, setTxHash] = useState<string>()
-  const [error, setError] = useState<RequestError>()
-
-  const cancelControlTransfer = useCallback(
-    async (argsDict: CancelControlTransferConfig) => {
-      try {
-        setStatus('pendingApproval')
-        setError(undefined)
-        setTxHash(undefined)
-
-        const { txHash: hash } =
-          await splitsClient.submitCancelControlTransferTransaction(argsDict)
-
-        setStatus('txInProgress')
-        setTxHash(hash)
-
-        const events = await splitsClient.getTransactionEvents({
-          txHash: hash,
-          eventTopics: splitsClient.eventTopics.cancelControlTransfer,
-        })
-
-        setStatus('complete')
-
-        return events
-      } catch (e) {
-        setStatus('error')
-        setError(e)
-      }
-    },
-    [splitsClient],
-  )
-
-  return { cancelControlTransfer, status, txHash, error }
-}
-
-export const useAcceptControlTransfer = (): {
-  acceptControlTransfer: (
-    arg0: AcceptControlTransferConfig,
-  ) => Promise<Log[] | undefined>
-  status?: ContractExecutionStatus
-  txHash?: string
-  error?: RequestError
-} => {
-  const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context).splitV1
-  if (!splitsClient) throw new Error('Invalid chain id for split v1')
-
-  const [status, setStatus] = useState<ContractExecutionStatus>()
-  const [txHash, setTxHash] = useState<string>()
-  const [error, setError] = useState<RequestError>()
-
-  const acceptControlTransfer = useCallback(
-    async (argsDict: AcceptControlTransferConfig) => {
-      try {
-        setStatus('pendingApproval')
-        setError(undefined)
-        setTxHash(undefined)
-
-        const { txHash: hash } =
-          await splitsClient.submitAcceptControlTransferTransaction(argsDict)
-
-        setStatus('txInProgress')
-        setTxHash(hash)
-
-        const events = await splitsClient.getTransactionEvents({
-          txHash: hash,
-          eventTopics: splitsClient.eventTopics.acceptControlTransfer,
-        })
-
-        setStatus('complete')
-
-        return events
-      } catch (e) {
-        setStatus('error')
-        setError(e)
-      }
-    },
-    [splitsClient],
-  )
-
-  return { acceptControlTransfer, status, txHash, error }
-}
-
-export const useMakeSplitImmutable = (): {
-  makeSplitImmutable: (
-    arg0: MakeSplitImmutableConfig,
-  ) => Promise<Log[] | undefined>
-  status?: ContractExecutionStatus
-  txHash?: string
-  error?: RequestError
-} => {
-  const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context).splitV1
-  if (!splitsClient) throw new Error('Invalid chain id for split v1')
-
-  const [status, setStatus] = useState<ContractExecutionStatus>()
-  const [txHash, setTxHash] = useState<string>()
-  const [error, setError] = useState<RequestError>()
-
-  const makeSplitImmutable = useCallback(
-    async (argsDict: MakeSplitImmutableConfig) => {
-      try {
-        setStatus('pendingApproval')
-        setError(undefined)
-        setTxHash(undefined)
-
-        const { txHash: hash } =
-          await splitsClient.submitMakeSplitImmutableTransaction(argsDict)
-
-        setStatus('txInProgress')
-        setTxHash(hash)
-
-        const events = await splitsClient.getTransactionEvents({
-          txHash: hash,
-          eventTopics: splitsClient.eventTopics.makeSplitImmutable,
-        })
-
-        setStatus('complete')
-
-        return events
-      } catch (e) {
-        setStatus('error')
-        setError(e)
-      }
-    },
-    [splitsClient],
-  )
-
-  return { makeSplitImmutable, status, txHash, error }
+  return { execCalls, status, txHash, error }
 }
 
 export const useSplitMetadata = (

@@ -1,10 +1,18 @@
-import { Address, MulticallReturnType, PublicClient, getAddress } from 'viem'
+import {
+  zeroAddress,
+  Address,
+  MulticallReturnType,
+  PublicClient,
+  getAddress,
+} from 'viem'
 
-import { ADDRESS_ZERO, CHAIN_INFO } from '../constants'
+import { CHAIN_INFO, ZERO } from '../constants'
 import { erc20Abi } from '../constants/abi/erc20'
 import { Token, TokenBalances } from '../types'
 import { isAlchemyPublicClient } from '.'
 import { retryExponentialBackoff } from './requests'
+import { IBalance } from '../subgraph/types'
+import { mergeWith } from 'lodash'
 
 export const fetchERC20TransferredTokens = async (
   chainId: number,
@@ -51,7 +59,7 @@ export const fetchActiveBalances: (
 ) => {
   const balances: TokenBalances = {}
 
-  const erc20Tokens = fullTokenList.filter((token) => token !== ADDRESS_ZERO)
+  const erc20Tokens = fullTokenList.filter((token) => token !== zeroAddress)
   const contractCalls = getTokenBalanceCalls(accountAddress, fullTokenList)
 
   const [tokenData, multicallResponse] = await Promise.all([
@@ -112,7 +120,7 @@ export const fetchContractBalancesWithAlchemy: (
     const results = await Promise.all(promisesArray)
     if (!pageKey) {
       const ethBalance = results[1] as bigint
-      balances[ADDRESS_ZERO] = ethBalance
+      balances[zeroAddress] = ethBalance
     }
 
     const erc20Balances = results[0] as {
@@ -136,7 +144,7 @@ const fetchTokenData: (
   arg0: Address[],
   arg1: PublicClient,
 ) => Promise<TokenData> = async (tokens, publicClient) => {
-  const filteredTokens = tokens.filter((token) => token !== ADDRESS_ZERO)
+  const filteredTokens = tokens.filter((token) => token !== zeroAddress)
   const contractCalls = getTokenDataCalls(filteredTokens)
 
   const multicallResponse = await publicClient.multicall({
@@ -171,8 +179,8 @@ const processBalanceMulticallResponse: (
     const balance = data.result as bigint
     if (balance === undefined) return
 
-    if (token === ADDRESS_ZERO) {
-      balances[ADDRESS_ZERO] = balance
+    if (token === zeroAddress) {
+      balances[zeroAddress] = balance
     } else {
       if (!tokenData[token]) return // Unable to fetch token data
       const { symbol, decimals } = tokenData[token]
@@ -197,7 +205,7 @@ const getTokenBalanceCalls = (
   tokenList: Address[],
 ) => {
   return tokenList.map((token) => {
-    if (token === ADDRESS_ZERO)
+    if (token === zeroAddress)
       return {
         address: '0xcA11bde05977b3631167028862bE2a173976CA11' as Address, // multicall3
         abi: ethBalanceAbi,
@@ -216,7 +224,7 @@ const getTokenBalanceCalls = (
 const getTokenDataCalls = (tokens: Address[]) => {
   return tokens
     .map((token) => {
-      if (token === ADDRESS_ZERO)
+      if (token === zeroAddress)
         throw new Error('Cannot fetch data for address zero')
 
       return [
@@ -233,4 +241,8 @@ const getTokenDataCalls = (tokens: Address[]) => {
       ]
     })
     .flat()
+}
+
+export const mergeBalances = (balances: IBalance[]): IBalance => {
+  return mergeWith({}, ...balances, (o: bigint, s: bigint) => (o ?? ZERO) + s)
 }
