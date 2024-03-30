@@ -24,8 +24,10 @@ export const fromBigIntToPercent = (
   value: bigint | number,
   scale?: bigint,
 ): number => {
-  if (!scale) scale = PERCENTAGE_SCALE
   const numberVal = BigInt(value)
+  if (!scale) {
+    return parseFloat(formatUnits(numberVal, 6)) * 100
+  }
   return Number((numberVal * BigInt(100)) / scale)
 }
 
