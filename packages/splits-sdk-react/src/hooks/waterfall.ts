@@ -1,15 +1,14 @@
 import { Log } from 'viem'
-import { useCallback, useContext, useEffect, useState } from 'react'
+import { useCallback, useContext, useState } from 'react'
 import {
   CreateWaterfallConfig,
   RecoverNonWaterfallFundsConfig,
   WaterfallFundsConfig,
-  WaterfallModule,
   WithdrawWaterfallPullFundsConfig,
 } from '@0xsplits/splits-sdk'
 
 import { SplitsContext } from '../context'
-import { ContractExecutionStatus, DataLoadStatus, RequestError } from '../types'
+import { ContractExecutionStatus, RequestError } from '../types'
 import { getSplitsClient } from '../utils'
 
 export const useCreateWaterfallModule = (): {
@@ -204,72 +203,4 @@ export const useWithdrawWaterfallPullFunds = (): {
   )
 
   return { withdrawPullFunds, status, txHash, error }
-}
-
-export const useWaterfallMetadata = (
-  chainId: number,
-  waterfallModuleAddress: string,
-): {
-  isLoading: boolean
-  waterfallMetadata: WaterfallModule | undefined
-  status?: DataLoadStatus
-  error?: RequestError
-} => {
-  const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context).dataClient
-  if (!splitsClient) throw new Error('Missing api key for data client')
-
-  const [waterfallMetadata, setWaterfallMetadata] = useState<
-    WaterfallModule | undefined
-  >()
-  const [isLoading, setIsLoading] = useState(!!waterfallModuleAddress)
-  const [status, setStatus] = useState<DataLoadStatus | undefined>(
-    waterfallModuleAddress ? 'loading' : undefined,
-  )
-  const [error, setError] = useState<RequestError>()
-
-  useEffect(() => {
-    let isActive = true
-
-    const fetchMetadata = async () => {
-      try {
-        const waterfall = await splitsClient.getWaterfallMetadata({
-          chainId,
-          waterfallModuleAddress,
-        })
-        if (!isActive) return
-        setWaterfallMetadata(waterfall)
-        setStatus('success')
-      } catch (e) {
-        if (isActive) {
-          setStatus('error')
-          setError(e)
-        }
-      } finally {
-        if (isActive) setIsLoading(false)
-      }
-    }
-
-    setError(undefined)
-    if (waterfallModuleAddress) {
-      setStatus('loading')
-      setIsLoading(true)
-      fetchMetadata()
-    } else {
-      setStatus(undefined)
-      setIsLoading(false)
-      setWaterfallMetadata(undefined)
-    }
-
-    return () => {
-      isActive = false
-    }
-  }, [splitsClient, waterfallModuleAddress])
-
-  return {
-    isLoading,
-    waterfallMetadata,
-    status,
-    error,
-  }
 }

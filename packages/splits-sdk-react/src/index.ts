@@ -63,4 +63,12 @@ export {
   usePassThroughTokens,
   usePassThroughWalletPause,
   usePassThroughWalletExecCalls,
+  useCreateSplitV2,
+  useDistributeTokenV2,
+  useBatchWithdrawWarehouse,
+  useExecCalls,
+  useSetPause,
+  useTransferOwnership,
+  useUpdateSplitV2,
+  useWithdrawWarehouse,
 } from './hooks'

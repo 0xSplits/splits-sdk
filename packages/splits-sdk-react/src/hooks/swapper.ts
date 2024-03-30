@@ -1,5 +1,5 @@
 import { Log } from 'viem'
-import { useCallback, useContext, useEffect, useState } from 'react'
+import { useCallback, useContext, useState } from 'react'
 import {
   CreateSwapperConfig,
   UniV3FlashSwapConfig,
@@ -10,11 +10,10 @@ import {
   SwapperSetOracleConfig,
   SwapperSetDefaultScaledOfferFactorConfig,
   SwapperSetScaledOfferFactorOverridesConfig,
-  Swapper,
 } from '@0xsplits/splits-sdk'
 
 import { SplitsContext } from '../context'
-import { ContractExecutionStatus, DataLoadStatus, RequestError } from '../types'
+import { ContractExecutionStatus, RequestError } from '../types'
 import { getSplitsClient } from '../utils'
 
 export const useCreateSwapper = (): {
@@ -449,71 +448,4 @@ export const useSwapperSetScaledOfferFactorOverrides = (): {
   )
 
   return { setScaledOfferFactorOverrides, status, txHash, error }
-}
-
-export const useSwapperMetadata = (
-  chainId: number,
-  swapperAddress: string,
-): {
-  isLoading: boolean
-  swapperMetadata: Swapper | undefined
-  status?: DataLoadStatus
-  error?: RequestError
-} => {
-  const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context).dataClient
-
-  if (!splitsClient) throw new Error('Missing api key for data client')
-
-  const [swapperMetadata, setSwapperMetadata] = useState<Swapper | undefined>()
-  const [isLoading, setIsLoading] = useState(!!swapperAddress)
-  const [status, setStatus] = useState<DataLoadStatus | undefined>(
-    swapperAddress ? 'loading' : undefined,
-  )
-  const [error, setError] = useState<RequestError>()
-
-  useEffect(() => {
-    let isActive = true
-
-    const fetchMetadata = async () => {
-      try {
-        const swapper = await splitsClient.getSwapperMetadata({
-          chainId,
-          swapperAddress,
-        })
-        if (!isActive) return
-        setSwapperMetadata(swapper)
-        setStatus('success')
-      } catch (e) {
-        if (isActive) {
-          setStatus('error')
-          setError(e)
-        }
-      } finally {
-        if (isActive) setIsLoading(false)
-      }
-    }
-
-    setError(undefined)
-    if (swapperAddress) {
-      setIsLoading(true)
-      setStatus('loading')
-      fetchMetadata()
-    } else {
-      setStatus(undefined)
-      setIsLoading(false)
-      setSwapperMetadata(undefined)
-    }
-
-    return () => {
-      isActive = false
-    }
-  }, [splitsClient, swapperAddress])
-
-  return {
-    isLoading,
-    swapperMetadata,
-    status,
-    error,
-  }
 }

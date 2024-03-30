@@ -1,14 +1,13 @@
 import { Log } from 'viem'
-import { useCallback, useContext, useEffect, useState } from 'react'
+import { useCallback, useContext, useState } from 'react'
 import {
   CreateLiquidSplitConfig,
-  LiquidSplit,
   DistributeLiquidSplitTokenConfig,
   TransferLiquidSplitOwnershipConfig,
 } from '@0xsplits/splits-sdk'
 
 import { SplitsContext } from '../context'
-import { ContractExecutionStatus, DataLoadStatus, RequestError } from '../types'
+import { ContractExecutionStatus, RequestError } from '../types'
 import { getSplitsClient } from '../utils'
 
 export const useCreateLiquidSplit = (): {
@@ -154,72 +153,4 @@ export const useTransferLiquidSplitOwnership = (): {
   )
 
   return { transferOwnership, status, txHash, error }
-}
-
-export const useLiquidSplitMetadata = (
-  chainId: number,
-  liquidSplitAddress: string,
-): {
-  isLoading: boolean
-  liquidSplitMetadata: LiquidSplit | undefined
-  status?: DataLoadStatus
-  error?: RequestError
-} => {
-  const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context).dataClient
-  if (!splitsClient) throw new Error('Missing api key for data client')
-
-  const [liquidSplitMetadata, setliquidSplitMetadata] = useState<
-    LiquidSplit | undefined
-  >()
-  const [isLoading, setIsLoading] = useState(!!liquidSplitAddress)
-  const [status, setStatus] = useState<DataLoadStatus | undefined>(
-    liquidSplitAddress ? 'loading' : undefined,
-  )
-  const [error, setError] = useState<RequestError>()
-
-  useEffect(() => {
-    let isActive = true
-
-    const fetchMetadata = async () => {
-      try {
-        const liquidSplit = await splitsClient.getLiquidSplitMetadata({
-          chainId,
-          liquidSplitAddress,
-        })
-        if (!isActive) return
-        setliquidSplitMetadata(liquidSplit)
-        setStatus('success')
-      } catch (e) {
-        if (isActive) {
-          setStatus('error')
-          setError(e)
-        }
-      } finally {
-        if (isActive) setIsLoading(false)
-      }
-    }
-
-    setError(undefined)
-    if (liquidSplitAddress) {
-      setStatus('loading')
-      setIsLoading(true)
-      fetchMetadata()
-    } else {
-      setStatus(undefined)
-      setIsLoading(false)
-      setliquidSplitMetadata(undefined)
-    }
-
-    return () => {
-      isActive = false
-    }
-  }, [splitsClient, liquidSplitAddress])
-
-  return {
-    isLoading,
-    liquidSplitMetadata,
-    status,
-    error,
-  }
 }
