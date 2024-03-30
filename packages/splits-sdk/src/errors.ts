@@ -80,6 +80,15 @@ export class MissingPublicClientError extends Error {
   }
 }
 
+export class MissingDataClientError extends Error {
+  name = 'MissingDataClientError'
+
+  constructor(m?: string) {
+    super(m)
+    Object.setPrototypeOf(this, MissingDataClientError.prototype)
+  }
+}
+
 export class MissingWalletClientError extends Error {
   name = 'MissingWalletClientError'
 

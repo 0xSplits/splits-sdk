@@ -53,6 +53,7 @@ class PassThroughWalletTransactions extends BaseTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
@@ -61,6 +62,7 @@ class PassThroughWalletTransactions extends BaseTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }
@@ -183,10 +185,9 @@ class PassThroughWalletTransactions extends BaseTransactions {
       passThroughWalletAddress,
     )
     const owner = await passThroughWalletContract.read.owner()
-    // TODO: how to get rid of this, needed for typescript check
-    if (!this._walletClient?.account) throw new Error()
 
-    const walletAddress = this._walletClient.account?.address
+    this._requireWalletClient()
+    const walletAddress = this._walletClient!.account?.address
 
     if (owner !== walletAddress)
       throw new InvalidAuthError(
@@ -219,6 +220,7 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -227,6 +229,7 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
 
@@ -474,6 +477,7 @@ class PassThroughWalletGasEstimates extends PassThroughWalletTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -482,6 +486,7 @@ class PassThroughWalletGasEstimates extends PassThroughWalletTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }
@@ -534,6 +539,7 @@ class PassThroughWalletCallData extends PassThroughWalletTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -542,6 +548,7 @@ class PassThroughWalletCallData extends PassThroughWalletTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }

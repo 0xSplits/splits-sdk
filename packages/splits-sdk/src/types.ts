@@ -31,11 +31,27 @@ export type MulticallConfig = {
   calls: CallData[]
 } & TransactionOverridesDict
 
+export type DataClientConfig = {
+  publicClient?: PublicClient<Transport, Chain>
+  apiConfig: {
+    apiKey: string
+    serverURL?: string
+  }
+  includeEnsNames?: boolean
+  // ensPublicClient can be used to fetch ens names when publicClient is not on mainnet (reverseRecords
+  // only works on mainnet).
+  ensPublicClient?: PublicClient<Transport, Chain>
+}
+
 // Splits
 export type SplitsClientConfig = {
   chainId: number
   publicClient?: PublicClient<Transport, Chain>
   walletClient?: WalletClient<Transport, Chain, Account>
+  apiConfig?: {
+    apiKey: string
+    serverURL?: string
+  }
   includeEnsNames?: boolean
   // ensPublicClient can be used to fetch ens names when publicClient is not on mainnet (reverseRecords
   // only works on mainnet).
@@ -235,8 +251,8 @@ export type WarehouseSetWithdrawConfig = {
 } & TransactionOverridesDict
 
 export enum SplitV2Type {
-  Push,
-  Pull,
+  Push = 'push',
+  Pull = 'pull',
 }
 
 // Split V2
@@ -574,11 +590,13 @@ export type Token = {
 }
 
 export type Split = {
-  type: 'Split'
+  type: 'Split' | 'SplitV2'
   address: Address
   controller: Recipient | null
   newPotentialController: Recipient | null
   distributorFeePercent: number
+  distributionsPaused: boolean
+  distributeDirection: 'pull' | 'push'
   recipients: {
     percentAllocation: number
     recipient: Recipient

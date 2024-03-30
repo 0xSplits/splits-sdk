@@ -1,15 +1,14 @@
 import { Log } from 'viem'
-import { useCallback, useContext, useEffect, useState } from 'react'
+import { useCallback, useContext, useState } from 'react'
 import {
   CreateWaterfallConfig,
   RecoverNonWaterfallFundsConfig,
   WaterfallFundsConfig,
-  WaterfallModule,
   WithdrawWaterfallPullFundsConfig,
 } from '@0xsplits/splits-sdk'
 
 import { SplitsContext } from '../context'
-import { ContractExecutionStatus, DataLoadStatus, RequestError } from '../types'
+import { ContractExecutionStatus, RequestError } from '../types'
 import { getSplitsClient } from '../utils'
 
 export const useCreateWaterfallModule = (): {
@@ -21,7 +20,9 @@ export const useCreateWaterfallModule = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context)
+  const splitsClient = getSplitsClient(context).waterfall
+
+  if (!splitsClient) throw new Error('Invalid chain id for waterfall')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -29,27 +30,20 @@ export const useCreateWaterfallModule = (): {
 
   const createWaterfallModule = useCallback(
     async (argsDict: CreateWaterfallConfig) => {
-      if (!splitsClient.waterfall)
-        throw new Error('Invalid chain id for waterfall')
-      if (!splitsClient._publicClient)
-        throw new Error('Invalid chain id for waterfall')
-
       try {
         setStatus('pendingApproval')
         setError(undefined)
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.waterfall.submitCreateWaterfallModuleTransaction(
-            argsDict,
-          )
+          await splitsClient.submitCreateWaterfallModuleTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics: splitsClient.waterfall.eventTopics.createWaterfallModule,
+          eventTopics: splitsClient.eventTopics.createWaterfallModule,
         })
 
         setStatus('complete')
@@ -73,7 +67,9 @@ export const useWaterfallFunds = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context)
+  const splitsClient = getSplitsClient(context).waterfall
+
+  if (!splitsClient) throw new Error('Invalid chain id for waterfall')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -81,23 +77,20 @@ export const useWaterfallFunds = (): {
 
   const waterfallFunds = useCallback(
     async (argsDict: WaterfallFundsConfig) => {
-      if (!splitsClient.waterfall)
-        throw new Error('Invalid chain id for waterfall')
-
       try {
         setStatus('pendingApproval')
         setError(undefined)
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.waterfall.submitWaterfallFundsTransaction(argsDict)
+          await splitsClient.submitWaterfallFundsTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics: splitsClient.waterfall.eventTopics.waterfallFunds,
+          eventTopics: splitsClient.eventTopics.waterfallFunds,
         })
 
         setStatus('complete')
@@ -123,7 +116,9 @@ export const useRecoverNonWaterfallFunds = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context)
+  const splitsClient = getSplitsClient(context).waterfall
+
+  if (!splitsClient) throw new Error('Invalid chain id for waterfall')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -131,26 +126,20 @@ export const useRecoverNonWaterfallFunds = (): {
 
   const recoverNonWaterfallFunds = useCallback(
     async (argsDict: RecoverNonWaterfallFundsConfig) => {
-      if (!splitsClient.waterfall)
-        throw new Error('Invalid chain id for waterfall')
-
       try {
         setStatus('pendingApproval')
         setError(undefined)
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.waterfall.submitRecoverNonWaterfallFundsTransaction(
-            argsDict,
-          )
+          await splitsClient.submitRecoverNonWaterfallFundsTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics:
-            splitsClient.waterfall.eventTopics.recoverNonWaterfallFunds,
+          eventTopics: splitsClient.eventTopics.recoverNonWaterfallFunds,
         })
 
         setStatus('complete')
@@ -176,7 +165,9 @@ export const useWithdrawWaterfallPullFunds = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context)
+  const splitsClient = getSplitsClient(context).waterfall
+
+  if (!splitsClient) throw new Error('Invalid chain id for waterfall')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -184,25 +175,20 @@ export const useWithdrawWaterfallPullFunds = (): {
 
   const withdrawPullFunds = useCallback(
     async (argsDict: WithdrawWaterfallPullFundsConfig) => {
-      if (!splitsClient.waterfall)
-        throw new Error('Invalid chain id for waterfall')
-
       try {
         setStatus('pendingApproval')
         setError(undefined)
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.waterfall.submitWithdrawPullFundsTransaction(
-            argsDict,
-          )
+          await splitsClient.submitWithdrawPullFundsTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics: splitsClient.waterfall.eventTopics.withdrawPullFunds,
+          eventTopics: splitsClient.eventTopics.withdrawPullFunds,
         })
 
         setStatus('complete')
@@ -217,73 +203,4 @@ export const useWithdrawWaterfallPullFunds = (): {
   )
 
   return { withdrawPullFunds, status, txHash, error }
-}
-
-export const useWaterfallMetadata = (
-  waterfallModuleAddress: string,
-): {
-  isLoading: boolean
-  waterfallMetadata: WaterfallModule | undefined
-  status?: DataLoadStatus
-  error?: RequestError
-} => {
-  const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context)
-  const waterfallClient = splitsClient.waterfall
-  if (!waterfallClient) {
-    throw new Error('Invalid chain id for waterfall')
-  }
-
-  const [waterfallMetadata, setWaterfallMetadata] = useState<
-    WaterfallModule | undefined
-  >()
-  const [isLoading, setIsLoading] = useState(!!waterfallModuleAddress)
-  const [status, setStatus] = useState<DataLoadStatus | undefined>(
-    waterfallModuleAddress ? 'loading' : undefined,
-  )
-  const [error, setError] = useState<RequestError>()
-
-  useEffect(() => {
-    let isActive = true
-
-    const fetchMetadata = async () => {
-      try {
-        const waterfall = await waterfallClient.getWaterfallMetadata({
-          waterfallModuleAddress,
-        })
-        if (!isActive) return
-        setWaterfallMetadata(waterfall)
-        setStatus('success')
-      } catch (e) {
-        if (isActive) {
-          setStatus('error')
-          setError(e)
-        }
-      } finally {
-        if (isActive) setIsLoading(false)
-      }
-    }
-
-    setError(undefined)
-    if (waterfallModuleAddress) {
-      setStatus('loading')
-      setIsLoading(true)
-      fetchMetadata()
-    } else {
-      setStatus(undefined)
-      setIsLoading(false)
-      setWaterfallMetadata(undefined)
-    }
-
-    return () => {
-      isActive = false
-    }
-  }, [waterfallClient, waterfallModuleAddress])
-
-  return {
-    isLoading,
-    waterfallMetadata,
-    status,
-    error,
-  }
 }

@@ -1012,39 +1012,4 @@ describe('Split v2 reads', () => {
       expect(controllerAddress).toEqual(ALICE)
     })
   })
-
-  describe('Get split metadata', () => {
-    test('fails with no provider', async () => {
-      const badClient = new SplitV2Client({
-        chainId: 1,
-      })
-
-      await expect(
-        async () =>
-          await badClient.isDeployed({
-            recipients: sampleRecipients,
-            distributorFeePercent: 0,
-          }),
-      ).rejects.toThrow(MissingPublicClientError)
-    })
-
-    test('passes', async () => {
-      const sender = ALICE
-      const client = createClient(sender)
-
-      const splitAddress = await createDefaultSplitWithOwner()
-
-      await client.updateSplit({
-        splitAddress,
-        recipients: sampleRecipients,
-        distributorFeePercent: 1,
-      })
-
-      const { split } = await client.getSplitMetadata({ splitAddress })
-
-      expect(split.address).toEqual(splitAddress)
-      expect(split.distributionIncentive).toEqual(10000)
-      expect(split.controllerAddress).toEqual(ALICE)
-    })
-  })
 })

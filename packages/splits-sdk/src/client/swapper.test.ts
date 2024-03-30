@@ -17,9 +17,7 @@ import {
   MissingWalletClientError,
   UnsupportedChainIdError,
 } from '../errors'
-import * as subgraph from '../subgraph'
 import * as swapperUtils from '../utils/swapper'
-import * as ensUtils from '../utils/ens'
 import {
   validateAddress,
   validateOracleParams,
@@ -32,13 +30,12 @@ import {
   FORMATTED_SCALED_OFFER_FACTOR_OVERRIDES,
   OWNER_ADDRESS,
 } from '../testing/constants'
-import { MockGraphqlClient } from '../testing/mocks/graphql'
 import { writeActions as factoryWriteActions } from '../testing/mocks/swapperFactory'
 import {
   writeActions as moduleWriteActions,
   readActions,
 } from '../testing/mocks/swapper'
-import type { ScaledOfferFactorOverride, Swapper } from '../types'
+import type { ScaledOfferFactorOverride } from '../types'
 import { MockViemContract } from '../testing/mocks/viemContract'
 
 jest.mock('viem', () => {
@@ -1089,93 +1086,6 @@ describe('Swapper reads', () => {
           },
         ],
       ])
-    })
-  })
-})
-
-const mockGqlClient = new MockGraphqlClient()
-jest.mock('graphql-request', () => {
-  return {
-    GraphQLClient: jest.fn().mockImplementation(() => {
-      return mockGqlClient
-    }),
-    gql: jest.fn(),
-  }
-})
-
-describe('Graphql reads', () => {
-  const mockFormatSwapper = jest
-    .spyOn(subgraph, 'protectedFormatSwapper')
-    .mockReturnValue('formatted_swapper' as unknown as Swapper)
-  const mockAddEnsNames = jest
-    .spyOn(ensUtils, 'addEnsNames')
-    .mockImplementation()
-  const mockGqlSwapper = {
-    beneficiary: {
-      id: '0xbeneficiary',
-    },
-    tokenToBeneficiary: {
-      id: '0xtokenToBeneficiary',
-    },
-    owner: {
-      id: '0xowner',
-    },
-  }
-
-  const swapperAddress = '0xswapper'
-  const publicClient = new mockPublicClient()
-  const client = new SwapperClient({
-    chainId: 1,
-    publicClient,
-  })
-
-  beforeEach(() => {
-    ;(validateAddress as jest.Mock).mockClear()
-    mockGqlClient.request.mockClear()
-    mockFormatSwapper.mockClear()
-    mockAddEnsNames.mockClear()
-  })
-
-  describe('Get swapper metadata tests', () => {
-    beforeEach(() => {
-      mockGqlClient.request.mockReturnValue({
-        swapper: mockGqlSwapper,
-      })
-    })
-
-    test('Get swapper metadata passes', async () => {
-      const swapper = await client.getSwapperMetadata({
-        swapperAddress,
-      })
-
-      expect(validateAddress).toBeCalledWith(swapperAddress)
-      expect(mockGqlClient.request).toBeCalledWith(subgraph.SWAPPER_QUERY, {
-        swapperAddress,
-      })
-      expect(mockFormatSwapper).toBeCalledWith(mockGqlSwapper)
-      expect(swapper).toEqual('formatted_swapper')
-      expect(mockAddEnsNames).not.toBeCalled()
-    })
-
-    test('Adds ens names', async () => {
-      const publicClient = new mockPublicClient()
-      const ensClient = new SwapperClient({
-        chainId: 1,
-        publicClient,
-        includeEnsNames: true,
-      })
-
-      const swapper = await ensClient.getSwapperMetadata({
-        swapperAddress,
-      })
-
-      expect(validateAddress).toBeCalledWith(swapperAddress)
-      expect(mockGqlClient.request).toBeCalledWith(subgraph.SWAPPER_QUERY, {
-        swapperAddress,
-      })
-      expect(mockFormatSwapper).toBeCalledWith(mockGqlSwapper)
-      expect(swapper).toEqual('formatted_swapper')
-      expect(mockAddEnsNames).toBeCalled()
     })
   })
 })

@@ -25,14 +25,8 @@ import {
 } from '../constants'
 import { vestingFactoryAbi } from '../constants/abi/vestingFactory'
 import { vestingAbi } from '../constants/abi/vesting'
-import {
-  AccountNotFoundError,
-  TransactionFailedError,
-  UnsupportedChainIdError,
-} from '../errors'
+import { TransactionFailedError, UnsupportedChainIdError } from '../errors'
 import { applyMixins } from './mixin'
-import { protectedFormatVestingModule, VESTING_MODULE_QUERY } from '../subgraph'
-import type { GqlVestingModule } from '../subgraph/types'
 import type {
   CallData,
   CreateVestingConfig,
@@ -41,9 +35,7 @@ import type {
   StartVestConfig,
   TransactionConfig,
   TransactionFormat,
-  VestingModule,
 } from '../types'
-import { getTokenData, addEnsNames } from '../utils'
 import { validateAddress, validateVestingPeriod } from '../utils/validation'
 
 type VestingAbi = typeof vestingAbi
@@ -56,6 +48,7 @@ class VestingTransactions extends BaseTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
@@ -64,6 +57,7 @@ class VestingTransactions extends BaseTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }
@@ -161,6 +155,7 @@ export class VestingClient extends VestingTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -169,6 +164,7 @@ export class VestingClient extends VestingTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
 
@@ -401,69 +397,6 @@ export class VestingClient extends VestingTransactions {
 
     return { amount }
   }
-
-  // Graphql read actions
-  async getVestingMetadata({
-    vestingModuleAddress,
-  }: {
-    vestingModuleAddress: string
-  }): Promise<VestingModule> {
-    validateAddress(vestingModuleAddress)
-    const chainId = this._chainId
-
-    const response = await this._makeGqlRequest<{
-      vestingModule: GqlVestingModule
-    }>(VESTING_MODULE_QUERY, {
-      vestingModuleAddress: vestingModuleAddress.toLowerCase(),
-    })
-
-    if (!response.vestingModule)
-      throw new AccountNotFoundError(
-        'vesting module',
-        vestingModuleAddress,
-        chainId,
-      )
-
-    return await this.formatVestingModule(response.vestingModule)
-  }
-
-  async formatVestingModule(
-    gqlVestingModule: GqlVestingModule,
-  ): Promise<VestingModule> {
-    this._requirePublicClient()
-    const publicClient = this._publicClient
-    if (!publicClient) throw new Error()
-
-    const tokenIds = Array.from(
-      new Set(gqlVestingModule.streams?.map((stream) => stream.token.id) ?? []),
-    )
-
-    const tokenData: { [token: string]: { symbol: string; decimals: number } } =
-      {}
-    await Promise.all(
-      tokenIds.map(async (token) => {
-        const result = await getTokenData(
-          this._chainId,
-          getAddress(token),
-          publicClient,
-        )
-
-        tokenData[token] = result
-      }),
-    )
-
-    const vestingModule = protectedFormatVestingModule(
-      gqlVestingModule,
-      tokenData,
-    )
-    if (this._includeEnsNames) {
-      await addEnsNames(this._ensPublicClient ?? publicClient, [
-        vestingModule.beneficiary,
-      ])
-    }
-
-    return vestingModule
-  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
@@ -477,6 +410,7 @@ class VestingGasEstimates extends VestingTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -485,6 +419,7 @@ class VestingGasEstimates extends VestingTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }
@@ -527,6 +462,7 @@ class VestingCallData extends VestingTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -535,6 +471,7 @@ class VestingCallData extends VestingTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }

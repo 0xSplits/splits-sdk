@@ -1,7 +1,13 @@
-import { Address, PublicClient, getAddress } from 'viem'
+import {
+  Address,
+  PublicClient,
+  encodePacked,
+  getAddress,
+  keccak256,
+  zeroAddress,
+} from 'viem'
 
 import {
-  ADDRESS_ZERO,
   LIQUID_SPLIT_NFT_COUNT,
   PERCENTAGE_SCALE,
   getSplitV2FactoryAddress,
@@ -23,6 +29,7 @@ import {
   InvalidDistributorFeePercentErrorV2,
   InvalidTotalAllocation,
 } from '../errors'
+import { IRecipient } from '../subgraph/types'
 
 export * from './ens'
 export * from './numbers'
@@ -99,7 +106,7 @@ export const getRecoupTranchesAndSizes = async (
       recoupTranches.push([
         [tranche.recipient],
         [PERCENTAGE_SCALE],
-        ADDRESS_ZERO,
+        zeroAddress,
         BigInt(0),
       ])
     } else {
@@ -111,7 +118,7 @@ export const getRecoupTranchesAndSizes = async (
       recoupTranches.push([
         addresses,
         percentAllocations,
-        tranche.recipient.controller ?? ADDRESS_ZERO,
+        tranche.recipient.controller ?? zeroAddress,
         distributorFee,
       ])
     }
@@ -183,4 +190,41 @@ export const getSplitType = (
   if (factoryAddress === getSplitV2FactoryAddress(chainId, SplitV2Type.Pull))
     return SplitV2Type.Pull
   return SplitV2Type.Push
+}
+
+export const getAccountsAndPercentAllocations: (
+  arg0: IRecipient[],
+  arg1?: boolean,
+) => [Address[], number[]] = (recipients, shouldSort = false) => {
+  const accounts: Address[] = []
+  const percentAllocations: number[] = []
+
+  const recipientsCopy = recipients.slice()
+
+  if (shouldSort) {
+    recipientsCopy.sort((a, b) => {
+      if (a.address.toLowerCase() > b.address.toLowerCase()) return 1
+      return -1
+    })
+  }
+
+  recipientsCopy.forEach((recipient) => {
+    accounts.push(recipient.address)
+    percentAllocations.push(recipient.ownership)
+  })
+
+  return [accounts, percentAllocations]
+}
+
+export const hashSplit: (
+  arg0: Address[],
+  arg1: number[],
+  arg2: number,
+) => string = (accounts, percentAllocations, distributorFee) => {
+  return keccak256(
+    encodePacked(
+      ['address[]', 'uint32[]', 'uint32'],
+      [accounts, percentAllocations, distributorFee],
+    ),
+  )
 }

@@ -2,24 +2,37 @@ import {
   Address,
   Chain,
   GetContractReturnType,
+  Hash,
   Hex,
   Log,
   PublicClient,
   Transport,
+  TypedDataDomain,
   decodeEventLog,
   encodeEventTopics,
-  zeroAddress,
   getContract,
-  TypedDataDomain,
+  zeroAddress,
 } from 'viem'
+import {
+  SPLITS_SUPPORTED_CHAIN_IDS,
+  SPLITS_V2_SUPPORTED_CHAIN_IDS,
+  TransactionType,
+  getSplitV2FactoriesStartBlock,
+  getSplitV2FactoryAddress,
+} from '../constants'
 import { splitV2ABI } from '../constants/abi/splitV2'
 import { splitV2FactoryABI } from '../constants/abi/splitV2Factory'
+import {
+  SaltRequired,
+  TransactionFailedError,
+  UnsupportedChainIdError,
+} from '../errors'
 import {
   CallData,
   CreateSplitV2Config,
   DistributeSplitConfig,
   SetPausedConfig,
-  SplitV2,
+  Split,
   SplitV2ExecCallsConfig,
   SplitV2Type,
   SplitsClientConfig,
@@ -29,30 +42,18 @@ import {
   UpdateSplitV2Config,
 } from '../types'
 import {
+  fromBigIntToPercent,
+  getNumberFromPercent,
+  getSplitType,
+  getValidatedSplitV2Config,
+  validateAddress,
+} from '../utils'
+import {
   BaseClientMixin,
   BaseGasEstimatesMixin,
   BaseTransactions,
 } from './base'
 import { applyMixins } from './mixin'
-import {
-  SPLITS_SUPPORTED_CHAIN_IDS,
-  SPLITS_V2_SUPPORTED_CHAIN_IDS,
-  TransactionType,
-  getSplitV2FactoriesStartBlock,
-  getSplitV2FactoryAddress,
-} from '../constants'
-import {
-  validateAddress,
-  getNumberFromPercent,
-  getValidatedSplitV2Config,
-  getSplitType,
-} from '../utils'
-import {
-  InvalidAuthError,
-  SaltRequired,
-  TransactionFailedError,
-  UnsupportedChainIdError,
-} from '../errors'
 
 type SplitFactoryABI = typeof splitV2FactoryABI
 type SplitV2ABI = typeof splitV2ABI
@@ -67,6 +68,7 @@ class SplitV2Transactions extends BaseTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
@@ -75,6 +77,7 @@ class SplitV2Transactions extends BaseTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }
@@ -240,8 +243,29 @@ class SplitV2Transactions extends BaseTransactions {
 
     this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
+    let split: Split
 
-    const { split } = await this._getSplitMetadata(splitAddress)
+    if (this._dataClient)
+      split = await this._dataClient.getSplitMetadata({
+        chainId: this._chainId,
+        splitAddress,
+      })
+    else split = (await this._getSplitMetadata(splitAddress)).split
+
+    const {
+      recipientAddresses,
+      recipientAllocations,
+      totalAllocation,
+      distributionIncentive,
+    } = getValidatedSplitV2Config(
+      split.recipients.map((recipient) => {
+        return {
+          address: recipient.recipient.address,
+          percentAllocation: recipient.percentAllocation,
+        }
+      }),
+      split.distributorFeePercent,
+    )
 
     return this._executeContractFunction({
       contractAddress: splitAddress,
@@ -249,10 +273,10 @@ class SplitV2Transactions extends BaseTransactions {
       functionName: 'distribute',
       functionArgs: [
         {
-          recipients: split.recipients,
-          allocations: split.allocations,
-          totalAllocation: split.totalAllocation,
-          distributionIncentive: split.distributionIncentive,
+          recipients: recipientAddresses,
+          allocations: recipientAllocations,
+          totalAllocation,
+          distributionIncentive,
         },
         token,
         distributorAddress,
@@ -271,7 +295,7 @@ class SplitV2Transactions extends BaseTransactions {
     return this._getSplitV2Contract(splitAddress).read.owner()
   }
 
-  async _getSplitMetadata(splitAddress: Address): Promise<{ split: SplitV2 }> {
+  async _getSplitMetadata(splitAddress: Address): Promise<{ split: Split }> {
     this._requirePublicClient()
 
     const [createLogs, owner, paused] = await Promise.all([
@@ -300,17 +324,36 @@ class SplitV2Transactions extends BaseTransactions {
       fromBlock: createLogs[0].blockNumber,
     })
 
-    const split: SplitV2 = {
+    const recipients = createLogs[0].args.splitParams.recipients.map(
+      (recipient, i) => {
+        return {
+          recipient: {
+            address: recipient,
+          },
+          percentAllocation: fromBigIntToPercent(
+            createLogs[0].args.splitParams.allocations[i],
+            createLogs[0].args.splitParams.totalAllocation,
+          ),
+        }
+      },
+    )
+
+    const split: Split = {
       address: splitAddress,
-      recipients: createLogs[0].args.splitParams.recipients as Address[],
-      allocations: createLogs[0].args.splitParams.allocations as bigint[],
-      totalAllocation: createLogs[0].args.splitParams.totalAllocation,
-      distributionIncentive:
+      recipients,
+      distributorFeePercent: fromBigIntToPercent(
         createLogs[0].args.splitParams.distributionIncentive,
-      creatorAddress: createLogs[0].args.creator,
-      type: getSplitType(this._chainId, createLogs[0].address),
-      controllerAddress: owner,
-      paused,
+      ),
+      distributeDirection: getSplitType(this._chainId, createLogs[0].address),
+      type: 'SplitV2',
+      controller: {
+        address: owner,
+      },
+      distributionsPaused: paused,
+      newPotentialController: {
+        address: zeroAddress,
+      },
+      createdBlock: Number(createLogs[0].blockNumber),
     }
 
     if (!updateLogs || updateLogs.length == 0) return { split }
@@ -321,11 +364,24 @@ class SplitV2Transactions extends BaseTransactions {
       else return a.logIndex > b.logIndex ? -1 : 1
     })
 
-    split.recipients = updateLogs[0].args._split.recipients as Address[]
-    split.allocations = updateLogs[0].args._split.allocations as bigint[]
-    split.totalAllocation = updateLogs[0].args._split.totalAllocation
-    split.distributionIncentive =
-      updateLogs[0].args._split.distributionIncentive
+    const updatedRecipients = updateLogs[0].args._split.recipients.map(
+      (recipient, i) => {
+        return {
+          recipient: {
+            address: recipient,
+          },
+          percentAllocation: fromBigIntToPercent(
+            updateLogs[0].args._split.allocations[i],
+            updateLogs[0].args._split.totalAllocation,
+          ),
+        }
+      },
+    )
+
+    split.recipients = updatedRecipients
+    split.distributorFeePercent = fromBigIntToPercent(
+      updateLogs[0].args._split.distributionIncentive,
+    )
 
     return { split }
   }
@@ -386,6 +442,7 @@ export class SplitV2Client extends SplitV2Transactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -394,6 +451,7 @@ export class SplitV2Client extends SplitV2Transactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
 
@@ -462,15 +520,23 @@ export class SplitV2Client extends SplitV2Transactions {
     })
   }
 
+  async submitCreateSplitTransaction(
+    createSplitArgs: CreateSplitV2Config,
+  ): Promise<{
+    txHash: Hash
+  }> {
+    const txHash = await this._createSplit(createSplitArgs)
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
+
+    return { txHash }
+  }
+
   async createSplit(createSplitArgs: CreateSplitV2Config): Promise<{
     splitAddress: Address
     event: Log
   }> {
-    const txHash = await this._createSplit(createSplitArgs)
-
-    if (!this._isContractTransaction(txHash))
-      throw new Error('Invalid response')
-
+    const { txHash } = await this.submitCreateSplitTransaction(createSplitArgs)
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.splitCreated,
@@ -491,15 +557,26 @@ export class SplitV2Client extends SplitV2Transactions {
     throw new TransactionFailedError()
   }
 
+  async submitTransferOwnershipTransaction(
+    transferOwnershipArgs: TransferOwnershipConfig,
+  ): Promise<{
+    txHash: Hash
+  }> {
+    const txHash = await this._transferOwnership(transferOwnershipArgs)
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
+
+    return { txHash }
+  }
+
   async transferOwnership(
     transferOwnershipArgs: TransferOwnershipConfig,
   ): Promise<{
     event: Log
   }> {
-    const txHash = await this._transferOwnership(transferOwnershipArgs)
-
-    if (!this._isContractTransaction(txHash))
-      throw new Error('Invalid response')
+    const { txHash } = await this.submitTransferOwnershipTransaction(
+      transferOwnershipArgs,
+    )
 
     const events = await this.getTransactionEvents({
       txHash,
@@ -515,13 +592,20 @@ export class SplitV2Client extends SplitV2Transactions {
     throw new TransactionFailedError()
   }
 
+  async submitSetPauseTransaction(setPausedArgs: SetPausedConfig): Promise<{
+    txHash: Hash
+  }> {
+    const txHash = await this._setPaused(setPausedArgs)
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
+
+    return { txHash }
+  }
+
   async setPause(setPausedArgs: SetPausedConfig): Promise<{
     event: Log
   }> {
-    const txHash = await this._setPaused(setPausedArgs)
-
-    if (!this._isContractTransaction(txHash))
-      throw new Error('Invalid response')
+    const { txHash } = await this.submitSetPauseTransaction(setPausedArgs)
 
     const events = await this.getTransactionEvents({
       txHash,
@@ -537,13 +621,22 @@ export class SplitV2Client extends SplitV2Transactions {
     throw new TransactionFailedError()
   }
 
+  async submitExecCallsTransaction(
+    execCallsArgs: SplitV2ExecCallsConfig,
+  ): Promise<{
+    txHash: Hash
+  }> {
+    const txHash = await this._execCalls(execCallsArgs)
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
+
+    return { txHash }
+  }
+
   async execCalls(execCallsArgs: SplitV2ExecCallsConfig): Promise<{
     event: Log
   }> {
-    const txHash = await this._execCalls(execCallsArgs)
-
-    if (!this._isContractTransaction(txHash))
-      throw new Error('Invalid response')
+    const { txHash } = await this.submitExecCallsTransaction(execCallsArgs)
 
     const events = await this.getTransactionEvents({
       txHash,
@@ -559,13 +652,22 @@ export class SplitV2Client extends SplitV2Transactions {
     throw new TransactionFailedError()
   }
 
+  async submitDistributeTransaction(
+    distributeArgs: DistributeSplitConfig,
+  ): Promise<{
+    txHash: Hash
+  }> {
+    const txHash = await this._distribute(distributeArgs)
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
+
+    return { txHash }
+  }
+
   async distribute(distributeArgs: DistributeSplitConfig): Promise<{
     event: Log
   }> {
-    const txHash = await this._distribute(distributeArgs)
-
-    if (!this._isContractTransaction(txHash))
-      throw new Error('Invalid response')
+    const { txHash } = await this.submitDistributeTransaction(distributeArgs)
 
     const events = await this.getTransactionEvents({
       txHash,
@@ -581,13 +683,22 @@ export class SplitV2Client extends SplitV2Transactions {
     throw new TransactionFailedError()
   }
 
+  async submitUpdateSplitTransaction(
+    updateSplitArgs: UpdateSplitV2Config,
+  ): Promise<{
+    txHash: Hash
+  }> {
+    const txHash = await this._updateSplit(updateSplitArgs)
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
+
+    return { txHash }
+  }
+
   async updateSplit(updateSplitArgs: UpdateSplitV2Config): Promise<{
     event: Log
   }> {
-    const txHash = await this._updateSplit(updateSplitArgs)
-
-    if (!this._isContractTransaction(txHash))
-      throw new Error('Invalid response')
+    const { txHash } = await this.submitUpdateSplitTransaction(updateSplitArgs)
 
     const events = await this.getTransactionEvents({
       txHash,
@@ -798,14 +909,6 @@ export class SplitV2Client extends SplitV2Transactions {
     const controllerAddress = await this._owner(splitAddress)
     return { controllerAddress }
   }
-
-  async getSplitMetadata({
-    splitAddress,
-  }: {
-    splitAddress: Address
-  }): Promise<{ split: SplitV2 }> {
-    return await this._getSplitMetadata(splitAddress)
-  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
@@ -819,6 +922,7 @@ class SplitV2GasEstimates extends SplitV2Transactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -827,6 +931,7 @@ class SplitV2GasEstimates extends SplitV2Transactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }
@@ -886,6 +991,7 @@ class SplitV2CallData extends SplitV2Transactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -894,6 +1000,7 @@ class SplitV2CallData extends SplitV2Transactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }
@@ -949,6 +1056,7 @@ class SplitV2Signature extends SplitV2Transactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames,
   }: SplitsClientConfig) {
     super({
@@ -957,6 +1065,7 @@ class SplitV2Signature extends SplitV2Transactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }

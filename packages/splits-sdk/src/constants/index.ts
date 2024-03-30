@@ -2,7 +2,6 @@ import { Address } from 'viem'
 import { SplitV2Type } from '../types'
 
 export const PERCENTAGE_SCALE = BigInt(1e6)
-export const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000'
 
 // https://github.com/mds1/multicall
 export const MULTICALL_3_ADDRESS = '0xca11bde05977b3631167028862be2a173976ca11'
@@ -243,6 +242,11 @@ export const LIQUID_SPLITS_MAX_PRECISION_DECIMALS = 1
 export const LIQUID_SPLIT_NFT_COUNT = 1000
 export const LIQUID_SPLIT_URI_BASE_64_HEADER = 'data:application/json;base64,'
 
+// TODO: update
+export const getGraphQLEndpoint = (key: string): string => {
+  return 'xxx' + key
+}
+
 export const CHAIN_INFO: {
   [chainId: number]: {
     startBlock: number
@@ -454,3 +458,7 @@ export enum TransactionType {
   GasEstimate = 'GasEstimate',
   Signature = 'Signature',
 }
+
+export const ZERO = BigInt(0)
+export const ONE = BigInt(1)
+export const TWO = BigInt(2)
