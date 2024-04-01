@@ -25,8 +25,7 @@ export const useSplitsClient = (config?: SplitsClientConfig): SplitsClient => {
   }
 
   const apiConfig = config && config.apiConfig
-  const chainId =
-    config && (config.chainId as number) && context.splitsClient._chainId
+  const chainId = config && (config.chainId as number)
   const publicClient =
     config && 'publicClient' in config
       ? config.publicClient
