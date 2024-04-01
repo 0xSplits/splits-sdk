@@ -49,6 +49,7 @@ import {
   PASS_THROUGH_WALLET_CHAIN_IDS,
   BASE_CHAIN_IDS,
   ADDRESS_ZERO,
+  ETHEREUM_TEST_CHAIN_IDS,
 } from '../constants'
 import {
   splitMainEthereumAbi,
@@ -103,7 +104,8 @@ import {
 } from '../utils'
 import { validateAddress, validateSplitInputs } from '../utils/validation'
 
-const polygonAbiChainIds = [
+const POLYGON_ABI_CHAIN_IDS = [
+  ...ETHEREUM_TEST_CHAIN_IDS,
   ...POLYGON_CHAIN_IDS,
   ...OPTIMISM_CHAIN_IDS,
   ...ARBITRUM_CHAIN_IDS,
@@ -148,10 +150,10 @@ class SplitsTransactions extends BaseTransactions {
       publicClient: this._publicClient,
     })
 
-    if (ETHEREUM_CHAIN_IDS.includes(chainId)) {
-      this._splitMainAbi = splitMainEthereumAbi
-    } else if (polygonAbiChainIds.includes(chainId)) {
+    if (POLYGON_ABI_CHAIN_IDS.includes(chainId)) {
       this._splitMainAbi = splitMainPolygonAbi
+    } else if (ETHEREUM_CHAIN_IDS.includes(chainId)) {
+      this._splitMainAbi = splitMainEthereumAbi
     } else
       throw new UnsupportedChainIdError(chainId, SPLITS_SUPPORTED_CHAIN_IDS)
   }
