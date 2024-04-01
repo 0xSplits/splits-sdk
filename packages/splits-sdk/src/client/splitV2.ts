@@ -359,7 +359,7 @@ class SplitV2Transactions extends BaseTransactions {
     if (!updateLogs || updateLogs.length == 0) return { split }
 
     updateLogs.sort((a, b) => {
-      if (a.blockNumber === b.blockNumber)
+      if (a.blockNumber !== b.blockNumber)
         return a.blockNumber > b.blockNumber ? -1 : 1
       else return a.logIndex > b.logIndex ? -1 : 1
     })

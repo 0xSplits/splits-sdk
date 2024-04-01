@@ -6,12 +6,19 @@ import {
   SPLITS_V2_SUPPORTED_CHAIN_IDS,
   SWAPPER_CHAIN_IDS,
   TEMPLATES_CHAIN_IDS,
+  TransactionType,
   VESTING_CHAIN_IDS,
   WATERFALL_CHAIN_IDS,
 } from '../constants'
 import { SplitsClientConfig } from '../types'
+import {
+  BaseClientMixin,
+  BaseGasEstimatesMixin,
+  BaseTransactions,
+} from './base'
 import { DataClient } from './data'
 import { LiquidSplitClient } from './liquidSplit'
+import { applyMixins } from './mixin'
 import { OracleClient } from './oracle'
 import { PassThroughWalletClient } from './passThroughWallet'
 import { SplitV1Client } from './splitV1'
@@ -23,7 +30,7 @@ import { WarehouseClient } from './warehouse'
 import { WaterfallClient } from './waterfall'
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export class SplitsClient {
+export class SplitsClient extends BaseTransactions {
   readonly waterfall: WaterfallClient | undefined
   readonly liquidSplits: LiquidSplitClient | undefined
   readonly passThroughWallet: PassThroughWalletClient | undefined
@@ -35,6 +42,7 @@ export class SplitsClient {
   readonly splitV2: SplitV2Client | undefined
   readonly warehouse: WarehouseClient | undefined
   readonly dataClient: DataClient | undefined
+  readonly estimateGas: SplitsClientGasEstimates
 
   constructor({
     chainId,
@@ -44,6 +52,15 @@ export class SplitsClient {
     includeEnsNames = false,
     ensPublicClient,
   }: SplitsClientConfig) {
+    super({
+      transactionType: TransactionType.Transaction,
+      chainId,
+      publicClient,
+      walletClient,
+      apiConfig,
+      includeEnsNames,
+      ensPublicClient,
+    })
     if (WATERFALL_CHAIN_IDS.includes(chainId)) {
       this.waterfall = new WaterfallClient({
         chainId,
@@ -151,5 +168,44 @@ export class SplitsClient {
         apiConfig,
       })
     }
+
+    this.estimateGas = new SplitsClientGasEstimates({
+      chainId,
+      publicClient,
+      walletClient,
+      ensPublicClient,
+      apiConfig,
+      includeEnsNames,
+    })
   }
 }
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface SplitsClient extends BaseClientMixin {}
+applyMixins(SplitV2Client, [BaseClientMixin])
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+class SplitsClientGasEstimates extends BaseTransactions {
+  constructor({
+    chainId,
+    publicClient,
+    walletClient,
+    apiConfig,
+    includeEnsNames = false,
+    ensPublicClient,
+  }: SplitsClientConfig) {
+    super({
+      transactionType: TransactionType.GasEstimate,
+      chainId,
+      publicClient,
+      walletClient,
+      apiConfig,
+      includeEnsNames,
+      ensPublicClient,
+    })
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+interface SplitsClientGasEstimates extends BaseGasEstimatesMixin {}
+applyMixins(SplitsClientGasEstimates, [BaseGasEstimatesMixin])

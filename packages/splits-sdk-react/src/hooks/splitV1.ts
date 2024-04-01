@@ -25,23 +25,24 @@ export const useSplitsClient = (config?: SplitsClientConfig): SplitsClient => {
   }
 
   const apiConfig = config && config.apiConfig
-  const chainId = config && (config.chainId as number)
+  const chainId =
+    config && (config.chainId as number) && context.splitsClient._chainId
   const publicClient =
     config && 'publicClient' in config
       ? config.publicClient
-      : context.splitsClient.splitV1?._publicClient
+      : context.splitsClient._publicClient
   const walletClient =
     config && 'walletClient' in config
       ? config.walletClient
-      : context.splitsClient.splitV1?._walletClient
+      : context.splitsClient._walletClient
   const includeEnsNames =
     config && 'includeEnsNames' in config
       ? config.includeEnsNames
-      : context.splitsClient.splitV1?._includeEnsNames
+      : context.splitsClient._includeEnsNames
   const ensPublicClient =
     config && 'ensPublicClient' in config
       ? config.ensPublicClient
-      : context.splitsClient.splitV1?._ensPublicClient
+      : context.splitsClient._ensPublicClient
   useEffect(() => {
     context.initClient({
       chainId: chainId!,
