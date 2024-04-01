@@ -55,7 +55,7 @@ export const useSplitsClient = (config?: SplitsClientConfig): SplitsClient => {
     chainId,
     publicClient,
     walletClient,
-    apiConfig,
+    JSON.stringify(apiConfig),
     includeEnsNames,
     ensPublicClient,
   ])
