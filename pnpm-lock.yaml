@@ -50,11 +50,11 @@ importers:
   packages/splits-kit:
     dependencies:
       '@0xsplits/splits-sdk':
-        specifier: ^3.3.2-alpha.0
-        version: 3.3.2-alpha.1(typescript@5.2.2)
+        specifier: ^3.3.3-alpha.0
+        version: link:../splits-sdk
       '@0xsplits/splits-sdk-react':
-        specifier: ^1.3.2-alpha.0
-        version: 1.3.2-alpha.3(react@18.2.0)(typescript@5.2.2)
+        specifier: ^1.3.3-alpha.0
+        version: link:../splits-sdk-react
       '@headlessui/react':
         specifier: ^1.7.17
         version: 1.7.17(react-dom@18.2.0)(react@18.2.0)
@@ -178,8 +178,8 @@ importers:
   packages/splits-sdk-react:
     dependencies:
       '@0xsplits/splits-sdk':
-        specifier: ^3.3.2-alpha.0
-        version: 3.3.2-alpha.1(typescript@5.2.2)
+        specifier: ^3.3.3-alpha.0
+        version: link:../splits-sdk
       react:
         specifier: 17.x.x || 18.x.x
         version: 18.2.0
@@ -192,74 +192,6 @@ importers:
         version: 18.2.37
 
 packages:
-  /@0no-co/graphql.web@1.0.4(graphql@16.8.1):
-    resolution:
-      {
-        integrity: sha512-W3ezhHGfO0MS1PtGloaTpg0PbaT8aZSmmaerL7idtU5F7oCI+uu25k+MsMS31BVFlp4aMkHSrNRxiD72IlK8TA==,
-      }
-    peerDependencies:
-      graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
-    peerDependenciesMeta:
-      graphql:
-        optional: true
-    dependencies:
-      graphql: 16.8.1
-    dev: false
-
-  /@0xsplits/splits-sdk-react@1.3.2-alpha.3(react@18.2.0)(typescript@5.2.2):
-    resolution:
-      {
-        integrity: sha512-AqYFQSL8xAkwhB10aGMI/u+tiZl6JtT4uTRwodhESpyltOwQVkFoyMZ8d1xHiOTg3fpKRC9m4FcW8ujzv/GSuQ==,
-      }
-    peerDependencies:
-      react: 17.x.x || 18.x.x
-    dependencies:
-      '@0xsplits/splits-sdk': 4.0.2-alpha.7(viem@1.18.9)
-      react: 18.2.0
-      viem: 1.18.9(typescript@5.2.2)
-    transitivePeerDependencies:
-      - bufferutil
-      - typescript
-      - utf-8-validate
-      - zod
-    dev: false
-
-  /@0xsplits/splits-sdk@3.3.2-alpha.1(typescript@5.2.2):
-    resolution:
-      {
-        integrity: sha512-/E592APmv0EoN7zzk8gMHE1I7VuB3S8b371Al4nAJyBJG7GLze9hqKAcPP1FNaDvdMT1w/XBvgK8PZ3yJdpSYg==,
-      }
-    dependencies:
-      base-64: 1.0.0
-      graphql: 16.8.1
-      graphql-request: 6.1.0(graphql@16.8.1)
-      viem: 1.18.9(typescript@5.2.2)
-    transitivePeerDependencies:
-      - bufferutil
-      - encoding
-      - typescript
-      - utf-8-validate
-      - zod
-    dev: false
-
-  /@0xsplits/splits-sdk@4.0.2-alpha.7(viem@1.18.9):
-    resolution:
-      {
-        integrity: sha512-nbaehe6OtCuKnzNEu0WTTUGGTDIQXGLcQwpU+xXeaEGcueWWHjOrIA/e1Bu9GBzUNLuMJpnbbiG+HZaMSDKy9Q==,
-      }
-    peerDependencies:
-      viem: ^1.0.0 || ^2.0.0
-    peerDependenciesMeta:
-      viem:
-        optional: true
-    dependencies:
-      '@urql/core': 4.3.0(graphql@16.8.1)
-      base-64: 1.0.0
-      graphql: 16.8.1
-      lodash: 4.17.21
-      viem: 1.18.9(typescript@5.2.2)
-    dev: false
-
   /@aashutoshrathi/word-wrap@1.2.6:
     resolution:
       {
@@ -6889,18 +6821,6 @@ packages:
         integrity: sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==,
       }
     dev: true
-
-  /@urql/core@4.3.0(graphql@16.8.1):
-    resolution:
-      {
-        integrity: sha512-wT+FeL8DG4x5o6RfHEnONNFVDM3616ouzATMYUClB6CB+iIu2mwfBKd7xSUxYOZmwtxna5/hDRQdMl3nbQZlnw==,
-      }
-    dependencies:
-      '@0no-co/graphql.web': 1.0.4(graphql@16.8.1)
-      wonka: 6.3.4
-    transitivePeerDependencies:
-      - graphql
-    dev: false
 
   /@wagmi/connectors@3.1.4(@types/react@18.2.37)(react@18.2.0)(typescript@5.2.2)(viem@1.18.9):
     resolution:
@@ -19468,13 +19388,6 @@ packages:
     dependencies:
       string-width: 4.2.3
     dev: true
-
-  /wonka@6.3.4:
-    resolution:
-      {
-        integrity: sha512-CjpbqNtBGNAeyNS/9W6q3kSkKE52+FjIj7AkFlLr11s/VWGUu6a2CdYSdGxocIhIVjaW/zchesBQUKPVU69Cqg==,
-      }
-    dev: false
 
   /wordwrap@1.0.0:
     resolution:
