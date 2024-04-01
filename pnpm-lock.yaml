@@ -50,11 +50,11 @@ importers:
   packages/splits-kit:
     dependencies:
       '@0xsplits/splits-sdk':
-        specifier: ^3.3.3-alpha.0
-        version: link:../splits-sdk
+        specifier: ^3.3.1
+        version: 3.3.1(typescript@5.2.2)
       '@0xsplits/splits-sdk-react':
-        specifier: ^1.3.3-alpha.0
-        version: link:../splits-sdk-react
+        specifier: ^1.3.1
+        version: 1.3.1(react@18.2.0)(typescript@5.2.2)
       '@headlessui/react':
         specifier: ^1.7.17
         version: 1.7.17(react-dom@18.2.0)(react@18.2.0)
@@ -178,7 +178,7 @@ importers:
   packages/splits-sdk-react:
     dependencies:
       '@0xsplits/splits-sdk':
-        specifier: ^3.3.3-alpha.0
+        specifier: ^4.0.3-alpha.1
         version: link:../splits-sdk
       react:
         specifier: 17.x.x || 18.x.x
@@ -192,6 +192,43 @@ importers:
         version: 18.2.37
 
 packages:
+  /@0xsplits/splits-sdk-react@1.3.1(react@18.2.0)(typescript@5.2.2):
+    resolution:
+      {
+        integrity: sha512-5lKmdnTtK0/trrGb5boDN4+KaRMBzdD/Nk6GAz5JbeDU0Y+UZMxuhHI+jyOvZVlnjyhgMSJ+Snj4HKjPPUarJA==,
+      }
+    peerDependencies:
+      react: 17.x.x || 18.x.x
+    dependencies:
+      '@0xsplits/splits-sdk': 3.3.1(typescript@5.2.2)
+      react: 18.2.0
+      viem: 1.18.9(typescript@5.2.2)
+    transitivePeerDependencies:
+      - bufferutil
+      - encoding
+      - typescript
+      - utf-8-validate
+      - zod
+    dev: false
+
+  /@0xsplits/splits-sdk@3.3.1(typescript@5.2.2):
+    resolution:
+      {
+        integrity: sha512-Avw9+4kmAEwmCNrwiJZnwI0yW1+31R7ow88Bi9EDpYDUNMNEkLGkH3BaD/wugm97c5FwMXGJB+6NZlhg2VzqHw==,
+      }
+    dependencies:
+      base-64: 1.0.0
+      graphql: 16.8.1
+      graphql-request: 6.1.0(graphql@16.8.1)
+      viem: 1.18.9(typescript@5.2.2)
+    transitivePeerDependencies:
+      - bufferutil
+      - encoding
+      - typescript
+      - utf-8-validate
+      - zod
+    dev: false
+
   /@aashutoshrathi/word-wrap@1.2.6:
     resolution:
       {
