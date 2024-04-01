@@ -199,7 +199,7 @@ importers:
   packages/splits-sdk-react:
     dependencies:
       '@0xsplits/splits-sdk':
-        specifier: ^4.0.2-alpha.6
+        specifier: ^4.0.2-alpha.7
         version: link:../splits-sdk
       react:
         specifier: 17.x.x || 18.x.x
