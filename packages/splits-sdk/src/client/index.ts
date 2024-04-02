@@ -49,6 +49,7 @@ import {
   PASS_THROUGH_WALLET_CHAIN_IDS,
   BASE_CHAIN_IDS,
   ADDRESS_ZERO,
+  ETHEREUM_TEST_CHAIN_IDS,
 } from '../constants'
 import {
   splitMainEthereumAbi,
@@ -104,6 +105,7 @@ import {
 import { validateAddress, validateSplitInputs } from '../utils/validation'
 
 const polygonAbiChainIds = [
+  ...ETHEREUM_TEST_CHAIN_IDS,
   ...POLYGON_CHAIN_IDS,
   ...OPTIMISM_CHAIN_IDS,
   ...ARBITRUM_CHAIN_IDS,
