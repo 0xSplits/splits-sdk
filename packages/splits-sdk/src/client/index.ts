@@ -182,7 +182,7 @@ export class SplitsClient extends BaseTransactions {
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface SplitsClient extends BaseClientMixin {}
-applyMixins(SplitV2Client, [BaseClientMixin])
+applyMixins(SplitsClient, [BaseClientMixin])
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 class SplitsClientGasEstimates extends BaseTransactions {
