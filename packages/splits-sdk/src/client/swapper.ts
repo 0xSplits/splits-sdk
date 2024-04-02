@@ -501,6 +501,7 @@ export class SwapperClient extends SwapperTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
     this.estimateGas = new SwapperGasEstimates({
@@ -508,6 +509,7 @@ export class SwapperClient extends SwapperTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }

@@ -264,6 +264,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
     this.estimateGas = new LiquidSplitGasEstimates({
@@ -271,6 +272,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }

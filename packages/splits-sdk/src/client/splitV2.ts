@@ -502,6 +502,7 @@ export class SplitV2Client extends SplitV2Transactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
     this.estimateGas = new SplitV2GasEstimates({
@@ -509,6 +510,7 @@ export class SplitV2Client extends SplitV2Transactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
     this.sign = new SplitV2Signature({
@@ -516,6 +518,7 @@ export class SplitV2Client extends SplitV2Transactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }

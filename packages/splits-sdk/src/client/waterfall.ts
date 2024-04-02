@@ -293,6 +293,7 @@ export class WaterfallClient extends WaterfallTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
     this.estimateGas = new WaterfallGasEstimates({
@@ -300,6 +301,7 @@ export class WaterfallClient extends WaterfallTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }

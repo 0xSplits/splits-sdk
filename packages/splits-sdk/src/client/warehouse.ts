@@ -539,6 +539,7 @@ export class WarehouseClient extends WarehouseTransactions {
       chainId,
       publicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
       ensPublicClient,
     })
@@ -547,6 +548,7 @@ export class WarehouseClient extends WarehouseTransactions {
       chainId,
       publicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
       ensPublicClient,
     })
@@ -555,6 +557,7 @@ export class WarehouseClient extends WarehouseTransactions {
       chainId,
       publicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
       ensPublicClient,
     })

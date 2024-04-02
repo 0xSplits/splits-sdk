@@ -276,6 +276,7 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
     this.estimateGas = new PassThroughWalletGasEstimates({
@@ -283,6 +284,7 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }

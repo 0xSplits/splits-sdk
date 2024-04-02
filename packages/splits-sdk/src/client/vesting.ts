@@ -201,6 +201,7 @@ export class VestingClient extends VestingTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
     this.estimateGas = new VestingGasEstimates({
@@ -208,6 +209,7 @@ export class VestingClient extends VestingTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }

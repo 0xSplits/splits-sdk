@@ -625,6 +625,7 @@ export class SplitV1Client extends SplitV1Transactions {
       chainId,
       publicClient,
       ensPublicClient,
+      apiConfig,
       walletClient,
       includeEnsNames,
     })
@@ -632,6 +633,7 @@ export class SplitV1Client extends SplitV1Transactions {
       chainId,
       publicClient,
       ensPublicClient,
+      apiConfig,
       walletClient,
       includeEnsNames,
     })

@@ -199,6 +199,7 @@ export class TemplatesClient extends TemplatesTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
     this.estimateGas = new TemplatesGasEstimates({
@@ -206,6 +207,7 @@ export class TemplatesClient extends TemplatesTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }
