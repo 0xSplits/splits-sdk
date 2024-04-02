@@ -1,6 +1,6 @@
 {
   "name": "@0xsplits/splits-sdk-react",
-  "version": "2.0.0-alpha.9",
+  "version": "2.0.0-alpha.10",
   "description": "React wrapper for the 0xSplits SDK",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -29,7 +29,7 @@
   },
   "homepage": "https://docs.splits.org/sdk",
   "dependencies": {
-    "@0xsplits/splits-sdk": "^4.0.2-alpha.9"
+    "@0xsplits/splits-sdk": "^4.0.2-alpha.10"
   },
   "peerDependencies": {
     "react": "17.x.x || 18.x.x",
