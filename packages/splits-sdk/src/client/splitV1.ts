@@ -29,6 +29,7 @@ import {
   TransactionType,
   ZORA_CHAIN_IDS,
   getSplitMainAddress,
+  ETHEREUM_TEST_CHAIN_IDS,
 } from '../constants'
 import {
   splitMainEthereumAbi,
@@ -71,6 +72,7 @@ import {
 import { applyMixins } from './mixin'
 
 const polygonAbiChainIds = [
+  ...ETHEREUM_TEST_CHAIN_IDS,
   ...POLYGON_CHAIN_IDS,
   ...OPTIMISM_CHAIN_IDS,
   ...ARBITRUM_CHAIN_IDS,

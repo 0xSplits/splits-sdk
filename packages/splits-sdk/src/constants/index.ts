@@ -151,15 +151,8 @@ export enum ChainId {
   FOUNDRY = 31337,
 }
 
-export const ETHEREUM_CHAIN_IDS = [
-  ChainId.MAINNET,
-  3,
-  4,
-  ChainId.GOERLI,
-  42,
-  ChainId.SEPOLIA,
-  ChainId.HOLESKY,
-]
+export const ETHEREUM_CHAIN_IDS = [ChainId.MAINNET, 3, 4, ChainId.GOERLI, 42]
+export const ETHEREUM_TEST_CHAIN_IDS = [ChainId.SEPOLIA, ChainId.HOLESKY]
 export const POLYGON_CHAIN_IDS = [ChainId.POLYGON, ChainId.POLYGON_MUMBAI]
 export const OPTIMISM_CHAIN_IDS = [ChainId.OPTIMISM, ChainId.OPTIMISM_GOERLI]
 export const ARBITRUM_CHAIN_IDS = [ChainId.ARBITRUM, ChainId.ARBITRUM_GOERLI]
