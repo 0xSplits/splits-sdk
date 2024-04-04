@@ -18,6 +18,7 @@ export const RECIPIENT_FIELDS_FRAGMENT = gql`
   fragment RecipientFieldsFragment on SplitRecipient {
     id
     ownership
+    idx
   }
 `
 
@@ -107,6 +108,7 @@ const formatGqlRecipient: (arg0: GqlRecipient) => IRecipient = (
   return {
     address: getAddress(accountId),
     ownership: parseInt(gqlRecipient.ownership),
+    idx: parseInt(gqlRecipient.idx),
   }
 }
 
@@ -180,10 +182,10 @@ export const protectedFormatSplit = (gqlSplit: ISplit): Split => {
     distributionsPaused: gqlSplit.distributionsPaused,
     createdBlock: gqlSplit.createdBlock,
     recipients: gqlSplit.recipients
-      .map((gqlRecipient) => formatRecipient(gqlRecipient))
       .sort((a, b) => {
-        return b.percentAllocation - a.percentAllocation
-      }),
+        return a.idx - b.idx
+      })
+      .map((gqlRecipient) => formatRecipient(gqlRecipient)),
   }
 }
 

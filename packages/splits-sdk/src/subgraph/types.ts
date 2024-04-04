@@ -16,6 +16,7 @@ export type GqlRecipient = {
   id: Scalars['ID']
   account: GqlAccount
   ownership: Scalars['String']
+  idx: Scalars['String']
 }
 
 type GqlAccountSharedFields = {
@@ -623,6 +624,7 @@ export type ISplit = IAccountSharedFields & {
 export type IRecipient = {
   address: Address
   ownership: number
+  idx: number
   ens?: string
 }
 
