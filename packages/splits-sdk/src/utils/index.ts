@@ -146,7 +146,7 @@ export const getAddressAndAllocationFromRecipients = (
   }
 }
 
-export const MAX_DISTRIBUTION_INCENTIVE = 6.5535
+export const MAX_V2_DISTRIBUTION_INCENTIVE = 6.5535
 
 export const getValidatedSplitV2Config = (
   recipients: SplitRecipient[],
@@ -161,7 +161,7 @@ export const getValidatedSplitV2Config = (
   const { recipientAddresses, recipientAllocations } =
     getAddressAndAllocationFromRecipients(recipients)
 
-  if (distributorFeePercent > MAX_DISTRIBUTION_INCENTIVE)
+  if (distributorFeePercent > MAX_V2_DISTRIBUTION_INCENTIVE)
     throw new InvalidDistributorFeePercentErrorV2(distributorFeePercent)
   const distributionIncentive = getNumberFromPercent(distributorFeePercent)
 

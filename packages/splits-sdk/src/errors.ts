@@ -1,5 +1,5 @@
 import { SPLITS_SUBGRAPH_CHAIN_IDS } from './constants'
-import { MAX_DISTRIBUTION_INCENTIVE } from './utils'
+import { MAX_V2_DISTRIBUTION_INCENTIVE } from './utils'
 
 // Manually setting the prototype in the constructor with setPrototypeOf fixes a typescript issue so that the
 // unit tests can detect the error class
@@ -121,7 +121,7 @@ export class InvalidDistributorFeePercentErrorV2 extends Error {
   name = 'InvalidDistributorFeePercentErrorV2'
 
   constructor(distributorFeePercent: number) {
-    const message = `Distributor Fee ${distributorFeePercent} should be less than ${MAX_DISTRIBUTION_INCENTIVE}`
+    const message = `Distributor Fee ${distributorFeePercent} should be less than ${MAX_V2_DISTRIBUTION_INCENTIVE}`
     super(message)
     Object.setPrototypeOf(this, InvalidDistributorFeePercentErrorV2.prototype)
   }
