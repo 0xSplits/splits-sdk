@@ -255,7 +255,7 @@ class SplitV2Transactions extends BaseTransactions {
         chainId: this._chainId,
         splitAddress,
       })
-    else split = (await this._getSplitMetadata(splitAddress)).split
+    else split = (await this._getSplitMetadataViaProvider(splitAddress)).split
 
     const {
       recipientAddresses,
@@ -300,7 +300,9 @@ class SplitV2Transactions extends BaseTransactions {
     return this._getSplitV2Contract(splitAddress).read.owner()
   }
 
-  async _getSplitMetadata(splitAddress: Address): Promise<{ split: Split }> {
+  async _getSplitMetadataViaProvider(
+    splitAddress: Address,
+  ): Promise<{ split: Split }> {
     this._requirePublicClient()
 
     const [createLogs, owner, paused] = await Promise.all([
