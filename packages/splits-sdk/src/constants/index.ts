@@ -239,11 +239,6 @@ export const LIQUID_SPLITS_MAX_PRECISION_DECIMALS = 1
 export const LIQUID_SPLIT_NFT_COUNT = 1000
 export const LIQUID_SPLIT_URI_BASE_64_HEADER = 'data:application/json;base64,'
 
-// TODO: update
-export const getGraphQLEndpoint = (key: string): string => {
-  return 'xxx' + key
-}
-
 export const CHAIN_INFO: {
   [chainId: number]: {
     startBlock: number
