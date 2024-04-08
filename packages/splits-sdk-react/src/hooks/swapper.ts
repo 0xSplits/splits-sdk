@@ -24,7 +24,6 @@ export const useCreateSwapper = (): {
 } => {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).swapper
-  if (!splitsClient) throw new Error('Invalid chain id for swapper')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -32,6 +31,8 @@ export const useCreateSwapper = (): {
 
   const createSwapper = useCallback(
     async (argsDict: CreateSwapperConfig) => {
+      if (!splitsClient) throw new Error('Invalid chain id for swapper')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)

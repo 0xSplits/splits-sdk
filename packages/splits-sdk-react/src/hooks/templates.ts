@@ -17,7 +17,6 @@ export const useCreateRecoup = (): {
 } => {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).templates
-  if (!splitsClient) throw new Error('Invalid chain id for recoup')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -25,6 +24,8 @@ export const useCreateRecoup = (): {
 
   const createRecoup = useCallback(
     async (argsDict: CreateRecoupConfig) => {
+      if (!splitsClient) throw new Error('Invalid chain id for recoup')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)
@@ -65,7 +66,6 @@ export const useCreateDiversifier = (): {
 } => {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).templates
-  if (!splitsClient) throw new Error('Invalid chain id for diversifier')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -73,6 +73,8 @@ export const useCreateDiversifier = (): {
 
   const createDiversifier = useCallback(
     async (argsDict: CreateDiversifierConfig) => {
+      if (!splitsClient) throw new Error('Invalid chain id for diversifier')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)

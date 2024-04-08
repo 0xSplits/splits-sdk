@@ -21,7 +21,6 @@ export const useCreatePassThroughWallet = (): {
 } => {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).passThroughWallet
-  if (!splitsClient) throw new Error('Invalid chain id for pass through wallet')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -29,6 +28,9 @@ export const useCreatePassThroughWallet = (): {
 
   const createPassThroughWallet = useCallback(
     async (argsDict: CreatePassThroughWalletConfig) => {
+      if (!splitsClient)
+        throw new Error('Invalid chain id for pass through wallet')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)
@@ -70,14 +72,15 @@ export const usePassThroughTokens = (): {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).passThroughWallet
 
-  if (!splitsClient) throw new Error('Invalid chain id for pass through wallet')
-
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
   const [error, setError] = useState<RequestError>()
 
   const passThroughTokens = useCallback(
     async (argsDict: PassThroughTokensConfig) => {
+      if (!splitsClient)
+        throw new Error('Invalid chain id for pass through wallet')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)
@@ -117,14 +120,15 @@ export const usePassThroughWalletPause = (): {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).passThroughWallet
 
-  if (!splitsClient) throw new Error('Invalid chain id for pass through wallet')
-
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
   const [error, setError] = useState<RequestError>()
 
   const setPaused = useCallback(
     async (argsDict: PassThroughWalletPauseConfig) => {
+      if (!splitsClient)
+        throw new Error('Invalid chain id for pass through wallet')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)
@@ -166,14 +170,15 @@ export const usePassThroughWalletExecCalls = (): {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).passThroughWallet
 
-  if (!splitsClient) throw new Error('Invalid chain id for pass through wallet')
-
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
   const [error, setError] = useState<RequestError>()
 
   const execCalls = useCallback(
     async (argsDict: PassThroughWalletExecCallsConfig) => {
+      if (!splitsClient)
+        throw new Error('Invalid chain id for pass through wallet')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)

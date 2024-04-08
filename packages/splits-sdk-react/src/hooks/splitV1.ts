@@ -72,14 +72,14 @@ export const useCreateSplit = (): {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).splitV1
 
-  if (!splitsClient) throw new Error('Invalid chain id for split v1')
-
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
   const [error, setError] = useState<RequestError>()
 
   const createSplit = useCallback(
     async (argsDict: CreateSplitConfig) => {
+      if (!splitsClient) throw new Error('Invalid chain id for split v1')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)
@@ -118,7 +118,6 @@ export const useUpdateSplit = (): {
 } => {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).splitV1
-  if (!splitsClient) throw new Error('Invalid chain id for split v1')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -126,6 +125,8 @@ export const useUpdateSplit = (): {
 
   const updateSplit = useCallback(
     async (argsDict: UpdateSplitConfig) => {
+      if (!splitsClient) throw new Error('Invalid chain id for split v1')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)
@@ -164,7 +165,6 @@ export const useDistributeToken = (): {
 } => {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).splitV1
-  if (!splitsClient) throw new Error('Invalid chain id for split v1')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -172,6 +172,8 @@ export const useDistributeToken = (): {
 
   const distributeToken = useCallback(
     async (argsDict: DistributeTokenConfig) => {
+      if (!splitsClient) throw new Error('Invalid chain id for split v1')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)
@@ -212,7 +214,6 @@ export const useUpdateSplitAndDistributeToken = (): {
 } => {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).splitV1
-  if (!splitsClient) throw new Error('Invalid chain id for split v1')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -220,6 +221,8 @@ export const useUpdateSplitAndDistributeToken = (): {
 
   const updateSplitAndDistributeToken = useCallback(
     async (argsDict: UpdateSplitAndDistributeTokenConfig) => {
+      if (!splitsClient) throw new Error('Invalid chain id for split v1')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)
@@ -260,7 +263,6 @@ export const useWithdrawFunds = (): {
 } => {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).splitV1
-  if (!splitsClient) throw new Error('Invalid chain id for split v1')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -268,6 +270,8 @@ export const useWithdrawFunds = (): {
 
   const withdrawFunds = useCallback(
     async (argsDict: WithdrawFundsConfig) => {
+      if (!splitsClient) throw new Error('Invalid chain id for split v1')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)
@@ -308,7 +312,6 @@ export const useInitiateControlTransfer = (): {
 } => {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).splitV1
-  if (!splitsClient) throw new Error('Invalid chain id for split v1')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -316,6 +319,8 @@ export const useInitiateControlTransfer = (): {
 
   const initiateControlTransfer = useCallback(
     async (argsDict: InitiateControlTransferConfig) => {
+      if (!splitsClient) throw new Error('Invalid chain id for split v1')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)
@@ -356,7 +361,6 @@ export const useCancelControlTransfer = (): {
 } => {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).splitV1
-  if (!splitsClient) throw new Error('Invalid chain id for split v1')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -364,6 +368,8 @@ export const useCancelControlTransfer = (): {
 
   const cancelControlTransfer = useCallback(
     async (argsDict: CancelControlTransferConfig) => {
+      if (!splitsClient) throw new Error('Invalid chain id for split v1')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)
@@ -404,7 +410,6 @@ export const useAcceptControlTransfer = (): {
 } => {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).splitV1
-  if (!splitsClient) throw new Error('Invalid chain id for split v1')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -412,6 +417,8 @@ export const useAcceptControlTransfer = (): {
 
   const acceptControlTransfer = useCallback(
     async (argsDict: AcceptControlTransferConfig) => {
+      if (!splitsClient) throw new Error('Invalid chain id for split v1')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)
@@ -452,7 +459,6 @@ export const useMakeSplitImmutable = (): {
 } => {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).splitV1
-  if (!splitsClient) throw new Error('Invalid chain id for split v1')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -460,6 +466,8 @@ export const useMakeSplitImmutable = (): {
 
   const makeSplitImmutable = useCallback(
     async (argsDict: MakeSplitImmutableConfig) => {
+      if (!splitsClient) throw new Error('Invalid chain id for split v1')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)

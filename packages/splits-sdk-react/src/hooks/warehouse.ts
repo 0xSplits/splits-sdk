@@ -20,14 +20,15 @@ export const useWithdrawWarehouse = (): {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).warehouse
 
-  if (!splitsClient) throw new Error('Invalid chain id for splits warehouse')
-
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
   const [error, setError] = useState<RequestError>()
 
   const withdrawWarehouse = useCallback(
     async (argsDict: WarehouseWithdrawConfig) => {
+      if (!splitsClient)
+        throw new Error('Invalid chain id for splits warehouse')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)
@@ -68,14 +69,15 @@ export const useBatchWithdrawWarehouse = (): {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).warehouse
 
-  if (!splitsClient) throw new Error('Invalid chain id for splits warehouse')
-
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
   const [error, setError] = useState<RequestError>()
 
   const batchWithdrawWarehouse = useCallback(
     async (argsDict: WarehouseBatchWithdrawConfig) => {
+      if (!splitsClient)
+        throw new Error('Invalid chain id for splits warehouse')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)

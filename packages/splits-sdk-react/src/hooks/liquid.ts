@@ -21,14 +21,14 @@ export const useCreateLiquidSplit = (): {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).liquidSplits
 
-  if (!splitsClient) throw new Error('Invalid chain id for liquid splits')
-
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
   const [error, setError] = useState<RequestError>()
 
   const createLiquidSplit = useCallback(
     async (argsDict: CreateLiquidSplitConfig) => {
+      if (!splitsClient) throw new Error('Invalid chain id for liquid splits')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)
@@ -69,7 +69,6 @@ export const useDistributeLiquidSplitToken = (): {
 } => {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).liquidSplits
-  if (!splitsClient) throw new Error('Invalid chain id for liquid splits')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -77,6 +76,8 @@ export const useDistributeLiquidSplitToken = (): {
 
   const distributeToken = useCallback(
     async (argsDict: DistributeLiquidSplitTokenConfig) => {
+      if (!splitsClient) throw new Error('Invalid chain id for liquid splits')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)
@@ -117,7 +118,6 @@ export const useTransferLiquidSplitOwnership = (): {
 } => {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).liquidSplits
-  if (!splitsClient) throw new Error('Invalid chain id for liquid splits')
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -125,6 +125,8 @@ export const useTransferLiquidSplitOwnership = (): {
 
   const transferOwnership = useCallback(
     async (argsDict: TransferLiquidSplitOwnershipConfig) => {
+      if (!splitsClient) throw new Error('Invalid chain id for liquid splits')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)

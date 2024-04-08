@@ -29,7 +29,6 @@ export const useSplitMetadata = (
 } => {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).dataClient
-  if (!splitsClient) throw new Error('Missing api key for data client')
 
   const [splitMetadata, setSplitMetadata] = useState<Split | undefined>()
   const [isLoading, setIsLoading] = useState(!!splitAddress)
@@ -42,6 +41,8 @@ export const useSplitMetadata = (
     let isActive = true
 
     const fetchMetadata = async () => {
+      if (!splitsClient) throw new Error('Missing api key for data client')
+
       try {
         const split = await splitsClient.getSplitMetadata({
           chainId,
@@ -99,7 +100,6 @@ export const useSplitEarnings = (
 } => {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).dataClient
-  if (!splitsClient) throw new Error('Missing api key for data client')
 
   const [splitEarnings, setSplitEarnings] = useState<
     SplitEarnings | undefined
@@ -117,6 +117,8 @@ export const useSplitEarnings = (
     let isActive = true
 
     const fetchEarnings = async (fetchFormattedEarnings?: boolean) => {
+      if (!splitsClient) throw new Error('Missing api key for data client')
+
       try {
         if (fetchFormattedEarnings) {
           const formattedEarnings =
@@ -199,7 +201,6 @@ export const useContractEarnings = (
 } => {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).dataClient
-  if (!splitsClient) throw new Error('Missing api key for data client')
 
   const [contractEarnings, setContractEarnings] = useState<
     ContractEarnings | undefined
@@ -217,6 +218,8 @@ export const useContractEarnings = (
     let isActive = true
 
     const fetchEarnings = async (fetchFormattedEarnings?: boolean) => {
+      if (!splitsClient) throw new Error('Missing api key for data client')
+
       try {
         if (fetchFormattedEarnings) {
           const formattedEarnings =
@@ -295,7 +298,6 @@ export const useLiquidSplitMetadata = (
 } => {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).dataClient
-  if (!splitsClient) throw new Error('Missing api key for data client')
 
   const [liquidSplitMetadata, setLiquidSplitMetadata] = useState<
     LiquidSplit | undefined
@@ -310,6 +312,8 @@ export const useLiquidSplitMetadata = (
     let isActive = true
 
     const fetchMetadata = async () => {
+      if (!splitsClient) throw new Error('Missing api key for data client')
+
       try {
         const liquidSplit = await splitsClient.getLiquidSplitMetadata({
           chainId,
@@ -364,8 +368,6 @@ export const useSwapperMetadata = (
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).dataClient
 
-  if (!splitsClient) throw new Error('Missing api key for data client')
-
   const [swapperMetadata, setSwapperMetadata] = useState<Swapper | undefined>()
   const [isLoading, setIsLoading] = useState(!!swapperAddress)
   const [status, setStatus] = useState<DataLoadStatus | undefined>(
@@ -377,6 +379,8 @@ export const useSwapperMetadata = (
     let isActive = true
 
     const fetchMetadata = async () => {
+      if (!splitsClient) throw new Error('Missing api key for data client')
+
       try {
         const swapper = await splitsClient.getSwapperMetadata({
           chainId,
@@ -435,8 +439,6 @@ export const useUserEarnings = (
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).dataClient
 
-  if (!splitsClient) throw new Error('Missing api key for data client')
-
   const [userEarnings, setUserEarnings] = useState<UserEarnings | undefined>()
   const [isLoading, setIsLoading] = useState(!!userAddress)
   const [status, setStatus] = useState<DataLoadStatus | undefined>(
@@ -448,6 +450,8 @@ export const useUserEarnings = (
     let isActive = true
 
     const fetchEarnings = async () => {
+      if (!splitsClient) throw new Error('Missing api key for data client')
+
       try {
         const earnings = await splitsClient.getUserEarnings({
           chainId,
@@ -502,8 +506,6 @@ export const useFormattedUserEarnings = (
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).dataClient
 
-  if (!splitsClient) throw new Error('Missing api key for data client')
-
   const [formattedUserEarnings, setFormattedUserEarnings] = useState<
     FormattedUserEarnings | undefined
   >()
@@ -517,6 +519,8 @@ export const useFormattedUserEarnings = (
     let isActive = true
 
     const fetchEarnings = async () => {
+      if (!splitsClient) throw new Error('Missing api key for data client')
+
       try {
         const formattedEarnings = await splitsClient.getFormattedUserEarnings({
           chainId,
@@ -574,8 +578,6 @@ export const useUserEarningsByContract = (
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).dataClient
 
-  if (!splitsClient) throw new Error('Missing api key for data client')
-
   const contractAddresses =
     options?.contractAddresses ?? DEFAULT_OPTIONS.contractIds
   const contractAddressesString = JSON.stringify(contractAddresses)
@@ -593,6 +595,8 @@ export const useUserEarningsByContract = (
     let isActive = true
 
     const fetchEarnings = async () => {
+      if (!splitsClient) throw new Error('Missing api key for data client')
+
       try {
         const earnings = await splitsClient.getUserEarningsByContract({
           chainId,
@@ -651,8 +655,6 @@ export const useFormattedUserEarningsByContract = (
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).dataClient
 
-  if (!splitsClient) throw new Error('Missing api key for data client')
-
   const contractAddresses =
     options?.contractAddresses ?? DEFAULT_OPTIONS.contractIds
   const contractAddressesString = JSON.stringify(contractAddresses)
@@ -669,6 +671,8 @@ export const useFormattedUserEarningsByContract = (
     let isActive = true
 
     const fetchEarnings = async () => {
+      if (!splitsClient) throw new Error('Missing api key for data client')
+
       try {
         const formattedEarnings =
           await splitsClient.getFormattedUserEarningsByContract({
@@ -724,7 +728,6 @@ export const useVestingMetadata = (
 } => {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).dataClient
-  if (!splitsClient) throw new Error('Missing api key for data client')
 
   const [vestingMetadata, setVestingMetadata] = useState<
     VestingModule | undefined
@@ -739,6 +742,8 @@ export const useVestingMetadata = (
     let isActive = true
 
     const fetchMetadata = async () => {
+      if (!splitsClient) throw new Error('Missing api key for data client')
+
       try {
         const vesting = await splitsClient.getVestingMetadata({
           chainId,
@@ -792,7 +797,6 @@ export const useWaterfallMetadata = (
 } => {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).dataClient
-  if (!splitsClient) throw new Error('Missing api key for data client')
 
   const [waterfallMetadata, setWaterfallMetadata] = useState<
     WaterfallModule | undefined
@@ -807,6 +811,8 @@ export const useWaterfallMetadata = (
     let isActive = true
 
     const fetchMetadata = async () => {
+      if (!splitsClient) throw new Error('Missing api key for data client')
+
       try {
         const waterfall = await splitsClient.getWaterfallMetadata({
           chainId,
