@@ -31,12 +31,14 @@ export type MulticallConfig = {
   calls: CallData[]
 } & TransactionOverridesDict
 
+export type ApiConfig = {
+  apiKey: string
+  serverURL?: string
+}
+
 export type DataClientConfig = {
   publicClient?: PublicClient<Transport, Chain>
-  apiConfig: {
-    apiKey: string
-    serverURL?: string
-  }
+  apiConfig: ApiConfig
   includeEnsNames?: boolean
   // ensPublicClient can be used to fetch ens names when publicClient is not on mainnet (reverseRecords
   // only works on mainnet).
@@ -48,10 +50,7 @@ export type SplitsClientConfig = {
   chainId: number
   publicClient?: PublicClient<Transport, Chain>
   walletClient?: WalletClient<Transport, Chain, Account>
-  apiConfig?: {
-    apiKey: string
-    serverURL?: string
-  }
+  apiConfig?: ApiConfig
   includeEnsNames?: boolean
   // ensPublicClient can be used to fetch ens names when publicClient is not on mainnet (reverseRecords
   // only works on mainnet).

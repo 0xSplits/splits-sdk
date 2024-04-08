@@ -21,6 +21,7 @@ import {
   MissingWalletClientError,
 } from '../errors'
 import type {
+  ApiConfig,
   CallData,
   MulticallConfig,
   SplitsClientConfig,
@@ -36,12 +37,7 @@ class BaseClient {
   readonly _ensPublicClient: PublicClient<Transport, Chain> | undefined
   readonly _walletClient: WalletClient<Transport, Chain, Account> | undefined
   readonly _publicClient: PublicClient<Transport, Chain> | undefined
-  readonly _apiConfig:
-    | {
-        apiKey: string
-        serverURL?: string
-      }
-    | undefined
+  readonly _apiConfig: ApiConfig | undefined
   readonly _includeEnsNames: boolean
   readonly _dataClient: DataClient | undefined
 
