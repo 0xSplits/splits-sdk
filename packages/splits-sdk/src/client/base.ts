@@ -174,6 +174,7 @@ export class BaseTransactions extends BaseClient {
       return {
         address: contractAddress,
         data: calldata,
+        value,
       }
     } else if (this._transactionType === TransactionType.Transaction) {
       if (!this._walletClient?.account) throw new Error()
