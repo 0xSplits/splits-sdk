@@ -24,8 +24,14 @@ export const useSplitsClient = (config?: SplitsClientConfig): SplitsClient => {
     throw new Error('Make sure to include <SplitsProvider>')
   }
 
-  const apiConfig = config && config.apiConfig
-  const chainId = config && (config.chainId as number)
+  const apiConfig =
+    config && 'apiConfig' in config
+      ? config.apiConfig
+      : context.splitsClient._apiConfig
+  const chainId =
+    config && 'chainId' in config
+      ? config.chainId
+      : context.splitsClient._chainId
   const publicClient =
     config && 'publicClient' in config
       ? config.publicClient

@@ -36,6 +36,12 @@ class BaseClient {
   readonly _ensPublicClient: PublicClient<Transport, Chain> | undefined
   readonly _walletClient: WalletClient<Transport, Chain, Account> | undefined
   readonly _publicClient: PublicClient<Transport, Chain> | undefined
+  readonly _apiConfig:
+    | {
+        apiKey: string
+        serverURL?: string
+      }
+    | undefined
   readonly _includeEnsNames: boolean
   readonly _dataClient: DataClient | undefined
 
@@ -57,6 +63,7 @@ class BaseClient {
     this._chainId = chainId
     this._walletClient = walletClient
     this._includeEnsNames = includeEnsNames
+    this._apiConfig = apiConfig
 
     if (apiConfig) {
       this._dataClient = new DataClient({
