@@ -78,7 +78,7 @@ class BaseClient {
   protected _requireDataClient() {
     if (!this._dataClient)
       throw new MissingDataClientError(
-        'Data client required to perform this action, please update your call to the constructor',
+        'API config required to perform this action, please update your call to the constructor',
       )
   }
 
