@@ -561,26 +561,6 @@ export class DataClient {
     return await this.formatSplit(response)
   }
 
-  protected async formatSplit(gqlSplit: ISplit): Promise<Split> {
-    const split = protectedFormatSplit(gqlSplit)
-
-    if (this._includeEnsNames) {
-      if (!this._ensPublicClient) throw new Error()
-      const ensRecipients = split.recipients
-        .map((recipient) => {
-          return recipient.recipient
-        })
-        .concat(split.controller ? [split.controller] : [])
-        .concat(
-          split.newPotentialController ? [split.newPotentialController] : [],
-        )
-
-      await addEnsNames(this._ensPublicClient, ensRecipients)
-    }
-
-    return split
-  }
-
   async getAccountMetadata({
     chainId,
     accountAddress,
@@ -597,22 +577,6 @@ export class DataClient {
       throw new AccountNotFoundError('account', accountAddress, chainId)
 
     return await this._formatAccount(chainId, response)
-  }
-
-  // Helper functions
-  private async _formatAccount(
-    chainId: number,
-    gqlAccount: IAccountType,
-  ): Promise<SplitsContract | undefined> {
-    if (!gqlAccount) return
-
-    if (gqlAccount.type === 'split') return await this.formatSplit(gqlAccount)
-    else if (gqlAccount.type === 'waterfall')
-      return await this.formatWaterfallModule(chainId, gqlAccount)
-    else if (gqlAccount.type === 'liquidSplit')
-      return await this.formatLiquidSplit(gqlAccount)
-    else if (gqlAccount.type === 'swapper')
-      return await this.formatSwapper(gqlAccount)
   }
 
   // Graphql read actions
@@ -894,22 +858,6 @@ export class DataClient {
     return await this.formatLiquidSplit(response)
   }
 
-  async formatLiquidSplit(gqlLiquidSplit: ILiquidSplit): Promise<LiquidSplit> {
-    this._requirePublicClient()
-
-    const liquidSplit = protectedFormatLiquidSplit(gqlLiquidSplit)
-    if (this._includeEnsNames) {
-      await addEnsNames(
-        this._ensPublicClient!,
-        liquidSplit.holders.map((holder) => {
-          return holder.recipient
-        }),
-      )
-    }
-
-    return liquidSplit
-  }
-
   async getSwapperMetadata({
     chainId,
     swapperAddress,
@@ -925,20 +873,6 @@ export class DataClient {
       throw new AccountNotFoundError('swapper', swapperAddress, chainId)
 
     return await this.formatSwapper(response)
-  }
-
-  async formatSwapper(gqlSwapper: ISwapper): Promise<Swapper> {
-    const swapper = protectedFormatSwapper(gqlSwapper)
-    if (this._includeEnsNames) {
-      if (!this._ensPublicClient) throw new Error()
-
-      const ensRecipients = [swapper.beneficiary].concat(
-        swapper.owner ? [swapper.owner] : [],
-      )
-      await addEnsNames(this._ensPublicClient, ensRecipients)
-    }
-
-    return swapper
   }
 
   async getVestingMetadata({
@@ -962,7 +896,81 @@ export class DataClient {
     return await this.formatVestingModule(chainId, response)
   }
 
-  async formatVestingModule(
+  async getWaterfallMetadata({
+    chainId,
+    waterfallModuleAddress,
+  }: {
+    chainId: number
+    waterfallModuleAddress: string
+  }): Promise<WaterfallModule> {
+    validateAddress(waterfallModuleAddress)
+
+    const response = await this._loadAccount(waterfallModuleAddress, chainId)
+
+    if (!response || response.type != 'waterfall')
+      throw new AccountNotFoundError(
+        'waterfall module',
+        waterfallModuleAddress,
+        chainId,
+      )
+
+    return await this.formatWaterfallModule(chainId, response)
+  }
+
+  // Helper functions
+  private async _formatAccount(
+    chainId: number,
+    gqlAccount: IAccountType,
+  ): Promise<SplitsContract | undefined> {
+    if (!gqlAccount) return
+
+    if (gqlAccount.type === 'split') return await this.formatSplit(gqlAccount)
+    else if (gqlAccount.type === 'waterfall')
+      return await this.formatWaterfallModule(chainId, gqlAccount)
+    else if (gqlAccount.type === 'liquidSplit')
+      return await this.formatLiquidSplit(gqlAccount)
+    else if (gqlAccount.type === 'swapper')
+      return await this.formatSwapper(gqlAccount)
+  }
+
+  private async formatWaterfallModule(
+    chainId: number,
+    gqlWaterfallModule: IWaterfallModule,
+  ): Promise<WaterfallModule> {
+    this._requirePublicClient()
+    if (!this._publicClient) throw new Error()
+
+    const tokenData = await getTokenData(
+      chainId,
+      getAddress(gqlWaterfallModule.token),
+      this._publicClient,
+    )
+
+    const waterfallModule = protectedFormatWaterfallModule(
+      gqlWaterfallModule,
+      tokenData.symbol,
+      tokenData.decimals,
+    )
+    if (this._includeEnsNames) {
+      const ensRecipients = waterfallModule.tranches
+        .map((tranche) => {
+          return tranche.recipient
+        })
+        .concat(
+          waterfallModule.nonWaterfallRecipient
+            ? [waterfallModule.nonWaterfallRecipient]
+            : [],
+        )
+      await addEnsNames(
+        this._ensPublicClient ?? this._publicClient,
+        ensRecipients,
+      )
+    }
+
+    return waterfallModule
+  }
+
+  private async formatVestingModule(
     chainId: number,
     gqlVestingModule: IVestingModule,
   ): Promise<VestingModule> {
@@ -1001,61 +1009,55 @@ export class DataClient {
     return vestingModule
   }
 
-  async getWaterfallMetadata({
-    chainId,
-    waterfallModuleAddress,
-  }: {
-    chainId: number
-    waterfallModuleAddress: string
-  }): Promise<WaterfallModule> {
-    validateAddress(waterfallModuleAddress)
+  private async formatSwapper(gqlSwapper: ISwapper): Promise<Swapper> {
+    const swapper = protectedFormatSwapper(gqlSwapper)
+    if (this._includeEnsNames) {
+      if (!this._ensPublicClient) throw new Error()
 
-    const response = await this._loadAccount(waterfallModuleAddress, chainId)
-
-    if (!response || response.type != 'waterfall')
-      throw new AccountNotFoundError(
-        'waterfall module',
-        waterfallModuleAddress,
-        chainId,
+      const ensRecipients = [swapper.beneficiary].concat(
+        swapper.owner ? [swapper.owner] : [],
       )
+      await addEnsNames(this._ensPublicClient, ensRecipients)
+    }
 
-    return await this.formatWaterfallModule(chainId, response)
+    return swapper
   }
 
-  async formatWaterfallModule(
-    chainId: number,
-    gqlWaterfallModule: IWaterfallModule,
-  ): Promise<WaterfallModule> {
+  private async formatLiquidSplit(
+    gqlLiquidSplit: ILiquidSplit,
+  ): Promise<LiquidSplit> {
     this._requirePublicClient()
-    if (!this._publicClient) throw new Error()
 
-    const tokenData = await getTokenData(
-      chainId,
-      getAddress(gqlWaterfallModule.token),
-      this._publicClient,
-    )
-
-    const waterfallModule = protectedFormatWaterfallModule(
-      gqlWaterfallModule,
-      tokenData.symbol,
-      tokenData.decimals,
-    )
+    const liquidSplit = protectedFormatLiquidSplit(gqlLiquidSplit)
     if (this._includeEnsNames) {
-      const ensRecipients = waterfallModule.tranches
-        .map((tranche) => {
-          return tranche.recipient
-        })
-        .concat(
-          waterfallModule.nonWaterfallRecipient
-            ? [waterfallModule.nonWaterfallRecipient]
-            : [],
-        )
       await addEnsNames(
-        this._ensPublicClient ?? this._publicClient,
-        ensRecipients,
+        this._ensPublicClient!,
+        liquidSplit.holders.map((holder) => {
+          return holder.recipient
+        }),
       )
     }
 
-    return waterfallModule
+    return liquidSplit
+  }
+
+  private async formatSplit(gqlSplit: ISplit): Promise<Split> {
+    const split = protectedFormatSplit(gqlSplit)
+
+    if (this._includeEnsNames) {
+      if (!this._ensPublicClient) throw new Error()
+      const ensRecipients = split.recipients
+        .map((recipient) => {
+          return recipient.recipient
+        })
+        .concat(split.controller ? [split.controller] : [])
+        .concat(
+          split.newPotentialController ? [split.newPotentialController] : [],
+        )
+
+      await addEnsNames(this._ensPublicClient, ensRecipients)
+    }
+
+    return split
   }
 }
