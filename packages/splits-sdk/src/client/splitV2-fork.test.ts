@@ -111,7 +111,7 @@ describe('Split v2 writes', () => {
     const { splitAddress } = await client.createSplit({
       recipients: sampleRecipients,
       distributorFeePercent: 0,
-      controllerAddress: ALICE,
+      ownerAddress: ALICE,
     })
 
     return splitAddress
@@ -188,7 +188,7 @@ describe('Split v2 writes', () => {
       const { splitAddress, event } = await client.createSplit({
         recipients: sampleRecipients,
         distributorFeePercent: 6.5,
-        controllerAddress: ALICE,
+        ownerAddress: ALICE,
         creatorAddress: ALICE,
       })
 
@@ -220,7 +220,7 @@ describe('Split v2 writes', () => {
       const { splitAddress, event } = await client.createSplit({
         recipients: sampleRecipients,
         distributorFeePercent: 6.5,
-        controllerAddress: ALICE,
+        ownerAddress: ALICE,
         creatorAddress: ALICE,
         splitType: SplitV2Type.Push,
       })
@@ -253,7 +253,7 @@ describe('Split v2 writes', () => {
       const { splitAddress, event } = await client.createSplit({
         recipients: sampleRecipients,
         distributorFeePercent: 6.5,
-        controllerAddress: ALICE,
+        ownerAddress: ALICE,
         creatorAddress: ALICE,
         splitType: SplitV2Type.Push,
         salt: '0x0000000000000000000000000000000000000000000000000000000000000000',
@@ -289,7 +289,7 @@ describe('Split v2 writes', () => {
           await client.createSplit({
             recipients: sampleRecipients,
             distributorFeePercent: 7.5,
-            controllerAddress: ALICE,
+            ownerAddress: ALICE,
             creatorAddress: ALICE,
           }),
       ).rejects.toThrow(InvalidDistributorFeePercentErrorV2)
@@ -306,7 +306,7 @@ describe('Split v2 writes', () => {
           await client.createSplit({
             recipients: sampleRecipients,
             distributorFeePercent: 6.5,
-            controllerAddress: ALICE,
+            ownerAddress: ALICE,
             creatorAddress: ALICE,
           }),
       ).rejects.toThrow(InvalidTotalAllocation)
@@ -323,7 +323,7 @@ describe('Split v2 writes', () => {
           await client.createSplit({
             recipients: sampleRecipients,
             distributorFeePercent: 6.5,
-            controllerAddress: ALICE,
+            ownerAddress: ALICE,
             creatorAddress: ALICE,
             totalAllocationPercent: 50,
           }),
@@ -346,7 +346,7 @@ describe('Split v2 writes', () => {
         async () =>
           await badClient.transferOwnership({
             splitAddress: zeroAddress,
-            newController: zeroAddress,
+            newOwner: zeroAddress,
           }),
       ).rejects.toThrow(MissingPublicClientError)
     })
@@ -365,7 +365,7 @@ describe('Split v2 writes', () => {
         async () =>
           await badClient.transferOwnership({
             splitAddress: zeroAddress,
-            newController: zeroAddress,
+            newOwner: zeroAddress,
           }),
       ).rejects.toThrow(MissingWalletClientError)
     })
@@ -376,7 +376,7 @@ describe('Split v2 writes', () => {
 
       const { event } = await client.transferOwnership({
         splitAddress,
-        newController: zeroAddress,
+        newOwner: zeroAddress,
       })
 
       const decodedLog = decodeEventLog({
@@ -730,7 +730,7 @@ describe('Split v2 reads', () => {
     const { splitAddress } = await client.createSplit({
       recipients: sampleRecipients,
       distributorFeePercent: 0,
-      controllerAddress: ALICE,
+      ownerAddress: ALICE,
     })
 
     return splitAddress
@@ -768,7 +768,7 @@ describe('Split v2 reads', () => {
       await client.predictDeterministicAddress({
         recipients: sampleRecipients,
         distributorFeePercent: 6.5,
-        controllerAddress: ALICE,
+        ownerAddress: ALICE,
         creatorAddress: ALICE,
       })
     })
@@ -780,7 +780,7 @@ describe('Split v2 reads', () => {
       await client.predictDeterministicAddress({
         recipients: sampleRecipients,
         distributorFeePercent: 6.5,
-        controllerAddress: ALICE,
+        ownerAddress: ALICE,
         creatorAddress: ALICE,
         splitType: SplitV2Type.Push,
         salt: '0x0000000000000000000000000000000000000000000000000000000000000000',
@@ -796,7 +796,7 @@ describe('Split v2 reads', () => {
           await client.predictDeterministicAddress({
             recipients: sampleRecipients,
             distributorFeePercent: 7.5,
-            controllerAddress: ALICE,
+            ownerAddress: ALICE,
             creatorAddress: ALICE,
           }),
       ).rejects.toThrow(InvalidDistributorFeePercentErrorV2)
@@ -813,7 +813,7 @@ describe('Split v2 reads', () => {
           await client.predictDeterministicAddress({
             recipients: sampleRecipients,
             distributorFeePercent: 6.5,
-            controllerAddress: ALICE,
+            ownerAddress: ALICE,
             creatorAddress: ALICE,
           }),
       ).rejects.toThrow(InvalidTotalAllocation)
@@ -830,7 +830,7 @@ describe('Split v2 reads', () => {
           await client.predictDeterministicAddress({
             recipients: sampleRecipients,
             distributorFeePercent: 6.5,
-            controllerAddress: ALICE,
+            ownerAddress: ALICE,
             creatorAddress: ALICE,
             totalAllocationPercent: 50,
           }),
@@ -873,7 +873,7 @@ describe('Split v2 reads', () => {
       const { deployed } = await client.isDeployed({
         recipients: sampleRecipients,
         distributorFeePercent: 6.5,
-        controllerAddress: ALICE,
+        ownerAddress: ALICE,
         creatorAddress: ALICE,
         splitType: SplitV2Type.Push,
         salt: '0x0000000000000000000000000000000000000000000000000000000000000000',
@@ -891,7 +891,7 @@ describe('Split v2 reads', () => {
           await client.isDeployed({
             recipients: sampleRecipients,
             distributorFeePercent: 7.5,
-            controllerAddress: ALICE,
+            ownerAddress: ALICE,
             creatorAddress: ALICE,
             salt: '0x0000000000000000000000000000000000000000000000000000000000000000',
           }),
@@ -909,7 +909,7 @@ describe('Split v2 reads', () => {
           await client.isDeployed({
             recipients: sampleRecipients,
             distributorFeePercent: 6.5,
-            controllerAddress: ALICE,
+            ownerAddress: ALICE,
             creatorAddress: ALICE,
             salt: '0x0000000000000000000000000000000000000000000000000000000000000000',
           }),
@@ -927,7 +927,7 @@ describe('Split v2 reads', () => {
           await client.isDeployed({
             recipients: sampleRecipients,
             distributorFeePercent: 6.5,
-            controllerAddress: ALICE,
+            ownerAddress: ALICE,
             creatorAddress: ALICE,
             totalAllocationPercent: 50,
             salt: '0x0000000000000000000000000000000000000000000000000000000000000000',
@@ -997,7 +997,7 @@ describe('Split v2 reads', () => {
       })
 
       await expect(
-        async () => await badClient.controller({ splitAddress: zeroAddress }),
+        async () => await badClient.owner({ splitAddress: zeroAddress }),
       ).rejects.toThrow(MissingPublicClientError)
     })
 
@@ -1007,9 +1007,9 @@ describe('Split v2 reads', () => {
 
       const splitAddress = await createDefaultSplitWithOwner()
 
-      const { controllerAddress } = await client.controller({ splitAddress })
+      const { ownerAddress } = await client.owner({ splitAddress })
 
-      expect(controllerAddress).toEqual(ALICE)
+      expect(ownerAddress).toEqual(ALICE)
     })
   })
 })

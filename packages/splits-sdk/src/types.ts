@@ -274,7 +274,7 @@ export type CreateSplitV2Config = {
   distributorFeePercent: number
   totalAllocationPercent?: number
   splitType?: SplitV2Type
-  controllerAddress?: Address
+  ownerAddress?: Address
   creatorAddress?: Address
   salt?: Hex
 } & TransactionOverridesDict
@@ -294,7 +294,7 @@ export type DistributeSplitConfig = {
 
 export type TransferOwnershipConfig = {
   splitAddress: Address
-  newController: Address
+  newOwner: Address
 } & TransactionOverridesDict
 
 export type SetPausedConfig = {

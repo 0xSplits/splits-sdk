@@ -88,7 +88,7 @@ class SplitV2Transactions extends BaseTransactions {
     distributorFeePercent,
     totalAllocationPercent,
     splitType = SplitV2Type.Pull,
-    controllerAddress = zeroAddress,
+    ownerAddress: controllerAddress = zeroAddress,
     creatorAddress = zeroAddress,
     salt,
     transactionOverrides = {},
@@ -135,7 +135,7 @@ class SplitV2Transactions extends BaseTransactions {
 
   protected async _transferOwnership({
     splitAddress,
-    newController,
+    newOwner: newController,
     transactionOverrides = {},
   }: TransferOwnershipConfig): Promise<TransactionFormat> {
     validateAddress(splitAddress)
@@ -744,8 +744,8 @@ export class SplitV2Client extends SplitV2Transactions {
   ): Promise<{
     splitAddress: Address
   }> {
-    if (!createSplitArgs.controllerAddress)
-      createSplitArgs.controllerAddress = zeroAddress
+    if (!createSplitArgs.ownerAddress)
+      createSplitArgs.ownerAddress = zeroAddress
     if (!createSplitArgs.creatorAddress)
       createSplitArgs.creatorAddress = zeroAddress
 
@@ -760,7 +760,7 @@ export class SplitV2Client extends SplitV2Transactions {
       createSplitArgs.totalAllocationPercent,
     )
 
-    validateAddress(createSplitArgs.controllerAddress)
+    validateAddress(createSplitArgs.ownerAddress)
     validateAddress(createSplitArgs.creatorAddress)
     recipientAddresses.map((recipient) => validateAddress(recipient))
 
@@ -779,7 +779,7 @@ export class SplitV2Client extends SplitV2Transactions {
           totalAllocation,
           distributionIncentive,
         },
-        createSplitArgs.controllerAddress,
+        createSplitArgs.ownerAddress,
         createSplitArgs.salt,
       ])
     } else {
@@ -792,7 +792,7 @@ export class SplitV2Client extends SplitV2Transactions {
             createSplitArgs.distributorFeePercent,
           ),
         },
-        createSplitArgs.controllerAddress,
+        createSplitArgs.ownerAddress,
       ])
     }
 
@@ -805,8 +805,8 @@ export class SplitV2Client extends SplitV2Transactions {
     splitAddress: Address
     deployed: boolean
   }> {
-    if (!createSplitArgs.controllerAddress)
-      createSplitArgs.controllerAddress = zeroAddress
+    if (!createSplitArgs.ownerAddress)
+      createSplitArgs.ownerAddress = zeroAddress
     if (!createSplitArgs.creatorAddress)
       createSplitArgs.creatorAddress = zeroAddress
 
@@ -821,7 +821,7 @@ export class SplitV2Client extends SplitV2Transactions {
       createSplitArgs.totalAllocationPercent,
     )
 
-    validateAddress(createSplitArgs.controllerAddress)
+    validateAddress(createSplitArgs.ownerAddress)
     recipientAddresses.map((recipient) => validateAddress(recipient))
     this._requirePublicClient()
 
@@ -837,7 +837,7 @@ export class SplitV2Client extends SplitV2Transactions {
         totalAllocation: totalAllocation,
         distributionIncentive,
       },
-      createSplitArgs.controllerAddress,
+      createSplitArgs.ownerAddress,
       createSplitArgs.salt,
     ])
 
@@ -928,11 +928,11 @@ export class SplitV2Client extends SplitV2Transactions {
     return { paused }
   }
 
-  async controller({ splitAddress }: { splitAddress: Address }): Promise<{
-    controllerAddress: Address
+  async owner({ splitAddress }: { splitAddress: Address }): Promise<{
+    ownerAddress: Address
   }> {
-    const controllerAddress = await this._owner(splitAddress)
-    return { controllerAddress }
+    const ownerAddress = await this._owner(splitAddress)
+    return { ownerAddress }
   }
 }
 
