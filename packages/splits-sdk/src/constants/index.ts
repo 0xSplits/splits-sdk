@@ -204,6 +204,8 @@ export const SPLITS_V2_SUPPORTED_CHAIN_IDS = [
   ChainId.ZORA_SEPOLIA,
   ChainId.OPTIMISM_SEPOLIA,
   ChainId.FOUNDRY,
+  ChainId.GNOSIS,
+  ChainId.BSC,
 ]
 
 export const SPLITS_SUBGRAPH_CHAIN_IDS = ALL_CHAIN_IDS.slice()
