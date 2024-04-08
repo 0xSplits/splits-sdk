@@ -23,6 +23,7 @@ import {
 import { splitV2ABI } from '../constants/abi/splitV2'
 import { splitV2FactoryABI } from '../constants/abi/splitV2Factory'
 import {
+  InvalidAuthError,
   SaltRequired,
   TransactionFailedError,
   UnsupportedChainIdError,
@@ -142,6 +143,7 @@ class SplitV2Transactions extends BaseTransactions {
 
     this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
+    await this._requireOwner(splitAddress)
 
     return this._executeContractFunction({
       contractAddress: splitAddress,
@@ -161,6 +163,7 @@ class SplitV2Transactions extends BaseTransactions {
 
     this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
+    await this._requireOwner(splitAddress)
 
     return this._executeContractFunction({
       contractAddress: splitAddress,
@@ -181,6 +184,7 @@ class SplitV2Transactions extends BaseTransactions {
 
     this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
+    this._requireOwner(splitAddress)
 
     return this._executeContractFunction({
       contractAddress: splitAddress,
@@ -214,6 +218,7 @@ class SplitV2Transactions extends BaseTransactions {
 
     this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
+    this._requireOwner(splitAddress)
 
     return this._executeContractFunction({
       contractAddress: splitAddress,
@@ -427,6 +432,17 @@ class SplitV2Transactions extends BaseTransactions {
         salt: eip712Domain[5],
       },
     }
+  }
+
+  protected async _requireOwner(splitAddress: Address) {
+    const ownerAddress = await this._owner(splitAddress)
+
+    const walletAddress = this._walletClient!.account.address
+
+    if (ownerAddress.toLowerCase() !== walletAddress.toLowerCase())
+      throw new InvalidAuthError(
+        `Action only available to the split controller. Split id: ${splitAddress}, split controller: ${ownerAddress}, wallet address: ${walletAddress}`,
+      )
   }
 }
 
