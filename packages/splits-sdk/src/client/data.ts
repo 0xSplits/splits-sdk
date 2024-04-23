@@ -86,6 +86,8 @@ import {
   isLogsPublicClient,
   validateAddress,
 } from '../utils'
+import { mergeWith } from 'lodash'
+import { ZERO } from '../constants'
 
 export class DataClient {
   readonly _ensPublicClient: PublicClient<Transport, Chain> | undefined
@@ -344,12 +346,20 @@ export class DataClient {
     }
 
     const internalBalances = formatAccountBalances(response.balances)
+    const warehouseBalances = formatAccountBalances(response.warehouseBalances)
     if (response.type === 'user') {
       // Only including split main balance for users
       return {
         withdrawn,
         distributed,
-        activeBalances: internalBalances,
+        activeBalances: mergeWith(
+          {},
+          internalBalances,
+          warehouseBalances,
+          (a: bigint, b: bigint) => {
+            return (a || ZERO) + (b || ZERO)
+          },
+        ),
       }
     }
 
