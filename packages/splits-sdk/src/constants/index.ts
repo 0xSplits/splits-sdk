@@ -42,14 +42,18 @@ const LIQUID_SPLIT_FACTORY_ADDRESS_HOLESKY =
   '0xAbA0E852f1EB10196b55f877903A87a2588b7aa8'
 const RECOUP_ADDRESS_HOLESKY = '0xcFba37C5Ee4d80c286593342470EB881deb9799e'
 
-const RECOUP_ADDRESS_SEPOLIA = '0xCA64fab630cDB098e5a5d393058aa27163a14293'
+const RECOUP_ADDRESS_SEPOLIA = '0x8Cbb4e187ce8A29BACC13Fd999a107f3c4b46D3B'
 const DIVERSIFIER_FACTORY_ADDRESS_SEPOLIA =
-  '0x15Cb41615d210f4c4E597BeCEcB8Ee9410B9837F'
+  '0x0eAeAfD1c82563B6005c7D09031462D9FF68Adab'
+const LIQUID_SPLIT_FACTORY_ADDRESS_SEPOLIA =
+  '0xb3Af150A5902e06373A2D3f177d85435A48c6b33'
+const SPLIT_MAIN_ADDRESS_SEPOLIA = '0x54E4a6014D36c381fC43b7E24A1492F556139a6F'
 
 export const getSplitMainAddress = (chainId: number): Address => {
   if (chainId === ChainId.BSC || chainId === ChainId.SEPOLIA)
     return SPLIT_MAIN_ADDRESS_BSC
   if (chainId === ChainId.HOLESKY) return SPLIT_MAIN_ADDRESS_HOLESKY
+  if (chainId == ChainId.SEPOLIA) return SPLIT_MAIN_ADDRESS_SEPOLIA
   return SPLIT_MAIN_ADDRESS
 }
 
@@ -66,6 +70,7 @@ export const getWaterfallFactoryAddress = (chainId: number): Address => {
 export const getLiquidSplitFactoryAddress = (chainId: number): Address => {
   if (chainId === ChainId.BSC) return LIQUID_SPLIT_FACTORY_ADDRESS_BSC
   if (chainId === ChainId.HOLESKY) return LIQUID_SPLIT_FACTORY_ADDRESS_HOLESKY
+  if (chainId === ChainId.SEPOLIA) return LIQUID_SPLIT_FACTORY_ADDRESS_SEPOLIA
   return LIQUID_SPLIT_FACTORY_ADDRESS
 }
 
@@ -98,7 +103,7 @@ export const getDiversifierFactoryAddress = (chainId: number): Address => {
   return DIVERSIFIER_FACTORY_ADDRESS
 }
 
-enum ChainId {
+export enum ChainId {
   MAINNET = 1,
   GOERLI = 5,
   SEPOLIA = 11155111,
