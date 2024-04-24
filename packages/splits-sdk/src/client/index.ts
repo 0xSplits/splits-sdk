@@ -49,6 +49,7 @@ import {
   PASS_THROUGH_WALLET_CHAIN_IDS,
   BASE_CHAIN_IDS,
   ADDRESS_ZERO,
+  ChainId,
 } from '../constants'
 import {
   splitMainEthereumAbi,
@@ -114,6 +115,8 @@ const polygonAbiChainIds = [
   ...AURORA_CHAIN_IDS,
   ...ZORA_CHAIN_IDS,
   ...BASE_CHAIN_IDS,
+  ChainId.SEPOLIA,
+  ChainId.HOLESKY,
 ]
 
 type SplitMainEthereumAbiType = typeof splitMainEthereumAbi
