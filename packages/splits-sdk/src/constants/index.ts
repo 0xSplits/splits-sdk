@@ -50,10 +50,9 @@ const LIQUID_SPLIT_FACTORY_ADDRESS_SEPOLIA =
 const SPLIT_MAIN_ADDRESS_SEPOLIA = '0x54E4a6014D36c381fC43b7E24A1492F556139a6F'
 
 export const getSplitMainAddress = (chainId: number): Address => {
-  if (chainId === ChainId.BSC || chainId === ChainId.SEPOLIA)
-    return SPLIT_MAIN_ADDRESS_BSC
+  if (chainId === ChainId.BSC) return SPLIT_MAIN_ADDRESS_BSC
   if (chainId === ChainId.HOLESKY) return SPLIT_MAIN_ADDRESS_HOLESKY
-  if (chainId == ChainId.SEPOLIA) return SPLIT_MAIN_ADDRESS_SEPOLIA
+  if (chainId === ChainId.SEPOLIA) return SPLIT_MAIN_ADDRESS_SEPOLIA
   return SPLIT_MAIN_ADDRESS
 }
 
