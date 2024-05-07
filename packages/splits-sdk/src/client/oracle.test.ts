@@ -41,7 +41,6 @@ describe('Client config validation', () => {
 
   test('Ethereum chain ids pass', () => {
     expect(() => new OracleClient({ chainId: 1 })).not.toThrow()
-    expect(() => new OracleClient({ chainId: 5 })).not.toThrow()
   })
 
   test('Polygon chain id pass', () => {

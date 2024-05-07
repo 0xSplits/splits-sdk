@@ -103,27 +103,22 @@ describe('Client config validation', () => {
 
   test('Ethereum chain ids pass', () => {
     expect(() => new VestingClient({ chainId: 1 })).not.toThrow()
-    expect(() => new VestingClient({ chainId: 5 })).not.toThrow()
   })
 
   test('Polygon chain ids pass', () => {
     expect(() => new VestingClient({ chainId: 137 })).not.toThrow()
-    expect(() => new VestingClient({ chainId: 80001 })).not.toThrow()
   })
 
   test('Optimism chain ids pass', () => {
     expect(() => new VestingClient({ chainId: 10 })).not.toThrow()
-    expect(() => new VestingClient({ chainId: 420 })).not.toThrow()
   })
 
   test('Arbitrum chain ids pass', () => {
     expect(() => new VestingClient({ chainId: 42161 })).not.toThrow()
-    expect(() => new VestingClient({ chainId: 421613 })).not.toThrow()
   })
 
   test('Zora chain ids pass', () => {
     expect(() => new VestingClient({ chainId: 7777777 })).not.toThrow()
-    expect(() => new VestingClient({ chainId: 999 })).not.toThrow()
   })
 
   test('Base chain ids pass', () => {
@@ -132,10 +127,7 @@ describe('Client config validation', () => {
 
   test('Other chain ids pass', () => {
     expect(() => new VestingClient({ chainId: 100 })).not.toThrow()
-    expect(() => new VestingClient({ chainId: 250 })).not.toThrow()
-    expect(() => new VestingClient({ chainId: 43114 })).not.toThrow()
     expect(() => new VestingClient({ chainId: 56 })).not.toThrow()
-    expect(() => new VestingClient({ chainId: 1313161554 })).not.toThrow()
   })
 })
 

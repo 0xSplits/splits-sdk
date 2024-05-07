@@ -134,10 +134,7 @@ export enum ChainId {
   OPTIMISM_SEPOLIA = 11155420,
   ARBITRUM = 42161,
   GNOSIS = 100,
-  FANTOM = 250,
-  AVALANCHE = 43114,
   BSC = 56,
-  AURORA = 1313161554,
   ZORA = 7777777,
   ZORA_SEPOLIA = 999999999,
   BASE = 8453,
@@ -149,13 +146,10 @@ export enum ChainId {
 export const ETHEREUM_CHAIN_IDS = [ChainId.MAINNET]
 export const ETHEREUM_TEST_CHAIN_IDS = [ChainId.SEPOLIA, ChainId.HOLESKY]
 export const POLYGON_CHAIN_IDS = [ChainId.POLYGON]
-export const OPTIMISM_CHAIN_IDS = [ChainId.OPTIMISM]
+export const OPTIMISM_CHAIN_IDS = [ChainId.OPTIMISM, ChainId.OPTIMISM_SEPOLIA]
 export const ARBITRUM_CHAIN_IDS = [ChainId.ARBITRUM]
 export const GNOSIS_CHAIN_IDS = [ChainId.GNOSIS]
-export const FANTOM_CHAIN_IDS = [ChainId.FANTOM]
-export const AVALANCHE_CHAIN_IDS = [ChainId.AVALANCHE]
 export const BSC_CHAIN_IDS = [ChainId.BSC]
-export const AURORA_CHAIN_IDS = [ChainId.AURORA]
 export const ZORA_CHAIN_IDS = [ChainId.ZORA, ChainId.ZORA_SEPOLIA]
 export const BASE_CHAIN_IDS = [ChainId.BASE, ChainId.BASE_SEPOLIA]
 export const BLAST_CHAIN_IDS = [ChainId.BLAST]
@@ -167,10 +161,7 @@ const ALL_CHAIN_IDS = [
   ...OPTIMISM_CHAIN_IDS,
   ...ARBITRUM_CHAIN_IDS,
   ...GNOSIS_CHAIN_IDS,
-  ...FANTOM_CHAIN_IDS,
-  ...AVALANCHE_CHAIN_IDS,
   ...BSC_CHAIN_IDS,
-  ...AURORA_CHAIN_IDS,
   ...ZORA_CHAIN_IDS,
   ...BASE_CHAIN_IDS,
   ...BLAST_CHAIN_IDS,
@@ -295,30 +286,12 @@ export const CHAIN_INFO: {
     },
     startBlockV2: 33277147,
   },
-  [ChainId.FANTOM]: {
-    startBlock: 53993922,
-    nativeCurrency: {
-      symbol: 'FTM',
-    },
-  },
-  [ChainId.AVALANCHE]: {
-    startBlock: 25125818,
-    nativeCurrency: {
-      symbol: 'AVAX',
-    },
-  },
   [ChainId.BSC]: {
     startBlock: 24962607,
     nativeCurrency: {
       symbol: 'BNB',
     },
     startBlockV2: 37570236,
-  },
-  [ChainId.AURORA]: {
-    startBlock: 83401794,
-    nativeCurrency: {
-      symbol: 'ETH',
-    },
   },
   [ChainId.ZORA]: {
     startBlock: 1860322,

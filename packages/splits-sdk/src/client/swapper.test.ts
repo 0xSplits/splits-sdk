@@ -137,31 +137,22 @@ describe('Client config validation', () => {
 
   test('Ethereum chain ids pass', () => {
     expect(() => new SwapperClient({ chainId: 1 })).not.toThrow()
-    expect(() => new SwapperClient({ chainId: 5 })).not.toThrow()
   })
 
   test('Polygon chain id pass', () => {
     expect(() => new SwapperClient({ chainId: 137 })).not.toThrow()
   })
-  test('Mumbai chain id fail', () => {
-    expect(() => new SwapperClient({ chainId: 80001 })).toThrow()
-  })
 
   test('Optimism chain id pass', () => {
     expect(() => new SwapperClient({ chainId: 10 })).not.toThrow()
   })
-  test('Optimism goerli chain id fail', () => {
-    expect(() => new SwapperClient({ chainId: 420 })).toThrow()
-  })
 
   test('Arbitrum chain ids pass (test chain fails)', () => {
     expect(() => new SwapperClient({ chainId: 42161 })).not.toThrow()
-    expect(() => new SwapperClient({ chainId: 421613 })).toThrow()
   })
 
   test('Zora chain ids fail', () => {
     expect(() => new SwapperClient({ chainId: 7777777 })).toThrow()
-    expect(() => new SwapperClient({ chainId: 999 })).toThrow()
   })
 
   test('Base chain ids pass', () => {
@@ -170,10 +161,7 @@ describe('Client config validation', () => {
 
   test('Other chain ids fail', () => {
     expect(() => new SwapperClient({ chainId: 100 })).toThrow()
-    expect(() => new SwapperClient({ chainId: 250 })).toThrow()
-    expect(() => new SwapperClient({ chainId: 43114 })).toThrow()
     expect(() => new SwapperClient({ chainId: 56 })).toThrow()
-    expect(() => new SwapperClient({ chainId: 1313161554 })).toThrow()
   })
 })
 
