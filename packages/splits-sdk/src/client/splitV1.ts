@@ -16,12 +16,9 @@ import {
 
 import {
   ARBITRUM_CHAIN_IDS,
-  AURORA_CHAIN_IDS,
-  AVALANCHE_CHAIN_IDS,
   BASE_CHAIN_IDS,
   BSC_CHAIN_IDS,
   ETHEREUM_CHAIN_IDS,
-  FANTOM_CHAIN_IDS,
   GNOSIS_CHAIN_IDS,
   OPTIMISM_CHAIN_IDS,
   POLYGON_CHAIN_IDS,
@@ -77,10 +74,7 @@ const polygonAbiChainIds = [
   ...OPTIMISM_CHAIN_IDS,
   ...ARBITRUM_CHAIN_IDS,
   ...GNOSIS_CHAIN_IDS,
-  ...FANTOM_CHAIN_IDS,
-  ...AVALANCHE_CHAIN_IDS,
   ...BSC_CHAIN_IDS,
-  ...AURORA_CHAIN_IDS,
   ...ZORA_CHAIN_IDS,
   ...BASE_CHAIN_IDS,
 ]
@@ -670,15 +664,28 @@ export class SplitV1Client extends SplitV1Transactions {
     })
     const event = events.length > 0 ? events[0] : undefined
     if (event) {
-      const log = decodeEventLog({
-        abi: this._splitMainAbi,
-        data: event.data,
-        topics: event.topics,
-      })
-      if (log.eventName !== 'CreateSplit') throw new Error()
-      return {
-        splitAddress: log.args.split,
-        event,
+      if (ETHEREUM_CHAIN_IDS.includes(this._chainId)) {
+        const log = decodeEventLog({
+          abi: splitMainEthereumAbi,
+          data: event.data,
+          topics: event.topics,
+        })
+        if (log.eventName !== 'CreateSplit') throw new Error()
+        return {
+          splitAddress: log.args.split,
+          event,
+        }
+      } else {
+        const log = decodeEventLog({
+          abi: splitMainPolygonAbi,
+          data: event.data,
+          topics: event.topics,
+        })
+        if (log.eventName !== 'CreateSplit') throw new Error()
+        return {
+          splitAddress: log.args.split,
+          event,
+        }
       }
     }
 
