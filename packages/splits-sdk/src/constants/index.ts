@@ -242,23 +242,18 @@ export const LIQUID_SPLIT_URI_BASE_64_HEADER = 'data:application/json;base64,'
 export const CHAIN_INFO: {
   [chainId: number]: {
     startBlock: number
-    gqlEndpoint?: string
     nativeCurrency: { symbol: string }
     startBlockV2?: number
   }
 } = {
   [ChainId.MAINNET]: {
     startBlock: 14206768,
-    gqlEndpoint:
-      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-ethereum',
     nativeCurrency: {
       symbol: 'ETH',
     },
   },
   [ChainId.SEPOLIA]: {
     startBlock: 4836125,
-    gqlEndpoint:
-      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-sepolia',
     nativeCurrency: {
       symbol: 'ETH',
     },
@@ -266,8 +261,6 @@ export const CHAIN_INFO: {
   },
   [ChainId.HOLESKY]: {
     startBlock: 148241,
-    gqlEndpoint:
-      'https://api.studio.thegraph.com/query/63614/splits-subgraph-holesky/version/latest',
     nativeCurrency: {
       symbol: 'ETH',
     },
@@ -275,8 +268,6 @@ export const CHAIN_INFO: {
   },
   [ChainId.POLYGON]: {
     startBlock: 25303316,
-    gqlEndpoint:
-      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-polygon',
     nativeCurrency: {
       symbol: 'MATIC',
     },
@@ -284,8 +275,6 @@ export const CHAIN_INFO: {
   },
   [ChainId.OPTIMISM]: {
     startBlock: 24704537,
-    gqlEndpoint:
-      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-optimism',
     nativeCurrency: {
       symbol: 'ETH',
     },
@@ -293,8 +282,6 @@ export const CHAIN_INFO: {
   },
   [ChainId.ARBITRUM]: {
     startBlock: 26082503,
-    gqlEndpoint:
-      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-arbitrum',
     nativeCurrency: {
       symbol: 'ETH',
     },
@@ -302,48 +289,36 @@ export const CHAIN_INFO: {
   },
   [ChainId.GNOSIS]: {
     startBlock: 26014830,
-    gqlEndpoint:
-      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-gnosis',
     nativeCurrency: {
       symbol: 'xDai',
     },
   },
   [ChainId.FANTOM]: {
     startBlock: 53993922,
-    gqlEndpoint:
-      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-fantom',
     nativeCurrency: {
       symbol: 'FTM',
     },
   },
   [ChainId.AVALANCHE]: {
     startBlock: 25125818,
-    gqlEndpoint:
-      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-avalanche',
     nativeCurrency: {
       symbol: 'AVAX',
     },
   },
   [ChainId.BSC]: {
     startBlock: 24962607,
-    gqlEndpoint:
-      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-bsc',
     nativeCurrency: {
       symbol: 'BNB',
     },
   },
   [ChainId.AURORA]: {
     startBlock: 83401794,
-    gqlEndpoint:
-      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-aurora',
     nativeCurrency: {
       symbol: 'ETH',
     },
   },
   [ChainId.ZORA]: {
     startBlock: 1860322,
-    gqlEndpoint:
-      'https://api.goldsky.com/api/public/project_clhk16b61ay9t49vm6ntn4mkz/subgraphs/splits-zora-mainnet/stable/gn',
     nativeCurrency: {
       symbol: 'ETH',
     },
@@ -351,8 +326,6 @@ export const CHAIN_INFO: {
   },
   [ChainId.ZORA_SEPOLIA]: {
     startBlock: 2296044,
-    gqlEndpoint:
-      'https://api.goldsky.com/api/public/project_clhk16b61ay9t49vm6ntn4mkz/subgraphs/splits-zora-sepolia/stable/gn',
     nativeCurrency: {
       symbol: 'ETH',
     },
@@ -360,8 +333,6 @@ export const CHAIN_INFO: {
   },
   [ChainId.BASE]: {
     startBlock: 2293907,
-    gqlEndpoint:
-      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-base',
     nativeCurrency: {
       symbol: 'ETH',
     },
@@ -369,8 +340,6 @@ export const CHAIN_INFO: {
   },
   [ChainId.BASE_SEPOLIA]: {
     startBlock: 3324413,
-    gqlEndpoint:
-      'https://api.studio.thegraph.com/query/63614/splits-subgraph-base-sepolia/version/latest',
     nativeCurrency: {
       symbol: 'ETH',
     },
