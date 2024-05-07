@@ -1,15 +1,7 @@
 import { Chain, PublicClient, Transport, zeroAddress } from 'viem'
 
 import { getTokenData } from './tokens'
-import {
-  avalanche,
-  base,
-  bsc,
-  fantom,
-  gnosis,
-  mainnet,
-  polygon,
-} from 'viem/chains'
+import { base, bsc, gnosis, mainnet, polygon } from 'viem/chains'
 
 const mockPublicClient = jest.fn() as unknown as PublicClient<Transport, Chain>
 
@@ -31,14 +23,6 @@ describe('Token data validatoin', () => {
       )
       expect(symbol).toEqual('xDai')
     })
-    test('Avalanche', async () => {
-      const { symbol } = await getTokenData(
-        avalanche.id,
-        zeroAddress,
-        mockPublicClient,
-      )
-      expect(symbol).toEqual('AVAX')
-    })
     test('Bsc', async () => {
       const { symbol } = await getTokenData(
         bsc.id,
@@ -46,14 +30,6 @@ describe('Token data validatoin', () => {
         mockPublicClient,
       )
       expect(symbol).toEqual('BNB')
-    })
-    test('Fantom', async () => {
-      const { symbol } = await getTokenData(
-        fantom.id,
-        zeroAddress,
-        mockPublicClient,
-      )
-      expect(symbol).toEqual('FTM')
     })
     test('Mainnet', async () => {
       const { symbol } = await getTokenData(

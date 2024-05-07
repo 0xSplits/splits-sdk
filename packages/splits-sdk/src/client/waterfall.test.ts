@@ -112,27 +112,22 @@ describe('Client config validation', () => {
 
   test('Ethereum chain ids pass', () => {
     expect(() => new WaterfallClient({ chainId: 1 })).not.toThrow()
-    expect(() => new WaterfallClient({ chainId: 5 })).not.toThrow()
   })
 
   test('Polygon chain ids pass', () => {
     expect(() => new WaterfallClient({ chainId: 137 })).not.toThrow()
-    expect(() => new WaterfallClient({ chainId: 80001 })).not.toThrow()
   })
 
   test('Optimism chain ids pass', () => {
     expect(() => new WaterfallClient({ chainId: 10 })).not.toThrow()
-    expect(() => new WaterfallClient({ chainId: 420 })).not.toThrow()
   })
 
   test('Arbitrum chain ids pass', () => {
     expect(() => new WaterfallClient({ chainId: 42161 })).not.toThrow()
-    expect(() => new WaterfallClient({ chainId: 421613 })).not.toThrow()
   })
 
   test('Zora chain ids pass', () => {
     expect(() => new WaterfallClient({ chainId: 7777777 })).not.toThrow()
-    expect(() => new WaterfallClient({ chainId: 999 })).not.toThrow()
   })
 
   test('Base chain ids pass', () => {
@@ -141,10 +136,7 @@ describe('Client config validation', () => {
 
   test('Other chain ids pass', () => {
     expect(() => new WaterfallClient({ chainId: 100 })).not.toThrow()
-    expect(() => new WaterfallClient({ chainId: 250 })).not.toThrow()
-    expect(() => new WaterfallClient({ chainId: 43114 })).not.toThrow()
     expect(() => new WaterfallClient({ chainId: 56 })).not.toThrow()
-    expect(() => new WaterfallClient({ chainId: 1313161554 })).not.toThrow()
   })
 })
 
