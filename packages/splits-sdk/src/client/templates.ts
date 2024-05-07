@@ -6,6 +6,7 @@ import {
   decodeEventLog,
   encodeEventTopics,
   getAddress,
+  zeroAddress,
 } from 'viem'
 
 import {
@@ -19,7 +20,6 @@ import {
   TEMPLATES_CHAIN_IDS,
   getDiversifierFactoryAddress,
   DIVERSIFIER_CHAIN_IDS,
-  ADDRESS_ZERO,
 } from '../constants'
 import { recoupFactoryAbi } from '../constants/abi/recoupFactory'
 import { diversifierFactoryAbi } from '../constants/abi/diversifierFactory'
@@ -53,6 +53,7 @@ class TemplatesTransactions extends BaseTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
@@ -61,6 +62,7 @@ class TemplatesTransactions extends BaseTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }
@@ -68,7 +70,7 @@ class TemplatesTransactions extends BaseTransactions {
   protected async _createRecoupTransaction({
     token,
     tranches,
-    nonWaterfallRecipientAddress = ADDRESS_ZERO,
+    nonWaterfallRecipientAddress = zeroAddress,
     nonWaterfallRecipientTrancheIndex = undefined,
     transactionOverrides = {},
   }: CreateRecoupConfig): Promise<TransactionFormat> {
@@ -83,7 +85,7 @@ class TemplatesTransactions extends BaseTransactions {
 
     this._requirePublicClient()
     if (!this._publicClient) throw new Error('Public client required')
-    if (this._shouldRequreWalletClient) this._requireWalletClient()
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const [recoupTranches, trancheSizes] = await getRecoupTranchesAndSizes(
       this._chainId,
@@ -130,7 +132,7 @@ class TemplatesTransactions extends BaseTransactions {
 
     this._requirePublicClient()
     if (!this._publicClient) throw new Error('Public client required')
-    if (this._shouldRequreWalletClient) this._requireWalletClient()
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const diversifierRecipients = getDiversifierRecipients(recipients)
     const formattedOracleParams = getFormattedOracleParams(oracleParams)
@@ -160,6 +162,7 @@ export class TemplatesClient extends TemplatesTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -168,6 +171,7 @@ export class TemplatesClient extends TemplatesTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
 
@@ -195,6 +199,7 @@ export class TemplatesClient extends TemplatesTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
     this.estimateGas = new TemplatesGasEstimates({
@@ -202,6 +207,7 @@ export class TemplatesClient extends TemplatesTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }
@@ -306,6 +312,7 @@ class TemplatesGasEstimates extends TemplatesTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -314,6 +321,7 @@ class TemplatesGasEstimates extends TemplatesTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }
@@ -347,6 +355,7 @@ class TemplatesCallData extends TemplatesTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -355,6 +364,7 @@ class TemplatesCallData extends TemplatesTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }

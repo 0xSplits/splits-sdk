@@ -2,12 +2,7 @@
   "compilerOptions": {
     "target": "es5",
     "module": "commonjs",
-    "lib": [
-      "DOM",
-      "DOM.Iterable",
-      "ES2016",
-      "ES2020"
-    ],
+    "lib": ["DOM", "DOM.Iterable", "ES2016", "ES2020"],
     "outDir": "./dist",
     "allowJs": false,
     "skipLibCheck": true,

@@ -31,6 +31,7 @@ function DistributeBalance({
 
   useEffect(() => {
     if (error) {
+      // eslint-disable-next-line no-console
       console.error(error)
       onError && onError(error)
     }

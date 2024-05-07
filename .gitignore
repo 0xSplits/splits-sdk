@@ -12,3 +12,5 @@ yarn-error.log*
 
 # build
 packages/*/dist
+
+packages/*/*.env

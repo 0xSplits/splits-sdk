@@ -12,12 +12,23 @@ export const roundToDecimals: (arg0: number, arg1: number) => number = (
 }
 
 export const getBigIntFromPercent = (value: number): bigint => {
-  return BigInt(Math.round(Number(PERCENTAGE_SCALE) * value) / 100)
+  return BigInt(getNumberFromPercent(value))
 }
 
-export const fromBigIntToPercent = (value: bigint | number): number => {
-  const numberVal = Number(value)
-  return (numberVal * 100) / Number(PERCENTAGE_SCALE)
+export const getNumberFromPercent = (value: number, scale?: bigint): number => {
+  if (!scale) scale = PERCENTAGE_SCALE
+  return Math.round(Number(scale) * value) / 100
+}
+
+export const fromBigIntToPercent = (
+  value: bigint | number,
+  scale?: bigint,
+): number => {
+  const numberVal = BigInt(value)
+  if (!scale) {
+    return parseFloat(formatUnits(numberVal, 6)) * 100
+  }
+  return Number((numberVal * BigInt(100)) / scale)
 }
 
 export const getBigIntTokenValue = (

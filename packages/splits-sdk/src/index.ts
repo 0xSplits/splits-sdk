@@ -2,13 +2,17 @@ import { LiquidSplitClient } from './client/liquidSplit'
 import { WaterfallClient } from './client/waterfall'
 import { VestingClient } from './client/vesting'
 import { TemplatesClient } from './client/templates'
-import { SplitsClient } from './client'
+import { SplitV1Client } from './client/splitV1'
 import { PassThroughWalletClient } from './client/passThroughWallet'
 import { SwapperClient } from './client/swapper'
 import { OracleClient } from './client/oracle'
+import { WarehouseClient } from './client/warehouse'
+import { SplitV2Client } from './client/splitV2'
+import { DataClient } from './client/data'
+import { SplitsClient } from './client'
 
 export {
-  SplitsClient,
+  SplitV1Client,
   WaterfallClient,
   LiquidSplitClient,
   VestingClient,
@@ -16,10 +20,15 @@ export {
   PassThroughWalletClient,
   SwapperClient,
   OracleClient,
+  SplitV2Client,
+  WarehouseClient,
+  DataClient,
+  SplitsClient,
 }
 export * from './errors'
 
 export {
+  SPLITS_V2_SUPPORTED_CHAIN_IDS,
   SPLITS_SUPPORTED_CHAIN_IDS,
   SPLITS_SUBGRAPH_CHAIN_IDS,
   WATERFALL_CHAIN_IDS,
@@ -36,7 +45,7 @@ export type {
   DistributeTokenConfig,
   UpdateSplitAndDistributeTokenConfig,
   WithdrawFundsConfig,
-  InititateControlTransferConfig,
+  InitiateControlTransferConfig,
   CancelControlTransferConfig,
   AcceptControlTransferConfig,
   MakeSplitImmutableConfig,
@@ -93,6 +102,29 @@ export type {
   PassThroughTokensConfig,
   PassThroughWalletPauseConfig,
   PassThroughWalletExecCallsConfig,
+  WarehouseApproveBySig,
+  WarehouseApproveConfig,
+  WarehouseApproveBySigConfig,
+  WarehouseBatchDepositConfig,
+  WarehouseBatchTransferConfig,
+  WarehouseBatchWithdrawConfig,
+  WarehouseDepositConfig,
+  WarehouseInvalidateNonceConfig,
+  WarehouseSetOperatorConfig,
+  WarehouseSetWithdrawConfig,
+  WarehouseTemporaryApproveAndCallBySig,
+  WarehouseTemporaryApproveAndCallBySigConfig,
+  WarehouseTemporaryApproveAndCallConfig,
+  WarehouseTransferConfig,
+  WarehouseTransferFromConfig,
+  WarehouseWithdrawConfig,
+  SplitV2,
+  CreateSplitV2Config,
+  UpdateSplitV2Config,
+  DistributeSplitConfig,
+  TransferOwnershipConfig,
+  SetPausedConfig,
+  SplitV2ExecCallsConfig,
 } from './types'
 
 export { roundToDecimals } from './utils'

@@ -16,7 +16,7 @@ export const useCreateRecoup = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context)
+  const splitsClient = getSplitsClient(context).templates
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -24,8 +24,7 @@ export const useCreateRecoup = (): {
 
   const createRecoup = useCallback(
     async (argsDict: CreateRecoupConfig) => {
-      if (!splitsClient.templates)
-        throw new Error('Invalid chain id for recoup')
+      if (!splitsClient) throw new Error('Invalid chain id for recoup')
 
       try {
         setStatus('pendingApproval')
@@ -33,14 +32,14 @@ export const useCreateRecoup = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.templates.submitCreateRecoupTransaction(argsDict)
+          await splitsClient.submitCreateRecoupTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics: splitsClient.templates.eventTopics.createRecoup,
+          eventTopics: splitsClient.eventTopics.createRecoup,
         })
 
         setStatus('complete')
@@ -66,7 +65,7 @@ export const useCreateDiversifier = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context)
+  const splitsClient = getSplitsClient(context).templates
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -74,8 +73,7 @@ export const useCreateDiversifier = (): {
 
   const createDiversifier = useCallback(
     async (argsDict: CreateDiversifierConfig) => {
-      if (!splitsClient.templates)
-        throw new Error('Invalid chain id for diversifier')
+      if (!splitsClient) throw new Error('Invalid chain id for diversifier')
 
       try {
         setStatus('pendingApproval')
@@ -83,16 +81,14 @@ export const useCreateDiversifier = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.templates.submitCreateDiversifierTransaction(
-            argsDict,
-          )
+          await splitsClient.submitCreateDiversifierTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics: splitsClient.templates.eventTopics.createDiversifier,
+          eventTopics: splitsClient.eventTopics.createDiversifier,
         })
 
         setStatus('complete')

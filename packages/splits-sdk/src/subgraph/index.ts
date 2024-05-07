@@ -1,609 +1,317 @@
-import { getAddress } from 'viem'
-import { GraphQLClient, gql } from 'graphql-request'
-
-import { ADDRESS_ZERO, CHAIN_INFO } from '../constants'
-import type {
-  EarningsByContract,
-  LiquidSplit,
-  Split,
-  Swapper,
-  TokenBalances,
-  VestingModule,
-  VestingStream,
-  WaterfallModule,
-  WaterfallTranche,
-} from '../types'
-import { fromBigIntToPercent } from '../utils'
+import { GqlAccount, GqlPassThroughWallet, GqlSplit, GqlSwapper } from './types'
 import {
-  GqlContractEarnings,
-  GqlLiquidSplit,
-  GqlSplit,
-  GqlSwapper,
-  GqlTokenBalance,
-  GqlVestingModule,
-  GqlVestingStream,
-  GqlWaterfallModule,
-  GqlWaterfallTranche,
+  IAccountType,
+  ILiquidSplit,
+  IPassThroughWallet,
+  ISplit,
+  ISwapper,
+  IVestingModule,
+  IWaterfallModule,
 } from './types'
+import {
+  formatGqlVestingModule,
+  VESTING_MODULE_FIELDS_FRAGMENT,
+} from './vesting'
+import {
+  formatGqlWaterfallModule,
+  WATERFALL_MODULE_FIELDS_FRAGMENT,
+} from './waterfall'
+import { formatGqlLiquidSplit, LIQUID_SPLIT_FIELDS_FRAGMENT } from './liquid'
+import {
+  PASS_THROUGH_WALLET_FIELDS_FRAGMENT,
+  formatGqlPassThroughWallet,
+} from './pass-through-wallet'
+import {
+  ACCOUNT_FIELDS_FRAGMENT,
+  formatGqlSplit,
+  SPLIT_FIELDS_FRAGMENT,
+} from './split'
+import { formatGqlSwapper, SWAPPER_FIELDS_FRAGMENT } from './swapper'
+import { USER_FIELDS_FRAGMENT, formatGqlUser } from './user'
+import { gql, createClient, Client, fetchExchange } from '@urql/core'
+import { getAddress } from 'viem'
 
-const TOKEN_BALANCE_FIELDS_FRAGMENT = gql`
-  fragment TokenBalanceFieldsFragment on TokenBalance {
-    amount
-    token {
-      id
-    }
-  }
-`
+export const MAX_UNIX_TIME = 2147480000 // Max unix time is roughly Jan 19 2038
 
-const RECIPIENT_FIELDS_FRAGMENT = gql`
-  fragment RecipientFieldsFragment on Recipient {
-    id
-    account {
-      id
-    }
-    split {
-      id
-    }
-    ownership
-  }
-`
-
-const ACCOUNT_BALANCES_FRAGMENT = gql`
-  fragment AccountBalancesFragment on Account {
-    internalBalances(first: 1000, orderBy: amount, orderDirection: desc) {
-      ...TokenBalanceFieldsFragment
-    }
-    withdrawals(first: 1000, orderBy: amount, orderDirection: desc) {
-      ...TokenBalanceFieldsFragment
-    }
-    distributions(first: 1000, orderBy: amount, orderDirection: desc) {
-      ...TokenBalanceFieldsFragment
-    }
-  }
-
-  ${TOKEN_BALANCE_FIELDS_FRAGMENT}
-`
-
-const CONTRACT_EARNINGS_FRAGMENT = gql`
-  fragment ContractEarningsFragment on ContractEarnings {
-    contract {
-      id
-    }
-    internalBalances(first: 1000, orderBy: amount, orderDirection: desc) {
-      amount
-      token {
-        id
-      }
-    }
-    withdrawals(first: 1000, orderBy: amount, orderDirection: desc) {
-      amount
-      token {
-        id
-      }
-    }
-  }
-`
-
-const ACCOUNT_FIELDS_FRAGMENT = gql`
-  fragment AccountFieldsFragment on Account {
-    id
-    upstream(first: 1000) {
-      ...RecipientFieldsFragment
-    }
-    ...AccountBalancesFragment
-  }
-
-  ${RECIPIENT_FIELDS_FRAGMENT}
-  ${ACCOUNT_BALANCES_FRAGMENT}
-`
-
-const SPLIT_FIELDS_FRAGMENT = gql`
-  fragment SplitFieldsFragment on Split {
-    controller
-    distributorFee
-    newPotentialController
-    createdBlock
-    latestBlock
-    recipients(first: 1000, orderBy: ownership, orderDirection: desc) {
-      ...RecipientFieldsFragment
-    }
-  }
-
-  ${RECIPIENT_FIELDS_FRAGMENT}
-`
-
-const FULL_SPLIT_FIELDS_FRAGMENT = gql`
-  fragment FullSplitFieldsFragment on Split {
+const ACCOUNT_FRAGMENT = gql`
+  fragment AccountFragment on Account {
+    __typename
     ...AccountFieldsFragment
-    ...SplitFieldsFragment
+    ... on User {
+      ...UserFieldsFragment
+    }
+    ... on Split {
+      ...SplitFieldsFragment
+    }
+    ... on VestingModule {
+      ...VestingModuleFieldsFragment
+    }
+    ... on WaterfallModule {
+      ...WaterfallModuleFieldsFragment
+    }
+    ... on LiquidSplit {
+      ...LiquidSplitFieldsFragment
+    }
+    ... on Swapper {
+      ...SwapperFieldsFragment
+    }
+    ... on PassThroughWallet {
+      ...PassThroughWalletFieldsFragment
+    }
   }
 
   ${ACCOUNT_FIELDS_FRAGMENT}
+  ${USER_FIELDS_FRAGMENT}
   ${SPLIT_FIELDS_FRAGMENT}
-`
-
-const WATERFALL_TRANCHE_FIELDS_FRAGMENT = gql`
-  fragment WaterfallTrancheFieldsFragment on WaterfallTranche {
-    startAmount
-    size
-    claimedAmount
-    recipient {
-      id
-    }
-  }
-`
-
-const WATERFALL_MODULE_FIELDS_FRAGMENT = gql`
-  fragment WaterfallModuleFieldsFragment on WaterfallModule {
-    token {
-      id
-    }
-    nonWaterfallRecipient
-    latestBlock
-    tranches(first: 1000) {
-      ...WaterfallTrancheFieldsFragment
-    }
-  }
-
-  ${WATERFALL_TRANCHE_FIELDS_FRAGMENT}
-`
-
-const FULL_WATERFALL_MODULE_FIELDS_FRAGMENT = gql`
-  fragment FullWaterfallModuleFieldsFragment on WaterfallModule {
-    ...AccountFieldsFragment
-    ...WaterfallModuleFieldsFragment
-  }
-
-  ${ACCOUNT_FIELDS_FRAGMENT}
-  ${WATERFALL_MODULE_FIELDS_FRAGMENT}
-`
-
-const VESTING_STREAM_FIELDS_FRAGMENT = gql`
-  fragment VestingStreamFieldsFragment on VestingStream {
-    token {
-      id
-    }
-    streamId
-    startTime
-    totalAmount
-    claimedAmount
-  }
-`
-
-const VESTING_MODULE_FIELDS_FRAGMENT = gql`
-  fragment VestingModuleFieldsFragment on VestingModule {
-    beneficiary {
-      id
-    }
-    vestingPeriod
-    streams(first: 1000) {
-      ...VestingStreamFieldsFragment
-    }
-  }
-
-  ${VESTING_STREAM_FIELDS_FRAGMENT}
-`
-
-const FULL_VESTING_MODULE_FIELDS_FRAGMENT = gql`
-  fragment FullVestingModuleFieldsFragment on VestingModule {
-    ...AccountFieldsFragment
-    ...VestingModuleFieldsFragment
-  }
-
-  ${ACCOUNT_FIELDS_FRAGMENT}
   ${VESTING_MODULE_FIELDS_FRAGMENT}
-`
-
-const LIQUID_SPLIT_HOLDERS_FRAGMENT = gql`
-  fragment LiquidSplitHoldersFragment on Holder {
-    account {
-      id
-    }
-    ownership
-  }
-`
-
-const LIQUID_SPLIT_FIELDS_FRAGMENT = gql`
-  fragment LiquidSplitFieldsFragment on LiquidSplit {
-    latestBlock
-    holders(first: 1000, where: { ownership_gt: "0" }) {
-      ...LiquidSplitHoldersFragment
-    }
-    distributorFee
-    split {
-      ...FullSplitFieldsFragment
-    }
-    isFactoryGenerated
-  }
-
-  ${LIQUID_SPLIT_HOLDERS_FRAGMENT}
-  ${FULL_SPLIT_FIELDS_FRAGMENT}
-`
-
-const FULL_LIQUID_SPLIT_FIELDS_FRAGMENT = gql`
-  fragment FullLiquidSplitFieldsFragment on LiquidSplit {
-    ...AccountFieldsFragment
-    ...LiquidSplitFieldsFragment
-  }
-
-  ${ACCOUNT_FIELDS_FRAGMENT}
+  ${WATERFALL_MODULE_FIELDS_FRAGMENT}
   ${LIQUID_SPLIT_FIELDS_FRAGMENT}
-`
-
-const SWAPPER_FIELDS_FRAGMENT = gql`
-  fragment SwapperFieldsFragment on Swapper {
-    latestBlock
-    beneficiary {
-      id
-    }
-    tokenToBeneficiary {
-      id
-    }
-    owner {
-      id
-    }
-    paused
-    defaultScaledOfferFactor
-    scaledOfferFactorPairOverrides(first: 1000) {
-      base {
-        id
-      }
-      quote {
-        id
-      }
-      scaledOfferFactor
-    }
-  }
-`
-
-const FULL_SWAPPER_FIELDS_FRAGMENT = gql`
-  fragment FullSwapperFieldsFragment on Swapper {
-    ...AccountFieldsFragment
-    ...SwapperFieldsFragment
-  }
-
-  ${ACCOUNT_FIELDS_FRAGMENT}
   ${SWAPPER_FIELDS_FRAGMENT}
-`
-
-const formatRecipient = (gqlRecipient: {
-  account: { id: string }
-  ownership: number
-}) => {
-  return {
-    recipient: {
-      address: getAddress(gqlRecipient.account.id),
-    },
-    percentAllocation: fromBigIntToPercent(gqlRecipient.ownership),
-  }
-}
-
-// Should only be called by formatSplit on SplitsClient
-export const protectedFormatSplit = (gqlSplit: GqlSplit): Split => {
-  return {
-    type: 'Split',
-    address: getAddress(gqlSplit.id),
-    controller:
-      gqlSplit.controller !== ADDRESS_ZERO
-        ? {
-            address: getAddress(gqlSplit.controller),
-          }
-        : null,
-    newPotentialController:
-      gqlSplit.newPotentialController !== ADDRESS_ZERO
-        ? {
-            address: getAddress(gqlSplit.newPotentialController),
-          }
-        : null,
-    distributorFeePercent: fromBigIntToPercent(gqlSplit.distributorFee),
-    createdBlock: gqlSplit.createdBlock,
-    recipients: gqlSplit.recipients
-      .map((gqlRecipient) => formatRecipient(gqlRecipient))
-      .sort((a, b) => {
-        return b.percentAllocation - a.percentAllocation
-      }),
-  }
-}
-
-// Should only be called by formatWaterfallModule on WaterfallClient
-export const protectedFormatWaterfallModule = (
-  gqlWaterfallModule: GqlWaterfallModule,
-  tokenSymbol: string,
-  tokenDecimals: number,
-): WaterfallModule => {
-  return {
-    type: 'WaterfallModule',
-    address: getAddress(gqlWaterfallModule.id),
-    token: {
-      address: getAddress(gqlWaterfallModule.token.id),
-      symbol: tokenSymbol,
-      decimals: tokenDecimals,
-    },
-    nonWaterfallRecipient:
-      gqlWaterfallModule.nonWaterfallRecipient !== ADDRESS_ZERO
-        ? {
-            address: getAddress(gqlWaterfallModule.nonWaterfallRecipient),
-          }
-        : null,
-    tranches: gqlWaterfallModule.tranches.map((tranche) =>
-      formatWaterfallModuleTranche(tranche, tokenDecimals),
-    ),
-  }
-}
-
-const formatWaterfallModuleTranche = (
-  gqlWaterfallTranche: GqlWaterfallTranche,
-  tokenDecimals: number,
-): WaterfallTranche => {
-  return {
-    recipient: {
-      address: getAddress(gqlWaterfallTranche.recipient.id),
-    },
-    startAmount: gqlWaterfallTranche.startAmount / Math.pow(10, tokenDecimals),
-    size: gqlWaterfallTranche.size
-      ? gqlWaterfallTranche.size / Math.pow(10, tokenDecimals)
-      : undefined,
-  }
-}
-
-// Should only be called by formatVestingModule on VestingClient
-export const protectedFormatVestingModule = (
-  gqlVestingModule: GqlVestingModule,
-  tokenData: { [token: string]: { symbol: string; decimals: number } },
-): VestingModule => {
-  return {
-    type: 'VestingModule',
-    address: getAddress(gqlVestingModule.id),
-    beneficiary: {
-      address: getAddress(gqlVestingModule.beneficiary.id),
-    },
-    vestingPeriod: parseInt(gqlVestingModule.vestingPeriod),
-    ...(gqlVestingModule.streams && {
-      streams: gqlVestingModule.streams.map((gqlVestingStream) =>
-        formatVestingModuleStream(gqlVestingStream, tokenData),
-      ),
-    }),
-  }
-}
-
-const formatVestingModuleStream = (
-  gqlVestingStream: GqlVestingStream,
-  tokenData: { [token: string]: { symbol: string; decimals: number } },
-): VestingStream => {
-  const tokenDecimals = tokenData[gqlVestingStream.token.id].decimals
-
-  return {
-    streamId: parseInt(gqlVestingStream.streamId),
-    startTime: parseInt(gqlVestingStream.startTime),
-    totalAmount: gqlVestingStream.totalAmount / Math.pow(10, tokenDecimals),
-    releasedAmount:
-      gqlVestingStream.claimedAmount / Math.pow(10, tokenDecimals),
-    token: {
-      address: getAddress(gqlVestingStream.token.id),
-      symbol: tokenData[gqlVestingStream.token.id].symbol,
-      decimals: tokenData[gqlVestingStream.token.id].decimals,
-    },
-    // Deprecated
-    claimedAmount: gqlVestingStream.claimedAmount / Math.pow(10, tokenDecimals),
-  }
-}
-
-// Should only be called by formatLiquidSplit on LiquidSplitClient
-export const protectedFormatLiquidSplit = (
-  gqlLiquidSplit: GqlLiquidSplit,
-): LiquidSplit => {
-  return {
-    type: 'LiquidSplit',
-    address: getAddress(gqlLiquidSplit.id),
-    distributorFeePercent: fromBigIntToPercent(gqlLiquidSplit.distributorFee),
-    payoutSplitAddress: getAddress(gqlLiquidSplit.split.id),
-    isFactoryGenerated: gqlLiquidSplit.isFactoryGenerated,
-    holders: gqlLiquidSplit.holders
-      .map((gqlHolder) => formatRecipient(gqlHolder))
-      .sort((a, b) => {
-        return b.percentAllocation - a.percentAllocation
-      }),
-  }
-}
-
-export const protectedFormatSwapper = (gqlSwapper: GqlSwapper): Swapper => {
-  return {
-    type: 'Swapper',
-    address: getAddress(gqlSwapper.id),
-    beneficiary: {
-      address: getAddress(gqlSwapper.beneficiary.id),
-    },
-    tokenToBeneficiary: {
-      address: getAddress(gqlSwapper.tokenToBeneficiary.id),
-    },
-    owner:
-      gqlSwapper.owner.id !== ADDRESS_ZERO
-        ? {
-            address: getAddress(gqlSwapper.owner.id),
-          }
-        : null,
-    paused: gqlSwapper.paused,
-    defaultScaledOfferFactorPercent:
-      (1e6 - parseInt(gqlSwapper.defaultScaledOfferFactor)) / 1e4,
-    scaledOfferFactorOverrides: gqlSwapper.scaledOfferFactorPairOverrides.map(
-      (scaleOfferFactorOverride) => {
-        const baseToken = getAddress(scaleOfferFactorOverride.base.id)
-        const quoteToken = getAddress(scaleOfferFactorOverride.quote.id)
-        const scaledOfferFactorPercent =
-          (1e6 - parseInt(scaleOfferFactorOverride.scaledOfferFactor)) / 1e4
-
-        return {
-          baseToken: {
-            address: baseToken,
-          },
-          quoteToken: {
-            address: quoteToken,
-          },
-          scaledOfferFactorPercent,
-        }
-      },
-    ),
-  }
-}
-
-export const formatAccountBalances = (
-  gqlTokenBalances: GqlTokenBalance[],
-): TokenBalances => {
-  return gqlTokenBalances.reduce((acc, gqlTokenBalance) => {
-    const tokenId = getAddress(gqlTokenBalance.token.id)
-    const amount = BigInt(gqlTokenBalance.amount)
-
-    if (amount > BigInt(1)) acc[tokenId] = amount
-    return acc
-  }, {} as TokenBalances)
-}
-
-export const formatContractEarnings = (
-  gqlContractEarnings: GqlContractEarnings[],
-): EarningsByContract => {
-  return gqlContractEarnings.reduce((acc, gqlContractEarning) => {
-    const contractId = getAddress(gqlContractEarning.contract.id)
-    const activeBalances = formatAccountBalances(
-      gqlContractEarning.internalBalances,
-    )
-    const withdrawn = formatAccountBalances(gqlContractEarning.withdrawals)
-
-    acc[contractId] = {
-      withdrawn,
-      activeBalances,
-    }
-
-    return acc
-  }, {} as EarningsByContract)
-}
-
-export const SPLIT_QUERY = gql`
-  query split($splitAddress: ID!) {
-    split(id: $splitAddress) {
-      ...FullSplitFieldsFragment
-    }
-  }
-
-  ${FULL_SPLIT_FIELDS_FRAGMENT}
-`
-
-export const WATERFALL_MODULE_QUERY = gql`
-  query waterfallModule($waterfallModuleAddress: ID!) {
-    waterfallModule(id: $waterfallModuleAddress) {
-      ...FullWaterfallModuleFieldsFragment
-    }
-  }
-
-  ${FULL_WATERFALL_MODULE_FIELDS_FRAGMENT}
-`
-
-export const VESTING_MODULE_QUERY = gql`
-  query vestingModule($vestingModuleAddress: ID!) {
-    vestingModule(id: $vestingModuleAddress) {
-      ...FullVestingModuleFieldsFragment
-    }
-  }
-
-  ${FULL_VESTING_MODULE_FIELDS_FRAGMENT}
-`
-
-export const LIQUID_SPLIT_QUERY = gql`
-  query liquidSplit($liquidSplitAddress: ID!) {
-    liquidSplit(id: $liquidSplitAddress) {
-      ...FullLiquidSplitFieldsFragment
-    }
-  }
-
-  ${FULL_LIQUID_SPLIT_FIELDS_FRAGMENT}
-`
-
-export const SWAPPER_QUERY = gql`
-  query swapper($swapperAddress: ID!) {
-    swapper(id: $swapperAddress) {
-      ...FullSwapperFieldsFragment
-    }
-  }
-
-  ${FULL_SWAPPER_FIELDS_FRAGMENT}
+  ${PASS_THROUGH_WALLET_FIELDS_FRAGMENT}
 `
 
 export const ACCOUNT_QUERY = gql`
-  query account($accountAddress: ID!) {
-    account(id: $accountAddress) {
-      __typename
-      ...AccountFieldsFragment
-      ...SplitFieldsFragment
-      ...WaterfallModuleFieldsFragment
-      ...LiquidSplitFieldsFragment
-      ...SwapperFieldsFragment
+  query account($accountId: ID!, $chainId: String!) {
+    account(id: $accountId, chainId: $chainId) {
+      ...AccountFragment
+    }
+  }
+  ${ACCOUNT_FRAGMENT}
+`
+
+export const FULL_ACCOUNT_QUERY = gql`
+  query account(
+    $accountId: ID!
+    $chainId: String!
+    $relatedAccountsLimit: Int!
+  ) {
+    account(id: $accountId, chainId: $chainId) {
+      ...AccountFragment
+    }
+
+    relatedAccounts(
+      id: $accountId
+      chainId: $chainId
+      limit: $relatedAccountsLimit
+    ) {
+      upstreamSplits {
+        ...AccountFieldsFragment
+        ...SplitFieldsFragment
+      }
+      upstreamLiquidSplits {
+        ...AccountFieldsFragment
+        ...LiquidSplitFieldsFragment
+      }
+      upstreamWaterfalls {
+        ...AccountFieldsFragment
+        ...WaterfallModuleFieldsFragment
+      }
+      upstreamVesting {
+        ...AccountFieldsFragment
+        ...VestingModuleFieldsFragment
+      }
+      upstreamSwappers {
+        ...AccountFieldsFragment
+        ...SwapperFieldsFragment
+      }
+      upstreamPassThroughWallets {
+        ...AccountFieldsFragment
+        ...PassThroughWalletFieldsFragment
+      }
+      controllingSplits {
+        ...AccountFieldsFragment
+        ...SplitFieldsFragment
+      }
+      pendingControlSplits {
+        ...AccountFieldsFragment
+        ...SplitFieldsFragment
+      }
+      ownedSwappers {
+        ...AccountFieldsFragment
+        ...SwapperFieldsFragment
+      }
+      ownedPassThroughWallets {
+        ...AccountFieldsFragment
+        ...PassThroughWalletFieldsFragment
+      }
     }
   }
 
+  ${ACCOUNT_FRAGMENT}
   ${ACCOUNT_FIELDS_FRAGMENT}
   ${SPLIT_FIELDS_FRAGMENT}
   ${WATERFALL_MODULE_FIELDS_FRAGMENT}
   ${LIQUID_SPLIT_FIELDS_FRAGMENT}
+  ${VESTING_MODULE_FIELDS_FRAGMENT}
   ${SWAPPER_FIELDS_FRAGMENT}
+  ${PASS_THROUGH_WALLET_FIELDS_FRAGMENT}
 `
 
-export const RELATED_SPLITS_QUERY = gql`
-  query relatedSplits($accountAddress: String!) {
-    receivingFrom: recipients(where: { account: $accountAddress }) {
-      split {
-        ...FullSplitFieldsFragment
-      }
-    }
-    controlling: splits(where: { controller: $accountAddress }) {
-      ...FullSplitFieldsFragment
-    }
-    pendingControl: splits(where: { newPotentialController: $accountAddress }) {
-      ...FullSplitFieldsFragment
+export const ACCOUNTS_QUERY = gql`
+  query accounts($accounts: [AccountInput!]!) {
+    accounts(accounts: $accounts) {
+      ...AccountFragment
     }
   }
 
-  ${FULL_SPLIT_FIELDS_FRAGMENT}
+  ${ACCOUNT_FRAGMENT}
 `
 
-export const ACCOUNT_BALANCES_QUERY = gql`
-  query accountBalances($accountAddress: ID!) {
-    accountBalances: account(id: $accountAddress) {
-      __typename
-      ...AccountBalancesFragment
+export const formatFullGqlAccount: (
+  arg0: GqlAccount,
+  arg1?: ISplit[],
+  arg2?: IVestingModule[],
+  arg3?: IWaterfallModule[],
+  arg4?: ILiquidSplit[],
+  arg5?: ISwapper[],
+  arg6?: IPassThroughWallet[],
+  arg7?: GqlSplit[],
+  arg8?: GqlSplit[],
+  arg9?: GqlSwapper[],
+  arg10?: GqlPassThroughWallet[],
+) => IAccountType = (
+  gqlAccount,
+  upstreamSplits,
+  upstreamVestingModules,
+  upstreamWaterfallModules,
+  upstreamLiquidSplits,
+  upstreamSwappers,
+  upstreamPassThroughWallets,
+  gqlControllingSplits,
+  gqlPendingControlSplits,
+  gqlOwnedSwappers,
+  gqlOwnedPassThroughWallets,
+) => {
+  const pendingControlSplits = gqlPendingControlSplits?.map((split) =>
+    getAddress(split.id),
+  )
+  const upstreamLiquidSplitAddresses = upstreamLiquidSplits?.map(
+    (upstreamLiquidSplit) => getAddress(upstreamLiquidSplit.address),
+  )
+  const upstreamLiquidSplitDownstreamSplitAddresses = upstreamLiquidSplits?.map(
+    (upstreamLiquidSplit) => getAddress(upstreamLiquidSplit.splitId),
+  )
+  const controllingSplits = gqlControllingSplits
+    // Don't include the split that the liquid split controls
+    ?.filter((gqlSplit) => gqlSplit.liquidSplit?.id !== gqlAccount.id)
+    .map((gqlSplit) => getAddress(gqlSplit.id))
+  const ownedSwappers = gqlOwnedSwappers?.map((swapper) =>
+    getAddress(swapper.id),
+  )
+  const ownedPassThroughWallets = gqlOwnedPassThroughWallets?.map(
+    (passThroughWallet) => getAddress(passThroughWallet.id),
+  )
+
+  const relatedData = {
+    ...(upstreamSwappers !== undefined && {
+      upstreamSwappers: upstreamSwappers?.map((upstreamSwapper) =>
+        getAddress(upstreamSwapper.address),
+      ),
+    }),
+    ...(upstreamPassThroughWallets !== undefined && {
+      upstreamPassThroughWallets: upstreamPassThroughWallets?.map(
+        (upstreamPassThroughWallet) =>
+          getAddress(upstreamPassThroughWallet.address),
+      ),
+    }),
+    ...(upstreamVestingModules !== undefined && {
+      upstreamVesting: upstreamVestingModules?.map((upstreamVestingModule) =>
+        getAddress(upstreamVestingModule.address),
+      ),
+    }),
+    ...(upstreamWaterfallModules !== undefined && {
+      upstreamWaterfalls: upstreamWaterfallModules?.map(
+        (upstreamWaterfallModule) =>
+          getAddress(upstreamWaterfallModule.address),
+      ),
+    }),
+    ...(upstreamLiquidSplits !== undefined && {
+      upstreamLiquidSplits: upstreamLiquidSplitAddresses,
+    }),
+    ...(upstreamSplits !== undefined && {
+      upstreamSplits: upstreamSplits
+        ?.map((upstreamSplit) => getAddress(upstreamSplit.address))
+        .filter(
+          (address) =>
+            !upstreamLiquidSplitDownstreamSplitAddresses?.includes(address),
+        ),
+    }),
+    ...(gqlControllingSplits !== undefined && {
+      controllingSplits,
+    }),
+    ...(gqlPendingControlSplits !== undefined && {
+      pendingControlSplits,
+    }),
+    ...(gqlOwnedSwappers !== undefined && {
+      ownedSwappers,
+    }),
+    ...(gqlOwnedPassThroughWallets !== undefined && {
+      ownedPassThroughWallets,
+    }),
+  }
+  return {
+    ...formatGqlAccount(gqlAccount),
+    ...relatedData,
+  }
+}
+
+export const formatGqlAccount: (arg0: GqlAccount) => IAccountType = (
+  gqlAccount,
+) => {
+  if (gqlAccount.__typename === 'Split')
+    return {
+      ...formatGqlSplit(gqlAccount),
     }
+  if (gqlAccount.__typename === 'LiquidSplit')
+    return {
+      ...formatGqlLiquidSplit(gqlAccount),
+    }
+  if (gqlAccount.__typename === 'WaterfallModule')
+    return {
+      ...formatGqlWaterfallModule(gqlAccount),
+    }
+  if (gqlAccount.__typename === 'VestingModule')
+    return {
+      ...formatGqlVestingModule(gqlAccount),
+    }
+  if (gqlAccount.__typename === 'Swapper')
+    return {
+      ...formatGqlSwapper(gqlAccount),
+    }
+  if (gqlAccount.__typename === 'PassThroughWallet')
+    return {
+      ...formatGqlPassThroughWallet(gqlAccount),
+    }
+  return {
+    ...formatGqlUser(gqlAccount),
+  }
+}
+
+const SPLITS_GRAPHQL_URL = 'http://api.splits.org/graphql'
+
+export type GqlVariables = {
+  [key: string]: string | number | boolean | undefined | string[] | object
+}
+
+export const getGraphqlClient = ({
+  apiKey,
+  serverURL,
+}: {
+  apiKey: string
+  serverURL?: string
+}): Client => {
+  if (!serverURL) {
+    serverURL = SPLITS_GRAPHQL_URL
   }
 
-  ${ACCOUNT_BALANCES_FRAGMENT}
-`
-
-export const USER_BALANCES_BY_CONTRACT_QUERY = gql`
-  query userBalancesByContract($userAddress: ID!) {
-    userBalancesByContract: user(id: $userAddress) {
-      contractEarnings(first: 1000) {
-        ...ContractEarningsFragment
-      }
-    }
+  const headers = {
+    Authorization: `Bearer ${apiKey}`,
   }
-
-  ${CONTRACT_EARNINGS_FRAGMENT}
-`
-
-export const USER_BALANCES_BY_CONTRACT_FILTERED_QUERY = gql`
-  query userBalancesByContract($userAddress: ID!, $contractIds: [ID!]!) {
-    userBalancesByContract: user(id: $userAddress) {
-      contractEarnings(first: 1000, where: { contract_in: $contractIds }) {
-        ...ContractEarningsFragment
-      }
-    }
-  }
-
-  ${CONTRACT_EARNINGS_FRAGMENT}
-`
-
-export const getGraphqlClient = (
-  chainId: number,
-): GraphQLClient | undefined => {
-  const gqlEndpoint = CHAIN_INFO[chainId]?.gqlEndpoint
-  if (!gqlEndpoint) return
-
-  return new GraphQLClient(gqlEndpoint)
+  return createClient({
+    url: serverURL,
+    exchanges: [fetchExchange],
+    fetchOptions: {
+      headers,
+    },
+  })
 }
