@@ -1,15 +1,11 @@
 import {
-  ContractEarnings,
   FormattedContractEarnings,
   FormattedSplitEarnings,
   FormattedUserEarnings,
   FormattedUserEarningsByContract,
   LiquidSplit,
   Split,
-  SplitEarnings,
   Swapper,
-  UserEarnings,
-  UserEarningsByContract,
   VestingModule,
   WaterfallModule,
 } from '@0xsplits/splits-sdk'
@@ -90,11 +86,9 @@ export const useSplitEarnings = (
   splitAddress: string,
   includeActiveBalances?: boolean,
   erc20TokenList?: string[],
-  formatted = true,
 ): {
   isLoading: boolean
-  splitEarnings: SplitEarnings | undefined
-  formattedSplitEarnings: FormattedSplitEarnings | undefined
+  splitEarnings: FormattedSplitEarnings | undefined
   status?: DataLoadStatus
   error?: RequestError
 } => {
@@ -102,9 +96,6 @@ export const useSplitEarnings = (
   const splitsClient = getSplitsClient(context).dataClient
 
   const [splitEarnings, setSplitEarnings] = useState<
-    SplitEarnings | undefined
-  >()
-  const [formattedSplitEarnings, setFormattedSplitEarnings] = useState<
     FormattedSplitEarnings | undefined
   >()
   const [isLoading, setIsLoading] = useState(!!splitAddress)
@@ -116,34 +107,19 @@ export const useSplitEarnings = (
   useEffect(() => {
     let isActive = true
 
-    const fetchEarnings = async (fetchFormattedEarnings?: boolean) => {
+    const fetchEarnings = async () => {
       if (!splitsClient) throw new Error('Missing api key for data client')
 
       try {
-        if (fetchFormattedEarnings) {
-          const formattedEarnings =
-            await splitsClient.getFormattedSplitEarnings({
-              chainId,
-              splitAddress,
-              includeActiveBalances,
-              erc20TokenList,
-            })
-          if (!isActive) return
-          setFormattedSplitEarnings(formattedEarnings)
-          setSplitEarnings(undefined)
-          setStatus('success')
-        } else {
-          const earnings = await splitsClient.getSplitEarnings({
-            chainId,
-            splitAddress,
-            includeActiveBalances,
-            erc20TokenList,
-          })
-          if (!isActive) return
-          setSplitEarnings(earnings)
-          setFormattedSplitEarnings(undefined)
-          setStatus('success')
-        }
+        const earnings = await splitsClient.getSplitEarnings({
+          chainId,
+          splitAddress,
+          includeActiveBalances,
+          erc20TokenList,
+        })
+        if (!isActive) return
+        setSplitEarnings(earnings)
+        setStatus('success')
       } catch (e) {
         if (isActive) {
           setStatus('error')
@@ -158,29 +134,21 @@ export const useSplitEarnings = (
     if (splitAddress) {
       setIsLoading(true)
       setStatus('loading')
-      fetchEarnings(formatted)
+      fetchEarnings()
     } else {
       setStatus(undefined)
       setIsLoading(false)
       setSplitEarnings(undefined)
-      setFormattedSplitEarnings(undefined)
     }
 
     return () => {
       isActive = false
     }
-  }, [
-    splitsClient,
-    splitAddress,
-    formatted,
-    includeActiveBalances,
-    erc20TokenList,
-  ])
+  }, [splitsClient, splitAddress, includeActiveBalances, erc20TokenList])
 
   return {
     isLoading,
     splitEarnings,
-    formattedSplitEarnings,
     status,
     error,
   }
@@ -191,11 +159,9 @@ export const useContractEarnings = (
   contractAddress: string,
   includeActiveBalances?: boolean,
   erc20TokenList?: string[],
-  formatted = true,
 ): {
   isLoading: boolean
-  contractEarnings: ContractEarnings | undefined
-  formattedContractEarnings: FormattedContractEarnings | undefined
+  contractEarnings: FormattedContractEarnings | undefined
   status?: DataLoadStatus
   error?: RequestError
 } => {
@@ -203,9 +169,6 @@ export const useContractEarnings = (
   const splitsClient = getSplitsClient(context).dataClient
 
   const [contractEarnings, setContractEarnings] = useState<
-    ContractEarnings | undefined
-  >()
-  const [formattedContractEarnings, setFormattedContractEarnings] = useState<
     FormattedContractEarnings | undefined
   >()
   const [isLoading, setIsLoading] = useState(!!contractAddress)
@@ -217,34 +180,19 @@ export const useContractEarnings = (
   useEffect(() => {
     let isActive = true
 
-    const fetchEarnings = async (fetchFormattedEarnings?: boolean) => {
+    const fetchEarnings = async () => {
       if (!splitsClient) throw new Error('Missing api key for data client')
 
       try {
-        if (fetchFormattedEarnings) {
-          const formattedEarnings =
-            await splitsClient.getFormattedContractEarnings({
-              chainId,
-              contractAddress,
-              includeActiveBalances,
-              erc20TokenList,
-            })
-          if (!isActive) return
-          setFormattedContractEarnings(formattedEarnings)
-          setContractEarnings(undefined)
-          setStatus('success')
-        } else {
-          const earnings = await splitsClient.getContractEarnings({
-            chainId,
-            contractAddress,
-            includeActiveBalances,
-            erc20TokenList,
-          })
-          if (!isActive) return
-          setContractEarnings(earnings)
-          setFormattedContractEarnings(undefined)
-          setStatus('success')
-        }
+        const earnings = await splitsClient.getContractEarnings({
+          chainId,
+          contractAddress,
+          includeActiveBalances,
+          erc20TokenList,
+        })
+        if (!isActive) return
+        setContractEarnings(earnings)
+        setStatus('success')
       } catch (e) {
         if (isActive) {
           setStatus('error')
@@ -259,29 +207,21 @@ export const useContractEarnings = (
     if (contractAddress) {
       setIsLoading(true)
       setStatus('loading')
-      fetchEarnings(formatted)
+      fetchEarnings()
     } else {
       setStatus(undefined)
       setIsLoading(false)
       setContractEarnings(undefined)
-      setFormattedContractEarnings(undefined)
     }
 
     return () => {
       isActive = false
     }
-  }, [
-    splitsClient,
-    contractAddress,
-    formatted,
-    includeActiveBalances,
-    erc20TokenList,
-  ])
+  }, [splitsClient, contractAddress, includeActiveBalances, erc20TokenList])
 
   return {
     isLoading,
     contractEarnings,
-    formattedContractEarnings,
     status,
     error,
   }
@@ -432,14 +372,16 @@ export const useUserEarnings = (
   userAddress: string,
 ): {
   isLoading: boolean
-  userEarnings?: UserEarnings
+  userEarnings?: FormattedUserEarnings
   status?: DataLoadStatus
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).dataClient
 
-  const [userEarnings, setUserEarnings] = useState<UserEarnings | undefined>()
+  const [userEarnings, setUserEarnings] = useState<
+    FormattedUserEarnings | undefined
+  >()
   const [isLoading, setIsLoading] = useState(!!userAddress)
   const [status, setStatus] = useState<DataLoadStatus | undefined>(
     userAddress ? 'loading' : undefined,
@@ -494,75 +436,6 @@ export const useUserEarnings = (
   }
 }
 
-export const useFormattedUserEarnings = (
-  chainId: number,
-  userAddress: string,
-): {
-  isLoading: boolean
-  formattedUserEarnings?: FormattedUserEarnings
-  status?: DataLoadStatus
-  error?: RequestError
-} => {
-  const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context).dataClient
-
-  const [formattedUserEarnings, setFormattedUserEarnings] = useState<
-    FormattedUserEarnings | undefined
-  >()
-  const [isLoading, setIsLoading] = useState(!!userAddress)
-  const [status, setStatus] = useState<DataLoadStatus | undefined>(
-    userAddress ? 'loading' : undefined,
-  )
-  const [error, setError] = useState<RequestError>()
-
-  useEffect(() => {
-    let isActive = true
-
-    const fetchEarnings = async () => {
-      if (!splitsClient) throw new Error('Missing api key for data client')
-
-      try {
-        const formattedEarnings = await splitsClient.getFormattedUserEarnings({
-          chainId,
-          userAddress,
-        })
-        if (!isActive) return
-        setFormattedUserEarnings(formattedEarnings)
-        setStatus('success')
-      } catch (e) {
-        if (isActive) {
-          setStatus('error')
-          setError(e)
-        }
-      } finally {
-        if (isActive) setIsLoading(false)
-      }
-    }
-
-    setError(undefined)
-    if (userAddress) {
-      setIsLoading(true)
-      setStatus('loading')
-      fetchEarnings()
-    } else {
-      setStatus(undefined)
-      setIsLoading(false)
-      setFormattedUserEarnings(undefined)
-    }
-
-    return () => {
-      isActive = false
-    }
-  }, [splitsClient, userAddress])
-
-  return {
-    isLoading,
-    formattedUserEarnings,
-    status,
-    error,
-  }
-}
-
 export const useUserEarningsByContract = (
   chainId: number,
   userAddress: string,
@@ -571,7 +444,7 @@ export const useUserEarningsByContract = (
   },
 ): {
   isLoading: boolean
-  userEarningsByContract?: UserEarningsByContract
+  userEarningsByContract?: FormattedUserEarningsByContract
   status?: DataLoadStatus
   error?: RequestError
 } => {
@@ -583,7 +456,7 @@ export const useUserEarningsByContract = (
   const contractAddressesString = JSON.stringify(contractAddresses)
 
   const [userEarningsByContract, setUserEarningsByContract] = useState<
-    UserEarningsByContract | undefined
+    FormattedUserEarningsByContract | undefined
   >()
   const [isLoading, setIsLoading] = useState(!!userAddress)
   const [status, setStatus] = useState<DataLoadStatus | undefined>(
@@ -635,83 +508,6 @@ export const useUserEarningsByContract = (
   return {
     isLoading,
     userEarningsByContract,
-    status,
-    error,
-  }
-}
-
-export const useFormattedUserEarningsByContract = (
-  chainId: number,
-  userAddress: string,
-  options?: {
-    contractAddresses?: string[]
-  },
-): {
-  isLoading: boolean
-  formattedUserEarningsByContract?: FormattedUserEarningsByContract
-  status?: DataLoadStatus
-  error?: RequestError
-} => {
-  const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context).dataClient
-
-  const contractAddresses =
-    options?.contractAddresses ?? DEFAULT_OPTIONS.contractIds
-  const contractAddressesString = JSON.stringify(contractAddresses)
-
-  const [formattedUserEarningsByContract, setFormattedUserEarningsByContract] =
-    useState<FormattedUserEarningsByContract | undefined>()
-  const [isLoading, setIsLoading] = useState(!!userAddress)
-  const [status, setStatus] = useState<DataLoadStatus | undefined>(
-    userAddress ? 'loading' : undefined,
-  )
-  const [error, setError] = useState<RequestError>()
-
-  useEffect(() => {
-    let isActive = true
-
-    const fetchEarnings = async () => {
-      if (!splitsClient) throw new Error('Missing api key for data client')
-
-      try {
-        const formattedEarnings =
-          await splitsClient.getFormattedUserEarningsByContract({
-            chainId,
-            userAddress,
-            contractAddresses,
-          })
-        if (!isActive) return
-        setFormattedUserEarningsByContract(formattedEarnings)
-        setStatus('success')
-      } catch (e) {
-        if (isActive) {
-          setStatus('error')
-          setError(e)
-        }
-      } finally {
-        if (isActive) setIsLoading(false)
-      }
-    }
-
-    setError(undefined)
-    if (userAddress) {
-      setIsLoading(true)
-      setStatus('loading')
-      fetchEarnings()
-    } else {
-      setStatus(undefined)
-      setIsLoading(false)
-      setFormattedUserEarningsByContract(undefined)
-    }
-
-    return () => {
-      isActive = false
-    }
-  }, [splitsClient, userAddress, contractAddressesString])
-
-  return {
-    isLoading,
-    formattedUserEarningsByContract,
     status,
     error,
   }
