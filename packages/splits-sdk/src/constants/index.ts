@@ -89,7 +89,7 @@ export const getRecoupAddress = (chainId: number): Address => {
 export const getPassThroughWalletFactoryAddress = (
   chainId: number,
 ): Address => {
-  if (chainId == ChainId.MAINNET || chainId == ChainId.GOERLI)
+  if (chainId == ChainId.MAINNET)
     return PASS_THROUGH_WALLET_FACTORY_ADDRESS_MAINNET
   return PASS_THROUGH_WALLET_FACTORY_ADDRESS
 }
@@ -127,56 +127,42 @@ export const getSplitV2FactoriesStartBlock = (chainId: number): bigint => {
 
 export enum ChainId {
   MAINNET = 1,
-  GOERLI = 5,
   SEPOLIA = 11155111,
   HOLESKY = 17000,
   POLYGON = 137,
-  POLYGON_MUMBAI = 80001,
   OPTIMISM = 10,
-  OPTIMISM_GOERLI = 420,
   OPTIMISM_SEPOLIA = 11155420,
   ARBITRUM = 42161,
-  ARBITRUM_GOERLI = 421613,
   GNOSIS = 100,
   FANTOM = 250,
   AVALANCHE = 43114,
   BSC = 56,
   AURORA = 1313161554,
   ZORA = 7777777,
-  ZORA_GOERLI = 999,
   ZORA_SEPOLIA = 999999999,
   BASE = 8453,
-  BASE_GOERLI = 84531,
   BASE_SEPOLIA = 84532,
   FOUNDRY = 31337,
+  BLAST = 81457,
 }
 
-export const ETHEREUM_CHAIN_IDS = [ChainId.MAINNET, 3, 4, ChainId.GOERLI, 42]
+export const ETHEREUM_CHAIN_IDS = [ChainId.MAINNET]
 export const ETHEREUM_TEST_CHAIN_IDS = [ChainId.SEPOLIA, ChainId.HOLESKY]
-export const POLYGON_CHAIN_IDS = [ChainId.POLYGON, ChainId.POLYGON_MUMBAI]
-export const OPTIMISM_CHAIN_IDS = [ChainId.OPTIMISM, ChainId.OPTIMISM_GOERLI]
-export const ARBITRUM_CHAIN_IDS = [ChainId.ARBITRUM, ChainId.ARBITRUM_GOERLI]
+export const POLYGON_CHAIN_IDS = [ChainId.POLYGON]
+export const OPTIMISM_CHAIN_IDS = [ChainId.OPTIMISM]
+export const ARBITRUM_CHAIN_IDS = [ChainId.ARBITRUM]
 export const GNOSIS_CHAIN_IDS = [ChainId.GNOSIS]
 export const FANTOM_CHAIN_IDS = [ChainId.FANTOM]
 export const AVALANCHE_CHAIN_IDS = [ChainId.AVALANCHE]
 export const BSC_CHAIN_IDS = [ChainId.BSC]
 export const AURORA_CHAIN_IDS = [ChainId.AURORA]
-export const ZORA_CHAIN_IDS = [
-  ChainId.ZORA,
-  ChainId.ZORA_GOERLI,
-  ChainId.ZORA_SEPOLIA,
-]
-export const BASE_CHAIN_IDS = [
-  ChainId.BASE,
-  ChainId.BASE_GOERLI,
-  ChainId.BASE_SEPOLIA,
-]
+export const ZORA_CHAIN_IDS = [ChainId.ZORA, ChainId.ZORA_SEPOLIA]
+export const BASE_CHAIN_IDS = [ChainId.BASE, ChainId.BASE_SEPOLIA]
+export const BLAST_CHAIN_IDS = [ChainId.BLAST]
 
 const ALL_CHAIN_IDS = [
-  ChainId.MAINNET,
-  ChainId.GOERLI,
-  ChainId.HOLESKY,
-  ChainId.SEPOLIA,
+  ...ETHEREUM_CHAIN_IDS,
+  ...ETHEREUM_TEST_CHAIN_IDS,
   ...POLYGON_CHAIN_IDS,
   ...OPTIMISM_CHAIN_IDS,
   ...ARBITRUM_CHAIN_IDS,
@@ -187,6 +173,7 @@ const ALL_CHAIN_IDS = [
   ...AURORA_CHAIN_IDS,
   ...ZORA_CHAIN_IDS,
   ...BASE_CHAIN_IDS,
+  ...BLAST_CHAIN_IDS,
 ]
 
 export const SPLITS_SUPPORTED_CHAIN_IDS = [3, 4, 42, ...ALL_CHAIN_IDS]
@@ -210,21 +197,32 @@ export const SPLITS_V2_SUPPORTED_CHAIN_IDS = [
 
 export const SPLITS_SUBGRAPH_CHAIN_IDS = ALL_CHAIN_IDS.slice()
 export const WATERFALL_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
-  (id) => id !== ChainId.ZORA_SEPOLIA && id !== ChainId.BASE_SEPOLIA,
+  (id) =>
+    id !== ChainId.ZORA_SEPOLIA &&
+    id !== ChainId.BASE_SEPOLIA &&
+    id !== ChainId.BLAST,
 )
 export const LIQUID_SPLIT_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
-  (id) => id !== ChainId.ZORA_SEPOLIA && id !== ChainId.BASE_SEPOLIA,
+  (id) =>
+    id !== ChainId.ZORA_SEPOLIA &&
+    id !== ChainId.BASE_SEPOLIA &&
+    id !== ChainId.BLAST,
 )
 export const VESTING_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
-  (id) => id !== ChainId.ZORA_SEPOLIA && id !== ChainId.BASE_SEPOLIA,
+  (id) =>
+    id !== ChainId.ZORA_SEPOLIA &&
+    id !== ChainId.BASE_SEPOLIA &&
+    id !== ChainId.BLAST,
 )
 export const TEMPLATES_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
-  (id) => id !== ChainId.ZORA_SEPOLIA && id !== ChainId.BASE_SEPOLIA,
+  (id) =>
+    id !== ChainId.ZORA_SEPOLIA &&
+    id !== ChainId.BASE_SEPOLIA &&
+    id !== ChainId.BLAST,
 )
 
 export const SWAPPER_CHAIN_IDS = [
   ChainId.MAINNET,
-  ChainId.GOERLI,
   ChainId.SEPOLIA,
   ChainId.BASE,
   ChainId.POLYGON,
@@ -244,58 +242,26 @@ export const LIQUID_SPLIT_URI_BASE_64_HEADER = 'data:application/json;base64,'
 export const CHAIN_INFO: {
   [chainId: number]: {
     startBlock: number
-    gqlEndpoint?: string
     nativeCurrency: { symbol: string }
     startBlockV2?: number
   }
 } = {
   [ChainId.MAINNET]: {
     startBlock: 14206768,
-    gqlEndpoint:
-      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-ethereum',
     nativeCurrency: {
       symbol: 'ETH',
     },
-  },
-  3: {
-    startBlock: 11962375,
-    nativeCurrency: {
-      symbol: 'ETH',
-    },
-  },
-  4: {
-    startBlock: 10163325,
-    nativeCurrency: {
-      symbol: 'ETH',
-    },
-  },
-  [ChainId.GOERLI]: {
-    startBlock: 6374540,
-    gqlEndpoint:
-      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-goerli',
-    nativeCurrency: {
-      symbol: 'ETH',
-    },
+    startBlockV2: 19451952,
   },
   [ChainId.SEPOLIA]: {
     startBlock: 4836125,
-    gqlEndpoint:
-      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-sepolia',
     nativeCurrency: {
       symbol: 'ETH',
     },
     startBlockV2: 5467056,
   },
-  42: {
-    startBlock: 29821123,
-    nativeCurrency: {
-      symbol: 'ETH',
-    },
-  },
   [ChainId.HOLESKY]: {
     startBlock: 148241,
-    gqlEndpoint:
-      'https://api.studio.thegraph.com/query/63614/splits-subgraph-holesky/version/latest',
     nativeCurrency: {
       symbol: 'ETH',
     },
@@ -303,116 +269,66 @@ export const CHAIN_INFO: {
   },
   [ChainId.POLYGON]: {
     startBlock: 25303316,
-    gqlEndpoint:
-      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-polygon',
     nativeCurrency: {
       symbol: 'MATIC',
     },
     startBlockV2: 54572664,
   },
-  [ChainId.POLYGON_MUMBAI]: {
-    startBlock: 25258326,
-    gqlEndpoint:
-      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-mumbai',
-    nativeCurrency: {
-      symbol: 'MATIC',
-    },
-  },
   [ChainId.OPTIMISM]: {
     startBlock: 24704537,
-    gqlEndpoint:
-      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-optimism',
     nativeCurrency: {
       symbol: 'ETH',
     },
     startBlockV2: 117327692,
   },
-  [ChainId.OPTIMISM_GOERLI]: {
-    startBlock: 1324620,
-    gqlEndpoint:
-      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-opt-goerli',
-    nativeCurrency: {
-      symbol: 'ETH',
-    },
-  },
   [ChainId.ARBITRUM]: {
     startBlock: 26082503,
-    gqlEndpoint:
-      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-arbitrum',
     nativeCurrency: {
       symbol: 'ETH',
     },
     startBlockV2: 189649987,
   },
-  [ChainId.ARBITRUM_GOERLI]: {
-    startBlock: 383218,
-    gqlEndpoint:
-      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-arb-goerli',
-    nativeCurrency: {
-      symbol: 'ETH',
-    },
-  },
   [ChainId.GNOSIS]: {
     startBlock: 26014830,
-    gqlEndpoint:
-      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-gnosis',
     nativeCurrency: {
       symbol: 'xDai',
     },
+    startBlockV2: 33277147,
   },
   [ChainId.FANTOM]: {
     startBlock: 53993922,
-    gqlEndpoint:
-      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-fantom',
     nativeCurrency: {
       symbol: 'FTM',
     },
   },
   [ChainId.AVALANCHE]: {
     startBlock: 25125818,
-    gqlEndpoint:
-      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-avalanche',
     nativeCurrency: {
       symbol: 'AVAX',
     },
   },
   [ChainId.BSC]: {
     startBlock: 24962607,
-    gqlEndpoint:
-      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-bsc',
     nativeCurrency: {
       symbol: 'BNB',
     },
+    startBlockV2: 37570236,
   },
   [ChainId.AURORA]: {
     startBlock: 83401794,
-    gqlEndpoint:
-      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-aurora',
     nativeCurrency: {
       symbol: 'ETH',
     },
   },
   [ChainId.ZORA]: {
     startBlock: 1860322,
-    gqlEndpoint:
-      'https://api.goldsky.com/api/public/project_clhk16b61ay9t49vm6ntn4mkz/subgraphs/splits-zora-mainnet/stable/gn',
     nativeCurrency: {
       symbol: 'ETH',
     },
     startBlockV2: 11780035,
   },
-  [ChainId.ZORA_GOERLI]: {
-    startBlock: 968023,
-    gqlEndpoint:
-      'https://api.goldsky.com/api/public/project_clhk16b61ay9t49vm6ntn4mkz/subgraphs/splits-zora-testnet/stable/gn',
-    nativeCurrency: {
-      symbol: 'ETH',
-    },
-  },
   [ChainId.ZORA_SEPOLIA]: {
     startBlock: 2296044,
-    gqlEndpoint:
-      'https://api.goldsky.com/api/public/project_clhk16b61ay9t49vm6ntn4mkz/subgraphs/splits-zora-sepolia/stable/gn',
     nativeCurrency: {
       symbol: 'ETH',
     },
@@ -420,29 +336,23 @@ export const CHAIN_INFO: {
   },
   [ChainId.BASE]: {
     startBlock: 2293907,
-    gqlEndpoint:
-      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-base',
     nativeCurrency: {
       symbol: 'ETH',
     },
     startBlockV2: 11732477,
   },
-  [ChainId.BASE_GOERLI]: {
-    startBlock: 8858512,
-    gqlEndpoint:
-      'https://api.thegraph.com/subgraphs/name/0xsplits/splits-subgraph-base-goerli',
-    nativeCurrency: {
-      symbol: 'ETH',
-    },
-  },
   [ChainId.BASE_SEPOLIA]: {
     startBlock: 3324413,
-    gqlEndpoint:
-      'https://api.studio.thegraph.com/query/63614/splits-subgraph-base-sepolia/version/latest',
     nativeCurrency: {
       symbol: 'ETH',
     },
     startBlockV2: 7243250,
+  },
+  [ChainId.BLAST]: {
+    startBlock: 220516,
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
   },
 }
 
