@@ -20,7 +20,6 @@ import { ZERO } from '../constants'
 import { SupportedChainId } from './constants'
 import { getSwapBalanceId } from '../utils'
 import { Swapper } from '../types'
-import _ from 'lodash'
 
 const UNISWAP_V3_TWAP_ORACLE_FIELDS_FRAGMENT = gql`
   fragment UniswapV3TwapOracleFieldsFragment on UniswapV3TWAPOracle {
@@ -261,7 +260,7 @@ export const protectedFormatSwapper = (gqlSwapper: ISwapper): Swapper => {
     paused: gqlSwapper.paused,
     defaultScaledOfferFactorPercent:
       (1e6 - gqlSwapper.defaultScaledOfferFactor) / 1e4,
-    scaledOfferFactorOverrides: _.values(
+    scaledOfferFactorOverrides: Object.values(
       gqlSwapper.scaledOfferFactorOverrides,
     ).map((scaleOfferFactorOverride) => {
       const baseToken = getAddress(scaleOfferFactorOverride.base)

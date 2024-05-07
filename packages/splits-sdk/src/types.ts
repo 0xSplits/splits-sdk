@@ -525,10 +525,6 @@ export type CreateDiversifierConfig = {
 
 // OUTPUTS
 
-export type TokenBalances = {
-  [token: string]: bigint
-}
-
 export type FormattedTokenBalances = {
   [token: string]: {
     symbol: string
@@ -538,17 +534,8 @@ export type FormattedTokenBalances = {
   }
 }
 
-export type EarningsByContract = {
-  [contractAddress: string]: UserEarnings
-}
-
 export type FormattedEarningsByContract = {
   [contractAddress: string]: FormattedUserEarnings
-}
-
-export type ContractEarnings = {
-  distributed: TokenBalances
-  activeBalances?: TokenBalances
 }
 
 export type FormattedContractEarnings = {
@@ -556,21 +543,11 @@ export type FormattedContractEarnings = {
   activeBalances?: FormattedTokenBalances
 }
 
-export type SplitEarnings = ContractEarnings
 export type FormattedSplitEarnings = FormattedContractEarnings
-
-export type UserEarnings = {
-  withdrawn: TokenBalances
-  activeBalances: TokenBalances
-}
 
 export type FormattedUserEarnings = {
   withdrawn: FormattedTokenBalances
   activeBalances: FormattedTokenBalances
-}
-
-export type UserEarningsByContract = UserEarnings & {
-  earningsByContract: EarningsByContract
 }
 
 export type FormattedUserEarningsByContract = FormattedUserEarnings & {

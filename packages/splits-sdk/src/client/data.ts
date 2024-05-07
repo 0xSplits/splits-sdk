@@ -9,9 +9,7 @@ import {
   zeroAddress,
 } from 'viem'
 import {
-  ContractEarnings,
   DataClientConfig,
-  EarningsByContract,
   FormattedContractEarnings,
   FormattedEarningsByContract,
   FormattedSplitEarnings,
@@ -19,11 +17,8 @@ import {
   FormattedUserEarningsByContract,
   LiquidSplit,
   Split,
-  SplitEarnings,
   SplitsContract,
   Swapper,
-  TokenBalances,
-  UserEarningsByContract,
   VestingModule,
   WaterfallModule,
 } from '../types'
@@ -84,10 +79,9 @@ import {
   getTokenData,
   isAlchemyPublicClient,
   isLogsPublicClient,
+  mergeFormattedTokenBalances,
   validateAddress,
 } from '../utils'
-import { mergeWith } from 'lodash'
-import { ZERO } from '../constants'
 
 export class DataClient {
   readonly _ensPublicClient: PublicClient<Transport, Chain> | undefined
@@ -297,7 +291,7 @@ export class DataClient {
     userAddress: string
     contractAddresses?: string[]
   }): Promise<{
-    contractEarnings: EarningsByContract
+    contractEarnings: FormattedEarningsByContract
   }> {
     const response = await this._loadAccount(userAddress, chainId)
 
@@ -324,9 +318,9 @@ export class DataClient {
     includeActiveBalances: boolean
     erc20TokenList?: string[]
   }): Promise<{
-    withdrawn: TokenBalances
-    distributed: TokenBalances
-    activeBalances?: TokenBalances
+    withdrawn: FormattedTokenBalances
+    distributed: FormattedTokenBalances
+    activeBalances?: FormattedTokenBalances
   }> {
     const response = await this._loadAccount(accountAddress, chainId)
 
@@ -352,14 +346,10 @@ export class DataClient {
       return {
         withdrawn,
         distributed,
-        activeBalances: mergeWith(
-          {},
+        activeBalances: mergeFormattedTokenBalances([
           internalBalances,
           warehouseBalances,
-          (a: bigint, b: bigint) => {
-            return (a || ZERO) + (b || ZERO)
-          },
-        ),
+        ]),
       }
     }
 
@@ -370,7 +360,7 @@ export class DataClient {
       )
     const tokenList = erc20TokenList ?? []
 
-    let balances: TokenBalances
+    let balances: FormattedTokenBalances
     if (
       erc20TokenList === undefined &&
       isAlchemyPublicClient(this._publicClient)
@@ -416,8 +406,9 @@ export class DataClient {
       new Set(Object.keys(balances).concat(Object.keys(internalBalances))),
     )
     const filteredBalances = allTokens.reduce((acc, token) => {
-      const internalBalanceAmount = internalBalances[token] ?? BigInt(0)
-      const contractBalanceAmount = balances[token] ?? BigInt(0)
+      const internalBalanceAmount =
+        internalBalances[token]?.rawAmount ?? BigInt(0)
+      const contractBalanceAmount = balances[token]?.rawAmount ?? BigInt(0)
 
       // SplitMain leaves a balance of 1 for gas efficiency in internal balances.
       // Splits leave a balance of 1 (for erc20) for gas efficiency
@@ -426,62 +417,26 @@ export class DataClient {
           ? internalBalanceAmount
           : BigInt(0)) +
         (contractBalanceAmount > BigInt(1) ? contractBalanceAmount : BigInt(0))
-      if (tokenBalance > BigInt(0)) acc[token] = tokenBalance
+      const symbol = internalBalances[token]?.symbol ?? balances[token]?.symbol
+      const decimals =
+        internalBalances[token]?.decimals ?? balances[token]?.decimals
+      const formattedAmount = fromBigIntToTokenValue(tokenBalance, decimals)
+      if (tokenBalance > BigInt(0))
+        acc[token] = {
+          rawAmount: tokenBalance,
+          formattedAmount,
+          symbol,
+          decimals,
+        }
 
       return acc
-    }, {} as TokenBalances)
+    }, {} as FormattedTokenBalances)
 
     return {
       withdrawn,
       distributed,
       activeBalances: filteredBalances,
     }
-  }
-
-  protected async _getFormattedTokenBalances(
-    chainId: number,
-    tokenBalancesList: TokenBalances[],
-  ): Promise<FormattedTokenBalances[]> {
-    const localPublicClient = this._publicClient
-    if (!localPublicClient)
-      throw new Error('Public client required to fetch token contract data')
-    const tokenData: { [token: string]: { symbol: string; decimals: number } } =
-      {}
-
-    const formattedTokenBalancesList = await Promise.all(
-      tokenBalancesList.map(async (tokenBalances) => {
-        const formattedTokenBalances = await Object.keys(tokenBalances).reduce(
-          async (acc, token) => {
-            const formattedToken = getAddress(token)
-            const awaitedAcc = await acc
-
-            const rawAmount = tokenBalances[token]
-            if (!tokenData[token]) {
-              tokenData[token] = await getTokenData(
-                chainId,
-                formattedToken,
-                localPublicClient,
-              )
-            }
-
-            awaitedAcc[token] = {
-              ...tokenData[token],
-              rawAmount,
-              formattedAmount: fromBigIntToTokenValue(
-                rawAmount,
-                tokenData[token].decimals,
-              ),
-            }
-            return awaitedAcc
-          },
-          {} as Promise<FormattedTokenBalances>,
-        )
-
-        return formattedTokenBalances
-      }),
-    )
-
-    return formattedTokenBalancesList
   }
 
   async getContractEarnings({
@@ -494,7 +449,7 @@ export class DataClient {
     contractAddress: string
     includeActiveBalances?: boolean
     erc20TokenList?: string[]
-  }): Promise<ContractEarnings> {
+  }): Promise<FormattedContractEarnings> {
     validateAddress(contractAddress)
     if (includeActiveBalances && !this._publicClient)
       throw new MissingPublicClientError(
@@ -510,48 +465,6 @@ export class DataClient {
 
     if (!includeActiveBalances) return { distributed }
     return { distributed, activeBalances }
-  }
-
-  async getFormattedContractEarnings({
-    chainId,
-    contractAddress,
-    includeActiveBalances = true,
-    erc20TokenList,
-  }: {
-    chainId: number
-    contractAddress: string
-    includeActiveBalances?: boolean
-    erc20TokenList?: string[]
-  }): Promise<FormattedContractEarnings> {
-    if (!this._publicClient)
-      throw new MissingPublicClientError(
-        'Public client required to get formatted earnings. Please update your call to the SplitsClient constructor with a valid public client',
-      )
-    const { distributed, activeBalances } = await this.getContractEarnings({
-      chainId,
-      contractAddress,
-      includeActiveBalances,
-      erc20TokenList,
-    })
-
-    const balancesToFormat = [distributed]
-    if (activeBalances) balancesToFormat.push(activeBalances)
-
-    const formattedBalances = await this._getFormattedTokenBalances(
-      chainId,
-      balancesToFormat,
-    )
-    const returnData: {
-      distributed: FormattedTokenBalances
-      activeBalances?: FormattedTokenBalances
-    } = {
-      distributed: formattedBalances[0],
-    }
-    if (includeActiveBalances) {
-      returnData.activeBalances = formattedBalances[1]
-    }
-
-    return returnData
   }
 
   async getSplitMetadata({
@@ -646,7 +559,7 @@ export class DataClient {
     splitAddress: string
     includeActiveBalances?: boolean
     erc20TokenList?: string[]
-  }): Promise<SplitEarnings> {
+  }): Promise<FormattedSplitEarnings> {
     validateAddress(splitAddress)
     if (includeActiveBalances && !this._publicClient)
       this._requirePublicClient()
@@ -662,45 +575,6 @@ export class DataClient {
     return { distributed: withdrawn, activeBalances }
   }
 
-  async getFormattedSplitEarnings({
-    chainId,
-    splitAddress,
-    includeActiveBalances = true,
-    erc20TokenList,
-  }: {
-    chainId: number
-    splitAddress: string
-    includeActiveBalances?: boolean
-    erc20TokenList?: string[]
-  }): Promise<FormattedSplitEarnings> {
-    this._requirePublicClient()
-    const { distributed, activeBalances } = await this.getSplitEarnings({
-      chainId,
-      splitAddress,
-      includeActiveBalances,
-      erc20TokenList,
-    })
-
-    const balancesToFormat = [distributed]
-    if (activeBalances) balancesToFormat.push(activeBalances)
-
-    const formattedBalances = await this._getFormattedTokenBalances(
-      chainId,
-      balancesToFormat,
-    )
-    const returnData: {
-      distributed: FormattedTokenBalances
-      activeBalances?: FormattedTokenBalances
-    } = {
-      distributed: formattedBalances[0],
-    }
-    if (includeActiveBalances) {
-      returnData.activeBalances = formattedBalances[1]
-    }
-
-    return returnData
-  }
-
   async getUserEarnings({
     chainId,
     userAddress,
@@ -708,8 +582,8 @@ export class DataClient {
     chainId: number
     userAddress: string
   }): Promise<{
-    withdrawn: TokenBalances
-    activeBalances: TokenBalances
+    withdrawn: FormattedTokenBalances
+    activeBalances: FormattedTokenBalances
   }> {
     validateAddress(userAddress)
 
@@ -723,34 +597,6 @@ export class DataClient {
     return { withdrawn, activeBalances }
   }
 
-  async getFormattedUserEarnings({
-    chainId,
-    userAddress,
-  }: {
-    chainId: number
-    userAddress: string
-  }): Promise<{
-    withdrawn: FormattedTokenBalances
-    activeBalances: FormattedTokenBalances
-  }> {
-    this._requirePublicClient()
-
-    const { withdrawn, activeBalances } = await this.getUserEarnings({
-      chainId,
-      userAddress,
-    })
-    const balancesToFormat = [withdrawn, activeBalances]
-    const formattedBalances = await this._getFormattedTokenBalances(
-      chainId,
-      balancesToFormat,
-    )
-
-    return {
-      withdrawn: formattedBalances[0],
-      activeBalances: formattedBalances[1],
-    }
-  }
-
   async getUserEarningsByContract({
     chainId,
     userAddress,
@@ -759,7 +605,7 @@ export class DataClient {
     chainId: number
     userAddress: string
     contractAddresses?: string[]
-  }): Promise<UserEarningsByContract> {
+  }): Promise<FormattedUserEarningsByContract> {
     validateAddress(userAddress)
     if (contractAddresses) {
       contractAddresses.map((contractAddress) =>
@@ -781,69 +627,52 @@ export class DataClient {
         },
       ) => {
         Object.keys(contractWithdrawn).map((tokenId) => {
-          acc[0][tokenId] =
-            (acc[0][tokenId] ?? BigInt(0)) + contractWithdrawn[tokenId]
+          if (!acc[0][tokenId])
+            acc[0][tokenId] = {
+              symbol: contractWithdrawn[tokenId].symbol,
+              decimals: contractWithdrawn[tokenId].decimals,
+              rawAmount: BigInt(0),
+              formattedAmount: '0',
+            }
+
+          const rawAmount =
+            acc[0][tokenId].rawAmount + contractWithdrawn[tokenId].rawAmount
+          const formattedAmount = fromBigIntToTokenValue(
+            rawAmount,
+            contractWithdrawn[tokenId].decimals,
+          )
+          acc[0][tokenId].rawAmount = rawAmount
+          acc[0][tokenId].formattedAmount = formattedAmount
         })
         Object.keys(contractActiveBalances).map((tokenId) => {
-          acc[1][tokenId] =
-            (acc[1][tokenId] ?? BigInt(0)) + contractActiveBalances[tokenId]
+          if (!acc[1][tokenId])
+            acc[1][tokenId] = {
+              symbol: contractActiveBalances[tokenId].symbol,
+              decimals: contractActiveBalances[tokenId].decimals,
+              rawAmount: BigInt(0),
+              formattedAmount: '0',
+            }
+
+          const rawAmount =
+            acc[1][tokenId].rawAmount +
+            contractActiveBalances[tokenId].rawAmount
+          const formattedAmount = fromBigIntToTokenValue(
+            rawAmount,
+            contractActiveBalances[tokenId].decimals,
+          )
+          acc[1][tokenId].rawAmount = rawAmount
+          acc[1][tokenId].formattedAmount = formattedAmount
         })
 
         return acc
       },
-      [{} as TokenBalances, {} as TokenBalances],
+      [{} as FormattedTokenBalances, {} as FormattedTokenBalances],
     )
 
     return {
       withdrawn,
       activeBalances,
       earningsByContract: contractEarnings,
-    }
-  }
-
-  async getFormattedUserEarningsByContract({
-    chainId,
-    userAddress,
-    contractAddresses,
-  }: {
-    chainId: number
-    userAddress: string
-    contractAddresses?: string[]
-  }): Promise<FormattedUserEarningsByContract> {
-    this._requirePublicClient()
-
-    const { withdrawn, activeBalances, earningsByContract } =
-      await this.getUserEarningsByContract({
-        chainId,
-        userAddress,
-        contractAddresses,
-      })
-    const balancesToFormat = [withdrawn, activeBalances]
-    Object.keys(earningsByContract).map((contractAddress) => {
-      balancesToFormat.push(earningsByContract[contractAddress].withdrawn)
-      balancesToFormat.push(earningsByContract[contractAddress].activeBalances)
-    })
-    const formattedBalances = await this._getFormattedTokenBalances(
-      chainId,
-      balancesToFormat,
-    )
-    const formattedContractEarnings = Object.keys(earningsByContract).reduce(
-      (acc, contractAddress, index) => {
-        const contractWithdrawn = formattedBalances[index * 2 + 2]
-        const contractActiveBalances = formattedBalances[index * 2 + 3]
-        acc[contractAddress] = {
-          withdrawn: contractWithdrawn,
-          activeBalances: contractActiveBalances,
-        }
-        return acc
-      },
-      {} as FormattedEarningsByContract,
-    )
-
-    return {
-      withdrawn: formattedBalances[0],
-      activeBalances: formattedBalances[1],
-      earningsByContract: formattedContractEarnings,
     }
   }
 

@@ -7,8 +7,9 @@ import {
 import { GqlUser, IBalance, IContractEarnings, IUser } from './types'
 import { getAddress } from 'viem'
 import { SupportedChainId } from './constants'
-import { EarningsByContract, TokenBalances } from '../types'
+import { FormattedEarningsByContract, FormattedTokenBalances } from '../types'
 import _ from 'lodash'
+import { fromBigIntToTokenValue } from '../utils/numbers'
 
 export const USER_FIELDS_FRAGMENT = gql`
   fragment UserFieldsFragment on User {
@@ -36,17 +37,17 @@ export const formatGqlUser: (arg0: GqlUser) => IUser = (gqlUser) => {
 }
 
 export const formatContractEarnings = (
-  gqlContractEarnings: IContractEarnings,
+  contractEarnings: IContractEarnings,
   contractAddresses?: string[],
-): EarningsByContract => {
-  const earnings = _.keys(gqlContractEarnings).reduce(
+): FormattedEarningsByContract => {
+  const earnings = Object.keys(contractEarnings).reduce(
     (acc, gqlContractEarning) => {
       const contractId = getAddress(gqlContractEarning)
       const activeBalances = formatAccountBalances(
-        gqlContractEarnings[gqlContractEarning].internalBalances,
+        contractEarnings[gqlContractEarning].internalBalances,
       )
       const withdrawn = formatAccountBalances(
-        gqlContractEarnings[gqlContractEarning].withdrawals,
+        contractEarnings[gqlContractEarning].withdrawals,
       )
 
       acc[contractId] = {
@@ -56,20 +57,30 @@ export const formatContractEarnings = (
 
       return acc
     },
-    {} as EarningsByContract,
+    {} as FormattedEarningsByContract,
   )
   if (contractAddresses) return _.pick(earnings, contractAddresses)
   return earnings
 }
 
 export const formatAccountBalances = (
-  gqlTokenBalances: IBalance,
-): TokenBalances => {
-  return _.keys(gqlTokenBalances).reduce((acc, token) => {
+  balances: IBalance,
+): FormattedTokenBalances => {
+  return Object.keys(balances).reduce((acc, token) => {
     const tokenId = getAddress(token)
-    const amount = BigInt(gqlTokenBalances[token])
+    const amount = BigInt(balances[token].amount)
 
-    if (amount > BigInt(1)) acc[tokenId] = amount
+    if (amount > BigInt(1)) {
+      acc[tokenId] = {
+        symbol: balances[token].symbol,
+        decimals: balances[token].decimals,
+        rawAmount: amount,
+        formattedAmount: fromBigIntToTokenValue(
+          amount,
+          balances[token].decimals,
+        ),
+      }
+    }
     return acc
-  }, {} as TokenBalances)
+  }, {} as FormattedTokenBalances)
 }

@@ -23,11 +23,15 @@ const PASS_THROUGH_WALLET_SWAP_BALANCE_FRAGMENT = gql`
   fragment PassThroughWalletSwapBalanceFragment on PassThroughWalletSwapBalance {
     inputToken {
       id
+      symbol
+      decimals
     }
     inputAmount
     outputs {
       token {
         id
+        symbol
+        decimals
       }
       amount
     }
@@ -80,7 +84,14 @@ const formatPassThroughWalletSwapBalances: (
         (outputAcc, passThroughWalletSwapBalanceOutput) => {
           const token = getAddress(passThroughWalletSwapBalanceOutput.token.id)
           const amount = BigInt(passThroughWalletSwapBalanceOutput.amount)
-          outputAcc[token] = amount
+          const symbol = passThroughWalletSwapBalanceOutput.token.symbol
+          const decimals = passThroughWalletSwapBalanceOutput.token.decimals
+          outputAcc[token] = {
+            amount,
+            symbol,
+            decimals,
+          }
+
           return outputAcc
         },
         {} as IBalance,
