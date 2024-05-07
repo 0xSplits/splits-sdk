@@ -228,6 +228,8 @@ export type GqlPassThroughWallet = GqlAccountSharedFields & {
 
 type GqlToken = {
   id: Scalars['ID']
+  symbol: Scalars['String']
+  decimals: Scalars['Int']
   withdrawals: GqlTokenBalance[]
   internalBalances: GqlTokenBalance[]
 }
@@ -235,10 +237,10 @@ type GqlToken = {
 export type GqlTokenBalanceSharedData = {
   id: Scalars['ID']
   amount: Scalars['Int']
+  token: GqlToken
 }
 
 export type GqlTokenBalance = GqlTokenBalanceSharedData & {
-  id: Scalars['ID']
   account: GqlAccount
 }
 
@@ -568,7 +570,11 @@ export type GqlAccount =
 
 export type GqlAccountType = GqlAccount['__typename']
 
-export type IBalance = Dictionary<bigint>
+export type IBalance = Dictionary<{
+  amount: bigint
+  symbol: string
+  decimals: number
+}>
 export type ISplitType = 'immutable' | 'mutable' | 'liquid'
 export type IContractEarnings = Dictionary<{
   total: IBalance

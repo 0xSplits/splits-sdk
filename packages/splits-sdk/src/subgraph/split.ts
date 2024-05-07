@@ -26,6 +26,10 @@ const TOKEN_BALANCE_FIELDS_FRAGMENT = gql`
   fragment TokenBalanceFieldsFragment on TokenBalance {
     id
     amount
+    token {
+      symbol
+      decimals
+    }
   }
 `
 
@@ -83,10 +87,18 @@ export const ACCOUNT_FIELDS_FRAGMENT = gql`
       internalBalances {
         id
         amount
+        token {
+          symbol
+          decimals
+        }
       }
       withdrawals {
         id
         amount
+        token {
+          symbol
+          decimals
+        }
       }
     }
     parentEntityType

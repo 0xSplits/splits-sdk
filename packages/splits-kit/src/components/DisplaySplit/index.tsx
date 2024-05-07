@@ -56,7 +56,7 @@ const DisplaySplit = ({
       : ERC20_TOKEN_LIST
     : ERC20_TOKEN_LIST
   const {
-    formattedSplitEarnings,
+    splitEarnings,
     isLoading: isLoadingEarnings,
     error: earningsError,
   } = useSplitEarnings(chainId, address, includeActiveBalances, erc20TokenList)
@@ -103,7 +103,7 @@ const DisplaySplit = ({
                 <SplitBalances
                   chainId={chainId}
                   address={address}
-                  formattedSplitEarnings={formattedSplitEarnings}
+                  formattedSplitEarnings={splitEarnings}
                   onSuccess={onSuccess}
                   onError={onError}
                 />

@@ -18,7 +18,15 @@ export const formatInternalTokenBalances: (
 
     // Ignore internal balances below the min token balance. This is leftover in split main
     // for gas efficiency
-    if (amount > ONE) acc[token] = (acc[token] ?? ZERO) + amount - ONE
+    if (amount > ONE) {
+      if (!acc[token])
+        acc[token] = {
+          amount: BigInt(0),
+          decimals: tokenBalance.token.decimals,
+          symbol: tokenBalance.token.symbol,
+        }
+      acc[token].amount = acc[token].amount + amount - ONE // TODO: review this, feels odd
+    }
 
     return acc
   }, {} as IBalance)
@@ -33,8 +41,15 @@ export const formatTokenBalances: (
     const token = getAddress(idParts[idParts.length - 1])
     const amount = BigInt(tokenBalance.amount)
     if (amount !== ZERO) {
-      acc[token] = (acc[token] ?? ZERO) + amount
+      if (!acc[token])
+        acc[token] = {
+          amount: BigInt(0),
+          decimals: tokenBalance.token.decimals,
+          symbol: tokenBalance.token.symbol,
+        }
+      acc[token].amount = acc[token].amount + amount
     }
+
     return acc
   }, {} as IBalance)
 }
