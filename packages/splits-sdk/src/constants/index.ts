@@ -251,6 +251,7 @@ export const CHAIN_INFO: {
     nativeCurrency: {
       symbol: 'ETH',
     },
+    startBlockV2: 19451952,
   },
   [ChainId.SEPOLIA]: {
     startBlock: 4836125,
@@ -292,6 +293,7 @@ export const CHAIN_INFO: {
     nativeCurrency: {
       symbol: 'xDai',
     },
+    startBlockV2: 33277147,
   },
   [ChainId.FANTOM]: {
     startBlock: 53993922,
@@ -310,6 +312,7 @@ export const CHAIN_INFO: {
     nativeCurrency: {
       symbol: 'BNB',
     },
+    startBlockV2: 37570236,
   },
   [ChainId.AURORA]: {
     startBlock: 83401794,
