@@ -564,15 +564,15 @@ export class DataClient {
     if (includeActiveBalances && !this._publicClient)
       this._requirePublicClient()
 
-    const { withdrawn, activeBalances } = await this._getAccountBalances({
+    const { distributed, activeBalances } = await this._getAccountBalances({
       chainId,
       accountAddress: getAddress(splitAddress),
       includeActiveBalances,
       erc20TokenList,
     })
 
-    if (!includeActiveBalances) return { distributed: withdrawn }
-    return { distributed: withdrawn, activeBalances }
+    if (!includeActiveBalances) return { distributed }
+    return { distributed, activeBalances }
   }
 
   async getUserEarnings({
