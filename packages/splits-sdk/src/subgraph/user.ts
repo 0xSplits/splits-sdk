@@ -16,6 +16,10 @@ export const USER_FIELDS_FRAGMENT = gql`
     withdrawals {
       id
       amount
+      token {
+        symbol
+        decimals
+      }
     }
   }
 `
