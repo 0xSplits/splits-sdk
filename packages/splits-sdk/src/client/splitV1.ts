@@ -27,6 +27,7 @@ import {
   ZORA_CHAIN_IDS,
   getSplitMainAddress,
   ETHEREUM_TEST_CHAIN_IDS,
+  BLAST_CHAIN_IDS,
 } from '../constants'
 import {
   splitMainEthereumAbi,
@@ -77,6 +78,7 @@ const polygonAbiChainIds = [
   ...BSC_CHAIN_IDS,
   ...ZORA_CHAIN_IDS,
   ...BASE_CHAIN_IDS,
+  ...BLAST_CHAIN_IDS,
 ]
 
 type SplitMainEthereumAbiType = typeof splitMainEthereumAbi
