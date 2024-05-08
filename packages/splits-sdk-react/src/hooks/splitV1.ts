@@ -3,24 +3,19 @@ import { useCallback, useContext, useEffect, useState } from 'react'
 import {
   SplitsClient,
   SplitsClientConfig,
-  Split,
   CreateSplitConfig,
   UpdateSplitConfig,
   DistributeTokenConfig,
   UpdateSplitAndDistributeTokenConfig,
   WithdrawFundsConfig,
-  InititateControlTransferConfig,
+  InitiateControlTransferConfig,
   CancelControlTransferConfig,
   AcceptControlTransferConfig,
   MakeSplitImmutableConfig,
-  SplitEarnings,
-  FormattedSplitEarnings,
-  ContractEarnings,
-  FormattedContractEarnings,
 } from '@0xsplits/splits-sdk'
 
 import { SplitsContext } from '../context'
-import { ContractExecutionStatus, DataLoadStatus, RequestError } from '../types'
+import { ContractExecutionStatus, RequestError } from '../types'
 import { getSplitsClient } from '../utils'
 
 export const useSplitsClient = (config?: SplitsClientConfig): SplitsClient => {
@@ -29,6 +24,10 @@ export const useSplitsClient = (config?: SplitsClientConfig): SplitsClient => {
     throw new Error('Make sure to include <SplitsProvider>')
   }
 
+  const apiConfig =
+    config && 'apiConfig' in config
+      ? config.apiConfig
+      : context.splitsClient._apiConfig
   const chainId =
     config && 'chainId' in config
       ? config.chainId
@@ -51,13 +50,21 @@ export const useSplitsClient = (config?: SplitsClientConfig): SplitsClient => {
       : context.splitsClient._ensPublicClient
   useEffect(() => {
     context.initClient({
-      chainId,
+      chainId: chainId!,
       publicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
       ensPublicClient,
     })
-  }, [chainId, publicClient, walletClient, includeEnsNames, ensPublicClient])
+  }, [
+    chainId,
+    publicClient,
+    walletClient,
+    apiConfig,
+    includeEnsNames,
+    ensPublicClient,
+  ])
 
   return context.splitsClient as SplitsClient
 }
@@ -69,7 +76,7 @@ export const useCreateSplit = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context)
+  const splitsClient = getSplitsClient(context).splitV1
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -77,6 +84,8 @@ export const useCreateSplit = (): {
 
   const createSplit = useCallback(
     async (argsDict: CreateSplitConfig) => {
+      if (!splitsClient) throw new Error('Invalid chain id for split v1')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)
@@ -114,7 +123,7 @@ export const useUpdateSplit = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context)
+  const splitsClient = getSplitsClient(context).splitV1
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -122,6 +131,8 @@ export const useUpdateSplit = (): {
 
   const updateSplit = useCallback(
     async (argsDict: UpdateSplitConfig) => {
+      if (!splitsClient) throw new Error('Invalid chain id for split v1')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)
@@ -159,7 +170,7 @@ export const useDistributeToken = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context)
+  const splitsClient = getSplitsClient(context).splitV1
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -167,6 +178,8 @@ export const useDistributeToken = (): {
 
   const distributeToken = useCallback(
     async (argsDict: DistributeTokenConfig) => {
+      if (!splitsClient) throw new Error('Invalid chain id for split v1')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)
@@ -206,7 +219,7 @@ export const useUpdateSplitAndDistributeToken = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context)
+  const splitsClient = getSplitsClient(context).splitV1
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -214,6 +227,8 @@ export const useUpdateSplitAndDistributeToken = (): {
 
   const updateSplitAndDistributeToken = useCallback(
     async (argsDict: UpdateSplitAndDistributeTokenConfig) => {
+      if (!splitsClient) throw new Error('Invalid chain id for split v1')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)
@@ -253,7 +268,7 @@ export const useWithdrawFunds = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context)
+  const splitsClient = getSplitsClient(context).splitV1
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -261,6 +276,8 @@ export const useWithdrawFunds = (): {
 
   const withdrawFunds = useCallback(
     async (argsDict: WithdrawFundsConfig) => {
+      if (!splitsClient) throw new Error('Invalid chain id for split v1')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)
@@ -293,21 +310,23 @@ export const useWithdrawFunds = (): {
 
 export const useInitiateControlTransfer = (): {
   initiateControlTransfer: (
-    arg0: InititateControlTransferConfig,
+    arg0: InitiateControlTransferConfig,
   ) => Promise<Log[] | undefined>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context)
+  const splitsClient = getSplitsClient(context).splitV1
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
   const [error, setError] = useState<RequestError>()
 
   const initiateControlTransfer = useCallback(
-    async (argsDict: InititateControlTransferConfig) => {
+    async (argsDict: InitiateControlTransferConfig) => {
+      if (!splitsClient) throw new Error('Invalid chain id for split v1')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)
@@ -347,7 +366,7 @@ export const useCancelControlTransfer = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context)
+  const splitsClient = getSplitsClient(context).splitV1
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -355,6 +374,8 @@ export const useCancelControlTransfer = (): {
 
   const cancelControlTransfer = useCallback(
     async (argsDict: CancelControlTransferConfig) => {
+      if (!splitsClient) throw new Error('Invalid chain id for split v1')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)
@@ -394,7 +415,7 @@ export const useAcceptControlTransfer = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context)
+  const splitsClient = getSplitsClient(context).splitV1
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -402,6 +423,8 @@ export const useAcceptControlTransfer = (): {
 
   const acceptControlTransfer = useCallback(
     async (argsDict: AcceptControlTransferConfig) => {
+      if (!splitsClient) throw new Error('Invalid chain id for split v1')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)
@@ -441,7 +464,7 @@ export const useMakeSplitImmutable = (): {
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context)
+  const splitsClient = getSplitsClient(context).splitV1
 
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
@@ -449,6 +472,8 @@ export const useMakeSplitImmutable = (): {
 
   const makeSplitImmutable = useCallback(
     async (argsDict: MakeSplitImmutableConfig) => {
+      if (!splitsClient) throw new Error('Invalid chain id for split v1')
+
       try {
         setStatus('pendingApproval')
         setError(undefined)
@@ -477,257 +502,4 @@ export const useMakeSplitImmutable = (): {
   )
 
   return { makeSplitImmutable, status, txHash, error }
-}
-
-export const useSplitMetadata = (
-  splitAddress: string,
-): {
-  isLoading: boolean
-  splitMetadata: Split | undefined
-  status?: DataLoadStatus
-  error?: RequestError
-} => {
-  const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context)
-
-  const [splitMetadata, setSplitMetadata] = useState<Split | undefined>()
-  const [isLoading, setIsLoading] = useState(!!splitAddress)
-  const [status, setStatus] = useState<DataLoadStatus | undefined>(
-    splitAddress ? 'loading' : undefined,
-  )
-  const [error, setError] = useState<RequestError>()
-
-  useEffect(() => {
-    let isActive = true
-
-    const fetchMetadata = async () => {
-      try {
-        const split = await splitsClient.getSplitMetadata({ splitAddress })
-        if (!isActive) return
-        setSplitMetadata(split)
-        setStatus('success')
-      } catch (e) {
-        if (isActive) {
-          setStatus('error')
-          setError(e)
-        }
-      } finally {
-        if (isActive) setIsLoading(false)
-      }
-    }
-
-    setError(undefined)
-    if (splitAddress) {
-      setIsLoading(true)
-      setStatus('loading')
-      fetchMetadata()
-    } else {
-      setStatus(undefined)
-      setIsLoading(false)
-      setSplitMetadata(undefined)
-    }
-
-    return () => {
-      isActive = false
-    }
-  }, [splitsClient, splitAddress])
-
-  return {
-    isLoading,
-    splitMetadata,
-    error,
-    status,
-  }
-}
-
-export const useSplitEarnings = (
-  splitAddress: string,
-  includeActiveBalances?: boolean,
-  erc20TokenList?: string[],
-  formatted = true,
-): {
-  isLoading: boolean
-  splitEarnings: SplitEarnings | undefined
-  formattedSplitEarnings: FormattedSplitEarnings | undefined
-  status?: DataLoadStatus
-  error?: RequestError
-} => {
-  const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context)
-
-  const [splitEarnings, setSplitEarnings] = useState<
-    SplitEarnings | undefined
-  >()
-  const [formattedSplitEarnings, setFormattedSplitEarnings] = useState<
-    FormattedSplitEarnings | undefined
-  >()
-  const [isLoading, setIsLoading] = useState(!!splitAddress)
-  const [status, setStatus] = useState<DataLoadStatus | undefined>(
-    splitAddress ? 'loading' : undefined,
-  )
-  const [error, setError] = useState<RequestError>()
-
-  useEffect(() => {
-    let isActive = true
-
-    const fetchEarnings = async (fetchFormattedEarnings?: boolean) => {
-      try {
-        if (fetchFormattedEarnings) {
-          const formattedEarnings =
-            await splitsClient.getFormattedSplitEarnings({
-              splitAddress,
-              includeActiveBalances,
-              erc20TokenList,
-            })
-          if (!isActive) return
-          setFormattedSplitEarnings(formattedEarnings)
-          setSplitEarnings(undefined)
-          setStatus('success')
-        } else {
-          const earnings = await splitsClient.getSplitEarnings({
-            splitAddress,
-            includeActiveBalances,
-            erc20TokenList,
-          })
-          if (!isActive) return
-          setSplitEarnings(earnings)
-          setFormattedSplitEarnings(undefined)
-          setStatus('success')
-        }
-      } catch (e) {
-        if (isActive) {
-          setStatus('error')
-          setError(e)
-        }
-      } finally {
-        if (isActive) setIsLoading(false)
-      }
-    }
-
-    setError(undefined)
-    if (splitAddress) {
-      setIsLoading(true)
-      setStatus('loading')
-      fetchEarnings(formatted)
-    } else {
-      setStatus(undefined)
-      setIsLoading(false)
-      setSplitEarnings(undefined)
-      setFormattedSplitEarnings(undefined)
-    }
-
-    return () => {
-      isActive = false
-    }
-  }, [
-    splitsClient,
-    splitAddress,
-    formatted,
-    includeActiveBalances,
-    erc20TokenList,
-  ])
-
-  return {
-    isLoading,
-    splitEarnings,
-    formattedSplitEarnings,
-    status,
-    error,
-  }
-}
-
-export const useContractEarnings = (
-  contractAddress: string,
-  includeActiveBalances?: boolean,
-  erc20TokenList?: string[],
-  formatted = true,
-): {
-  isLoading: boolean
-  contractEarnings: ContractEarnings | undefined
-  formattedContractEarnings: FormattedContractEarnings | undefined
-  status?: DataLoadStatus
-  error?: RequestError
-} => {
-  const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context)
-
-  const [contractEarnings, setContractEarnings] = useState<
-    ContractEarnings | undefined
-  >()
-  const [formattedContractEarnings, setFormattedContractEarnings] = useState<
-    FormattedContractEarnings | undefined
-  >()
-  const [isLoading, setIsLoading] = useState(!!contractAddress)
-  const [status, setStatus] = useState<DataLoadStatus | undefined>(
-    contractAddress ? 'loading' : undefined,
-  )
-  const [error, setError] = useState<RequestError>()
-
-  useEffect(() => {
-    let isActive = true
-
-    const fetchEarnings = async (fetchFormattedEarnings?: boolean) => {
-      try {
-        if (fetchFormattedEarnings) {
-          const formattedEarnings =
-            await splitsClient.getFormattedContractEarnings({
-              contractAddress,
-              includeActiveBalances,
-              erc20TokenList,
-            })
-          if (!isActive) return
-          setFormattedContractEarnings(formattedEarnings)
-          setContractEarnings(undefined)
-          setStatus('success')
-        } else {
-          const earnings = await splitsClient.getContractEarnings({
-            contractAddress,
-            includeActiveBalances,
-            erc20TokenList,
-          })
-          if (!isActive) return
-          setContractEarnings(earnings)
-          setFormattedContractEarnings(undefined)
-          setStatus('success')
-        }
-      } catch (e) {
-        if (isActive) {
-          setStatus('error')
-          setError(e)
-        }
-      } finally {
-        if (isActive) setIsLoading(false)
-      }
-    }
-
-    setError(undefined)
-    if (contractAddress) {
-      setIsLoading(true)
-      setStatus('loading')
-      fetchEarnings(formatted)
-    } else {
-      setStatus(undefined)
-      setIsLoading(false)
-      setContractEarnings(undefined)
-      setFormattedContractEarnings(undefined)
-    }
-
-    return () => {
-      isActive = false
-    }
-  }, [
-    splitsClient,
-    contractAddress,
-    formatted,
-    includeActiveBalances,
-    erc20TokenList,
-  ])
-
-  return {
-    isLoading,
-    contractEarnings,
-    formattedContractEarnings,
-    status,
-    error,
-  }
 }

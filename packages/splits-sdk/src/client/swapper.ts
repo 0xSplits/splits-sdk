@@ -11,6 +11,7 @@ import {
   encodeEventTopics,
   getAddress,
   getContract,
+  zeroAddress,
 } from 'viem'
 
 import {
@@ -23,13 +24,11 @@ import {
   getSwapperFactoryAddress,
   SWAPPER_CHAIN_IDS,
   getUniV3SwapAddress,
-  ADDRESS_ZERO,
 } from '../constants'
 import { swapperFactoryAbi } from '../constants/abi/swapperFactory'
 import { uniV3SwapAbi } from '../constants/abi/uniV3Swap'
 import { swapperAbi } from '../constants/abi/swapper'
 import {
-  AccountNotFoundError,
   InvalidAuthError,
   TransactionFailedError,
   UnsupportedChainIdError,
@@ -41,7 +40,6 @@ import type {
   ContractSwapperExactInputParams,
   CreateSwapperConfig,
   SplitsClientConfig,
-  Swapper,
   SwapperExecCallsConfig,
   SwapperPauseConfig,
   SwapperSetBeneficiaryConfig,
@@ -54,7 +52,6 @@ import type {
   UniV3FlashSwapConfig,
 } from '../types'
 import {
-  addEnsNames,
   getFormattedOracleParams,
   getFormattedScaledOfferFactor,
   getFormattedScaledOfferFactorOverrides,
@@ -66,8 +63,6 @@ import {
   validateScaledOfferFactorOverrides,
   validateUniV3SwapInputAssets,
 } from '../utils/validation'
-import { GqlSwapper } from '../subgraph/types'
-import { SWAPPER_QUERY, protectedFormatSwapper } from '../subgraph'
 
 type SwapperAbi = typeof swapperAbi
 type UniV3SwapAbi = typeof uniV3SwapAbi
@@ -79,6 +74,7 @@ class SwapperTransactions extends BaseTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
@@ -87,6 +83,7 @@ class SwapperTransactions extends BaseTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }
@@ -107,7 +104,7 @@ class SwapperTransactions extends BaseTransactions {
     validateOracleParams(oracleParams)
     validateScaledOfferFactor(defaultScaledOfferFactorPercent)
     validateScaledOfferFactorOverrides(scaledOfferFactorOverrides)
-    if (this._shouldRequreWalletClient) this._requireWalletClient()
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const formattedOracleParams = getFormattedOracleParams(oracleParams)
     const formattedDefaultScaledOfferFactor = getFormattedScaledOfferFactor(
@@ -117,7 +114,7 @@ class SwapperTransactions extends BaseTransactions {
       getFormattedScaledOfferFactorOverrides(scaledOfferFactorOverrides)
 
     const result = await this._executeContractFunction({
-      contractAddress: getSwapperFactoryAddress(this._chainId),
+      contractAddress: getSwapperFactoryAddress(),
       contractAbi: swapperFactoryAbi,
       functionName: 'createSwapper',
       functionArgs: [
@@ -149,21 +146,24 @@ class SwapperTransactions extends BaseTransactions {
 
     this._requirePublicClient()
     if (!this._publicClient) throw new Error('Public client required')
-    if (this._shouldRequreWalletClient) this._requireWalletClient()
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const excessRecipientAddress = excessRecipient
       ? excessRecipient
       : this._walletClient?.account
       ? this._walletClient.account.address
-      : ADDRESS_ZERO
+      : zeroAddress
     validateAddress(excessRecipientAddress)
 
+    this._requireDataClient()
+
     // TO DO: handle bad swapper id/no metadata found
-    const { tokenToBeneficiary } = await this.getSwapperMetadata({
+    const { tokenToBeneficiary } = await this._dataClient!.getSwapperMetadata({
+      chainId: this._chainId,
       swapperAddress,
     })
 
-    const swapRecipient = getUniV3SwapAddress(this._chainId)
+    const swapRecipient = getUniV3SwapAddress()
     const deadlineTime = Math.floor(Date.now() / 1000) + transactionTimeLimit
 
     const quoteParams: ContractQuoteParams[] = []
@@ -191,7 +191,7 @@ class SwapperTransactions extends BaseTransactions {
     ]
 
     const result = await this._executeContractFunction({
-      contractAddress: getUniV3SwapAddress(this._chainId),
+      contractAddress: getUniV3SwapAddress(),
       contractAbi: uniV3SwapAbi,
       functionName: 'initFlash',
       functionArgs: [swapperAddress, flashParams],
@@ -208,7 +208,7 @@ class SwapperTransactions extends BaseTransactions {
   }: SwapperSetBeneficiaryConfig): Promise<TransactionFormat> {
     validateAddress(swapperAddress)
     validateAddress(beneficiary)
-    if (this._shouldRequreWalletClient) {
+    if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
       await this._requireOwner(swapperAddress)
     }
@@ -231,7 +231,7 @@ class SwapperTransactions extends BaseTransactions {
   }: SwapperSetTokenToBeneficiaryConfig): Promise<TransactionFormat> {
     validateAddress(swapperAddress)
     validateAddress(tokenToBeneficiary)
-    if (this._shouldRequreWalletClient) {
+    if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
       await this._requireOwner(swapperAddress)
     }
@@ -254,7 +254,7 @@ class SwapperTransactions extends BaseTransactions {
   }: SwapperSetOracleConfig): Promise<TransactionFormat> {
     validateAddress(swapperAddress)
     validateAddress(oracle)
-    if (this._shouldRequreWalletClient) {
+    if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
       await this._requireOwner(swapperAddress)
     }
@@ -277,7 +277,7 @@ class SwapperTransactions extends BaseTransactions {
   }: SwapperSetDefaultScaledOfferFactorConfig): Promise<TransactionFormat> {
     validateAddress(swapperAddress)
     validateScaledOfferFactor(defaultScaledOfferFactorPercent)
-    if (this._shouldRequreWalletClient) {
+    if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
       await this._requireOwner(swapperAddress)
     }
@@ -304,7 +304,7 @@ class SwapperTransactions extends BaseTransactions {
   }: SwapperSetScaledOfferFactorOverridesConfig): Promise<TransactionFormat> {
     validateAddress(swapperAddress)
     validateScaledOfferFactorOverrides(scaledOfferFactorOverrides)
-    if (this._shouldRequreWalletClient) {
+    if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
       await this._requireOwner(swapperAddress)
     }
@@ -330,7 +330,7 @@ class SwapperTransactions extends BaseTransactions {
   }: SwapperExecCallsConfig): Promise<TransactionFormat> {
     validateAddress(swapperAddress)
     calls.map((callData) => validateAddress(callData.to))
-    if (this._shouldRequreWalletClient) {
+    if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
       await this._requireOwner(swapperAddress)
     }
@@ -356,7 +356,7 @@ class SwapperTransactions extends BaseTransactions {
     transactionOverrides = {},
   }: SwapperPauseConfig): Promise<TransactionFormat> {
     validateAddress(swapperAddress)
-    if (this._shouldRequreWalletClient) {
+    if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
       await this._requireOwner(swapperAddress)
     }
@@ -372,48 +372,13 @@ class SwapperTransactions extends BaseTransactions {
     return result
   }
 
-  // Graphql read actions
-  async getSwapperMetadata({
-    swapperAddress,
-  }: {
-    swapperAddress: string
-  }): Promise<Swapper> {
-    validateAddress(swapperAddress)
-    const chainId = this._chainId
-
-    const response = await this._makeGqlRequest<{
-      swapper: GqlSwapper
-    }>(SWAPPER_QUERY, {
-      swapperAddress: swapperAddress.toLowerCase(),
-    })
-
-    if (!response.swapper)
-      throw new AccountNotFoundError('swapper', swapperAddress, chainId)
-
-    return await this.formatSwapper(response.swapper)
-  }
-
-  async formatSwapper(gqlSwapper: GqlSwapper): Promise<Swapper> {
-    const swapper = protectedFormatSwapper(gqlSwapper)
-    if (this._includeEnsNames) {
-      if (!this._ensPublicClient) throw new Error()
-
-      const ensRecipients = [swapper.beneficiary].concat(
-        swapper.owner ? [swapper.owner] : [],
-      )
-      await addEnsNames(this._ensPublicClient, ensRecipients)
-    }
-
-    return swapper
-  }
-
   private async _requireOwner(swapperAddress: string) {
     const swapperContract = this._getSwapperContract(swapperAddress)
     const owner = await swapperContract.read.owner()
-    // TODO: how to get rid of this, needed for typescript check
-    if (!this._walletClient?.account) throw new Error()
 
-    const walletAddress = this._walletClient.account.address
+    this._requireWalletClient()
+
+    const walletAddress = this._walletClient!.account.address
 
     if (owner !== walletAddress)
       throw new InvalidAuthError(
@@ -426,8 +391,10 @@ class SwapperTransactions extends BaseTransactions {
     PublicClient<Transport, Chain>
   > {
     return getContract({
-      address: getUniV3SwapAddress(this._chainId),
+      address: getUniV3SwapAddress(),
       abi: uniV3SwapAbi,
+      // @ts-expect-error v1/v2 viem support
+      client: this._publicClient,
       publicClient: this._publicClient,
     })
   }
@@ -438,6 +405,8 @@ class SwapperTransactions extends BaseTransactions {
     return getContract({
       address: getAddress(swapper),
       abi: swapperAbi,
+      // @ts-expect-error v1/v2 viem support
+      client: this._publicClient,
       publicClient: this._publicClient,
     })
   }
@@ -454,6 +423,7 @@ export class SwapperClient extends SwapperTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -462,6 +432,7 @@ export class SwapperClient extends SwapperTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
 
@@ -530,6 +501,7 @@ export class SwapperClient extends SwapperTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
     this.estimateGas = new SwapperGasEstimates({
@@ -537,6 +509,7 @@ export class SwapperClient extends SwapperTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }
@@ -640,7 +613,8 @@ export class SwapperClient extends SwapperTransactions {
     txHash: Hash
   }> {
     const txHash = await this._setPausedTransaction(pauseArgs)
-    if (!this._isContractTransaction(txHash)) throw new Error('Invalid reponse')
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
 
     return { txHash }
   }
@@ -668,7 +642,8 @@ export class SwapperClient extends SwapperTransactions {
     txHash: Hash
   }> {
     const txHash = await this._setBeneficiaryTransaction(args)
-    if (!this._isContractTransaction(txHash)) throw new Error('Invalid reponse')
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
 
     return { txHash }
   }
@@ -696,7 +671,8 @@ export class SwapperClient extends SwapperTransactions {
     txHash: Hash
   }> {
     const txHash = await this._setTokenToBeneficiaryTransaction(args)
-    if (!this._isContractTransaction(txHash)) throw new Error('Invalid reponse')
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
 
     return { txHash }
   }
@@ -724,7 +700,8 @@ export class SwapperClient extends SwapperTransactions {
     txHash: Hash
   }> {
     const txHash = await this._setOracleTransaction(args)
-    if (!this._isContractTransaction(txHash)) throw new Error('Invalid reponse')
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
 
     return { txHash }
   }
@@ -752,7 +729,8 @@ export class SwapperClient extends SwapperTransactions {
     txHash: Hash
   }> {
     const txHash = await this._setDefaultScaledOfferFactorTransaction(args)
-    if (!this._isContractTransaction(txHash)) throw new Error('Invalid reponse')
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
 
     return { txHash }
   }
@@ -786,7 +764,8 @@ export class SwapperClient extends SwapperTransactions {
     txHash: Hash
   }> {
     const txHash = await this._setScaledOfferFactorOverridesTransaction(args)
-    if (!this._isContractTransaction(txHash)) throw new Error('Invalid reponse')
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
 
     return { txHash }
   }
@@ -933,6 +912,7 @@ class SwapperGasEstimates extends SwapperTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -941,6 +921,7 @@ class SwapperGasEstimates extends SwapperTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }
@@ -1026,6 +1007,7 @@ class SwapperCallData extends SwapperTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -1034,6 +1016,7 @@ class SwapperCallData extends SwapperTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }

@@ -12,6 +12,7 @@ import {
   encodeEventTopics,
   getAddress,
   getContract,
+  zeroAddress,
 } from 'viem'
 
 import {
@@ -25,22 +26,17 @@ import {
   getLiquidSplitFactoryAddress,
   LIQUID_SPLIT_URI_BASE_64_HEADER,
   TransactionType,
-  ADDRESS_ZERO,
 } from '../constants'
 import { liquidSplitFactoryAbi } from '../constants/abi/liquidSplitFactory'
 import { ls1155CloneAbi } from '../constants/abi/ls1155Clone'
 import { splitMainPolygonAbi } from '../constants/abi/splitMain'
 import {
-  AccountNotFoundError,
   InvalidAuthError,
   TransactionFailedError,
   UnsupportedChainIdError,
 } from '../errors'
 import { applyMixins } from './mixin'
-import { protectedFormatLiquidSplit, LIQUID_SPLIT_QUERY } from '../subgraph'
-import type { GqlLiquidSplit } from '../subgraph/types'
 import type {
-  LiquidSplit,
   SplitsClientConfig,
   CreateLiquidSplitConfig,
   DistributeLiquidSplitTokenConfig,
@@ -53,7 +49,6 @@ import {
   getBigIntFromPercent,
   getRecipientSortedAddressesAndAllocations,
   getNftCountsFromPercents,
-  addEnsNames,
 } from '../utils'
 import {
   validateAddress,
@@ -70,6 +65,7 @@ class LiquidSplitTransactions extends BaseTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
@@ -78,6 +74,7 @@ class LiquidSplitTransactions extends BaseTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }
@@ -91,12 +88,12 @@ class LiquidSplitTransactions extends BaseTransactions {
     validateSplitRecipients(recipients, LIQUID_SPLITS_MAX_PRECISION_DECIMALS)
     validateDistributorFeePercent(distributorFeePercent)
 
-    if (this._shouldRequreWalletClient) this._requireWalletClient()
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
     const ownerAddress = owner
       ? owner
       : this._walletClient?.account
       ? this._walletClient.account.address
-      : ADDRESS_ZERO
+      : zeroAddress
     validateAddress(ownerAddress)
 
     const [accounts, percentAllocations] =
@@ -123,17 +120,19 @@ class LiquidSplitTransactions extends BaseTransactions {
   }: DistributeLiquidSplitTokenConfig): Promise<TransactionFormat> {
     validateAddress(liquidSplitAddress)
     validateAddress(token)
-    if (this._shouldRequreWalletClient) this._requireWalletClient()
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const distributorPayoutAddress = distributorAddress
       ? distributorAddress
       : this._walletClient?.account
       ? this._walletClient.account.address
-      : ADDRESS_ZERO
+      : zeroAddress
     validateAddress(distributorPayoutAddress)
 
-    // TO DO: handle bad split id/no metadata found
-    const { holders } = await this.getLiquidSplitMetadata({
+    this._requireDataClient()
+
+    const { holders } = await this._dataClient!.getLiquidSplitMetadata({
+      chainId: this._chainId,
       liquidSplitAddress,
     })
     const accounts = holders
@@ -161,7 +160,7 @@ class LiquidSplitTransactions extends BaseTransactions {
   }: TransferLiquidSplitOwnershipConfig): Promise<TransactionFormat> {
     validateAddress(liquidSplitAddress)
     validateAddress(newOwner)
-    if (this._shouldRequreWalletClient) {
+    if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
       await this._requireOwner(liquidSplitAddress)
     }
@@ -177,60 +176,13 @@ class LiquidSplitTransactions extends BaseTransactions {
     return result
   }
 
-  // Graphql read actions
-  async getLiquidSplitMetadata({
-    liquidSplitAddress,
-  }: {
-    liquidSplitAddress: string
-  }): Promise<LiquidSplit> {
-    validateAddress(liquidSplitAddress)
-    const chainId = this._chainId
-
-    const response = await this._makeGqlRequest<{
-      liquidSplit: GqlLiquidSplit
-    }>(LIQUID_SPLIT_QUERY, {
-      liquidSplitAddress: liquidSplitAddress.toLowerCase(),
-    })
-
-    if (!response.liquidSplit)
-      throw new AccountNotFoundError(
-        'liquid split',
-        liquidSplitAddress,
-        chainId,
-      )
-
-    return await this.formatLiquidSplit(response.liquidSplit)
-  }
-
-  async formatLiquidSplit(
-    gqlLiquidSplit: GqlLiquidSplit,
-  ): Promise<LiquidSplit> {
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error()
-
-    const liquidSplit = protectedFormatLiquidSplit(gqlLiquidSplit)
-    if (this._includeEnsNames) {
-      await addEnsNames(
-        this._ensPublicClient ?? this._publicClient,
-        liquidSplit.holders.map((holder) => {
-          return holder.recipient
-        }),
-      )
-    }
-
-    return liquidSplit
-  }
-
   private async _requireOwner(liquidSplitAddress: string) {
     this._requireWalletClient()
 
     const liquidSplitContract = this._getLiquidSplitContract(liquidSplitAddress)
     const owner = await liquidSplitContract.read.owner()
 
-    // TODO: how to get rid of this, needed for typescript check
-    if (!this._walletClient?.account) throw new Error()
-
-    const walletAddress = this._walletClient.account.address
+    const walletAddress = this._walletClient!.account.address
 
     if (owner !== walletAddress)
       throw new InvalidAuthError(
@@ -244,6 +196,8 @@ class LiquidSplitTransactions extends BaseTransactions {
     return getContract({
       address: getAddress(liquidSplit),
       abi: ls1155CloneAbi,
+      // @ts-expect-error v1/v2 viem support
+      client: this._publicClient,
       publicClient: this._publicClient,
     })
   }
@@ -260,6 +214,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -268,6 +223,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
 
@@ -308,6 +264,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
     this.estimateGas = new LiquidSplitGasEstimates({
@@ -315,6 +272,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }
@@ -392,7 +350,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
 
     const { token } = distributeTokenArgs
     const eventTopic =
-      token === ADDRESS_ZERO
+      token === zeroAddress
         ? this.eventTopics.distributeToken[1]
         : this.eventTopics.distributeToken[2]
     const events = await this.getTransactionEvents({
@@ -570,6 +528,7 @@ class LiquidSplitGasEstimates extends LiquidSplitTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -578,6 +537,7 @@ class LiquidSplitGasEstimates extends LiquidSplitTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }
@@ -625,6 +585,7 @@ class LiquidSplitCallData extends LiquidSplitTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -633,6 +594,7 @@ class LiquidSplitCallData extends LiquidSplitTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }

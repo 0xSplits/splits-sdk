@@ -31,11 +31,26 @@ export type MulticallConfig = {
   calls: CallData[]
 } & TransactionOverridesDict
 
+export type ApiConfig = {
+  apiKey: string
+  serverURL?: string
+}
+
+export type DataClientConfig = {
+  publicClient?: PublicClient<Transport, Chain>
+  apiConfig: ApiConfig
+  includeEnsNames?: boolean
+  // ensPublicClient can be used to fetch ens names when publicClient is not on mainnet (reverseRecords
+  // only works on mainnet).
+  ensPublicClient?: PublicClient<Transport, Chain>
+}
+
 // Splits
 export type SplitsClientConfig = {
   chainId: number
   publicClient?: PublicClient<Transport, Chain>
   walletClient?: WalletClient<Transport, Chain, Account>
+  apiConfig?: ApiConfig
   includeEnsNames?: boolean
   // ensPublicClient can be used to fetch ens names when publicClient is not on mainnet (reverseRecords
   // only works on mainnet).
@@ -82,7 +97,7 @@ export type WithdrawFundsConfig = {
   tokens: string[]
 } & TransactionOverridesDict
 
-export type InititateControlTransferConfig = {
+export type InitiateControlTransferConfig = {
   splitAddress: string
   newController: string
 } & TransactionOverridesDict
@@ -116,6 +131,184 @@ export type GetSplitBalanceConfig = {
   splitAddress: string
   token?: string
 }
+
+// Warehouse
+export type WarehouseTransferConfig = {
+  receiverAddress: Address
+  tokenAddress: Address
+  amount: bigint
+} & TransactionOverridesDict
+
+export type WarehouseTransferFromConfig = {
+  senderAddress: Address
+  receiverAddress: Address
+  tokenAddress: Address
+  amount: bigint
+} & TransactionOverridesDict
+
+export type WarehouseApproveConfig = {
+  spenderAddress: Address
+  tokenAddress: Address
+  amount: bigint
+} & TransactionOverridesDict
+
+export type WarehouseSetOperatorConfig = {
+  operatorAddress: Address
+  approved: boolean
+} & TransactionOverridesDict
+
+export type WarehouseInvalidateNonceConfig = {
+  nonce: bigint
+} & TransactionOverridesDict
+
+export type WarehouseTemporaryApproveAndCallConfig = {
+  spenderAddress: Address
+  operator: boolean
+  tokenAddress: Address
+  amount: bigint
+  targetAddress: Address
+  data: Hex
+} & TransactionOverridesDict
+
+export type WarehouseTemporaryApproveAndCallBySigConfig = {
+  ownerAddress: Address
+  spenderAddress: Address
+  operator: boolean
+  tokenAddress: Address
+  amount: bigint
+  targetAddress: Address
+  data: Hex
+  nonce: bigint
+  deadline: number
+  signature: Hex
+} & TransactionOverridesDict
+
+export type WarehouseApproveBySig = {
+  spenderAddress: Address
+  operator: boolean
+  tokenAddress: Address
+  amount: bigint
+  nonce: bigint
+  deadline: number
+}
+
+export type WarehouseTemporaryApproveAndCallBySig = {
+  spenderAddress: Address
+  operator: boolean
+  tokenAddress: Address
+  amount: bigint
+  targetAddress: Address
+  data: Hex
+  nonce: bigint
+  deadline: number
+}
+
+export type WarehouseApproveBySigConfig = {
+  ownerAddress: Address
+  spenderAddress: Address
+  operator: boolean
+  tokenAddress: Address
+  amount: bigint
+  nonce: bigint
+  deadline: number
+  signature: Hex
+} & TransactionOverridesDict
+
+export type WarehouseDepositConfig = {
+  receiverAddress: Address
+  tokenAddress: Address
+  amount: bigint
+} & TransactionOverridesDict
+
+export type WarehouseBatchDepositConfig = {
+  receiversAddresses: Address[]
+  tokenAddress: Address
+  amounts: bigint[]
+} & TransactionOverridesDict
+
+export type WarehouseWithdrawConfig = {
+  ownerAddress: Address
+  tokenAddress: Address
+} & TransactionOverridesDict
+
+export type WarehouseBatchWithdrawConfig = {
+  ownerAddress: Address
+  tokensAddresses: Address[]
+  amounts: bigint[]
+  withdrawerAddress: Address
+} & TransactionOverridesDict
+
+export type WarehouseBatchTransferConfig = {
+  receiversAddresses: Address[]
+  tokenAddress: Address
+  amounts: bigint[]
+} & TransactionOverridesDict
+
+export type WarehouseSetWithdrawConfig = {
+  incentivePercent: number
+  paused: boolean
+} & TransactionOverridesDict
+
+export enum SplitV2Type {
+  Push = 'push',
+  Pull = 'pull',
+}
+
+// Split V2
+
+export type SplitV2 = {
+  address: Address
+  recipients: Address[]
+  allocations: bigint[]
+  distributionIncentive: number
+  totalAllocation: bigint
+  paused: boolean
+  type: SplitV2Type
+  controllerAddress: Address
+  creatorAddress: Address
+}
+
+export type CreateSplitV2Config = {
+  recipients: SplitRecipient[]
+  distributorFeePercent: number
+  totalAllocationPercent?: number
+  splitType?: SplitV2Type
+  ownerAddress?: Address
+  creatorAddress?: Address
+  salt?: Hex
+} & TransactionOverridesDict
+
+export type UpdateSplitV2Config = {
+  splitAddress: Address
+  recipients: SplitRecipient[]
+  distributorFeePercent: number
+  totalAllocationPercent?: number
+} & TransactionOverridesDict
+
+export type DistributeSplitConfig = {
+  splitAddress: Address
+  tokenAddress: Address
+  distributorAddress?: Address
+} & TransactionOverridesDict
+
+export type TransferOwnershipConfig = {
+  splitAddress: Address
+  newOwner: Address
+} & TransactionOverridesDict
+
+export type SetPausedConfig = {
+  splitAddress: Address
+  paused: boolean
+} & TransactionOverridesDict
+
+export type SplitV2ExecCallsConfig = {
+  splitAddress: Address
+  calls: {
+    to: Address
+    value: bigint
+    data: Hex
+  }[]
+} & TransactionOverridesDict
 
 // Waterfall
 export type WaterfallTrancheInput = {
@@ -332,10 +525,6 @@ export type CreateDiversifierConfig = {
 
 // OUTPUTS
 
-export type TokenBalances = {
-  [token: string]: bigint
-}
-
 export type FormattedTokenBalances = {
   [token: string]: {
     symbol: string
@@ -345,17 +534,8 @@ export type FormattedTokenBalances = {
   }
 }
 
-export type EarningsByContract = {
-  [contractAddress: string]: UserEarnings
-}
-
 export type FormattedEarningsByContract = {
   [contractAddress: string]: FormattedUserEarnings
-}
-
-export type ContractEarnings = {
-  distributed: TokenBalances
-  activeBalances?: TokenBalances
 }
 
 export type FormattedContractEarnings = {
@@ -363,21 +543,11 @@ export type FormattedContractEarnings = {
   activeBalances?: FormattedTokenBalances
 }
 
-export type SplitEarnings = ContractEarnings
 export type FormattedSplitEarnings = FormattedContractEarnings
-
-export type UserEarnings = {
-  withdrawn: TokenBalances
-  activeBalances: TokenBalances
-}
 
 export type FormattedUserEarnings = {
   withdrawn: FormattedTokenBalances
   activeBalances: FormattedTokenBalances
-}
-
-export type UserEarningsByContract = UserEarnings & {
-  earningsByContract: EarningsByContract
 }
 
 export type FormattedUserEarningsByContract = FormattedUserEarnings & {
@@ -396,11 +566,13 @@ export type Token = {
 }
 
 export type Split = {
-  type: 'Split'
+  type: 'Split' | 'SplitV2'
   address: Address
   controller: Recipient | null
   newPotentialController: Recipient | null
   distributorFeePercent: number
+  distributionsPaused: boolean
+  distributeDirection: 'pull' | 'push'
   recipients: {
     percentAllocation: number
     recipient: Recipient

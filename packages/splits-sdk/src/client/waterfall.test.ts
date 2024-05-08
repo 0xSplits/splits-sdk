@@ -6,10 +6,11 @@ import {
   PublicClient,
   Transport,
   WalletClient,
+  zeroAddress,
 } from 'viem'
 
 import { WaterfallClient } from './waterfall'
-import { ADDRESS_ZERO, getWaterfallFactoryAddress } from '../constants'
+import { getWaterfallFactoryAddress } from '../constants'
 import {
   InvalidArgumentError,
   InvalidConfigError,
@@ -17,16 +18,9 @@ import {
   MissingWalletClientError,
   UnsupportedChainIdError,
 } from '../errors'
-import * as subgraph from '../subgraph'
 import * as utils from '../utils'
-import * as tokenUtils from '../utils/tokens'
-import * as ensUtils from '../utils/ens'
 import { validateAddress, validateWaterfallTranches } from '../utils/validation'
-import {
-  TRANCHE_RECIPIENTS,
-  TRANCHE_SIZES,
-  GET_TOKEN_DATA,
-} from '../testing/constants'
+import { TRANCHE_RECIPIENTS, TRANCHE_SIZES } from '../testing/constants'
 import { MockGraphqlClient } from '../testing/mocks/graphql'
 import { writeActions as factoryWriteActions } from '../testing/mocks/waterfallFactory'
 import {
@@ -35,6 +29,9 @@ import {
 } from '../testing/mocks/waterfallModule'
 import type { WaterfallModule } from '../types'
 import { MockViemContract } from '../testing/mocks/viemContract'
+import { DataClient } from './data'
+
+jest.mock('./data')
 
 jest.mock('viem', () => {
   const originalModule = jest.requireActual('viem')
@@ -59,12 +56,6 @@ const getTrancheRecipientsAndSizesMock = jest
   .spyOn(utils, 'getTrancheRecipientsAndSizes')
   .mockImplementation(async () => {
     return [TRANCHE_RECIPIENTS, TRANCHE_SIZES]
-  })
-
-const getTokenDataMock = jest
-  .spyOn(tokenUtils, 'getTokenData')
-  .mockImplementation(async () => {
-    return GET_TOKEN_DATA
   })
 
 jest.mock('../utils/validation')
@@ -121,27 +112,22 @@ describe('Client config validation', () => {
 
   test('Ethereum chain ids pass', () => {
     expect(() => new WaterfallClient({ chainId: 1 })).not.toThrow()
-    expect(() => new WaterfallClient({ chainId: 5 })).not.toThrow()
   })
 
   test('Polygon chain ids pass', () => {
     expect(() => new WaterfallClient({ chainId: 137 })).not.toThrow()
-    expect(() => new WaterfallClient({ chainId: 80001 })).not.toThrow()
   })
 
   test('Optimism chain ids pass', () => {
     expect(() => new WaterfallClient({ chainId: 10 })).not.toThrow()
-    expect(() => new WaterfallClient({ chainId: 420 })).not.toThrow()
   })
 
   test('Arbitrum chain ids pass', () => {
     expect(() => new WaterfallClient({ chainId: 42161 })).not.toThrow()
-    expect(() => new WaterfallClient({ chainId: 421613 })).not.toThrow()
   })
 
   test('Zora chain ids pass', () => {
     expect(() => new WaterfallClient({ chainId: 7777777 })).not.toThrow()
-    expect(() => new WaterfallClient({ chainId: 999 })).not.toThrow()
   })
 
   test('Base chain ids pass', () => {
@@ -150,10 +136,7 @@ describe('Client config validation', () => {
 
   test('Other chain ids pass', () => {
     expect(() => new WaterfallClient({ chainId: 100 })).not.toThrow()
-    expect(() => new WaterfallClient({ chainId: 250 })).not.toThrow()
-    expect(() => new WaterfallClient({ chainId: 43114 })).not.toThrow()
     expect(() => new WaterfallClient({ chainId: 56 })).not.toThrow()
-    expect(() => new WaterfallClient({ chainId: 1313161554 })).not.toThrow()
   })
 })
 
@@ -162,6 +145,9 @@ describe('Waterfall writes', () => {
   const walletClient = new mockWalletClient()
   const waterfallClient = new WaterfallClient({
     chainId: 1,
+    apiConfig: {
+      apiKey: '1',
+    },
     publicClient,
     walletClient,
   })
@@ -255,7 +241,7 @@ describe('Waterfall writes', () => {
       )
       expect(factoryWriteActions.createWaterfallModule).toBeCalledWith(
         token,
-        ADDRESS_ZERO,
+        zeroAddress,
         TRANCHE_RECIPIENTS,
         TRANCHE_SIZES,
       )
@@ -386,20 +372,21 @@ describe('Waterfall writes', () => {
       value: 'recover_non_waterfall_funds_tx',
       wait: 'wait',
     }
-
-    const mockGetWaterfallData = jest
-      .spyOn(waterfallClient, 'getWaterfallMetadata')
-      .mockImplementation(async () => {
-        return {
-          token: {
-            address: '0xwaterfalltoken',
-          },
-          tranches: [
-            { recipient: { address: '0xrecipient1' } },
-            { recipient: { address: '0xrecipient2' } },
-          ],
-        } as unknown as WaterfallModule
-      })
+    const mockedDataClient = DataClient as jest.MockedClass<typeof DataClient>
+    const mockGetWaterfallData =
+      mockedDataClient.prototype.getWaterfallMetadata.mockImplementationOnce(
+        async () => {
+          return {
+            token: {
+              address: '0xwaterfalltoken',
+            },
+            tranches: [
+              { recipient: { address: '0xrecipient1' } },
+              { recipient: { address: '0xrecipient2' } },
+            ],
+          } as unknown as WaterfallModule
+        },
+      )
 
     beforeEach(() => {
       mockGetWaterfallData.mockClear()
@@ -452,6 +439,21 @@ describe('Waterfall writes', () => {
     })
 
     test('Recover non waterfall funds fails with invalid recipient', async () => {
+      mockGetWaterfallData.mockImplementationOnce(async () => {
+        return {
+          token: {
+            address: '0xwaterfalltoken',
+          },
+          tranches: [
+            { recipient: { address: '0xrecipient1' } },
+            { recipient: { address: '0xrecipient2' } },
+          ],
+          nonWaterfallRecipient: {
+            address: nonWaterfallRecipient,
+          },
+        } as unknown as WaterfallModule
+      })
+
       await expect(
         async () =>
           await waterfallClient.recoverNonWaterfallFunds({
@@ -489,19 +491,33 @@ describe('Waterfall writes', () => {
     })
 
     test('Recover non waterfall funds passes', async () => {
+      mockGetWaterfallData.mockImplementationOnce(async () => {
+        return {
+          token: {
+            address: '0xwaterfalltoken',
+          },
+          tranches: [
+            { recipient: { address: '0xrecipient1' } },
+            { recipient: { address: '0xrecipient2' } },
+          ],
+          nonWaterfallRecipient: {
+            address: nonWaterfallRecipient,
+          },
+        } as unknown as WaterfallModule
+      })
       const { event } = await waterfallClient.recoverNonWaterfallFunds({
         waterfallModuleAddress,
         token,
-        recipient,
+        recipient: nonWaterfallRecipient,
       })
 
       expect(event.blockNumber).toEqual(12345)
       expect(validateAddress).toBeCalledWith(waterfallModuleAddress)
       expect(validateAddress).toBeCalledWith(token)
-      expect(validateAddress).toBeCalledWith(recipient)
+      expect(validateAddress).toBeCalledWith(nonWaterfallRecipient)
       expect(moduleWriteActions.recoverNonWaterfallFunds).toBeCalledWith(
         token,
-        recipient,
+        nonWaterfallRecipient,
       )
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
@@ -832,112 +848,4 @@ jest.mock('graphql-request', () => {
     }),
     gql: jest.fn(),
   }
-})
-
-describe('Graphql reads', () => {
-  const mockGqlWaterfall = {
-    token: {
-      id: '0xwaterfallToken',
-    },
-    tranches: [],
-  }
-  const mockFormatWaterfall = jest
-    .spyOn(subgraph, 'protectedFormatWaterfallModule')
-    .mockReturnValue(mockGqlWaterfall as unknown as WaterfallModule)
-  const mockAddEnsNames = jest
-    .spyOn(ensUtils, 'addEnsNames')
-    .mockImplementation()
-
-  const waterfallModuleAddress = '0xwaterfall'
-  const publicClient = new mockPublicClient()
-  const waterfallClient = new WaterfallClient({
-    chainId: 1,
-    publicClient,
-  })
-
-  beforeEach(() => {
-    ;(validateAddress as jest.Mock).mockClear()
-    mockGqlClient.request.mockClear()
-    mockFormatWaterfall.mockClear()
-    mockAddEnsNames.mockClear()
-  })
-
-  describe('Get waterfall metadata tests', () => {
-    beforeEach(() => {
-      mockGqlClient.request.mockReturnValue({
-        waterfallModule: mockGqlWaterfall,
-      })
-    })
-
-    test('Get waterfall metadata fails with no provider', async () => {
-      const badClient = new WaterfallClient({
-        chainId: 1,
-      })
-      await expect(
-        async () =>
-          await badClient.getWaterfallMetadata({
-            waterfallModuleAddress,
-          }),
-      ).rejects.toThrow(MissingPublicClientError)
-    })
-
-    test('Get waterfall metadata passes', async () => {
-      const waterfallModule = await waterfallClient.getWaterfallMetadata({
-        waterfallModuleAddress,
-      })
-
-      expect(validateAddress).toBeCalledWith(waterfallModuleAddress)
-      expect(mockGqlClient.request).toBeCalledWith(
-        subgraph.WATERFALL_MODULE_QUERY,
-        {
-          waterfallModuleAddress: waterfallModuleAddress.toLowerCase(),
-        },
-      )
-      expect(getTokenDataMock).toBeCalledWith(
-        1,
-        mockGqlWaterfall.token.id,
-        publicClient,
-      )
-      expect(mockFormatWaterfall).toBeCalledWith(
-        mockGqlWaterfall,
-        GET_TOKEN_DATA.symbol,
-        GET_TOKEN_DATA.decimals,
-      )
-      expect(waterfallModule).toEqual(mockGqlWaterfall)
-      expect(mockAddEnsNames).not.toBeCalled()
-    })
-
-    test('Adds ens names', async () => {
-      const publicClient = new mockPublicClient()
-      const ensWaterfallClient = new WaterfallClient({
-        chainId: 1,
-        publicClient,
-        includeEnsNames: true,
-      })
-
-      const waterfallModule = await ensWaterfallClient.getWaterfallMetadata({
-        waterfallModuleAddress,
-      })
-
-      expect(validateAddress).toBeCalledWith(waterfallModuleAddress)
-      expect(mockGqlClient.request).toBeCalledWith(
-        subgraph.WATERFALL_MODULE_QUERY,
-        {
-          waterfallModuleAddress: waterfallModuleAddress.toLowerCase(),
-        },
-      )
-      expect(getTokenDataMock).toBeCalledWith(
-        1,
-        mockGqlWaterfall.token.id,
-        publicClient,
-      )
-      expect(mockFormatWaterfall).toBeCalledWith(
-        mockGqlWaterfall,
-        GET_TOKEN_DATA.symbol,
-        GET_TOKEN_DATA.decimals,
-      )
-      expect(waterfallModule).toEqual(mockGqlWaterfall)
-      expect(mockAddEnsNames).toBeCalled()
-    })
-  })
 })

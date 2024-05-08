@@ -12,7 +12,12 @@ Developer tools for integrating with the 0xSplits contracts and subgraph data
 
 ## Testing
 
-Run tests with `pnpm run test`
+Update the `.env` file with appropriate values for the variables present [here](packages/splits-sdk/.env.sample).
+
+Run mocked tests with `pnpm run test`.
+Run forked tests with `pnpm run vitest`.
+
+note: when writing forked tests make sure to add fork in the test file name. e.g. `my-test-fork.test.ts`.
 
 ## Local development
 

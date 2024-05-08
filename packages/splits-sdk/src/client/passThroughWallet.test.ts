@@ -109,31 +109,22 @@ describe('Client config validation', () => {
 
   test('Ethereum chain ids pass', () => {
     expect(() => new PassThroughWalletClient({ chainId: 1 })).not.toThrow()
-    expect(() => new PassThroughWalletClient({ chainId: 5 })).not.toThrow()
   })
 
   test('Polygon chain id pass', () => {
     expect(() => new PassThroughWalletClient({ chainId: 137 })).not.toThrow()
   })
-  test('Mumbai chain id fail', () => {
-    expect(() => new PassThroughWalletClient({ chainId: 80001 })).toThrow()
-  })
 
   test('Optimism chain id pass', () => {
     expect(() => new PassThroughWalletClient({ chainId: 10 })).not.toThrow()
   })
-  test('Optimism goerli chain id fail', () => {
-    expect(() => new PassThroughWalletClient({ chainId: 420 })).toThrow()
-  })
 
   test('Arbitrum chain ids pass (test chain fails)', () => {
     expect(() => new PassThroughWalletClient({ chainId: 42161 })).not.toThrow()
-    expect(() => new PassThroughWalletClient({ chainId: 421613 })).toThrow()
   })
 
   test('Zora chain ids fail', () => {
     expect(() => new PassThroughWalletClient({ chainId: 7777777 })).toThrow()
-    expect(() => new PassThroughWalletClient({ chainId: 999 })).toThrow()
   })
 
   test('Base chain ids pass', () => {
@@ -142,10 +133,7 @@ describe('Client config validation', () => {
 
   test('Other chain ids fail', () => {
     expect(() => new PassThroughWalletClient({ chainId: 100 })).toThrow()
-    expect(() => new PassThroughWalletClient({ chainId: 250 })).toThrow()
-    expect(() => new PassThroughWalletClient({ chainId: 43114 })).toThrow()
     expect(() => new PassThroughWalletClient({ chainId: 56 })).toThrow()
-    expect(() => new PassThroughWalletClient({ chainId: 1313161554 })).toThrow()
   })
 })
 

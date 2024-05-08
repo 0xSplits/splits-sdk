@@ -1,18 +1,35 @@
-import { Address, PublicClient, getAddress } from 'viem'
+import {
+  Address,
+  PublicClient,
+  encodePacked,
+  getAddress,
+  keccak256,
+  zeroAddress,
+} from 'viem'
 
 import {
-  ADDRESS_ZERO,
   LIQUID_SPLIT_NFT_COUNT,
   PERCENTAGE_SCALE,
+  getSplitV2FactoryAddress,
 } from '../constants'
-import type {
+import {
   ContractRecoupTranche,
   RecoupTrancheInput,
   SplitRecipient,
+  SplitV2Type,
   WaterfallTrancheInput,
 } from '../types'
-import { getBigIntFromPercent, getBigIntTokenValue } from './numbers'
+import {
+  getBigIntFromPercent,
+  getBigIntTokenValue,
+  getNumberFromPercent,
+} from './numbers'
 import { getTokenData } from './tokens'
+import {
+  InvalidDistributorFeePercentErrorV2,
+  InvalidTotalAllocation,
+} from '../errors'
+import { IRecipient } from '../subgraph/types'
 
 export * from './ens'
 export * from './numbers'
@@ -89,7 +106,7 @@ export const getRecoupTranchesAndSizes = async (
       recoupTranches.push([
         [tranche.recipient],
         [PERCENTAGE_SCALE],
-        ADDRESS_ZERO,
+        zeroAddress,
         BigInt(0),
       ])
     } else {
@@ -101,7 +118,7 @@ export const getRecoupTranchesAndSizes = async (
       recoupTranches.push([
         addresses,
         percentAllocations,
-        tranche.recipient.controller ?? ADDRESS_ZERO,
+        tranche.recipient.controller ?? zeroAddress,
         distributorFee,
       ])
     }
@@ -114,4 +131,100 @@ export const getRecoupTranchesAndSizes = async (
   })
 
   return [recoupTranches, sizes]
+}
+
+export const getAddressAndAllocationFromRecipients = (
+  recipients: SplitRecipient[],
+): { recipientAddresses: Address[]; recipientAllocations: bigint[] } => {
+  return {
+    recipientAddresses: recipients.map(
+      (recipient) => recipient.address,
+    ) as Address[],
+    recipientAllocations: recipients.map((recipient) =>
+      getBigIntFromPercent(recipient.percentAllocation),
+    ),
+  }
+}
+
+export const MAX_V2_DISTRIBUTION_INCENTIVE = 6.5535
+
+export const getValidatedSplitV2Config = (
+  recipients: SplitRecipient[],
+  distributorFeePercent: number,
+  totalAllocationPercent?: number,
+): {
+  recipientAddresses: Address[]
+  recipientAllocations: bigint[]
+  distributionIncentive: number
+  totalAllocation: bigint
+} => {
+  const { recipientAddresses, recipientAllocations } =
+    getAddressAndAllocationFromRecipients(recipients)
+
+  if (distributorFeePercent > MAX_V2_DISTRIBUTION_INCENTIVE)
+    throw new InvalidDistributorFeePercentErrorV2(distributorFeePercent)
+  const distributionIncentive = getNumberFromPercent(distributorFeePercent)
+
+  const calculatedTotalAllocation = recipientAllocations.reduce((a, b) => a + b)
+
+  if (
+    totalAllocationPercent &&
+    getBigIntFromPercent(totalAllocationPercent) !== calculatedTotalAllocation
+  )
+    throw new InvalidTotalAllocation(totalAllocationPercent)
+  else if (calculatedTotalAllocation !== PERCENTAGE_SCALE)
+    throw new InvalidTotalAllocation()
+
+  return {
+    recipientAddresses,
+    recipientAllocations,
+    distributionIncentive,
+    totalAllocation: calculatedTotalAllocation,
+  }
+}
+
+export const getSplitType = (
+  chainId: number,
+  factoryAddress: Address,
+): SplitV2Type => {
+  if (factoryAddress === getSplitV2FactoryAddress(chainId, SplitV2Type.Pull))
+    return SplitV2Type.Pull
+  return SplitV2Type.Push
+}
+
+export const getAccountsAndPercentAllocations: (
+  arg0: IRecipient[],
+  arg1?: boolean,
+) => [Address[], number[]] = (recipients, shouldSort = false) => {
+  const accounts: Address[] = []
+  const percentAllocations: number[] = []
+
+  const recipientsCopy = recipients.slice()
+
+  if (shouldSort) {
+    recipientsCopy.sort((a, b) => {
+      if (a.address.toLowerCase() > b.address.toLowerCase()) return 1
+      return -1
+    })
+  }
+
+  recipientsCopy.forEach((recipient) => {
+    accounts.push(recipient.address)
+    percentAllocations.push(recipient.ownership)
+  })
+
+  return [accounts, percentAllocations]
+}
+
+export const hashSplit: (
+  arg0: Address[],
+  arg1: number[],
+  arg2: number,
+) => string = (accounts, percentAllocations, distributorFee) => {
+  return keccak256(
+    encodePacked(
+      ['address[]', 'uint32[]', 'uint32'],
+      [accounts, percentAllocations, distributorFee],
+    ),
+  )
 }

@@ -45,26 +45,30 @@ const DisplaySplit = ({
     splitMetadata: split,
     error: metadataError,
     isLoading: isLoadingMetadata,
-  } = useSplitMetadata(address)
+  } = useSplitMetadata(chainId, address)
+
+  if (!splitsClient.splitV1) throw new Error('Split v1 not supported')
 
   const includeActiveBalances = true
-  const erc20TokenList = splitsClient._publicClient
-    ? isLogsPublicClient(splitsClient._publicClient)
+  const erc20TokenList = splitsClient.splitV1._publicClient
+    ? isLogsPublicClient(splitsClient.splitV1._publicClient)
       ? undefined
       : ERC20_TOKEN_LIST
     : ERC20_TOKEN_LIST
   const {
-    formattedSplitEarnings,
+    splitEarnings,
     isLoading: isLoadingEarnings,
     error: earningsError,
-  } = useSplitEarnings(address, includeActiveBalances, erc20TokenList)
+  } = useSplitEarnings(chainId, address, includeActiveBalances, erc20TokenList)
 
   useEffect(() => {
     if (earningsError) {
+      // eslint-disable-next-line no-console
       console.error(earningsError)
       onError && onError(earningsError)
     }
     if (metadataError) {
+      // eslint-disable-next-line no-console
       console.error(metadataError)
       onError && onError(metadataError)
     }
@@ -99,7 +103,7 @@ const DisplaySplit = ({
                 <SplitBalances
                   chainId={chainId}
                   address={address}
-                  formattedSplitEarnings={formattedSplitEarnings}
+                  formattedSplitEarnings={splitEarnings}
                   onSuccess={onSuccess}
                   onError={onError}
                 />

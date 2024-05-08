@@ -16,11 +16,7 @@ import {
   MissingWalletClientError,
   UnsupportedChainIdError,
 } from '../errors'
-import * as subgraph from '../subgraph'
-import * as tokenUtils from '../utils/tokens'
-import * as ensUtils from '../utils/ens'
 import { validateAddress, validateVestingPeriod } from '../utils/validation'
-import { GET_TOKEN_DATA } from '../testing/constants'
 import { MockGraphqlClient } from '../testing/mocks/graphql'
 import {
   writeActions as factoryWriteActions,
@@ -31,7 +27,6 @@ import {
   readActions,
 } from '../testing/mocks/vestingModule'
 import { MockViemContract } from '../testing/mocks/viemContract'
-import type { VestingModule } from '../types'
 
 jest.mock('viem', () => {
   const originalModule = jest.requireActual('viem')
@@ -55,12 +50,6 @@ jest.mock('viem', () => {
 })
 
 jest.mock('../utils/validation')
-
-const getTokenDataMock = jest
-  .spyOn(tokenUtils, 'getTokenData')
-  .mockImplementation(async () => {
-    return GET_TOKEN_DATA
-  })
 
 const mockPublicClient = jest.fn(() => {
   return {
@@ -114,27 +103,22 @@ describe('Client config validation', () => {
 
   test('Ethereum chain ids pass', () => {
     expect(() => new VestingClient({ chainId: 1 })).not.toThrow()
-    expect(() => new VestingClient({ chainId: 5 })).not.toThrow()
   })
 
   test('Polygon chain ids pass', () => {
     expect(() => new VestingClient({ chainId: 137 })).not.toThrow()
-    expect(() => new VestingClient({ chainId: 80001 })).not.toThrow()
   })
 
   test('Optimism chain ids pass', () => {
     expect(() => new VestingClient({ chainId: 10 })).not.toThrow()
-    expect(() => new VestingClient({ chainId: 420 })).not.toThrow()
   })
 
   test('Arbitrum chain ids pass', () => {
     expect(() => new VestingClient({ chainId: 42161 })).not.toThrow()
-    expect(() => new VestingClient({ chainId: 421613 })).not.toThrow()
   })
 
   test('Zora chain ids pass', () => {
     expect(() => new VestingClient({ chainId: 7777777 })).not.toThrow()
-    expect(() => new VestingClient({ chainId: 999 })).not.toThrow()
   })
 
   test('Base chain ids pass', () => {
@@ -143,10 +127,7 @@ describe('Client config validation', () => {
 
   test('Other chain ids pass', () => {
     expect(() => new VestingClient({ chainId: 100 })).not.toThrow()
-    expect(() => new VestingClient({ chainId: 250 })).not.toThrow()
-    expect(() => new VestingClient({ chainId: 43114 })).not.toThrow()
     expect(() => new VestingClient({ chainId: 56 })).not.toThrow()
-    expect(() => new VestingClient({ chainId: 1313161554 })).not.toThrow()
   })
 })
 
@@ -562,125 +543,4 @@ jest.mock('graphql-request', () => {
     }),
     gql: jest.fn(),
   }
-})
-
-describe('Graphql reads', () => {
-  const mockFormatVesting = jest
-    .spyOn(subgraph, 'protectedFormatVestingModule')
-    .mockReturnValue('formatted_vesting_module' as unknown as VestingModule)
-  const mockAddEnsNames = jest
-    .spyOn(ensUtils, 'addEnsNames')
-    .mockImplementation()
-  const mockGqlVesting = {
-    streams: [
-      {
-        token: {
-          id: '0xtoken1',
-        },
-      },
-    ],
-  }
-
-  const vestingModuleAddress = '0xvesting'
-  const publicClient = new mockPublicClient()
-  const vestingClient = new VestingClient({
-    chainId: 1,
-    publicClient,
-  })
-
-  beforeEach(() => {
-    ;(validateAddress as jest.Mock).mockClear()
-    mockGqlClient.request.mockClear()
-    mockFormatVesting.mockClear()
-    mockAddEnsNames.mockClear()
-  })
-
-  describe('Get vesting metadata tests', () => {
-    beforeEach(() => {
-      mockGqlClient.request.mockReturnValue({
-        vestingModule: {
-          streams: [
-            {
-              token: {
-                id: '0xtoken1',
-              },
-            },
-          ],
-        },
-      })
-    })
-
-    test('Get vesting metadata fails with no provider', async () => {
-      const badClient = new VestingClient({
-        chainId: 1,
-      })
-      await expect(
-        async () =>
-          await badClient.getVestingMetadata({
-            vestingModuleAddress,
-          }),
-      ).rejects.toThrow(MissingPublicClientError)
-    })
-
-    test('Get vesting metadata passes', async () => {
-      const vestingModule = await vestingClient.getVestingMetadata({
-        vestingModuleAddress,
-      })
-
-      expect(validateAddress).toBeCalledWith(vestingModuleAddress)
-      expect(mockGqlClient.request).toBeCalledWith(
-        subgraph.VESTING_MODULE_QUERY,
-        {
-          vestingModuleAddress,
-        },
-      )
-      expect(getTokenDataMock).toBeCalledWith(
-        1,
-        mockGqlVesting.streams[0].token.id,
-        publicClient,
-      )
-      expect(mockFormatVesting).toBeCalledWith(mockGqlVesting, {
-        [mockGqlVesting.streams[0].token.id]: {
-          symbol: GET_TOKEN_DATA.symbol,
-          decimals: GET_TOKEN_DATA.decimals,
-        },
-      })
-      expect(vestingModule).toEqual('formatted_vesting_module')
-      expect(mockAddEnsNames).not.toBeCalled()
-    })
-
-    test('Adds ens names', async () => {
-      const publicClient = new mockPublicClient()
-      const ensVestingClient = new VestingClient({
-        chainId: 1,
-        publicClient,
-        includeEnsNames: true,
-      })
-
-      const vestingModule = await ensVestingClient.getVestingMetadata({
-        vestingModuleAddress,
-      })
-
-      expect(validateAddress).toBeCalledWith(vestingModuleAddress)
-      expect(mockGqlClient.request).toBeCalledWith(
-        subgraph.VESTING_MODULE_QUERY,
-        {
-          vestingModuleAddress,
-        },
-      )
-      expect(getTokenDataMock).toBeCalledWith(
-        1,
-        mockGqlVesting.streams[0].token.id,
-        publicClient,
-      )
-      expect(mockFormatVesting).toBeCalledWith(mockGqlVesting, {
-        [mockGqlVesting.streams[0].token.id]: {
-          symbol: GET_TOKEN_DATA.symbol,
-          decimals: GET_TOKEN_DATA.decimals,
-        },
-      })
-      expect(vestingModule).toEqual('formatted_vesting_module')
-      expect(mockAddEnsNames).toBeCalled()
-    })
-  })
 })

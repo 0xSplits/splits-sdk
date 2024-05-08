@@ -27,6 +27,7 @@ class OracleTransactions extends BaseTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig & TransactionConfig) {
     super({
@@ -35,6 +36,7 @@ class OracleTransactions extends BaseTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
   }
@@ -45,6 +47,8 @@ class OracleTransactions extends BaseTransactions {
     return getContract({
       address: getAddress(oracle),
       abi: uniV3OracleAbi,
+      // @ts-expect-error v1/v2 viem support
+      client: this._publicClient,
       publicClient: this._publicClient,
     })
   }
@@ -56,6 +60,7 @@ export class OracleClient extends OracleTransactions {
     publicClient,
     ensPublicClient,
     walletClient,
+    apiConfig,
     includeEnsNames = false,
   }: SplitsClientConfig) {
     super({
@@ -64,6 +69,7 @@ export class OracleClient extends OracleTransactions {
       publicClient,
       ensPublicClient,
       walletClient,
+      apiConfig,
       includeEnsNames,
     })
 
