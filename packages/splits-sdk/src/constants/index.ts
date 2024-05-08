@@ -242,7 +242,7 @@ export const CHAIN_INFO: {
     nativeCurrency: {
       symbol: 'ETH',
     },
-    startBlockV2: 19451952,
+    startBlockV2: 19451953,
   },
   [ChainId.SEPOLIA]: {
     startBlock: 4836125,
