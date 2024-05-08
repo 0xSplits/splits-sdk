@@ -27,7 +27,6 @@ import {
   ZORA_CHAIN_IDS,
   getSplitMainAddress,
   ETHEREUM_TEST_CHAIN_IDS,
-  BLAST_CHAIN_IDS,
 } from '../constants'
 import {
   splitMainEthereumAbi,
@@ -78,7 +77,6 @@ const polygonAbiChainIds = [
   ...BSC_CHAIN_IDS,
   ...ZORA_CHAIN_IDS,
   ...BASE_CHAIN_IDS,
-  ...BLAST_CHAIN_IDS,
 ]
 
 type SplitMainEthereumAbiType = typeof splitMainEthereumAbi
@@ -112,8 +110,6 @@ class SplitV1Transactions extends BaseTransactions {
     this._splitMainContract = getContract({
       address: getSplitMainAddress(chainId),
       abi: splitMainEthereumAbi,
-      // @ts-expect-error v1/v2 viem support
-      client: this._publicClient,
       publicClient: this._publicClient,
     })
 
