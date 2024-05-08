@@ -59,10 +59,10 @@ importers:
   packages/splits-kit:
     dependencies:
       '@0xsplits/splits-sdk':
-        specifier: ^4.0.1-alpha.0
-        version: link:../splits-sdk
+        specifier: ^4.0.1-4.0.1-alpha.20.0
+        version: 4.0.1-alpha.0(viem@1.18.9)
       '@0xsplits/splits-sdk-react':
-        specifier: ^2.0.1-alpha.0
+        specifier: ^2.0.1-alpha.1
         version: 2.0.1-alpha.10(react@18.2.0)(viem@1.18.9)
       '@headlessui/react':
         specifier: ^1.7.17
@@ -199,8 +199,8 @@ importers:
   packages/splits-sdk-react:
     dependencies:
       '@0xsplits/splits-sdk':
-        specifier: ^4.0.1-alpha.0
-        version: link:../splits-sdk
+        specifier: ^4.0.1-4.0.1-alpha.20.0
+        version: 4.0.1-alpha.0(viem@1.18.9)
       react:
         specifier: 17.x.x || 18.x.x
         version: 18.2.0
@@ -241,6 +241,24 @@ packages:
     dependencies:
       '@0xsplits/splits-sdk': 4.0.3-alpha.12(viem@1.18.9)
       react: 18.2.0
+      viem: 1.18.9(typescript@5.2.2)
+    dev: false
+
+  /@0xsplits/splits-sdk@4.0.1-alpha.0(viem@1.18.9):
+    resolution:
+      {
+        integrity: sha512-728tU3SL43kHfHxFNUJ1jqhkUAIug+huJqfwekFeNoOGbJ8MjgqUv9MCiiuy18vw+qhze+AlV7iEpb/O7JKIeg==,
+      }
+    peerDependencies:
+      viem: ^1.0.0 || ^2.0.0
+    peerDependenciesMeta:
+      viem:
+        optional: true
+    dependencies:
+      '@urql/core': 4.3.0(graphql@16.8.1)
+      base-64: 1.0.0
+      graphql: 16.8.1
+      lodash: 4.17.21
       viem: 1.18.9(typescript@5.2.2)
     dev: false
 
