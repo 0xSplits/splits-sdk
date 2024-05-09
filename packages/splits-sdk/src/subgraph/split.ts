@@ -1,11 +1,7 @@
 import { gql } from '@urql/core'
 import { getAddress, zeroAddress } from 'viem'
 import { Split } from '../types'
-import {
-  fromBigIntToPercent,
-  getAccountsAndPercentAllocations,
-  hashSplit,
-} from '../utils'
+import { fromBigIntToPercent, hashSplitV1, hashSplitV2 } from '../utils'
 import { SupportedChainId } from './constants'
 import {
   formatGqlContractEarnings,
@@ -119,7 +115,7 @@ const formatGqlRecipient: (arg0: GqlRecipient) => IRecipient = (
 
   return {
     address: getAddress(accountId),
-    ownership: parseInt(gqlRecipient.ownership),
+    ownership: BigInt(gqlRecipient.ownership),
     idx: parseInt(gqlRecipient.idx),
   }
 }
@@ -129,8 +125,8 @@ export const formatGqlSplit: (arg0: GqlSplit) => ISplit = (gqlSplit) => {
     formatGqlRecipient(gqlRecipient),
   )
 
-  const [accounts, percentAllocations] =
-    getAccountsAndPercentAllocations(recipients)
+  const accounts = recipients.map((recipient) => recipient.address)
+  const percentAllocations = recipients.map((recipient) => recipient.ownership)
 
   return {
     type: gqlSplit.type,
@@ -150,11 +146,19 @@ export const formatGqlSplit: (arg0: GqlSplit) => ISplit = (gqlSplit) => {
     newPotentialController: gqlSplit.newPotentialController
       ? getAddress(gqlSplit.newPotentialController.id)
       : zeroAddress,
-    hash: hashSplit(
-      accounts,
-      percentAllocations.map((val) => Number(val)),
-      parseInt(gqlSplit.distributorFee),
-    ),
+    hash:
+      gqlSplit.type === 'split'
+        ? hashSplitV1(
+            accounts,
+            percentAllocations.map((val) => Number(val)),
+            parseInt(gqlSplit.distributorFee),
+          )
+        : hashSplitV2(
+            accounts,
+            percentAllocations,
+            percentAllocations.reduce((acc, cur) => acc + cur),
+            parseInt(gqlSplit.distributorFee),
+          ),
     balances: {},
     // TODO: remove?
     distributed: gqlSplit.distributions
@@ -206,6 +210,7 @@ export const formatRecipient = (gqlRecipient: IHolder) => {
     recipient: {
       address: gqlRecipient.address,
     },
+    ownership: gqlRecipient.ownership,
     percentAllocation: fromBigIntToPercent(gqlRecipient.ownership),
   }
 }

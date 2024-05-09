@@ -629,7 +629,7 @@ export type ISplit = IAccountSharedFields & {
 
 export type IRecipient = {
   address: Address
-  ownership: number
+  ownership: bigint
   idx: number
   ens?: string
 }
@@ -678,7 +678,7 @@ export type IWaterfallModule = IAccountSharedFields & {
 
 export type IHolder = {
   address: Address
-  ownership: number
+  ownership: bigint
 }
 
 export type ILiquidSplit = IAccountSharedFields & {
