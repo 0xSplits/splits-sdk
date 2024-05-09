@@ -172,7 +172,10 @@ export const getValidatedSplitV2Config = (
     getBigIntFromPercent(totalAllocationPercent) !== calculatedTotalAllocation
   )
     throw new InvalidTotalAllocation(totalAllocationPercent)
-  else if (calculatedTotalAllocation !== PERCENTAGE_SCALE)
+  else if (
+    !totalAllocationPercent &&
+    calculatedTotalAllocation !== PERCENTAGE_SCALE
+  )
     throw new InvalidTotalAllocation()
 
   return {
@@ -195,9 +198,9 @@ export const getSplitType = (
 export const getAccountsAndPercentAllocations: (
   arg0: IRecipient[],
   arg1?: boolean,
-) => [Address[], number[]] = (recipients, shouldSort = false) => {
+) => [Address[], bigint[]] = (recipients, shouldSort = false) => {
   const accounts: Address[] = []
-  const percentAllocations: number[] = []
+  const percentAllocations: bigint[] = []
 
   const recipientsCopy = recipients.slice()
 
@@ -216,7 +219,26 @@ export const getAccountsAndPercentAllocations: (
   return [accounts, percentAllocations]
 }
 
-export const hashSplit: (
+export const hashSplitV2: (
+  arg0: Address[],
+  arg1: bigint[],
+  arg2: bigint,
+  arg3: number,
+) => string = (
+  accounts,
+  percentAllocations,
+  totalAllocations,
+  distributorFee,
+) => {
+  return keccak256(
+    encodePacked(
+      ['address[]', 'uint256[]', 'uint256', 'uint16'],
+      [accounts, percentAllocations, totalAllocations, distributorFee],
+    ),
+  )
+}
+
+export const hashSplitV1: (
   arg0: Address[],
   arg1: number[],
   arg2: number,

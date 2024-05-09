@@ -17,6 +17,7 @@ import {
   SPLITS_SUPPORTED_CHAIN_IDS,
   SPLITS_V2_SUPPORTED_CHAIN_IDS,
   TransactionType,
+  ZERO,
   getSplitV2FactoriesStartBlock,
   getSplitV2FactoryAddress,
 } from '../constants'
@@ -257,19 +258,11 @@ class SplitV2Transactions extends BaseTransactions {
       })
     else split = (await this._getSplitMetadataViaProvider(splitAddress)).split
 
-    const {
-      recipientAddresses,
-      recipientAllocations,
-      totalAllocation,
-      distributionIncentive,
-    } = getValidatedSplitV2Config(
-      split.recipients.map((recipient) => {
-        return {
-          address: recipient.recipient.address,
-          percentAllocation: recipient.percentAllocation,
-        }
-      }),
-      split.distributorFeePercent,
+    const recipientAddresses = split.recipients.map(
+      (recipient) => recipient.recipient.address,
+    )
+    const recipientAllocations = split.recipients.map(
+      (recipient) => recipient.ownership,
     )
 
     return this._executeContractFunction({
@@ -280,13 +273,19 @@ class SplitV2Transactions extends BaseTransactions {
         {
           recipients: recipientAddresses,
           allocations: recipientAllocations,
-          totalAllocation,
-          distributionIncentive,
+          totalAllocation: recipientAllocations.reduce(
+            (acc, curr) => acc + curr,
+            BigInt(0),
+          ),
+          distributionIncentive: getNumberFromPercent(
+            split.distributorFeePercent,
+          ),
         },
         token,
         distributorAddress,
       ],
       transactionOverrides,
+      value: ZERO,
     })
   }
 
@@ -337,6 +336,7 @@ class SplitV2Transactions extends BaseTransactions {
           recipient: {
             address: recipient,
           },
+          ownership: createLogs[0].args.splitParams.allocations[i],
           percentAllocation: fromBigIntToPercent(
             createLogs[0].args.splitParams.allocations[i],
             createLogs[0].args.splitParams.totalAllocation,
@@ -377,6 +377,7 @@ class SplitV2Transactions extends BaseTransactions {
           recipient: {
             address: recipient,
           },
+          ownership: updateLogs[0].args._split.allocations[i],
           percentAllocation: fromBigIntToPercent(
             updateLogs[0].args._split.allocations[i],
             updateLogs[0].args._split.totalAllocation,
