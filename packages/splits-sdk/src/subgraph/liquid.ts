@@ -43,7 +43,7 @@ const formatGqlHolder: (arg0: GqlHolder) => IHolder = (gqlHolder) => {
 
   return {
     address: getAddress(accountId),
-    ownership: parseInt(gqlHolder.ownership),
+    ownership: BigInt(gqlHolder.ownership),
   }
 }
 

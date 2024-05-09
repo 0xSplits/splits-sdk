@@ -575,6 +575,7 @@ export type Split = {
   distributeDirection: 'pull' | 'push'
   recipients: {
     percentAllocation: number
+    ownership: bigint
     recipient: Recipient
   }[]
   createdBlock: number
