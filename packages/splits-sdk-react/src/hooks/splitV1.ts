@@ -1,5 +1,5 @@
 import { Log } from 'viem'
-import { useCallback, useContext, useEffect, useState } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import {
   SplitsClient,
   SplitsClientConfig,
@@ -24,10 +24,24 @@ export const useSplitsClient = (config?: SplitsClientConfig): SplitsClient => {
     throw new Error('Make sure to include <SplitsProvider>')
   }
 
-  const apiConfig =
+  // Since apiConfig is an object, if it gets set directly it'll be considered "new" on each render
+  const apiKey =
     config && 'apiConfig' in config
-      ? config.apiConfig
-      : context.splitsClient._apiConfig
+      ? config.apiConfig!.apiKey
+      : context.splitsClient._apiConfig?.apiKey
+  const serverUrl =
+    config && 'apiConfig' in config
+      ? config.apiConfig!.serverURL
+      : context.splitsClient._apiConfig?.serverURL
+  const apiConfig = useMemo(() => {
+    if (!apiKey) return
+
+    return {
+      apiKey,
+      serverUrl,
+    }
+  }, [apiKey, serverUrl])
+
   const chainId =
     config && 'chainId' in config
       ? config.chainId
