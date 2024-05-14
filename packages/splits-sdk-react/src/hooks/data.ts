@@ -104,6 +104,8 @@ export const useSplitEarnings = (
   )
   const [error, setError] = useState<RequestError>()
 
+  const stringErc20List =
+    erc20TokenList !== undefined ? JSON.stringify(erc20TokenList) : undefined
   useEffect(() => {
     let isActive = true
 
@@ -115,7 +117,10 @@ export const useSplitEarnings = (
           chainId,
           splitAddress,
           includeActiveBalances,
-          erc20TokenList,
+          erc20TokenList:
+            stringErc20List !== undefined
+              ? JSON.parse(stringErc20List)
+              : undefined,
         })
         if (!isActive) return
         setSplitEarnings(earnings)
@@ -149,7 +154,7 @@ export const useSplitEarnings = (
     chainId,
     splitAddress,
     includeActiveBalances,
-    erc20TokenList,
+    stringErc20List,
   ])
 
   return {
@@ -183,6 +188,8 @@ export const useContractEarnings = (
   )
   const [error, setError] = useState<RequestError>()
 
+  const stringErc20List =
+    erc20TokenList !== undefined ? JSON.stringify(erc20TokenList) : undefined
   useEffect(() => {
     let isActive = true
 
@@ -194,7 +201,10 @@ export const useContractEarnings = (
           chainId,
           contractAddress,
           includeActiveBalances,
-          erc20TokenList,
+          erc20TokenList:
+            stringErc20List !== undefined
+              ? JSON.parse(stringErc20List)
+              : undefined,
         })
         if (!isActive) return
         setContractEarnings(earnings)
@@ -228,7 +238,7 @@ export const useContractEarnings = (
     chainId,
     contractAddress,
     includeActiveBalances,
-    erc20TokenList,
+    stringErc20List,
   ])
 
   return {
