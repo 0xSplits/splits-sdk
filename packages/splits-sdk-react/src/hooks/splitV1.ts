@@ -1,4 +1,5 @@
-import { Log } from 'viem'
+import { Address, Log, decodeEventLog } from 'viem'
+import { mainnet } from 'viem/chains'
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import {
   SplitsClient,
@@ -13,6 +14,10 @@ import {
   AcceptControlTransferConfig,
   MakeSplitImmutableConfig,
 } from '@0xsplits/splits-sdk'
+import {
+  splitMainEthereumAbi,
+  splitMainPolygonAbi,
+} from '@0xsplits/splits-sdk/constants/abi'
 
 import { SplitsContext } from '../context'
 import { ContractExecutionStatus, RequestError } from '../types'
@@ -85,6 +90,7 @@ export const useSplitsClient = (config?: SplitsClientConfig): SplitsClient => {
 
 export const useCreateSplit = (): {
   createSplit: (arg0: CreateSplitConfig) => Promise<Log[] | undefined>
+  splitAddress?: Address
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -92,6 +98,7 @@ export const useCreateSplit = (): {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).splitV1
 
+  const [splitAddress, setSplitAddress] = useState<Address>()
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
   const [error, setError] = useState<RequestError>()
@@ -102,6 +109,7 @@ export const useCreateSplit = (): {
 
       try {
         setStatus('pendingApproval')
+        setSplitAddress(undefined)
         setError(undefined)
         setTxHash(undefined)
 
@@ -116,6 +124,24 @@ export const useCreateSplit = (): {
           eventTopics: splitsClient.eventTopics.createSplit,
         })
 
+        const splitMainAbi =
+          splitsClient._walletClient?.chain.id === mainnet.id
+            ? splitMainEthereumAbi
+            : splitMainPolygonAbi
+        const event = events?.[0]
+        const decodedLog = event
+          ? decodeEventLog({
+              abi: splitMainAbi,
+              data: event.data,
+              topics: event.topics,
+            })
+          : undefined
+        const splitId =
+          decodedLog?.eventName === 'CreateSplit'
+            ? decodedLog.args.split
+            : undefined
+
+        setSplitAddress(splitId)
         setStatus('complete')
 
         return events
@@ -127,7 +153,7 @@ export const useCreateSplit = (): {
     [splitsClient],
   )
 
-  return { createSplit, status, txHash, error }
+  return { createSplit, splitAddress, status, txHash, error }
 }
 
 export const useUpdateSplit = (): {

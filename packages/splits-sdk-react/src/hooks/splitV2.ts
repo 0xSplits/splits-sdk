@@ -1,4 +1,4 @@
-import { Log } from 'viem'
+import { Address, Log, decodeEventLog } from 'viem'
 import { useCallback, useContext, useState } from 'react'
 import {
   CreateSplitV2Config,
@@ -8,6 +8,7 @@ import {
   SetPausedConfig,
   SplitV2ExecCallsConfig,
 } from '@0xsplits/splits-sdk'
+import { splitV2FactoryABI } from '@0xsplits/splits-sdk/constants/abi'
 
 import { SplitsContext } from '../context'
 import { ContractExecutionStatus, RequestError } from '../types'
@@ -15,6 +16,7 @@ import { getSplitsClient } from '../utils'
 
 export const useCreateSplitV2 = (): {
   createSplit: (arg0: CreateSplitV2Config) => Promise<Log[] | undefined>
+  splitAddress?: Address
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -22,6 +24,7 @@ export const useCreateSplitV2 = (): {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).splitV2
 
+  const [splitAddress, setSplitAddress] = useState<Address>()
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
   const [error, setError] = useState<RequestError>()
@@ -32,6 +35,7 @@ export const useCreateSplitV2 = (): {
 
       try {
         setStatus('pendingApproval')
+        setSplitAddress(undefined)
         setError(undefined)
         setTxHash(undefined)
 
@@ -46,6 +50,20 @@ export const useCreateSplitV2 = (): {
           eventTopics: splitsClient.eventTopics.splitCreated,
         })
 
+        const event = events?.[0]
+        const decodedLog = event
+          ? decodeEventLog({
+              abi: splitV2FactoryABI,
+              data: event.data,
+              topics: event.topics,
+            })
+          : undefined
+        const splitId =
+          decodedLog?.eventName === 'SplitCreated'
+            ? decodedLog.args.split
+            : undefined
+
+        setSplitAddress(splitId)
         setStatus('complete')
 
         return events
@@ -57,7 +75,7 @@ export const useCreateSplitV2 = (): {
     [splitsClient],
   )
 
-  return { createSplit, status, txHash, error }
+  return { createSplit, splitAddress, status, txHash, error }
 }
 
 export const useUpdateSplitV2 = (): {
