@@ -62,7 +62,7 @@ importers:
         specifier: ^4.0.2
         version: link:../splits-sdk
       '@0xsplits/splits-sdk-react':
-        specifier: ^2.0.3-beta.0
+        specifier: ^2.0.3
         version: link:../splits-sdk-react
       '@headlessui/react':
         specifier: ^1.7.17
