@@ -71,7 +71,7 @@ export const useSplitMetadata = (
     return () => {
       isActive = false
     }
-  }, [splitsClient, splitAddress])
+  }, [splitsClient, chainId, splitAddress])
 
   return {
     isLoading,
@@ -104,6 +104,8 @@ export const useSplitEarnings = (
   )
   const [error, setError] = useState<RequestError>()
 
+  const stringErc20List =
+    erc20TokenList !== undefined ? JSON.stringify(erc20TokenList) : undefined
   useEffect(() => {
     let isActive = true
 
@@ -115,7 +117,10 @@ export const useSplitEarnings = (
           chainId,
           splitAddress,
           includeActiveBalances,
-          erc20TokenList,
+          erc20TokenList:
+            stringErc20List !== undefined
+              ? JSON.parse(stringErc20List)
+              : undefined,
         })
         if (!isActive) return
         setSplitEarnings(earnings)
@@ -144,7 +149,13 @@ export const useSplitEarnings = (
     return () => {
       isActive = false
     }
-  }, [splitsClient, splitAddress, includeActiveBalances, erc20TokenList])
+  }, [
+    splitsClient,
+    chainId,
+    splitAddress,
+    includeActiveBalances,
+    stringErc20List,
+  ])
 
   return {
     isLoading,
@@ -177,6 +188,8 @@ export const useContractEarnings = (
   )
   const [error, setError] = useState<RequestError>()
 
+  const stringErc20List =
+    erc20TokenList !== undefined ? JSON.stringify(erc20TokenList) : undefined
   useEffect(() => {
     let isActive = true
 
@@ -188,7 +201,10 @@ export const useContractEarnings = (
           chainId,
           contractAddress,
           includeActiveBalances,
-          erc20TokenList,
+          erc20TokenList:
+            stringErc20List !== undefined
+              ? JSON.parse(stringErc20List)
+              : undefined,
         })
         if (!isActive) return
         setContractEarnings(earnings)
@@ -217,7 +233,13 @@ export const useContractEarnings = (
     return () => {
       isActive = false
     }
-  }, [splitsClient, contractAddress, includeActiveBalances, erc20TokenList])
+  }, [
+    splitsClient,
+    chainId,
+    contractAddress,
+    includeActiveBalances,
+    stringErc20List,
+  ])
 
   return {
     isLoading,
@@ -286,7 +308,7 @@ export const useLiquidSplitMetadata = (
     return () => {
       isActive = false
     }
-  }, [splitsClient, liquidSplitAddress])
+  }, [splitsClient, chainId, liquidSplitAddress])
 
   return {
     isLoading,
@@ -353,7 +375,7 @@ export const useSwapperMetadata = (
     return () => {
       isActive = false
     }
-  }, [splitsClient, swapperAddress])
+  }, [splitsClient, chainId, swapperAddress])
 
   return {
     isLoading,
@@ -426,7 +448,7 @@ export const useUserEarnings = (
     return () => {
       isActive = false
     }
-  }, [splitsClient, userAddress])
+  }, [splitsClient, chainId, userAddress])
 
   return {
     isLoading,
@@ -503,7 +525,7 @@ export const useUserEarningsByContract = (
     return () => {
       isActive = false
     }
-  }, [splitsClient, userAddress, contractAddressesString])
+  }, [splitsClient, chainId, userAddress, contractAddressesString])
 
   return {
     isLoading,
@@ -572,7 +594,7 @@ export const useVestingMetadata = (
     return () => {
       isActive = false
     }
-  }, [splitsClient, vestingModuleAddress])
+  }, [splitsClient, chainId, vestingModuleAddress])
 
   return {
     isLoading,
@@ -641,7 +663,7 @@ export const useWaterfallMetadata = (
     return () => {
       isActive = false
     }
-  }, [splitsClient, waterfallModuleAddress])
+  }, [splitsClient, chainId, waterfallModuleAddress])
 
   return {
     isLoading,
