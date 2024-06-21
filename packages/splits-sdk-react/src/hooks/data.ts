@@ -1,3 +1,5 @@
+import { useContext, useEffect, useState } from 'react'
+import { Chain, PublicClient, Transport } from 'viem'
 import {
   FormattedContractEarnings,
   FormattedSplitEarnings,
@@ -9,8 +11,8 @@ import {
   VestingModule,
   WaterfallModule,
 } from '@0xsplits/splits-sdk'
+
 import { DataLoadStatus, RequestError } from '../types'
-import { useContext, useEffect, useState } from 'react'
 import { getSplitsClient } from '../utils'
 import { SplitsContext } from '../context'
 
@@ -86,6 +88,7 @@ export const useSplitEarnings = (
   splitAddress: string,
   includeActiveBalances?: boolean,
   erc20TokenList?: string[],
+  publicClient?: PublicClient<Transport, Chain>,
 ): {
   isLoading: boolean
   splitEarnings: FormattedSplitEarnings | undefined
@@ -121,6 +124,7 @@ export const useSplitEarnings = (
             stringErc20List !== undefined
               ? JSON.parse(stringErc20List)
               : undefined,
+          publicClient,
         })
         if (!isActive) return
         setSplitEarnings(earnings)
@@ -170,6 +174,7 @@ export const useContractEarnings = (
   contractAddress: string,
   includeActiveBalances?: boolean,
   erc20TokenList?: string[],
+  publicClient?: PublicClient<Transport, Chain>,
 ): {
   isLoading: boolean
   contractEarnings: FormattedContractEarnings | undefined
@@ -205,6 +210,7 @@ export const useContractEarnings = (
             stringErc20List !== undefined
               ? JSON.parse(stringErc20List)
               : undefined,
+          publicClient,
         })
         if (!isActive) return
         setContractEarnings(earnings)

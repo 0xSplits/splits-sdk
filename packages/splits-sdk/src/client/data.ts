@@ -312,16 +312,20 @@ export class DataClient {
     accountAddress,
     includeActiveBalances,
     erc20TokenList,
+    publicClient,
   }: {
     chainId: number
     accountAddress: Address
     includeActiveBalances: boolean
     erc20TokenList?: string[]
+    publicClient?: PublicClient<Transport, Chain>
   }): Promise<{
     withdrawn: FormattedTokenBalances
     distributed: FormattedTokenBalances
     activeBalances?: FormattedTokenBalances
   }> {
+    const functionPublicClient = publicClient ?? this._publicClient
+
     const response = await this._loadAccount(accountAddress, chainId)
 
     if (!response)
@@ -354,32 +358,37 @@ export class DataClient {
     }
 
     // Need to fetch current balance. Handle alchemy/infura with logs, and all other rpc's with token list
-    if (!this._publicClient)
+    if (!functionPublicClient)
       throw new MissingPublicClientError(
-        'Public client required to get active balances. Please update your call to the client constructor with a valid public client, or set includeActiveBalances to false',
+        'Public client required to get active balances. Please include a publicClient in your function call, or update your call to the client constructor, or set includeActiveBalances to false',
       )
+    if (functionPublicClient.chain.id !== chainId) {
+      throw new InvalidArgumentError(
+        `Public client is set to chain id ${functionPublicClient.chain.id}, but active balances are being fetched on chain ${chainId}. Active balances can only be fetched on the same chain as the public client.`,
+      )
+    }
     const tokenList = erc20TokenList ?? []
 
     let balances: FormattedTokenBalances
     if (
       erc20TokenList === undefined &&
-      isAlchemyPublicClient(this._publicClient)
+      isAlchemyPublicClient(functionPublicClient)
     ) {
       // If no token list passed in and we're using alchemy, fetch all balances with alchemy's custom api
       balances = await fetchContractBalancesWithAlchemy(
         accountAddress,
-        this._publicClient,
+        functionPublicClient,
       )
     } else {
       if (erc20TokenList === undefined) {
         // If no token list passed in, make sure the public client supports logs and then fetch all erc20 tokens
-        if (!isLogsPublicClient(this._publicClient))
+        if (!isLogsPublicClient(functionPublicClient))
           throw new InvalidArgumentError(
             'Token list required if public client is not alchemy or infura',
           )
         const transferredErc20Tokens = await fetchERC20TransferredTokens(
           chainId,
-          this._publicClient,
+          functionPublicClient,
           accountAddress,
         )
         tokenList.push(...transferredErc20Tokens)
@@ -397,7 +406,7 @@ export class DataClient {
       )
       balances = await fetchActiveBalances(
         accountAddress,
-        this._publicClient,
+        functionPublicClient,
         fullTokenList,
       )
     }
@@ -444,11 +453,13 @@ export class DataClient {
     contractAddress,
     includeActiveBalances = true,
     erc20TokenList,
+    publicClient,
   }: {
     chainId: number
     contractAddress: string
     includeActiveBalances?: boolean
     erc20TokenList?: string[]
+    publicClient?: PublicClient<Transport, Chain>
   }): Promise<FormattedContractEarnings> {
     validateAddress(contractAddress)
     if (includeActiveBalances && !this._publicClient)
@@ -461,6 +472,7 @@ export class DataClient {
       accountAddress: getAddress(contractAddress),
       includeActiveBalances,
       erc20TokenList,
+      publicClient,
     })
 
     if (!includeActiveBalances) return { distributed }
@@ -554,11 +566,13 @@ export class DataClient {
     splitAddress,
     includeActiveBalances = true,
     erc20TokenList,
+    publicClient,
   }: {
     chainId: number
     splitAddress: string
     includeActiveBalances?: boolean
     erc20TokenList?: string[]
+    publicClient?: PublicClient<Transport, Chain>
   }): Promise<FormattedSplitEarnings> {
     validateAddress(splitAddress)
     if (includeActiveBalances && !this._publicClient)
@@ -569,6 +583,7 @@ export class DataClient {
       accountAddress: getAddress(splitAddress),
       includeActiveBalances,
       erc20TokenList,
+      publicClient,
     })
 
     if (!includeActiveBalances) return { distributed }
