@@ -1,3 +1,4 @@
+import { useContext, useEffect, useState } from 'react'
 import {
   FormattedContractEarnings,
   FormattedSplitEarnings,
@@ -9,8 +10,8 @@ import {
   VestingModule,
   WaterfallModule,
 } from '@0xsplits/splits-sdk'
+
 import { DataLoadStatus, RequestError } from '../types'
-import { useContext, useEffect, useState } from 'react'
 import { getSplitsClient } from '../utils'
 import { SplitsContext } from '../context'
 
