@@ -312,19 +312,17 @@ export class DataClient {
     accountAddress,
     includeActiveBalances,
     erc20TokenList,
-    publicClient,
   }: {
     chainId: number
     accountAddress: Address
     includeActiveBalances: boolean
     erc20TokenList?: string[]
-    publicClient?: PublicClient<Transport, Chain>
   }): Promise<{
     withdrawn: FormattedTokenBalances
     distributed: FormattedTokenBalances
     activeBalances?: FormattedTokenBalances
   }> {
-    const functionPublicClient = publicClient ?? this._publicClient
+    const functionPublicClient = this._publicClient
 
     const response = await this._loadAccount(accountAddress, chainId)
 
@@ -360,7 +358,7 @@ export class DataClient {
     // Need to fetch current balance. Handle alchemy/infura with logs, and all other rpc's with token list
     if (!functionPublicClient)
       throw new MissingPublicClientError(
-        'Public client required to get active balances. Please include a publicClient in your function call, or update your call to the client constructor, or set includeActiveBalances to false',
+        'Public client required to get active balances. Please update your call to the client constructor, or set includeActiveBalances to false',
       )
     if (functionPublicClient.chain.id !== chainId) {
       throw new InvalidArgumentError(
@@ -453,13 +451,11 @@ export class DataClient {
     contractAddress,
     includeActiveBalances = true,
     erc20TokenList,
-    publicClient,
   }: {
     chainId: number
     contractAddress: string
     includeActiveBalances?: boolean
     erc20TokenList?: string[]
-    publicClient?: PublicClient<Transport, Chain>
   }): Promise<FormattedContractEarnings> {
     validateAddress(contractAddress)
     if (includeActiveBalances && !this._publicClient)
@@ -472,7 +468,6 @@ export class DataClient {
       accountAddress: getAddress(contractAddress),
       includeActiveBalances,
       erc20TokenList,
-      publicClient,
     })
 
     if (!includeActiveBalances) return { distributed }
@@ -566,13 +561,11 @@ export class DataClient {
     splitAddress,
     includeActiveBalances = true,
     erc20TokenList,
-    publicClient,
   }: {
     chainId: number
     splitAddress: string
     includeActiveBalances?: boolean
     erc20TokenList?: string[]
-    publicClient?: PublicClient<Transport, Chain>
   }): Promise<FormattedSplitEarnings> {
     validateAddress(splitAddress)
     if (includeActiveBalances && !this._publicClient)
@@ -583,7 +576,6 @@ export class DataClient {
       accountAddress: getAddress(splitAddress),
       includeActiveBalances,
       erc20TokenList,
-      publicClient,
     })
 
     if (!includeActiveBalances) return { distributed }
