@@ -401,6 +401,7 @@ export class DataClient {
         ),
       )
       balances = await fetchActiveBalances(
+        chainId,
         accountAddress,
         functionPublicClient,
         fullTokenList,
