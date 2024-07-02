@@ -58,8 +58,11 @@ export const formatGqlVestingModule: (
     chainId: parseInt(gqlVestingModule.chainId) as SupportedChainId,
     distributions: formatTokenBalances(gqlVestingModule.distributions),
     balances: {},
-    internalBalances: formatInternalTokenBalances(
+    splitmainBalances: formatInternalTokenBalances(
       gqlVestingModule.internalBalances,
+    ),
+    warehouseBalances: formatInternalTokenBalances(
+      gqlVestingModule.warehouseBalances,
     ),
     beneficiary: getAddress(gqlVestingModule.beneficiary.id),
     vestingPeriod: parseInt(gqlVestingModule.vestingPeriod),

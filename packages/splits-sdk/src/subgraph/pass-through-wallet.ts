@@ -118,8 +118,11 @@ export const formatGqlPassThroughWallet: (
     address: getAddress(gqlPassThroughWallet.id),
     balances: {},
     balanceQuoteAmounts: {},
-    internalBalances: formatInternalTokenBalances(
+    splitmainBalances: formatInternalTokenBalances(
       gqlPassThroughWallet.internalBalances,
+    ),
+    warehouseBalances: formatInternalTokenBalances(
+      gqlPassThroughWallet.warehouseBalances,
     ),
     latestBlock: gqlPassThroughWallet.latestBlock,
     latestActivity: parseInt(gqlPassThroughWallet.latestActivity),

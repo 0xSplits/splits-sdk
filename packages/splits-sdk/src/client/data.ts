@@ -329,10 +329,8 @@ export class DataClient {
     if (!response)
       throw new AccountNotFoundError('account', accountAddress, chainId)
 
-    if (response.type !== 'split' && response.type !== 'user')
-      throw new AccountNotFoundError('split & user', accountAddress, chainId)
-
-    const withdrawn = formatAccountBalances(response.withdrawn)
+    const withdrawn =
+      response.type === 'user' ? formatAccountBalances(response.withdrawn) : {}
     const distributed = formatAccountBalances(response.distributions)
     if (!includeActiveBalances) {
       return {
@@ -341,15 +339,14 @@ export class DataClient {
       }
     }
 
-    const internalBalances = formatAccountBalances(response.balances)
+    const splitmainBalances = formatAccountBalances(response.splitmainBalances)
     const warehouseBalances = formatAccountBalances(response.warehouseBalances)
     if (response.type === 'user') {
-      // Only including split main balance for users
       return {
         withdrawn,
         distributed,
         activeBalances: mergeFormattedTokenBalances([
-          internalBalances,
+          splitmainBalances,
           warehouseBalances,
         ]),
       }
@@ -397,7 +394,8 @@ export class DataClient {
       const fullTokenList = Array.from(
         new Set(
           [zeroAddress, ...tokenList]
-            .concat(Object.keys(internalBalances))
+            .concat(Object.keys(splitmainBalances))
+            .concat(Object.keys(warehouseBalances))
             .concat(customTokens)
             .map((token) => getAddress(token)),
         ),
@@ -410,23 +408,39 @@ export class DataClient {
     }
 
     const allTokens = Array.from(
-      new Set(Object.keys(balances).concat(Object.keys(internalBalances))),
+      new Set(
+        Object.keys(balances)
+          .concat(Object.keys(splitmainBalances))
+          .concat(Object.keys(warehouseBalances)),
+      ),
     )
     const filteredBalances = allTokens.reduce((acc, token) => {
-      const internalBalanceAmount =
-        internalBalances[token]?.rawAmount ?? BigInt(0)
+      const splitmainBalanceAmount =
+        splitmainBalances[token]?.rawAmount ?? BigInt(0)
+      const warehouseBalanceAmount =
+        warehouseBalances[token]?.rawAmount ?? BigInt(0)
       const contractBalanceAmount = balances[token]?.rawAmount ?? BigInt(0)
 
       // SplitMain leaves a balance of 1 for gas efficiency in internal balances.
       // Splits leave a balance of 1 (for erc20) for gas efficiency
       const tokenBalance =
-        (internalBalanceAmount > BigInt(1)
-          ? internalBalanceAmount
+        (splitmainBalanceAmount > BigInt(1)
+          ? splitmainBalanceAmount
+          : BigInt(0)) +
+        (warehouseBalanceAmount > BigInt(1)
+          ? warehouseBalanceAmount
           : BigInt(0)) +
         (contractBalanceAmount > BigInt(1) ? contractBalanceAmount : BigInt(0))
-      const symbol = internalBalances[token]?.symbol ?? balances[token]?.symbol
+
+      const symbol =
+        splitmainBalances[token]?.symbol ??
+        warehouseBalances[token]?.symbol ??
+        balances[token]?.symbol
       const decimals =
-        internalBalances[token]?.decimals ?? balances[token]?.decimals
+        splitmainBalances[token]?.decimals ??
+        warehouseBalances[token]?.decimals ??
+        balances[token]?.decimals
+
       const formattedAmount = fromBigIntToTokenValue(tokenBalance, decimals)
       if (tokenBalance > BigInt(0))
         acc[token] = {

@@ -75,8 +75,11 @@ export const formatGqlWaterfallModule: (
       ? formatTokenBalances(gqlWaterfallModule.distributions)
       : {},
     token: getAddress(gqlWaterfallModule.token.id),
-    internalBalances: formatInternalTokenBalances(
+    splitmainBalances: formatInternalTokenBalances(
       gqlWaterfallModule.internalBalances,
+    ),
+    warehouseBalances: formatInternalTokenBalances(
+      gqlWaterfallModule.warehouseBalances,
     ),
     latestBlock: gqlWaterfallModule.latestBlock,
     latestActivity: parseInt(gqlWaterfallModule.latestActivity),

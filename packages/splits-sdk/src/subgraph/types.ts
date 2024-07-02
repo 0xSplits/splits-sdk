@@ -589,6 +589,8 @@ export type IAccount = {
 
 type IAccountSharedFields = IAccount & {
   distributions: IBalance
+  splitmainBalances: IBalance
+  warehouseBalances: IBalance
   latestBlock: number
   latestActivity: number
   parentEntityType?: string
@@ -621,8 +623,6 @@ export type ISplit = IAccountSharedFields & {
   controller: Address
   newPotentialController: Address
   hash: string
-  internalBalances: IBalance
-  warehouseBalances: IBalance
   liquidSplitId?: Address
   createdBlock: number
 }
@@ -637,8 +637,6 @@ export type IRecipient = {
 export type IUser = IAccountSharedFields & {
   type: 'user'
   withdrawn: IBalance
-  balances: IBalance
-  warehouseBalances: IBalance
 }
 
 export type IVestingStream = {
@@ -652,7 +650,6 @@ export type IVestingStream = {
 export type IVestingModule = IAccountSharedFields & {
   type: 'vesting'
   balances: IBalance
-  internalBalances: IBalance
   beneficiary: Address
   vestingPeriod: number
   streams?: IVestingStream[]
@@ -671,7 +668,6 @@ export type IWaterfallModule = IAccountSharedFields & {
   balances: IBalance
   distributed: IBalance
   token: Address
-  internalBalances: IBalance
   tranches: IWaterfallTranche[]
   nonWaterfallRecipient: Address
 }
@@ -685,7 +681,6 @@ export type ILiquidSplit = IAccountSharedFields & {
   type: 'liquidSplit'
   balances: IBalance
   distributed: IBalance
-  internalBalances: IBalance
   splitId: Address
   distributorFee: number
   holders: IHolder[]
@@ -744,7 +739,6 @@ export type ISwapper = IAccountSharedFields & {
   balances: IBalance
   balanceQuoteAmounts: ISwapBalance
   swapBalances: ISwapBalance
-  internalBalances: IBalance
   owner: Address
   beneficiary: Address
   tokenToBeneficiary: Address
@@ -770,7 +764,6 @@ export type IPassThroughWalletSwapBalance = Dictionary<{
 export type IPassThroughWallet = IAccountSharedFields & {
   type: 'passThroughWallet'
   balances: IBalance
-  internalBalances: IBalance
   passThroughBalances: IBalance
   owner: Address
   passThroughAccount: Address
