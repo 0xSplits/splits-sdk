@@ -25,11 +25,7 @@ import {
 } from '../constants'
 import { passThroughWalletFactoryAbi } from '../constants/abi/passThroughWalletFactory'
 import { passThroughWalletAbi } from '../constants/abi/passThroughWallet'
-import {
-  InvalidAuthError,
-  TransactionFailedError,
-  UnsupportedChainIdError,
-} from '../errors'
+import { InvalidAuthError, TransactionFailedError } from '../errors'
 import { applyMixins } from './mixin'
 import type {
   CallData,
@@ -64,6 +60,7 @@ class PassThroughWalletTransactions extends BaseTransactions {
       walletClient,
       apiConfig,
       includeEnsNames,
+      supportedChainIds: PASS_THROUGH_WALLET_CHAIN_IDS,
     })
   }
 
@@ -71,14 +68,17 @@ class PassThroughWalletTransactions extends BaseTransactions {
     owner,
     paused = false,
     passThrough,
+    chainId,
     transactionOverrides = {},
   }: CreatePassThroughWalletConfig): Promise<TransactionFormat> {
     validateAddress(owner)
     validateAddress(passThrough)
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
+    const functionChainId = this._getFunctionChainId(chainId)
+
     const result = await this._executeContractFunction({
-      contractAddress: getPassThroughWalletFactoryAddress(this._chainId),
+      contractAddress: getPassThroughWalletFactoryAddress(functionChainId),
       contractAbi: passThroughWalletFactoryAbi,
       functionName: 'createPassThroughWallet',
       functionArgs: [[owner, paused, passThrough]],
@@ -234,9 +234,6 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
       apiConfig,
       includeEnsNames,
     })
-
-    if (!PASS_THROUGH_WALLET_CHAIN_IDS.includes(chainId))
-      throw new UnsupportedChainIdError(chainId, PASS_THROUGH_WALLET_CHAIN_IDS)
 
     this.eventTopics = {
       createPassThroughWallet: [

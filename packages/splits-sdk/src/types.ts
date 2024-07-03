@@ -416,6 +416,7 @@ export type CreatePassThroughWalletConfig = {
   owner: string
   paused?: boolean
   passThrough: string
+  chainId?: number
 } & TransactionOverridesDict
 
 export type PassThroughTokensConfig = {
