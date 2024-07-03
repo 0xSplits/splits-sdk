@@ -73,6 +73,10 @@ export type SplitRecipient = {
   percentAllocation: number
 }
 
+export type ReadContractArgs = {
+  chainId?: number
+}
+
 export type CreateSplitConfig = {
   recipients: SplitRecipient[]
   distributorFeePercent: number
