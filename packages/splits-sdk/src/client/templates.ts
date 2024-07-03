@@ -64,6 +64,7 @@ class TemplatesTransactions extends BaseTransactions {
       walletClient,
       apiConfig,
       includeEnsNames,
+      supportedChainIds: TEMPLATES_CHAIN_IDS,
     })
   }
 
@@ -72,6 +73,7 @@ class TemplatesTransactions extends BaseTransactions {
     tranches,
     nonWaterfallRecipientAddress = zeroAddress,
     nonWaterfallRecipientTrancheIndex = undefined,
+    chainId,
     transactionOverrides = {},
   }: CreateRecoupConfig): Promise<TransactionFormat> {
     validateAddress(token)
@@ -87,8 +89,10 @@ class TemplatesTransactions extends BaseTransactions {
     if (!this._publicClient) throw new Error('Public client required')
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
+    const functionChainId = this._getFunctionChainId(chainId)
+
     const [recoupTranches, trancheSizes] = await getRecoupTranchesAndSizes(
-      this._chainId,
+      functionChainId,
       getAddress(token),
       tranches,
       this._publicClient,
@@ -100,7 +104,7 @@ class TemplatesTransactions extends BaseTransactions {
         : nonWaterfallRecipientTrancheIndex
 
     const result = await this._executeContractFunction({
-      contractAddress: getRecoupAddress(this._chainId),
+      contractAddress: getRecoupAddress(functionChainId),
       contractAbi: recoupFactoryAbi,
       functionName: 'createRecoup',
       functionArgs: [
@@ -121,11 +125,9 @@ class TemplatesTransactions extends BaseTransactions {
     paused = false,
     oracleParams,
     recipients,
+    chainId,
     transactionOverrides = {},
   }: CreateDiversifierConfig): Promise<TransactionFormat> {
-    if (!DIVERSIFIER_CHAIN_IDS.includes(this._chainId))
-      throw new UnsupportedChainIdError(this._chainId, DIVERSIFIER_CHAIN_IDS)
-
     validateAddress(owner)
     validateOracleParams(oracleParams)
     validateDiversifierRecipients(recipients)
@@ -134,11 +136,15 @@ class TemplatesTransactions extends BaseTransactions {
     if (!this._publicClient) throw new Error('Public client required')
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
+    const functionChainId = this._getFunctionChainId(chainId)
+    if (!DIVERSIFIER_CHAIN_IDS.includes(functionChainId))
+      throw new UnsupportedChainIdError(functionChainId, DIVERSIFIER_CHAIN_IDS)
+
     const diversifierRecipients = getDiversifierRecipients(recipients)
     const formattedOracleParams = getFormattedOracleParams(oracleParams)
 
     const result = await this._executeContractFunction({
-      contractAddress: getDiversifierFactoryAddress(this._chainId),
+      contractAddress: getDiversifierFactoryAddress(functionChainId),
       contractAbi: diversifierFactoryAbi,
       functionName: 'createDiversifier',
       functionArgs: [
@@ -174,9 +180,6 @@ export class TemplatesClient extends TemplatesTransactions {
       apiConfig,
       includeEnsNames,
     })
-
-    if (!TEMPLATES_CHAIN_IDS.includes(chainId))
-      throw new UnsupportedChainIdError(chainId, TEMPLATES_CHAIN_IDS)
 
     this.eventTopics = {
       // TODO: add others here? create waterfall, create split, etc.

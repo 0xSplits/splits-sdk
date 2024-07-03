@@ -394,6 +394,7 @@ export type CreateRecoupConfig = {
   tranches: RecoupTrancheInput[]
   nonWaterfallRecipientAddress?: string
   nonWaterfallRecipientTrancheIndex?: number
+  chainId?: number
 } & TransactionOverridesDict
 
 // Pass through wallet
@@ -528,6 +529,7 @@ export type CreateDiversifierConfig = {
   paused?: boolean
   oracleParams: ParseOracleParams
   recipients: DiversifierRecipient[]
+  chainId?: number
 } & TransactionOverridesDict
 
 // OUTPUTS
