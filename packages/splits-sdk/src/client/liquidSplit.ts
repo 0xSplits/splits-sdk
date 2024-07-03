@@ -40,6 +40,7 @@ import type {
   CallData,
   TransactionConfig,
   TransactionFormat,
+  ReadContractArgs,
 } from '../types'
 import {
   getBigIntFromPercent,
@@ -182,7 +183,10 @@ class LiquidSplitTransactions extends BaseTransactions {
   private async _requireOwner(liquidSplitAddress: string) {
     this._requireWalletClient()
 
-    const liquidSplitContract = this._getLiquidSplitContract(liquidSplitAddress)
+    const liquidSplitContract = this._getLiquidSplitContract(
+      liquidSplitAddress,
+      this._walletClient!.chain.id,
+    )
     const owner = await liquidSplitContract.read.owner()
 
     const walletAddress = this._walletClient!.account.address
@@ -195,13 +199,15 @@ class LiquidSplitTransactions extends BaseTransactions {
 
   protected _getLiquidSplitContract(
     liquidSplit: string,
+    chainId: number,
   ): GetContractReturnType<LS1155Abi, PublicClient<Transport, Chain>> {
+    const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getAddress(liquidSplit),
       abi: ls1155CloneAbi,
       // @ts-expect-error v1/v2 viem support
-      client: this._publicClient,
-      publicClient: this._publicClient,
+      client: publicClient,
+      publicClient: publicClient,
     })
   }
 }
@@ -298,9 +304,6 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
     liquidSplitAddress: Address
     event: Log
   }> {
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error()
-
     const { txHash } = await this.submitCreateLiquidSplitTransaction(
       createLiquidSplitArgs,
     )
@@ -342,9 +345,6 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
   ): Promise<{
     event: Log
   }> {
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error()
-
     const { txHash } =
       await this.submitDistributeTokenTransaction(distributeTokenArgs)
 
@@ -353,6 +353,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
       token === zeroAddress
         ? this.eventTopics.distributeToken[1]
         : this.eventTopics.distributeToken[2]
+
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: [eventTopic],
@@ -382,9 +383,6 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
   ): Promise<{
     event: Log
   }> {
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error()
-
     const { txHash } = await this.submitTransferOwnershipTransaction(
       transferOwnershipArgs,
     )
@@ -401,15 +399,19 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
   // Read actions
   async getDistributorFee({
     liquidSplitAddress,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     liquidSplitAddress: string
   }): Promise<{
     distributorFee: number
   }> {
     validateAddress(liquidSplitAddress)
-    this._requirePublicClient()
 
-    const liquidSplitContract = this._getLiquidSplitContract(liquidSplitAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const liquidSplitContract = this._getLiquidSplitContract(
+      liquidSplitAddress,
+      functionChainId,
+    )
     const distributorFee = await liquidSplitContract.read.distributorFee()
 
     return {
@@ -419,15 +421,19 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
 
   async getPayoutSplit({
     liquidSplitAddress,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     liquidSplitAddress: string
   }): Promise<{
     payoutSplitAddress: Address
   }> {
     validateAddress(liquidSplitAddress)
-    this._requirePublicClient()
 
-    const liquidSplitContract = this._getLiquidSplitContract(liquidSplitAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const liquidSplitContract = this._getLiquidSplitContract(
+      liquidSplitAddress,
+      functionChainId,
+    )
     const payoutSplitAddress = await liquidSplitContract.read.payoutSplit()
 
     return {
@@ -437,15 +443,19 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
 
   async getOwner({
     liquidSplitAddress,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     liquidSplitAddress: string
   }): Promise<{
     owner: Address
   }> {
     validateAddress(liquidSplitAddress)
-    this._requirePublicClient()
 
-    const liquidSplitContract = this._getLiquidSplitContract(liquidSplitAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const liquidSplitContract = this._getLiquidSplitContract(
+      liquidSplitAddress,
+      functionChainId,
+    )
     const owner = await liquidSplitContract.read.owner()
 
     return {
@@ -455,15 +465,19 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
 
   async getUri({
     liquidSplitAddress,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     liquidSplitAddress: string
   }): Promise<{
     uri: string
   }> {
     validateAddress(liquidSplitAddress)
-    this._requirePublicClient()
 
-    const liquidSplitContract = this._getLiquidSplitContract(liquidSplitAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const liquidSplitContract = this._getLiquidSplitContract(
+      liquidSplitAddress,
+      functionChainId,
+    )
     const uri = await liquidSplitContract.read.uri([BigInt(0)]) // Expects an argument, but it's not actually used
 
     return {
@@ -474,7 +488,8 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
   async getScaledPercentBalanceOf({
     liquidSplitAddress,
     address,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     liquidSplitAddress: string
     address: string
   }): Promise<{
@@ -482,9 +497,12 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
   }> {
     validateAddress(liquidSplitAddress)
     validateAddress(address)
-    this._requirePublicClient()
 
-    const liquidSplitContract = this._getLiquidSplitContract(liquidSplitAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const liquidSplitContract = this._getLiquidSplitContract(
+      liquidSplitAddress,
+      functionChainId,
+    )
     const scaledPercentBalance =
       await liquidSplitContract.read.scaledPercentBalanceOf([
         getAddress(address),
@@ -503,7 +521,6 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
     image: string
   }> {
     validateAddress(liquidSplitAddress)
-    this._requirePublicClient()
 
     const { uri } = await this.getUri({
       liquidSplitAddress,
