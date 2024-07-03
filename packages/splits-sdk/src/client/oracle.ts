@@ -10,7 +10,6 @@ import {
 import { BaseTransactions } from './base'
 import { TransactionType, ORACLE_CHAIN_IDS } from '../constants'
 import { uniV3OracleAbi } from '../constants/abi/uniV3Oracle'
-import { UnsupportedChainIdError } from '../errors'
 import type {
   QuoteParams,
   SplitsClientConfig,
@@ -38,6 +37,7 @@ class OracleTransactions extends BaseTransactions {
       walletClient,
       apiConfig,
       includeEnsNames,
+      supportedChainIds: ORACLE_CHAIN_IDS,
     })
   }
 
@@ -72,9 +72,6 @@ export class OracleClient extends OracleTransactions {
       apiConfig,
       includeEnsNames,
     })
-
-    if (!ORACLE_CHAIN_IDS.includes(chainId))
-      throw new UnsupportedChainIdError(chainId, ORACLE_CHAIN_IDS)
   }
 
   // Read actions
