@@ -35,6 +35,7 @@ import type {
   ContractQuoteParams,
   ContractSwapperExactInputParams,
   CreateSwapperConfig,
+  ReadContractArgs,
   SplitsClientConfig,
   SwapperExecCallsConfig,
   SwapperPauseConfig,
@@ -142,8 +143,6 @@ class SwapperTransactions extends BaseTransactions {
     validateAddress(swapperAddress)
     validateUniV3SwapInputAssets(inputAssets)
 
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error('Public client required')
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const functionChainId = this._getFunctionChainId(chainId)
@@ -373,10 +372,13 @@ class SwapperTransactions extends BaseTransactions {
   }
 
   private async _requireOwner(swapperAddress: string) {
-    const swapperContract = this._getSwapperContract(swapperAddress)
-    const owner = await swapperContract.read.owner()
-
     this._requireWalletClient()
+
+    const swapperContract = this._getSwapperContract(
+      swapperAddress,
+      this._walletClient!.chain.id,
+    )
+    const owner = await swapperContract.read.owner()
 
     const walletAddress = this._walletClient!.account.address
 
@@ -386,28 +388,30 @@ class SwapperTransactions extends BaseTransactions {
       )
   }
 
-  protected _getUniV3SwapContract(): GetContractReturnType<
-    UniV3SwapAbi,
-    PublicClient<Transport, Chain>
-  > {
+  protected _getUniV3SwapContract(
+    chainId: number,
+  ): GetContractReturnType<UniV3SwapAbi, PublicClient<Transport, Chain>> {
+    const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getUniV3SwapAddress(),
       abi: uniV3SwapAbi,
       // @ts-expect-error v1/v2 viem support
-      client: this._publicClient,
-      publicClient: this._publicClient,
+      client: publicClient,
+      publicClient: publicClient,
     })
   }
 
   protected _getSwapperContract(
     swapper: string,
+    chainId: number,
   ): GetContractReturnType<SwapperAbi, PublicClient<Transport, Chain>> {
+    const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getAddress(swapper),
       abi: swapperAbi,
       // @ts-expect-error v1/v2 viem support
-      client: this._publicClient,
-      publicClient: this._publicClient,
+      client: publicClient,
+      publicClient: publicClient,
     })
   }
 }
@@ -736,9 +740,6 @@ export class SwapperClient extends SwapperTransactions {
   ): Promise<{
     event: Log
   }> {
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error()
-
     const { txHash } =
       await this.submitSetDefaultScaledOfferFactorTransaction(args)
     const events = await this.getTransactionEvents({
@@ -771,9 +772,6 @@ export class SwapperClient extends SwapperTransactions {
   ): Promise<{
     event: Log
   }> {
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error()
-
     const { txHash } =
       await this.submitSetScaledOfferFactorOverridesTransaction(args)
     const events = await this.getTransactionEvents({
@@ -792,15 +790,19 @@ export class SwapperClient extends SwapperTransactions {
   // Read actions
   async getBeneficiary({
     swapperAddress,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     swapperAddress: string
   }): Promise<{
     beneficiary: Address
   }> {
     validateAddress(swapperAddress)
-    this._requirePublicClient()
 
-    const swapperContract = this._getSwapperContract(swapperAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const swapperContract = this._getSwapperContract(
+      swapperAddress,
+      functionChainId,
+    )
     const beneficiary = await swapperContract.read.beneficiary()
 
     return {
@@ -810,15 +812,19 @@ export class SwapperClient extends SwapperTransactions {
 
   async getTokenToBeneficiary({
     swapperAddress,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     swapperAddress: string
   }): Promise<{
     tokenToBeneficiary: Address
   }> {
     validateAddress(swapperAddress)
-    this._requirePublicClient()
 
-    const swapperContract = this._getSwapperContract(swapperAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const swapperContract = this._getSwapperContract(
+      swapperAddress,
+      functionChainId,
+    )
     const tokenToBeneficiary = await swapperContract.read.tokenToBeneficiary()
 
     return {
@@ -826,13 +832,19 @@ export class SwapperClient extends SwapperTransactions {
     }
   }
 
-  async getOracle({ swapperAddress }: { swapperAddress: string }): Promise<{
+  async getOracle({
+    swapperAddress,
+    chainId,
+  }: ReadContractArgs & { swapperAddress: string }): Promise<{
     oracle: Address
   }> {
     validateAddress(swapperAddress)
-    this._requirePublicClient()
 
-    const swapperContract = this._getSwapperContract(swapperAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const swapperContract = this._getSwapperContract(
+      swapperAddress,
+      functionChainId,
+    )
     const oracle = await swapperContract.read.oracle()
 
     return {
@@ -842,15 +854,19 @@ export class SwapperClient extends SwapperTransactions {
 
   async getDefaultScaledOfferFactor({
     swapperAddress,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     swapperAddress: string
   }): Promise<{
     defaultScaledOfferFactor: number
   }> {
     validateAddress(swapperAddress)
-    this._requirePublicClient()
 
-    const swapperContract = this._getSwapperContract(swapperAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const swapperContract = this._getSwapperContract(
+      swapperAddress,
+      functionChainId,
+    )
     const defaultScaledOfferFactor =
       await swapperContract.read.defaultScaledOfferFactor()
 
@@ -862,7 +878,8 @@ export class SwapperClient extends SwapperTransactions {
   async getScaledOfferFactorOverrides({
     swapperAddress,
     quotePairs,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     swapperAddress: string
     quotePairs: {
       base: string
@@ -876,7 +893,6 @@ export class SwapperClient extends SwapperTransactions {
       validateAddress(quotePair.base)
       validateAddress(quotePair.quote)
     })
-    this._requirePublicClient()
 
     const formattedQuotePairs = quotePairs.map((quotePair) => {
       return {
@@ -885,7 +901,11 @@ export class SwapperClient extends SwapperTransactions {
       }
     })
 
-    const swapperContract = this._getSwapperContract(swapperAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const swapperContract = this._getSwapperContract(
+      swapperAddress,
+      functionChainId,
+    )
     const scaledOfferFactorOverrides =
       await swapperContract.read.getPairScaledOfferFactors([
         formattedQuotePairs,
