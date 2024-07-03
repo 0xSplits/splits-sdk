@@ -25,11 +25,12 @@ import {
 } from '../constants'
 import { vestingFactoryAbi } from '../constants/abi/vestingFactory'
 import { vestingAbi } from '../constants/abi/vesting'
-import { InvalidArgumentError, TransactionFailedError } from '../errors'
+import { TransactionFailedError } from '../errors'
 import { applyMixins } from './mixin'
 import type {
   CallData,
   CreateVestingConfig,
+  ReadContractArgs,
   ReleaseVestedFundsConfig,
   SplitsClientConfig,
   StartVestConfig,
@@ -128,25 +129,28 @@ class VestingTransactions extends BaseTransactions {
 
   protected _getVestingContract(
     vestingModule: string,
+    chainId: number,
   ): GetContractReturnType<VestingAbi, PublicClient<Transport, Chain>> {
+    const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getAddress(vestingModule),
       abi: vestingAbi,
       // @ts-expect-error v1/v2 viem support
-      client: this._publicClient,
-      publicClient: this._publicClient,
+      client: publicClient,
+      publicClient: publicClient,
     })
   }
 
   protected _getVestingFactoryContract(
     chainId: number,
   ): GetContractReturnType<VestingFactoryAbi, PublicClient<Transport, Chain>> {
+    const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getVestingFactoryAddress(chainId),
       abi: vestingFactoryAbi,
       // @ts-expect-error v1/v2 viem support
-      client: this._publicClient,
-      publicClient: this._publicClient,
+      client: publicClient,
+      publicClient: publicClient,
     })
   }
 }
@@ -231,9 +235,6 @@ export class VestingClient extends VestingTransactions {
     vestingModuleAddress: string
     event: Log
   }> {
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error()
-
     const { txHash } =
       await this.submitCreateVestingModuleTransaction(createVestingArgs)
     const events = await this.getTransactionEvents({
@@ -269,9 +270,6 @@ export class VestingClient extends VestingTransactions {
   async startVest(startVestArgs: StartVestConfig): Promise<{
     events: Log[]
   }> {
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error()
-
     const { txHash } = await this.submitStartVestTransaction(startVestArgs)
     const events = await this.getTransactionEvents({
       txHash,
@@ -297,9 +295,6 @@ export class VestingClient extends VestingTransactions {
   ): Promise<{
     events: Log[]
   }> {
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error()
-
     const { txHash } =
       await this.submitReleaseVestedFundsTransaction(releaseFundsArgs)
     const events = await this.getTransactionEvents({
@@ -320,11 +315,8 @@ export class VestingClient extends VestingTransactions {
   }> {
     validateAddress(beneficiary)
     validateVestingPeriod(vestingPeriodSeconds)
-    this._requirePublicClient()
 
-    const functionChainId = chainId ?? this._chainId
-    if (!functionChainId)
-      throw new InvalidArgumentError('Please pass in the chainId you are using')
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
 
     const vestingModuleFactoryContract =
       this._getVestingFactoryContract(functionChainId)
@@ -342,15 +334,19 @@ export class VestingClient extends VestingTransactions {
 
   async getBeneficiary({
     vestingModuleAddress,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     vestingModuleAddress: string
   }): Promise<{
     beneficiary: Address
   }> {
     validateAddress(vestingModuleAddress)
-    this._requirePublicClient()
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
 
-    const vestingContract = this._getVestingContract(vestingModuleAddress)
+    const vestingContract = this._getVestingContract(
+      vestingModuleAddress,
+      functionChainId,
+    )
     const beneficiary = await vestingContract.read.beneficiary()
 
     return { beneficiary }
@@ -358,15 +354,19 @@ export class VestingClient extends VestingTransactions {
 
   async getVestingPeriod({
     vestingModuleAddress,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     vestingModuleAddress: string
   }): Promise<{
     vestingPeriod: bigint
   }> {
     validateAddress(vestingModuleAddress)
-    this._requirePublicClient()
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
 
-    const vestingContract = this._getVestingContract(vestingModuleAddress)
+    const vestingContract = this._getVestingContract(
+      vestingModuleAddress,
+      functionChainId,
+    )
     const vestingPeriod = await vestingContract.read.vestingPeriod()
 
     return { vestingPeriod }
@@ -375,16 +375,20 @@ export class VestingClient extends VestingTransactions {
   async getVestedAmount({
     vestingModuleAddress,
     streamId,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     vestingModuleAddress: string
     streamId: string
   }): Promise<{
     amount: bigint
   }> {
     validateAddress(vestingModuleAddress)
-    this._requirePublicClient()
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
 
-    const vestingContract = this._getVestingContract(vestingModuleAddress)
+    const vestingContract = this._getVestingContract(
+      vestingModuleAddress,
+      functionChainId,
+    )
     const amount = await vestingContract.read.vested([BigInt(streamId)])
 
     return { amount }
@@ -393,16 +397,20 @@ export class VestingClient extends VestingTransactions {
   async getVestedAndUnreleasedAmount({
     vestingModuleAddress,
     streamId,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     vestingModuleAddress: string
     streamId: string
   }): Promise<{
     amount: bigint
   }> {
     validateAddress(vestingModuleAddress)
-    this._requirePublicClient()
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
 
-    const vestingContract = this._getVestingContract(vestingModuleAddress)
+    const vestingContract = this._getVestingContract(
+      vestingModuleAddress,
+      functionChainId,
+    )
     const amount = await vestingContract.read.vestedAndUnreleased([
       BigInt(streamId),
     ])
