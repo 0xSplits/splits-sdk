@@ -74,10 +74,7 @@ class VestingTransactions extends BaseTransactions {
 
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
-    const functionChainId =
-      this._walletClient?.chain.id ?? chainId ?? this._chainId
-    if (!functionChainId)
-      throw new InvalidArgumentError('Please pass in the chainId you are using')
+    const functionChainId = this._getFunctionChainId(chainId)
 
     const result = await this._executeContractFunction({
       contractAddress: getVestingFactoryAddress(functionChainId),

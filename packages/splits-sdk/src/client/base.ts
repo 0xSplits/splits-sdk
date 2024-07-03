@@ -15,6 +15,7 @@ import {
 import { MULTICALL_3_ADDRESS, TransactionType } from '../constants'
 import { multicallAbi } from '../constants/abi/multicall'
 import {
+  InvalidArgumentError,
   InvalidConfigError,
   MissingDataClientError,
   MissingPublicClientError,
@@ -103,6 +104,15 @@ class BaseClient {
     const chainId = this._walletClient.chain.id
     if (!this._supportedChainIds.includes(chainId))
       throw new UnsupportedChainIdError(chainId, this._supportedChainIds)
+  }
+
+  protected _getFunctionChainId(argumentChainId?: number) {
+    const functionChainId =
+      this._walletClient?.chain.id ?? argumentChainId ?? this._chainId
+    if (!functionChainId)
+      throw new InvalidArgumentError('Please pass in the chainId you are using')
+
+    return functionChainId
   }
 }
 

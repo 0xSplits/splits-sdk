@@ -79,10 +79,7 @@ class WaterfallTransactions extends BaseTransactions {
     if (!this._publicClient) throw new Error('Public client required')
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
-    const functionChainId =
-      this._walletClient?.chain.id ?? chainId ?? this._chainId
-    if (!functionChainId)
-      throw new InvalidArgumentError('Please pass in the chainId you are using')
+    const functionChainId = this._getFunctionChainId(chainId)
 
     const formattedToken = getAddress(token)
     const formattedNonWaterfallRecipient = getAddress(nonWaterfallRecipient)
@@ -140,10 +137,7 @@ class WaterfallTransactions extends BaseTransactions {
     validateAddress(recipient)
     this._requireWalletClient()
 
-    const functionChainId =
-      this._walletClient?.chain.id ?? chainId ?? this._chainId
-    if (!functionChainId)
-      throw new InvalidArgumentError('Please pass in the chainId you are using')
+    const functionChainId = this._getFunctionChainId(chainId)
 
     await this._validateRecoverTokensWaterfallData({
       waterfallModuleAddress,
