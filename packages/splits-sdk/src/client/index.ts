@@ -1,15 +1,4 @@
-import {
-  LIQUID_SPLIT_CHAIN_IDS,
-  ORACLE_CHAIN_IDS,
-  PASS_THROUGH_WALLET_CHAIN_IDS,
-  SPLITS_SUPPORTED_CHAIN_IDS,
-  SPLITS_V2_SUPPORTED_CHAIN_IDS,
-  SWAPPER_CHAIN_IDS,
-  TEMPLATES_CHAIN_IDS,
-  TransactionType,
-  VESTING_CHAIN_IDS,
-  WATERFALL_CHAIN_IDS,
-} from '../constants'
+import { TransactionType } from '../constants'
 import { SplitsClientConfig } from '../types'
 import {
   BaseClientMixin,
@@ -31,16 +20,16 @@ import { WaterfallClient } from './waterfall'
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class SplitsClient extends BaseTransactions {
-  readonly waterfall: WaterfallClient | undefined
-  readonly liquidSplits: LiquidSplitClient | undefined
-  readonly passThroughWallet: PassThroughWalletClient | undefined
-  readonly vesting: VestingClient | undefined
-  readonly oracle: OracleClient | undefined
-  readonly swapper: SwapperClient | undefined
-  readonly templates: TemplatesClient | undefined
-  readonly splitV1: SplitV1Client | undefined
-  readonly splitV2: SplitV2Client | undefined
-  readonly warehouse: WarehouseClient | undefined
+  readonly waterfall: WaterfallClient
+  readonly liquidSplits: LiquidSplitClient
+  readonly passThroughWallet: PassThroughWalletClient
+  readonly vesting: VestingClient
+  readonly oracle: OracleClient
+  readonly swapper: SwapperClient
+  readonly templates: TemplatesClient
+  readonly splitV1: SplitV1Client
+  readonly splitV2: SplitV2Client
+  readonly warehouse: WarehouseClient
   readonly dataClient: DataClient | undefined
   readonly estimateGas: SplitsClientGasEstimates
 
@@ -60,105 +49,88 @@ export class SplitsClient extends BaseTransactions {
       apiConfig,
       includeEnsNames,
       ensPublicClient,
+      supportedChainIds: [],
     })
-    if (WATERFALL_CHAIN_IDS.includes(chainId)) {
-      this.waterfall = new WaterfallClient({
-        chainId,
-        publicClient,
-        ensPublicClient,
-        walletClient,
-        apiConfig,
-        includeEnsNames,
-      })
-    }
-    if (LIQUID_SPLIT_CHAIN_IDS.includes(chainId)) {
-      this.liquidSplits = new LiquidSplitClient({
-        chainId,
-        publicClient,
-        ensPublicClient,
-        walletClient,
-        apiConfig,
-        includeEnsNames,
-      })
-    }
-    if (VESTING_CHAIN_IDS.includes(chainId)) {
-      this.vesting = new VestingClient({
-        chainId,
-        publicClient,
-        ensPublicClient,
-        walletClient,
-        apiConfig,
-        includeEnsNames,
-      })
-    }
-    if (TEMPLATES_CHAIN_IDS.includes(chainId)) {
-      this.templates = new TemplatesClient({
-        chainId,
-        publicClient,
-        ensPublicClient,
-        walletClient,
-        apiConfig,
-        includeEnsNames,
-      })
-    }
-    if (ORACLE_CHAIN_IDS.includes(chainId)) {
-      this.oracle = new OracleClient({
-        chainId,
-        publicClient,
-        ensPublicClient,
-        walletClient,
-        apiConfig,
-        includeEnsNames,
-      })
-    }
-    if (SWAPPER_CHAIN_IDS.includes(chainId)) {
-      this.swapper = new SwapperClient({
-        chainId,
-        publicClient,
-        ensPublicClient,
-        walletClient,
-        apiConfig,
-        includeEnsNames,
-      })
-    }
-    if (PASS_THROUGH_WALLET_CHAIN_IDS.includes(chainId)) {
-      this.passThroughWallet = new PassThroughWalletClient({
-        chainId,
-        publicClient,
-        ensPublicClient,
-        walletClient,
-        apiConfig,
-        includeEnsNames,
-      })
-    }
-    if (SPLITS_SUPPORTED_CHAIN_IDS.includes(chainId)) {
-      this.splitV1 = new SplitV1Client({
-        chainId,
-        publicClient,
-        ensPublicClient,
-        walletClient,
-        apiConfig,
-        includeEnsNames,
-      })
-    }
-    if (SPLITS_V2_SUPPORTED_CHAIN_IDS.includes(chainId)) {
-      this.splitV2 = new SplitV2Client({
-        chainId,
-        publicClient,
-        ensPublicClient,
-        walletClient,
-        apiConfig,
-        includeEnsNames,
-      })
-      this.warehouse = new WarehouseClient({
-        chainId,
-        publicClient,
-        ensPublicClient,
-        walletClient,
-        apiConfig,
-        includeEnsNames,
-      })
-    }
+    this.waterfall = new WaterfallClient({
+      chainId,
+      publicClient,
+      ensPublicClient,
+      walletClient,
+      apiConfig,
+      includeEnsNames,
+    })
+    this.liquidSplits = new LiquidSplitClient({
+      chainId,
+      publicClient,
+      ensPublicClient,
+      walletClient,
+      apiConfig,
+      includeEnsNames,
+    })
+    this.vesting = new VestingClient({
+      chainId,
+      publicClient,
+      ensPublicClient,
+      walletClient,
+      apiConfig,
+      includeEnsNames,
+    })
+    this.templates = new TemplatesClient({
+      chainId,
+      publicClient,
+      ensPublicClient,
+      walletClient,
+      apiConfig,
+      includeEnsNames,
+    })
+    this.oracle = new OracleClient({
+      chainId,
+      publicClient,
+      ensPublicClient,
+      walletClient,
+      apiConfig,
+      includeEnsNames,
+    })
+    this.swapper = new SwapperClient({
+      chainId,
+      publicClient,
+      ensPublicClient,
+      walletClient,
+      apiConfig,
+      includeEnsNames,
+    })
+    this.passThroughWallet = new PassThroughWalletClient({
+      chainId,
+      publicClient,
+      ensPublicClient,
+      walletClient,
+      apiConfig,
+      includeEnsNames,
+    })
+    this.splitV1 = new SplitV1Client({
+      chainId,
+      publicClient,
+      ensPublicClient,
+      walletClient,
+      apiConfig,
+      includeEnsNames,
+    })
+    this.splitV2 = new SplitV2Client({
+      chainId,
+      publicClient,
+      ensPublicClient,
+      walletClient,
+      apiConfig,
+      includeEnsNames,
+    })
+    this.warehouse = new WarehouseClient({
+      chainId,
+      publicClient,
+      ensPublicClient,
+      walletClient,
+      apiConfig,
+      includeEnsNames,
+    })
 
     if (apiConfig) {
       this.dataClient = new DataClient({
@@ -202,6 +174,7 @@ class SplitsClientGasEstimates extends BaseTransactions {
       apiConfig,
       includeEnsNames,
       ensPublicClient,
+      supportedChainIds: [],
     })
   }
 }
