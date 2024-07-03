@@ -371,6 +371,7 @@ export class DataClient {
     ) {
       // If no token list passed in and we're using alchemy, fetch all balances with alchemy's custom api
       balances = await fetchContractBalancesWithAlchemy(
+        chainId,
         accountAddress,
         functionPublicClient,
       )

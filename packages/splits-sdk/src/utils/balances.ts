@@ -84,9 +84,14 @@ export const fetchActiveBalances: (
 // NOTE: this should never be called for a user, we only care about a user's
 // balance in split main which is stored in subgraph
 export const fetchContractBalancesWithAlchemy: (
-  arg0: Address,
-  arg1: PublicClient,
-) => Promise<FormattedTokenBalances> = async (address, rpcPublicClient) => {
+  arg0: number,
+  arg1: Address,
+  arg2: PublicClient,
+) => Promise<FormattedTokenBalances> = async (
+  chainId,
+  address,
+  rpcPublicClient,
+) => {
   if (!isAlchemyPublicClient(rpcPublicClient))
     throw new Error('Cannot call this without an alchemy provider')
 
@@ -123,8 +128,7 @@ export const fetchContractBalancesWithAlchemy: (
     const results = await Promise.all(promisesArray)
     if (!pageKey) {
       const ethBalance = results[1] as bigint
-      // TODO: get correct symbol/decimals
-      const symbol = 'ETH'
+      const symbol = CHAIN_INFO[chainId]?.nativeCurrency.symbol ?? 'ETH'
       const decimals = 18
       const formattedAmount = fromBigIntToTokenValue(ethBalance, decimals)
 
