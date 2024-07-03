@@ -279,7 +279,7 @@ describe('SplitMain writes', () => {
       )
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
-        eventTopics: [splitsClient.eventTopics.createSplit[0]],
+        eventTopics: [splitsClient.getEventTopics(1).createSplit[0]],
       })
     })
 
@@ -310,7 +310,7 @@ describe('SplitMain writes', () => {
       )
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
-        eventTopics: [splitsClient.eventTopics.createSplit[0]],
+        eventTopics: [splitsClient.getEventTopics(1).createSplit[0]],
       })
     })
   })
@@ -403,7 +403,7 @@ describe('SplitMain writes', () => {
       )
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
-        eventTopics: [splitsClient.eventTopics.updateSplit[0]],
+        eventTopics: [splitsClient.getEventTopics(1).updateSplit[0]],
       })
     })
   })
@@ -495,7 +495,7 @@ describe('SplitMain writes', () => {
       )
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
-        eventTopics: [splitsClient.eventTopics.distributeToken[0]],
+        eventTopics: [splitsClient.getEventTopics(1).distributeToken[0]],
       })
     })
 
@@ -522,7 +522,7 @@ describe('SplitMain writes', () => {
       )
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
-        eventTopics: [splitsClient.eventTopics.distributeToken[1]],
+        eventTopics: [splitsClient.getEventTopics(1).distributeToken[1]],
       })
     })
 
@@ -549,7 +549,7 @@ describe('SplitMain writes', () => {
       )
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
-        eventTopics: [splitsClient.eventTopics.distributeToken[0]],
+        eventTopics: [splitsClient.getEventTopics(1).distributeToken[0]],
       })
     })
 
@@ -578,7 +578,7 @@ describe('SplitMain writes', () => {
       )
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
-        eventTopics: [splitsClient.eventTopics.distributeToken[1]],
+        eventTopics: [splitsClient.getEventTopics(1).distributeToken[1]],
       })
     })
   })
@@ -689,7 +689,7 @@ describe('SplitMain writes', () => {
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
         eventTopics: [
-          splitsClient.eventTopics.updateSplitAndDistributeToken[1],
+          splitsClient.getEventTopics(1).updateSplitAndDistributeToken[1],
         ],
       })
     })
@@ -724,7 +724,7 @@ describe('SplitMain writes', () => {
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
         eventTopics: [
-          splitsClient.eventTopics.updateSplitAndDistributeToken[2],
+          splitsClient.getEventTopics(1).updateSplitAndDistributeToken[2],
         ],
       })
     })
@@ -759,7 +759,7 @@ describe('SplitMain writes', () => {
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
         eventTopics: [
-          splitsClient.eventTopics.updateSplitAndDistributeToken[1],
+          splitsClient.getEventTopics(1).updateSplitAndDistributeToken[1],
         ],
       })
     })
@@ -796,7 +796,7 @@ describe('SplitMain writes', () => {
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
         eventTopics: [
-          splitsClient.eventTopics.updateSplitAndDistributeToken[2],
+          splitsClient.getEventTopics(1).updateSplitAndDistributeToken[2],
         ],
       })
     })
@@ -856,7 +856,7 @@ describe('SplitMain writes', () => {
       expect(writeActions.withdraw).toBeCalledWith(address, 1, ['0xerc20'])
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
-        eventTopics: [splitsClient.eventTopics.withdrawFunds[0]],
+        eventTopics: [splitsClient.getEventTopics(1).withdrawFunds[0]],
       })
     })
 
@@ -876,7 +876,7 @@ describe('SplitMain writes', () => {
       ])
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
-        eventTopics: [splitsClient.eventTopics.withdrawFunds[0]],
+        eventTopics: [splitsClient.getEventTopics(1).withdrawFunds[0]],
       })
     })
   })
@@ -954,7 +954,9 @@ describe('SplitMain writes', () => {
       )
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
-        eventTopics: [splitsClient.eventTopics.initiateControlTransfer[0]],
+        eventTopics: [
+          splitsClient.getEventTopics(1).initiateControlTransfer[0],
+        ],
       })
     })
   })
@@ -1026,7 +1028,7 @@ describe('SplitMain writes', () => {
       expect(writeActions.cancelControlTransfer).toBeCalledWith(splitAddress)
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
-        eventTopics: [splitsClient.eventTopics.cancelControlTransfer[0]],
+        eventTopics: [splitsClient.getEventTopics(1).cancelControlTransfer[0]],
       })
     })
   })
@@ -1107,7 +1109,7 @@ describe('SplitMain writes', () => {
       expect(writeActions.acceptControl).toBeCalledWith(splitAddress)
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
-        eventTopics: [splitsClient.eventTopics.acceptControlTransfer[0]],
+        eventTopics: [splitsClient.getEventTopics(1).acceptControlTransfer[0]],
       })
     })
   })
@@ -1179,7 +1181,7 @@ describe('SplitMain writes', () => {
       expect(writeActions.makeSplitImmutable).toBeCalledWith(splitAddress)
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
-        eventTopics: [splitsClient.eventTopics.makeSplitImmutable[0]],
+        eventTopics: [splitsClient.getEventTopics(1).makeSplitImmutable[0]],
       })
     })
   })

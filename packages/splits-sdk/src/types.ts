@@ -74,18 +74,21 @@ export type CreateSplitConfig = {
   recipients: SplitRecipient[]
   distributorFeePercent: number
   controller?: string
+  chainId?: number
 } & TransactionOverridesDict
 
 export type UpdateSplitConfig = {
   splitAddress: string
   recipients: SplitRecipient[]
   distributorFeePercent: number
+  chainId?: number
 } & TransactionOverridesDict
 
 export type DistributeTokenConfig = {
   splitAddress: string
   token: string
   distributorAddress?: string
+  chainId?: number
 } & TransactionOverridesDict
 
 export type UpdateSplitAndDistributeTokenConfig = {
@@ -94,28 +97,34 @@ export type UpdateSplitAndDistributeTokenConfig = {
   recipients: SplitRecipient[]
   distributorFeePercent: number
   distributorAddress?: string
+  chainId?: number
 } & TransactionOverridesDict
 
 export type WithdrawFundsConfig = {
   address: string
   tokens: string[]
+  chainId?: number
 } & TransactionOverridesDict
 
 export type InitiateControlTransferConfig = {
   splitAddress: string
   newController: string
+  chainId?: number
 } & TransactionOverridesDict
 
 export type CancelControlTransferConfig = {
   splitAddress: string
+  chainId?: number
 } & TransactionOverridesDict
 
 export type AcceptControlTransferConfig = {
   splitAddress: string
+  chainId?: number
 } & TransactionOverridesDict
 
 export type MakeSplitImmutableConfig = {
   splitAddress: string
+  chainId?: number
 } & TransactionOverridesDict
 
 export type BatchDistributeAndWithdrawConfig = {
@@ -123,17 +132,20 @@ export type BatchDistributeAndWithdrawConfig = {
   tokens: string[]
   recipientAddresses: string[]
   distributorAddress?: string
+  chainId?: number
 }
 
 export type BatchDistributeAndWithdrawForAllConfig = {
   splitAddress: string
   tokens: string[]
   distributorAddress?: string
+  chainId?: number
 }
 
 export type GetSplitBalanceConfig = {
   splitAddress: string
   token?: string
+  chainId?: number
 }
 
 // Warehouse
