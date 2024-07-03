@@ -46,7 +46,7 @@ import {
   SPLITS_V2_SUPPORTED_CHAIN_IDS,
   getWarehouseAddress,
 } from '../constants'
-import { TransactionFailedError, UnsupportedChainIdError } from '../errors'
+import { TransactionFailedError } from '../errors'
 import { applyMixins } from './mixin'
 import { getNumberFromPercent, validateAddress } from '../utils'
 
@@ -78,6 +78,7 @@ class WarehouseTransactions extends BaseTransactions {
       walletClient,
       apiConfig,
       includeEnsNames,
+      supportedChainIds: SPLITS_V2_SUPPORTED_CHAIN_IDS,
     })
 
     this._warehouseContract = getContract({
@@ -492,9 +493,6 @@ export class WarehouseClient extends WarehouseTransactions {
       includeEnsNames,
       ensPublicClient,
     })
-
-    if (!SPLITS_V2_SUPPORTED_CHAIN_IDS.includes(chainId))
-      throw new UnsupportedChainIdError(chainId, SPLITS_V2_SUPPORTED_CHAIN_IDS)
 
     this.eventTopics = {
       transfer: [
