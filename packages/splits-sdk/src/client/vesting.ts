@@ -25,7 +25,7 @@ import {
 } from '../constants'
 import { vestingFactoryAbi } from '../constants/abi/vestingFactory'
 import { vestingAbi } from '../constants/abi/vesting'
-import { TransactionFailedError, UnsupportedChainIdError } from '../errors'
+import { InvalidArgumentError, TransactionFailedError } from '../errors'
 import { applyMixins } from './mixin'
 import type {
   CallData,
@@ -59,12 +59,14 @@ class VestingTransactions extends BaseTransactions {
       walletClient,
       apiConfig,
       includeEnsNames,
+      supportedChainIds: VESTING_CHAIN_IDS,
     })
   }
 
   protected async _createVestingModuleTransaction({
     beneficiary,
     vestingPeriodSeconds,
+    chainId,
     transactionOverrides = {},
   }: CreateVestingConfig): Promise<TransactionFormat> {
     validateAddress(beneficiary)
@@ -72,8 +74,13 @@ class VestingTransactions extends BaseTransactions {
 
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
+    const functionChainId =
+      this._walletClient?.chain.id ?? chainId ?? this._chainId
+    if (!functionChainId)
+      throw new InvalidArgumentError('Please pass in the chainId you are using')
+
     const result = await this._executeContractFunction({
-      contractAddress: getVestingFactoryAddress(this._chainId),
+      contractAddress: getVestingFactoryAddress(functionChainId),
       contractAbi: vestingFactoryAbi,
       functionName: 'createVestingModule',
       functionArgs: [beneficiary, vestingPeriodSeconds],
@@ -134,12 +141,11 @@ class VestingTransactions extends BaseTransactions {
     })
   }
 
-  protected _getVestingFactoryContract(): GetContractReturnType<
-    VestingFactoryAbi,
-    PublicClient<Transport, Chain>
-  > {
+  protected _getVestingFactoryContract(
+    chainId: number,
+  ): GetContractReturnType<VestingFactoryAbi, PublicClient<Transport, Chain>> {
     return getContract({
-      address: getVestingFactoryAddress(this._chainId),
+      address: getVestingFactoryAddress(chainId),
       abi: vestingFactoryAbi,
       // @ts-expect-error v1/v2 viem support
       client: this._publicClient,
@@ -171,9 +177,6 @@ export class VestingClient extends VestingTransactions {
       apiConfig,
       includeEnsNames,
     })
-
-    if (!VESTING_CHAIN_IDS.includes(chainId))
-      throw new UnsupportedChainIdError(chainId, VESTING_CHAIN_IDS)
 
     this.eventTopics = {
       createVestingModule: [
@@ -313,6 +316,7 @@ export class VestingClient extends VestingTransactions {
   async predictVestingModuleAddress({
     beneficiary,
     vestingPeriodSeconds,
+    chainId,
   }: CreateVestingConfig): Promise<{
     address: Address
     exists: boolean
@@ -321,7 +325,12 @@ export class VestingClient extends VestingTransactions {
     validateVestingPeriod(vestingPeriodSeconds)
     this._requirePublicClient()
 
-    const vestingModuleFactoryContract = this._getVestingFactoryContract()
+    const functionChainId = chainId ?? this._chainId
+    if (!functionChainId)
+      throw new InvalidArgumentError('Please pass in the chainId you are using')
+
+    const vestingModuleFactoryContract =
+      this._getVestingFactoryContract(functionChainId)
     const [address, exists] =
       await vestingModuleFactoryContract.read.predictVestingModuleAddress([
         getAddress(beneficiary),

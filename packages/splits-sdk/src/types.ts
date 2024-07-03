@@ -348,6 +348,7 @@ export type WithdrawWaterfallPullFundsConfig = {
 export type CreateVestingConfig = {
   beneficiary: string
   vestingPeriodSeconds: number
+  chainId?: number
 } & TransactionOverridesDict
 
 export type StartVestConfig = {
