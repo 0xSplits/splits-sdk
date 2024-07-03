@@ -280,6 +280,7 @@ export type CreateSplitV2Config = {
   ownerAddress?: Address
   creatorAddress?: Address
   salt?: Hex
+  chainId?: number
 } & TransactionOverridesDict
 
 export type UpdateSplitV2Config = {
@@ -293,6 +294,7 @@ export type DistributeSplitConfig = {
   splitAddress: Address
   tokenAddress: Address
   distributorAddress?: Address
+  chainId?: number
 } & TransactionOverridesDict
 
 export type TransferOwnershipConfig = {

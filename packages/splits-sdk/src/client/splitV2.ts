@@ -14,7 +14,6 @@ import {
   zeroAddress,
 } from 'viem'
 import {
-  SPLITS_SUPPORTED_CHAIN_IDS,
   SPLITS_V2_SUPPORTED_CHAIN_IDS,
   TransactionType,
   ZERO,
@@ -24,10 +23,10 @@ import {
 import { splitV2ABI } from '../constants/abi/splitV2'
 import { splitV2FactoryABI } from '../constants/abi/splitV2Factory'
 import {
+  InvalidArgumentError,
   InvalidAuthError,
   SaltRequired,
   TransactionFailedError,
-  UnsupportedChainIdError,
 } from '../errors'
 import {
   CallData,
@@ -81,6 +80,7 @@ class SplitV2Transactions extends BaseTransactions {
       walletClient,
       apiConfig,
       includeEnsNames,
+      supportedChainIds: SPLITS_V2_SUPPORTED_CHAIN_IDS,
     })
   }
 
@@ -92,6 +92,7 @@ class SplitV2Transactions extends BaseTransactions {
     ownerAddress: controllerAddress = zeroAddress,
     creatorAddress = zeroAddress,
     salt,
+    chainId,
     transactionOverrides = {},
   }: CreateSplitV2Config): Promise<TransactionFormat> {
     const {
@@ -112,6 +113,8 @@ class SplitV2Transactions extends BaseTransactions {
     this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
+    const functionChainId = this._getFunctionChainId(chainId)
+
     const functionName = salt ? 'createSplitDeterministic' : 'createSplit'
     const functionArgs = [
       {
@@ -126,7 +129,7 @@ class SplitV2Transactions extends BaseTransactions {
     if (salt) functionArgs.push(salt)
 
     return this._executeContractFunction({
-      contractAddress: getSplitV2FactoryAddress(this._chainId, splitType),
+      contractAddress: getSplitV2FactoryAddress(functionChainId, splitType),
       contractAbi: splitV2FactoryABI,
       functionName,
       functionArgs,
@@ -241,6 +244,7 @@ class SplitV2Transactions extends BaseTransactions {
     splitAddress,
     tokenAddress: token,
     distributorAddress = this._walletClient?.account.address as Address,
+    chainId,
     transactionOverrides = {},
   }: DistributeSplitConfig): Promise<TransactionFormat> {
     validateAddress(splitAddress)
@@ -249,14 +253,20 @@ class SplitV2Transactions extends BaseTransactions {
 
     this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
+
+    const functionChainId = this._getFunctionChainId(chainId)
+
     let split: Split
 
     if (this._dataClient)
       split = await this._dataClient.getSplitMetadata({
-        chainId: this._chainId,
+        chainId: functionChainId,
         splitAddress,
       })
-    else split = (await this._getSplitMetadataViaProvider(splitAddress)).split
+    else
+      split = (
+        await this._getSplitMetadataViaProvider(splitAddress, functionChainId)
+      ).split
 
     const recipientAddresses = split.recipients.map(
       (recipient) => recipient.recipient.address,
@@ -301,6 +311,7 @@ class SplitV2Transactions extends BaseTransactions {
 
   async _getSplitMetadataViaProvider(
     splitAddress: Address,
+    chainId: number,
   ): Promise<{ split: Split }> {
     this._requirePublicClient()
 
@@ -308,14 +319,14 @@ class SplitV2Transactions extends BaseTransactions {
       this._publicClient?.getLogs({
         event: splitCreatedEvent,
         address: [
-          getSplitV2FactoryAddress(this._chainId, SplitV2Type.Pull),
-          getSplitV2FactoryAddress(this._chainId, SplitV2Type.Push),
+          getSplitV2FactoryAddress(chainId, SplitV2Type.Pull),
+          getSplitV2FactoryAddress(chainId, SplitV2Type.Push),
         ],
         args: {
           split: splitAddress,
         },
         strict: true,
-        fromBlock: getSplitV2FactoriesStartBlock(this._chainId),
+        fromBlock: getSplitV2FactoriesStartBlock(chainId),
       }),
       this._owner(splitAddress),
       this._paused(splitAddress),
@@ -351,7 +362,7 @@ class SplitV2Transactions extends BaseTransactions {
       distributorFeePercent: fromBigIntToPercent(
         createLogs[0].args.splitParams.distributionIncentive,
       ),
-      distributeDirection: getSplitType(this._chainId, createLogs[0].address),
+      distributeDirection: getSplitType(chainId, createLogs[0].address),
       type: 'SplitV2',
       controller: {
         address: owner,
@@ -411,9 +422,10 @@ class SplitV2Transactions extends BaseTransactions {
 
   protected _getSplitV2FactoryContract(
     splitType: SplitV2Type,
+    chainId: number,
   ): GetContractReturnType<SplitFactoryABI, PublicClient<Transport, Chain>> {
     return getContract({
-      address: getSplitV2FactoryAddress(this._chainId, splitType),
+      address: getSplitV2FactoryAddress(chainId, splitType),
       abi: splitV2FactoryABI,
       // @ts-expect-error v1/v2 viem support
       client: this._publicClient,
@@ -477,10 +489,6 @@ export class SplitV2Client extends SplitV2Transactions {
       apiConfig,
       includeEnsNames,
     })
-
-    if (!SPLITS_V2_SUPPORTED_CHAIN_IDS.includes(chainId))
-      throw new UnsupportedChainIdError(chainId, SPLITS_SUPPORTED_CHAIN_IDS)
-
     this.eventTopics = {
       splitCreated: [
         encodeEventTopics({
@@ -767,8 +775,13 @@ export class SplitV2Client extends SplitV2Transactions {
 
     this._requirePublicClient()
 
+    const functionChainId = createSplitArgs.chainId ?? this._chainId
+    if (!functionChainId)
+      throw new InvalidArgumentError('Please pass in the chainId you are using')
+
     const factory = this._getSplitV2FactoryContract(
       createSplitArgs.splitType ?? SplitV2Type.Pull,
+      functionChainId,
     )
 
     let splitAddress
@@ -826,8 +839,13 @@ export class SplitV2Client extends SplitV2Transactions {
     recipientAddresses.map((recipient) => validateAddress(recipient))
     this._requirePublicClient()
 
+    const functionChainId = createSplitArgs.chainId ?? this._chainId
+    if (!functionChainId)
+      throw new InvalidArgumentError('Please pass in the chainId you are using')
+
     const factory = this._getSplitV2FactoryContract(
       createSplitArgs.splitType ?? SplitV2Type.Pull,
+      functionChainId,
     )
 
     if (!createSplitArgs.salt) throw new SaltRequired()
