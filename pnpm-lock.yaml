@@ -59,10 +59,10 @@ importers:
   packages/splits-kit:
     dependencies:
       '@0xsplits/splits-sdk':
-        specifier: ^4.0.4-beta.1
+        specifier: ^4.0.4
         version: link:../splits-sdk
       '@0xsplits/splits-sdk-react':
-        specifier: ^2.0.5-beta.1
+        specifier: ^2.0.5
         version: link:../splits-sdk-react
       '@headlessui/react':
         specifier: ^1.7.17
@@ -199,7 +199,7 @@ importers:
   packages/splits-sdk-react:
     dependencies:
       '@0xsplits/splits-sdk':
-        specifier: ^4.0.4-beta.1
+        specifier: ^4.0.4
         version: link:../splits-sdk
       react:
         specifier: 17.x.x || 18.x.x
