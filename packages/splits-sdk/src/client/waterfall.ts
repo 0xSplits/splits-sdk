@@ -31,6 +31,7 @@ import { applyMixins } from './mixin'
 import type {
   CallData,
   CreateWaterfallConfig,
+  ReadContractArgs,
   RecoverNonWaterfallFundsConfig,
   SplitsClientConfig,
   TransactionConfig,
@@ -75,11 +76,10 @@ class WaterfallTransactions extends BaseTransactions {
     validateAddress(token)
     validateAddress(nonWaterfallRecipient)
     validateWaterfallTranches(tranches)
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error('Public client required')
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const functionChainId = this._getFunctionChainId(chainId)
+    const publicClient = this._getPublicClient(functionChainId)
 
     const formattedToken = getAddress(token)
     const formattedNonWaterfallRecipient = getAddress(nonWaterfallRecipient)
@@ -88,7 +88,7 @@ class WaterfallTransactions extends BaseTransactions {
       functionChainId,
       formattedToken,
       tranches,
-      this._publicClient,
+      publicClient,
     )
 
     const result = await this._executeContractFunction({
@@ -230,13 +230,15 @@ class WaterfallTransactions extends BaseTransactions {
 
   protected _getWaterfallContract(
     waterfallModule: string,
+    chainId: number,
   ): GetContractReturnType<WaterfallAbi, PublicClient<Transport, Chain>> {
+    const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getAddress(waterfallModule),
       abi: waterfallAbi,
       // @ts-expect-error v1/v2 viem support
-      client: this._publicClient,
-      publicClient: this._publicClient,
+      client: publicClient,
+      publicClient: publicClient,
     })
   }
 }
@@ -449,15 +451,19 @@ export class WaterfallClient extends WaterfallTransactions {
   // Read actions
   async getDistributedFunds({
     waterfallModuleAddress,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     waterfallModuleAddress: string
   }): Promise<{
     distributedFunds: bigint
   }> {
     validateAddress(waterfallModuleAddress)
-    this._requirePublicClient()
 
-    const contract = this._getWaterfallContract(waterfallModuleAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const contract = this._getWaterfallContract(
+      waterfallModuleAddress,
+      functionChainId,
+    )
     const distributedFunds = await contract.read.distributedFunds()
 
     return {
@@ -467,15 +473,19 @@ export class WaterfallClient extends WaterfallTransactions {
 
   async getFundsPendingWithdrawal({
     waterfallModuleAddress,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     waterfallModuleAddress: string
   }): Promise<{
     fundsPendingWithdrawal: bigint
   }> {
     validateAddress(waterfallModuleAddress)
-    this._requirePublicClient()
 
-    const waterfallContract = this._getWaterfallContract(waterfallModuleAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const waterfallContract = this._getWaterfallContract(
+      waterfallModuleAddress,
+      functionChainId,
+    )
     const fundsPendingWithdrawal =
       await waterfallContract.read.fundsPendingWithdrawal()
 
@@ -486,16 +496,20 @@ export class WaterfallClient extends WaterfallTransactions {
 
   async getTranches({
     waterfallModuleAddress,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     waterfallModuleAddress: string
   }): Promise<{
     recipients: Address[]
     thresholds: bigint[]
   }> {
     validateAddress(waterfallModuleAddress)
-    this._requirePublicClient()
 
-    const waterfallContract = this._getWaterfallContract(waterfallModuleAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const waterfallContract = this._getWaterfallContract(
+      waterfallModuleAddress,
+      functionChainId,
+    )
     const [recipients, thresholds] = await waterfallContract.read.getTranches()
 
     return {
@@ -506,15 +520,19 @@ export class WaterfallClient extends WaterfallTransactions {
 
   async getNonWaterfallRecipient({
     waterfallModuleAddress,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     waterfallModuleAddress: string
   }): Promise<{
     nonWaterfallRecipient: Address
   }> {
     validateAddress(waterfallModuleAddress)
-    this._requirePublicClient()
 
-    const waterfallContract = this._getWaterfallContract(waterfallModuleAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const waterfallContract = this._getWaterfallContract(
+      waterfallModuleAddress,
+      functionChainId,
+    )
     const nonWaterfallRecipient =
       await waterfallContract.read.nonWaterfallRecipient()
 
@@ -525,15 +543,19 @@ export class WaterfallClient extends WaterfallTransactions {
 
   async getToken({
     waterfallModuleAddress,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     waterfallModuleAddress: string
   }): Promise<{
     token: Address
   }> {
     validateAddress(waterfallModuleAddress)
-    this._requirePublicClient()
 
-    const waterfallContract = this._getWaterfallContract(waterfallModuleAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const waterfallContract = this._getWaterfallContract(
+      waterfallModuleAddress,
+      functionChainId,
+    )
     const token = await waterfallContract.read.token()
 
     return {
@@ -544,16 +566,20 @@ export class WaterfallClient extends WaterfallTransactions {
   async getPullBalance({
     waterfallModuleAddress,
     address,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     waterfallModuleAddress: string
     address: string
   }): Promise<{
     pullBalance: bigint
   }> {
     validateAddress(waterfallModuleAddress)
-    this._requirePublicClient()
 
-    const waterfallContract = this._getWaterfallContract(waterfallModuleAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const waterfallContract = this._getWaterfallContract(
+      waterfallModuleAddress,
+      functionChainId,
+    )
     const pullBalance = await waterfallContract.read.getPullBalance([
       getAddress(address),
     ])
