@@ -85,17 +85,16 @@ class TemplatesTransactions extends BaseTransactions {
       nonWaterfallRecipientTrancheIndex,
     )
 
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error('Public client required')
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const functionChainId = this._getFunctionChainId(chainId)
+    const publicClient = this._getPublicClient(functionChainId)
 
     const [recoupTranches, trancheSizes] = await getRecoupTranchesAndSizes(
       functionChainId,
       getAddress(token),
       tranches,
-      this._publicClient,
+      publicClient,
     )
 
     const formattedNonWaterfallRecipientTrancheIndex =
@@ -132,8 +131,6 @@ class TemplatesTransactions extends BaseTransactions {
     validateOracleParams(oracleParams)
     validateDiversifierRecipients(recipients)
 
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error('Public client required')
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const functionChainId = this._getFunctionChainId(chainId)
@@ -232,9 +229,6 @@ export class TemplatesClient extends TemplatesTransactions {
     waterfallModuleAddress: Address
     event: Log
   }> {
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error()
-
     const { txHash } =
       await this.submitCreateRecoupTransaction(createRecoupArgs)
     const events = await this.getTransactionEvents({
@@ -277,9 +271,6 @@ export class TemplatesClient extends TemplatesTransactions {
     passThroughWalletAddress: Address
     event: Log
   }> {
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error()
-
     const { txHash } = await this.submitCreateDiversifierTransaction(
       createDiversifierArgs,
     )
