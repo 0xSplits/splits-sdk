@@ -19,12 +19,13 @@ import {
   MissingDataClientError,
   MissingPublicClientError,
   MissingWalletClientError,
+  UnsupportedChainIdError,
 } from '../errors'
 import type {
   ApiConfig,
+  BaseClientConfig,
   CallData,
   MulticallConfig,
-  SplitsClientConfig,
   TransactionConfig,
   TransactionFormat,
   TransactionOverrides,
@@ -33,13 +34,14 @@ import type {
 import { DataClient } from './data'
 
 class BaseClient {
-  readonly _chainId: number
+  readonly _chainId: number | undefined // DEPRECATED
   readonly _ensPublicClient: PublicClient<Transport, Chain> | undefined
   readonly _walletClient: WalletClient<Transport, Chain, Account> | undefined
   readonly _publicClient: PublicClient<Transport, Chain> | undefined
   readonly _apiConfig: ApiConfig | undefined
   readonly _includeEnsNames: boolean
   readonly _dataClient: DataClient | undefined
+  readonly _supportedChainIds: number[]
 
   constructor({
     chainId,
@@ -47,8 +49,9 @@ class BaseClient {
     ensPublicClient,
     walletClient,
     apiConfig,
+    supportedChainIds,
     includeEnsNames = false,
-  }: SplitsClientConfig) {
+  }: BaseClientConfig) {
     if (includeEnsNames && !publicClient && !ensPublicClient)
       throw new InvalidConfigError(
         'Must include a mainnet public client if includeEnsNames is set to true',
@@ -60,6 +63,7 @@ class BaseClient {
     this._walletClient = walletClient
     this._includeEnsNames = includeEnsNames
     this._apiConfig = apiConfig
+    this._supportedChainIds = supportedChainIds
 
     if (apiConfig) {
       this._dataClient = new DataClient({
@@ -95,6 +99,10 @@ class BaseClient {
       throw new MissingWalletClientError(
         'Wallet client must have an account attached to it to perform this action, please update your wallet client passed into the constructor',
       )
+
+    const chainId = this._walletClient.chain.id
+    if (!this._supportedChainIds.includes(chainId))
+      throw new UnsupportedChainIdError(chainId, this._supportedChainIds)
   }
 }
 
@@ -109,14 +117,16 @@ export class BaseTransactions extends BaseClient {
     ensPublicClient,
     walletClient,
     apiConfig,
+    supportedChainIds,
     includeEnsNames = false,
-  }: SplitsClientConfig & TransactionConfig) {
+  }: BaseClientConfig & TransactionConfig) {
     super({
       chainId,
       publicClient,
       ensPublicClient,
       walletClient,
       apiConfig,
+      supportedChainIds,
       includeEnsNames,
     })
 

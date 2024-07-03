@@ -47,7 +47,7 @@ export type DataClientConfig = {
 
 // Splits
 export type SplitsClientConfig = {
-  chainId: number
+  chainId?: number
   publicClient?: PublicClient<Transport, Chain>
   walletClient?: WalletClient<Transport, Chain, Account>
   apiConfig?: ApiConfig
@@ -55,6 +55,10 @@ export type SplitsClientConfig = {
   // ensPublicClient can be used to fetch ens names when publicClient is not on mainnet (reverseRecords
   // only works on mainnet).
   ensPublicClient?: PublicClient<Transport, Chain>
+}
+
+export type BaseClientConfig = SplitsClientConfig & {
+  supportedChainIds: number[]
 }
 
 export type TransactionConfig = {
