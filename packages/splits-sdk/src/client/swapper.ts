@@ -28,11 +28,7 @@ import {
 import { swapperFactoryAbi } from '../constants/abi/swapperFactory'
 import { uniV3SwapAbi } from '../constants/abi/uniV3Swap'
 import { swapperAbi } from '../constants/abi/swapper'
-import {
-  InvalidAuthError,
-  TransactionFailedError,
-  UnsupportedChainIdError,
-} from '../errors'
+import { InvalidAuthError, TransactionFailedError } from '../errors'
 import { applyMixins } from './mixin'
 import type {
   CallData,
@@ -85,6 +81,7 @@ class SwapperTransactions extends BaseTransactions {
       walletClient,
       apiConfig,
       includeEnsNames,
+      supportedChainIds: SWAPPER_CHAIN_IDS,
     })
   }
 
@@ -139,6 +136,7 @@ class SwapperTransactions extends BaseTransactions {
     excessRecipient,
     inputAssets,
     transactionTimeLimit = 300,
+    chainId,
     transactionOverrides = {},
   }: UniV3FlashSwapConfig): Promise<TransactionFormat> {
     validateAddress(swapperAddress)
@@ -147,6 +145,8 @@ class SwapperTransactions extends BaseTransactions {
     this._requirePublicClient()
     if (!this._publicClient) throw new Error('Public client required')
     if (this._shouldRequireWalletClient) this._requireWalletClient()
+
+    const functionChainId = this._getFunctionChainId(chainId)
 
     const excessRecipientAddress = excessRecipient
       ? excessRecipient
@@ -159,7 +159,7 @@ class SwapperTransactions extends BaseTransactions {
 
     // TO DO: handle bad swapper id/no metadata found
     const { tokenToBeneficiary } = await this._dataClient!.getSwapperMetadata({
-      chainId: this._chainId,
+      chainId: functionChainId,
       swapperAddress,
     })
 
@@ -435,10 +435,6 @@ export class SwapperClient extends SwapperTransactions {
       apiConfig,
       includeEnsNames,
     })
-
-    if (!SWAPPER_CHAIN_IDS.includes(chainId))
-      throw new UnsupportedChainIdError(chainId, SWAPPER_CHAIN_IDS)
-
     this.eventTopics = {
       createSwapper: [
         encodeEventTopics({

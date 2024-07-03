@@ -476,6 +476,7 @@ export type UniV3FlashSwapConfig = {
     amountOutMin: bigint
   }[]
   transactionTimeLimit?: number
+  chainId?: number
 } & TransactionOverridesDict
 
 export type SwapperExecCallsConfig = {
