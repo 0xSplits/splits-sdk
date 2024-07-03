@@ -30,11 +30,7 @@ import {
 import { liquidSplitFactoryAbi } from '../constants/abi/liquidSplitFactory'
 import { ls1155CloneAbi } from '../constants/abi/ls1155Clone'
 import { splitMainPolygonAbi } from '../constants/abi/splitMain'
-import {
-  InvalidAuthError,
-  TransactionFailedError,
-  UnsupportedChainIdError,
-} from '../errors'
+import { InvalidAuthError, TransactionFailedError } from '../errors'
 import { applyMixins } from './mixin'
 import type {
   SplitsClientConfig,
@@ -76,6 +72,7 @@ class LiquidSplitTransactions extends BaseTransactions {
       walletClient,
       apiConfig,
       includeEnsNames,
+      supportedChainIds: LIQUID_SPLIT_CHAIN_IDS,
     })
   }
 
@@ -83,6 +80,7 @@ class LiquidSplitTransactions extends BaseTransactions {
     recipients,
     distributorFeePercent,
     owner = undefined,
+    chainId,
     transactionOverrides = {},
   }: CreateLiquidSplitConfig): Promise<TransactionFormat> {
     validateSplitRecipients(recipients, LIQUID_SPLITS_MAX_PRECISION_DECIMALS)
@@ -101,8 +99,10 @@ class LiquidSplitTransactions extends BaseTransactions {
     const nftAmounts = getNftCountsFromPercents(percentAllocations)
     const distributorFee = getBigIntFromPercent(distributorFeePercent)
 
+    const functionChainId = this._getFunctionChainId(chainId)
+
     const result = await this._executeContractFunction({
-      contractAddress: getLiquidSplitFactoryAddress(this._chainId),
+      contractAddress: getLiquidSplitFactoryAddress(functionChainId),
       contractAbi: liquidSplitFactoryAbi,
       functionName: 'createLiquidSplitClone',
       functionArgs: [accounts, nftAmounts, distributorFee, ownerAddress],
@@ -116,6 +116,7 @@ class LiquidSplitTransactions extends BaseTransactions {
     liquidSplitAddress,
     token,
     distributorAddress,
+    chainId,
     transactionOverrides = {},
   }: DistributeLiquidSplitTokenConfig): Promise<TransactionFormat> {
     validateAddress(liquidSplitAddress)
@@ -131,8 +132,10 @@ class LiquidSplitTransactions extends BaseTransactions {
 
     this._requireDataClient()
 
+    const functionChainId = this._getFunctionChainId(chainId)
+
     const { holders } = await this._dataClient!.getLiquidSplitMetadata({
-      chainId: this._chainId,
+      chainId: functionChainId,
       liquidSplitAddress,
     })
     const accounts = holders
@@ -226,9 +229,6 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
       apiConfig,
       includeEnsNames,
     })
-
-    if (!LIQUID_SPLIT_CHAIN_IDS.includes(chainId))
-      throw new UnsupportedChainIdError(chainId, LIQUID_SPLIT_CHAIN_IDS)
 
     this.eventTopics = {
       createLiquidSplit: [

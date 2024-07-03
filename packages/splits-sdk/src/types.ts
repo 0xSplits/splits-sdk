@@ -380,12 +380,14 @@ export type CreateLiquidSplitConfig = {
   recipients: SplitRecipient[]
   distributorFeePercent: number
   owner?: string
+  chainId?: number
 } & TransactionOverridesDict
 
 export type DistributeLiquidSplitTokenConfig = {
   liquidSplitAddress: string
   token: string
   distributorAddress?: string
+  chainId?: number
 } & TransactionOverridesDict
 
 export type TransferLiquidSplitOwnershipConfig = {
