@@ -324,6 +324,7 @@ export type CreateWaterfallConfig = {
   token: string
   tranches: WaterfallTrancheInput[]
   nonWaterfallRecipient?: string
+  chainId?: number
 } & TransactionOverridesDict
 
 export type WaterfallFundsConfig = {
@@ -335,6 +336,7 @@ export type RecoverNonWaterfallFundsConfig = {
   waterfallModuleAddress: string
   token: string
   recipient?: string
+  chainId?: number
 } & TransactionOverridesDict
 
 export type WithdrawWaterfallPullFundsConfig = {

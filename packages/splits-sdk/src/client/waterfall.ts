@@ -26,11 +26,7 @@ import {
 } from '../constants'
 import { waterfallFactoryAbi } from '../constants/abi/waterfallFactory'
 import { waterfallAbi } from '../constants/abi/waterfall'
-import {
-  InvalidArgumentError,
-  TransactionFailedError,
-  UnsupportedChainIdError,
-} from '../errors'
+import { InvalidArgumentError, TransactionFailedError } from '../errors'
 import { applyMixins } from './mixin'
 import type {
   CallData,
@@ -65,6 +61,7 @@ class WaterfallTransactions extends BaseTransactions {
       walletClient,
       apiConfig,
       includeEnsNames,
+      supportedChainIds: WATERFALL_CHAIN_IDS,
     })
   }
 
@@ -72,6 +69,7 @@ class WaterfallTransactions extends BaseTransactions {
     token,
     tranches,
     nonWaterfallRecipient = zeroAddress,
+    chainId,
     transactionOverrides = {},
   }: CreateWaterfallConfig): Promise<TransactionFormat> {
     validateAddress(token)
@@ -81,18 +79,23 @@ class WaterfallTransactions extends BaseTransactions {
     if (!this._publicClient) throw new Error('Public client required')
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
+    const functionChainId =
+      this._walletClient?.chain.id ?? chainId ?? this._chainId
+    if (!functionChainId)
+      throw new InvalidArgumentError('Please pass in the chainId you are using')
+
     const formattedToken = getAddress(token)
     const formattedNonWaterfallRecipient = getAddress(nonWaterfallRecipient)
 
     const [recipients, trancheSizes] = await getTrancheRecipientsAndSizes(
-      this._chainId,
+      functionChainId,
       formattedToken,
       tranches,
       this._publicClient,
     )
 
     const result = await this._executeContractFunction({
-      contractAddress: getWaterfallFactoryAddress(this._chainId),
+      contractAddress: getWaterfallFactoryAddress(functionChainId),
       contractAbi: waterfallFactoryAbi,
       functionName: 'createWaterfallModule',
       functionArgs: [
@@ -129,16 +132,24 @@ class WaterfallTransactions extends BaseTransactions {
     waterfallModuleAddress,
     token,
     recipient = zeroAddress,
+    chainId,
     transactionOverrides = {},
   }: RecoverNonWaterfallFundsConfig): Promise<TransactionFormat> {
     validateAddress(waterfallModuleAddress)
     validateAddress(token)
     validateAddress(recipient)
     this._requireWalletClient()
+
+    const functionChainId =
+      this._walletClient?.chain.id ?? chainId ?? this._chainId
+    if (!functionChainId)
+      throw new InvalidArgumentError('Please pass in the chainId you are using')
+
     await this._validateRecoverTokensWaterfallData({
       waterfallModuleAddress,
       token,
       recipient,
+      chainId: functionChainId,
     })
 
     const result = await this._executeContractFunction({
@@ -176,14 +187,16 @@ class WaterfallTransactions extends BaseTransactions {
     waterfallModuleAddress,
     token,
     recipient,
+    chainId,
   }: {
     waterfallModuleAddress: string
     token: string
     recipient: string
+    chainId: number
   }) {
     this._requireDataClient()
     const waterfallMetadata = await this._dataClient!.getWaterfallMetadata({
-      chainId: this._chainId,
+      chainId,
       waterfallModuleAddress,
     })
 
@@ -257,10 +270,6 @@ export class WaterfallClient extends WaterfallTransactions {
       apiConfig,
       includeEnsNames,
     })
-
-    if (!WATERFALL_CHAIN_IDS.includes(chainId))
-      throw new UnsupportedChainIdError(chainId, WATERFALL_CHAIN_IDS)
-
     this.eventTopics = {
       createWaterfallModule: [
         encodeEventTopics({
