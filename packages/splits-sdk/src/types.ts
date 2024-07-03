@@ -49,6 +49,9 @@ export type DataClientConfig = {
 export type SplitsClientConfig = {
   chainId?: number
   publicClient?: PublicClient<Transport, Chain>
+  publicClients?: {
+    [chainId: number]: PublicClient<Transport, Chain>
+  }
   walletClient?: WalletClient<Transport, Chain, Account>
   apiConfig?: ApiConfig
   includeEnsNames?: boolean
