@@ -49,10 +49,12 @@ export const fetchERC20TransferredTokens = async (
 // NOTE: this should never be called for a user, we only care about a user's
 // balance in split main which is stored in subgraph
 export const fetchActiveBalances: (
-  arg0: Address,
-  arg1: PublicClient,
-  arg2: Address[],
+  arg0: number,
+  arg1: Address,
+  arg2: PublicClient,
+  arg3: Address[],
 ) => Promise<FormattedTokenBalances> = async (
+  chainId,
   accountAddress,
   publicClient,
   fullTokenList,
@@ -69,6 +71,7 @@ export const fetchActiveBalances: (
     }),
   ])
   processBalanceMulticallResponse(
+    chainId,
     fullTokenList,
     tokenData,
     multicallResponse,
@@ -81,9 +84,14 @@ export const fetchActiveBalances: (
 // NOTE: this should never be called for a user, we only care about a user's
 // balance in split main which is stored in subgraph
 export const fetchContractBalancesWithAlchemy: (
-  arg0: Address,
-  arg1: PublicClient,
-) => Promise<FormattedTokenBalances> = async (address, rpcPublicClient) => {
+  arg0: number,
+  arg1: Address,
+  arg2: PublicClient,
+) => Promise<FormattedTokenBalances> = async (
+  chainId,
+  address,
+  rpcPublicClient,
+) => {
   if (!isAlchemyPublicClient(rpcPublicClient))
     throw new Error('Cannot call this without an alchemy provider')
 
@@ -120,8 +128,7 @@ export const fetchContractBalancesWithAlchemy: (
     const results = await Promise.all(promisesArray)
     if (!pageKey) {
       const ethBalance = results[1] as bigint
-      // TODO: get correct symbol/decimals
-      const symbol = 'ETH'
+      const symbol = CHAIN_INFO[chainId]?.nativeCurrency.symbol ?? 'ETH'
       const decimals = 18
       const formattedAmount = fromBigIntToTokenValue(ethBalance, decimals)
 
@@ -201,20 +208,26 @@ const fetchTokenData: (
 }
 
 const processBalanceMulticallResponse: (
-  arg0: Address[],
-  arg1: TokenData,
-  arg2: MulticallReturnType,
-  arg3: FormattedTokenBalances,
-) => void = (fullTokenList, tokenData, multicallResponse, balances) => {
+  arg0: number,
+  arg1: Address[],
+  arg2: TokenData,
+  arg3: MulticallReturnType,
+  arg4: FormattedTokenBalances,
+) => void = (
+  chainId,
+  fullTokenList,
+  tokenData,
+  multicallResponse,
+  balances,
+) => {
   fullTokenList.map((token, index) => {
     const data = multicallResponse[index]
     const balance = data.result as bigint
     if (balance === undefined) return
 
     if (token === zeroAddress) {
-      // TODO: fix this for other networks
       const decimals = 18
-      const symbol = 'ETH'
+      const symbol = CHAIN_INFO[chainId]?.nativeCurrency.symbol ?? 'ETH'
       const formattedAmount = fromBigIntToTokenValue(balance, decimals)
       balances[zeroAddress] = {
         rawAmount: balance,

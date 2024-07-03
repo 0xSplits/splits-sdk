@@ -212,7 +212,10 @@ export const formatGqlSwapper: (arg0: GqlSwapper) => ISwapper = (
     distributions: formatTokenBalances(gqlSwapper.distributions),
     balances: {},
     balanceQuoteAmounts: {},
-    internalBalances: formatInternalTokenBalances(gqlSwapper.internalBalances),
+    splitmainBalances: formatInternalTokenBalances(gqlSwapper.internalBalances),
+    warehouseBalances: formatInternalTokenBalances(
+      gqlSwapper.warehouseBalances,
+    ),
     latestBlock: gqlSwapper.latestBlock,
     latestActivity: parseInt(gqlSwapper.latestActivity),
     parentEntityType: gqlSwapper.parentEntityType,

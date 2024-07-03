@@ -164,7 +164,7 @@ export const formatGqlSplit: (arg0: GqlSplit) => ISplit = (gqlSplit) => {
     distributed: gqlSplit.distributions
       ? formatTokenBalances(gqlSplit.distributions)
       : {},
-    internalBalances: formatInternalTokenBalances(gqlSplit.internalBalances),
+    splitmainBalances: formatInternalTokenBalances(gqlSplit.internalBalances),
     warehouseBalances: formatInternalTokenBalances(gqlSplit.warehouseBalances),
     ...(gqlSplit.liquidSplit && {
       liquidSplitId: getAddress(gqlSplit.liquidSplit.id),

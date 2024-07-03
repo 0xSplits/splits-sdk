@@ -31,7 +31,7 @@ export const formatGqlUser: (arg0: GqlUser) => IUser = (gqlUser) => {
     chainId: parseInt(gqlUser.chainId) as SupportedChainId,
     distributions: formatTokenBalances(gqlUser.distributions),
     withdrawn: formatTokenBalances(gqlUser.withdrawals),
-    balances: formatInternalTokenBalances(gqlUser.internalBalances),
+    splitmainBalances: formatInternalTokenBalances(gqlUser.internalBalances),
     warehouseBalances: formatInternalTokenBalances(gqlUser.warehouseBalances),
     latestBlock: gqlUser.latestBlock,
     latestActivity: parseInt(gqlUser.latestActivity),

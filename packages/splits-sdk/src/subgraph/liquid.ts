@@ -59,8 +59,11 @@ export const formatGqlLiquidSplit: (arg0: GqlLiquidSplit) => ILiquidSplit = (
     distributed: gqlLiquidSplit.split.distributions
       ? formatTokenBalances(gqlLiquidSplit.split.distributions)
       : {},
-    internalBalances: formatInternalTokenBalances(
+    splitmainBalances: formatInternalTokenBalances(
       gqlLiquidSplit.internalBalances,
+    ),
+    warehouseBalances: formatInternalTokenBalances(
+      gqlLiquidSplit.warehouseBalances,
     ),
     distributorFee: parseInt(gqlLiquidSplit.distributorFee),
     splitId: getAddress(gqlLiquidSplit.split.id),
