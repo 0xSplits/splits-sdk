@@ -110,7 +110,6 @@ class SplitV2Transactions extends BaseTransactions {
     validateAddress(controllerAddress)
     validateAddress(creatorAddress)
 
-    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const functionChainId = this._getFunctionChainId(chainId)
@@ -145,7 +144,6 @@ class SplitV2Transactions extends BaseTransactions {
     validateAddress(splitAddress)
     validateAddress(newController)
 
-    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
     await this._requireOwner(splitAddress)
 
@@ -165,7 +163,6 @@ class SplitV2Transactions extends BaseTransactions {
   }: SetPausedConfig): Promise<TransactionFormat> {
     validateAddress(splitAddress)
 
-    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
     await this._requireOwner(splitAddress)
 
@@ -186,7 +183,6 @@ class SplitV2Transactions extends BaseTransactions {
     validateAddress(splitAddress)
     calls.map((call) => validateAddress(call.to))
 
-    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
     this._requireOwner(splitAddress)
 
@@ -220,7 +216,6 @@ class SplitV2Transactions extends BaseTransactions {
     validateAddress(splitAddress)
     recipientAddresses.map((recipient) => validateAddress(recipient))
 
-    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
     this._requireOwner(splitAddress)
 
@@ -251,7 +246,6 @@ class SplitV2Transactions extends BaseTransactions {
     validateAddress(token)
     validateAddress(distributorAddress)
 
-    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const functionChainId = this._getFunctionChainId(chainId)
@@ -299,24 +293,28 @@ class SplitV2Transactions extends BaseTransactions {
     })
   }
 
-  async _paused(splitAddress: Address): Promise<boolean> {
-    this._requirePublicClient()
-    return this._getSplitV2Contract(splitAddress).read.paused()
+  protected async _paused(
+    splitAddress: Address,
+    chainId: number,
+  ): Promise<boolean> {
+    return this._getSplitV2Contract(splitAddress, chainId).read.paused()
   }
 
-  async _owner(splitAddress: Address): Promise<Address> {
-    this._requirePublicClient()
-    return this._getSplitV2Contract(splitAddress).read.owner()
+  protected async _owner(
+    splitAddress: Address,
+    chainId: number,
+  ): Promise<Address> {
+    return this._getSplitV2Contract(splitAddress, chainId).read.owner()
   }
 
-  async _getSplitMetadataViaProvider(
+  protected async _getSplitMetadataViaProvider(
     splitAddress: Address,
     chainId: number,
   ): Promise<{ split: Split }> {
-    this._requirePublicClient()
+    const publicClient = this._getPublicClient(chainId)
 
     const [createLogs, owner, paused] = await Promise.all([
-      this._publicClient?.getLogs({
+      publicClient.getLogs({
         event: splitCreatedEvent,
         address: [
           getSplitV2FactoryAddress(chainId, SplitV2Type.Pull),
@@ -328,13 +326,13 @@ class SplitV2Transactions extends BaseTransactions {
         strict: true,
         fromBlock: getSplitV2FactoriesStartBlock(chainId),
       }),
-      this._owner(splitAddress),
-      this._paused(splitAddress),
+      this._owner(splitAddress, chainId),
+      this._paused(splitAddress, chainId),
     ])
 
     if (!createLogs) throw new Error('Split not found')
 
-    const updateLogs = await this._publicClient?.getLogs({
+    const updateLogs = await publicClient.getLogs({
       address: splitAddress,
       event: splitUpdatedEvent,
       strict: true,
@@ -407,15 +405,17 @@ class SplitV2Transactions extends BaseTransactions {
 
   protected _getSplitV2Contract(
     splitAddress: Address,
+    chainId: number,
   ): GetContractReturnType<SplitV2ABI, PublicClient<Transport, Chain>> {
     validateAddress(splitAddress)
+    const publicClient = this._getPublicClient(chainId)
 
     return getContract({
       address: splitAddress,
       abi: splitV2ABI,
       // @ts-expect-error v1/v2 viem support
-      client: this._publicClient,
-      publicClient: this._publicClient,
+      client: publicClient,
+      publicClient: publicClient,
       walletClient: this._walletClient,
     })
   }
@@ -424,23 +424,26 @@ class SplitV2Transactions extends BaseTransactions {
     splitType: SplitV2Type,
     chainId: number,
   ): GetContractReturnType<SplitFactoryABI, PublicClient<Transport, Chain>> {
+    const publicClient = this._getPublicClient(chainId)
+
     return getContract({
       address: getSplitV2FactoryAddress(chainId, splitType),
       abi: splitV2FactoryABI,
       // @ts-expect-error v1/v2 viem support
-      client: this._publicClient,
-      publicClient: this._publicClient,
+      client: publicClient,
+      publicClient: publicClient,
       walletClient: this._walletClient,
     })
   }
 
   protected async _eip712Domain(
     splitAddress: Address,
+    chainId: number,
   ): Promise<{ domain: TypedDataDomain }> {
-    this._requirePublicClient()
-
-    const eip712Domain =
-      await this._getSplitV2Contract(splitAddress).read.eip712Domain()
+    const eip712Domain = await this._getSplitV2Contract(
+      splitAddress,
+      chainId,
+    ).read.eip712Domain()
 
     return {
       domain: {
@@ -454,7 +457,10 @@ class SplitV2Transactions extends BaseTransactions {
   }
 
   protected async _requireOwner(splitAddress: Address) {
-    const ownerAddress = await this._owner(splitAddress)
+    const ownerAddress = await this._owner(
+      splitAddress,
+      this._walletClient!.chain.id,
+    )
 
     const walletAddress = this._walletClient!.account.address
 
@@ -773,9 +779,9 @@ export class SplitV2Client extends SplitV2Transactions {
     validateAddress(createSplitArgs.creatorAddress)
     recipientAddresses.map((recipient) => validateAddress(recipient))
 
-    this._requirePublicClient()
-
-    const functionChainId = createSplitArgs.chainId ?? this._chainId
+    const functionChainId = this._getReadOnlyFunctionChainId(
+      createSplitArgs.chainId,
+    )
     if (!functionChainId)
       throw new InvalidArgumentError('Please pass in the chainId you are using')
 
@@ -837,9 +843,10 @@ export class SplitV2Client extends SplitV2Transactions {
 
     validateAddress(createSplitArgs.ownerAddress)
     recipientAddresses.map((recipient) => validateAddress(recipient))
-    this._requirePublicClient()
 
-    const functionChainId = createSplitArgs.chainId ?? this._chainId
+    const functionChainId = this._getReadOnlyFunctionChainId(
+      createSplitArgs.chainId,
+    )
     if (!functionChainId)
       throw new InvalidArgumentError('Please pass in the chainId you are using')
 
@@ -869,18 +876,22 @@ export class SplitV2Client extends SplitV2Transactions {
   async getSplitBalance({
     splitAddress,
     tokenAddress,
+    chainId,
   }: {
     splitAddress: Address
     tokenAddress: Address
+    chainId?: number
   }): Promise<{
     splitBalance: bigint
     warehouseBalance: bigint
   }> {
     validateAddress(tokenAddress)
 
-    this._requirePublicClient()
-
-    const splitContract = this._getSplitV2Contract(splitAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const splitContract = this._getSplitV2Contract(
+      splitAddress,
+      functionChainId,
+    )
 
     const [splitBalance, warehouseBalance] =
       await splitContract.read.getSplitBalance([tokenAddress])
@@ -894,13 +905,17 @@ export class SplitV2Client extends SplitV2Transactions {
   async getReplaySafeHash({
     splitAddress,
     hash,
+    chainId,
   }: {
     splitAddress: Address
     hash: Hex
+    chainId?: number
   }): Promise<{ hash: Hex }> {
-    this._requirePublicClient()
-
-    const splitContract = this._getSplitV2Contract(splitAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const splitContract = this._getSplitV2Contract(
+      splitAddress,
+      functionChainId,
+    )
 
     const replaySafeHash = await splitContract.read.replaySafeHash([hash])
 
@@ -913,16 +928,20 @@ export class SplitV2Client extends SplitV2Transactions {
     splitAddress,
     hash,
     signature,
+    chainId,
   }: {
     splitAddress: Address
     hash: Hex
     signature: Hex
+    chainId?: number
   }): Promise<{ isValid: boolean }> {
     validateAddress(splitAddress)
 
-    this._requirePublicClient()
-
-    const splitContract = this._getSplitV2Contract(splitAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const splitContract = this._getSplitV2Contract(
+      splitAddress,
+      functionChainId,
+    )
 
     return {
       isValid:
@@ -933,24 +952,40 @@ export class SplitV2Client extends SplitV2Transactions {
 
   async eip712Domain({
     splitAddress,
+    chainId,
   }: {
     splitAddress: Address
+    chainId?: number
   }): Promise<{ domain: TypedDataDomain }> {
-    this._requirePublicClient()
-    return this._eip712Domain(splitAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    return this._eip712Domain(splitAddress, functionChainId)
   }
 
-  async paused({ splitAddress }: { splitAddress: Address }): Promise<{
+  async paused({
+    splitAddress,
+    chainId,
+  }: {
+    splitAddress: Address
+    chainId?: number
+  }): Promise<{
     paused: boolean
   }> {
-    const paused = await this._paused(splitAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const paused = await this._paused(splitAddress, functionChainId)
     return { paused }
   }
 
-  async owner({ splitAddress }: { splitAddress: Address }): Promise<{
+  async owner({
+    splitAddress,
+    chainId,
+  }: {
+    splitAddress: Address
+    chainId?: number
+  }): Promise<{
     ownerAddress: Address
   }> {
-    const ownerAddress = await this._owner(splitAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const ownerAddress = await this._owner(splitAddress, functionChainId)
     return { ownerAddress }
   }
 }
@@ -1117,8 +1152,10 @@ class SplitV2Signature extends SplitV2Transactions {
   async signData(
     splitAddress: Address,
     data: Hex,
+    chainId?: number,
   ): Promise<{ signature: Hex }> {
-    const { domain } = await this._eip712Domain(splitAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const { domain } = await this._eip712Domain(splitAddress, functionChainId)
 
     this._requireWalletClient()
 
