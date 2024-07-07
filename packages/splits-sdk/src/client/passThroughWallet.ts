@@ -181,13 +181,14 @@ class PassThroughWalletTransactions extends BaseTransactions {
   }
 
   private async _requireOwner(passThroughWalletAddress: string) {
-    const passThroughWalletContract = this._getPassThroughWalletContract(
-      passThroughWalletAddress,
-    )
-    const owner = await passThroughWalletContract.read.owner()
-
     this._requireWalletClient()
     const walletAddress = this._walletClient!.account?.address
+
+    const passThroughWalletContract = this._getPassThroughWalletContract(
+      passThroughWalletAddress,
+      this._walletClient!.chain.id,
+    )
+    const owner = await passThroughWalletContract.read.owner()
 
     if (owner !== walletAddress)
       throw new InvalidAuthError(
@@ -197,16 +198,19 @@ class PassThroughWalletTransactions extends BaseTransactions {
 
   protected _getPassThroughWalletContract(
     passThroughWallet: string,
+    chainId: number,
   ): GetContractReturnType<
     PassThroughWalletAbi,
     PublicClient<Transport, Chain>
   > {
+    const publicClient = this._getPublicClient(chainId)
+
     return getContract({
       address: getAddress(passThroughWallet),
       abi: passThroughWalletAbi,
       // @ts-expect-error v1/v2 viem support
-      client: this._publicClient,
-      publicClient: this._publicClient,
+      client: publicClient,
+      publicClient: publicClient,
     })
   }
 }
@@ -428,9 +432,6 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
   async execCalls(args: PassThroughWalletExecCallsConfig): Promise<{
     event: Log
   }> {
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error()
-
     const { txHash } = await this.submitExecCallsTransaction(args)
     const events = await this.getTransactionEvents({
       txHash,
@@ -448,16 +449,19 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
   // Read actions
   async getPassThrough({
     passThroughWalletAddress,
+    chainId,
   }: {
     passThroughWalletAddress: string
+    chainId?: number
   }): Promise<{
     passThrough: string
   }> {
     validateAddress(passThroughWalletAddress)
-    this._requirePublicClient()
 
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
     const passThroughWalletContract = this._getPassThroughWalletContract(
       passThroughWalletAddress,
+      functionChainId,
     )
     const passThrough = await passThroughWalletContract.read.passThrough()
 
