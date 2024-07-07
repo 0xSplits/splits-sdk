@@ -548,12 +548,14 @@ class SplitV1Transactions extends BaseTransactions {
     SplitMainEthereumAbiType,
     PublicClient<Transport, Chain>
   > {
+    const publicClient = this._getPublicClient(chainId)
+
     return getContract({
       address: getSplitMainAddress(chainId),
       abi: splitMainEthereumAbi,
       // @ts-expect-error v1/v2 viem support
-      client: this._publicClient,
-      publicClient: this._publicClient,
+      client: publicClient,
+      publicClient: publicClient,
     })
   }
 
@@ -1068,9 +1070,8 @@ export class SplitV1Client extends SplitV1Transactions {
   }> {
     validateAddress(splitAddress)
     validateAddress(token)
-    this._requirePublicClient()
 
-    const functionChainId = chainId ?? this._chainId
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
     if (!functionChainId)
       throw new InvalidArgumentError('Please pass in the chainId you are using')
 
@@ -1100,13 +1101,12 @@ export class SplitV1Client extends SplitV1Transactions {
     splitExists: boolean
   }> {
     validateSplitInputs({ recipients, distributorFeePercent })
-    this._requirePublicClient()
 
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
     const distributorFee = getBigIntFromPercent(distributorFeePercent)
 
-    const functionChainId = chainId ?? this._chainId
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
     if (!functionChainId)
       throw new InvalidArgumentError('Please pass in the chainId you are using')
 
@@ -1137,9 +1137,8 @@ export class SplitV1Client extends SplitV1Transactions {
     controller: Address
   }> {
     validateAddress(splitAddress)
-    this._requirePublicClient()
 
-    const functionChainId = chainId ?? this._chainId
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
     if (!functionChainId)
       throw new InvalidArgumentError('Please pass in the chainId you are using')
 
@@ -1162,9 +1161,8 @@ export class SplitV1Client extends SplitV1Transactions {
     newPotentialController: Address
   }> {
     validateAddress(splitAddress)
-    this._requirePublicClient()
 
-    const functionChainId = chainId ?? this._chainId
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
     if (!functionChainId)
       throw new InvalidArgumentError('Please pass in the chainId you are using')
 
@@ -1188,9 +1186,8 @@ export class SplitV1Client extends SplitV1Transactions {
     hash: string
   }> {
     validateAddress(splitAddress)
-    this._requirePublicClient()
 
-    const functionChainId = chainId ?? this._chainId
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
     if (!functionChainId)
       throw new InvalidArgumentError('Please pass in the chainId you are using')
 
