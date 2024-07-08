@@ -652,9 +652,10 @@ export class WarehouseClient extends WarehouseTransactions {
     }
   }
 
-  async eip712Domain({
-    chainId,
-  }: ReadContractArgs): Promise<{ domain: TypedDataDomain }> {
+  async eip712Domain(
+    args?: ReadContractArgs,
+  ): Promise<{ domain: TypedDataDomain }> {
+    const chainId = args?.chainId
     const functionChainId = this._getReadOnlyFunctionChainId(chainId)
     return this._eip712Domain(functionChainId)
   }
