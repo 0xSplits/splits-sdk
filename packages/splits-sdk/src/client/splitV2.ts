@@ -23,7 +23,6 @@ import {
 import { splitV2ABI } from '../constants/abi/splitV2'
 import { splitV2FactoryABI } from '../constants/abi/splitV2Factory'
 import {
-  InvalidArgumentError,
   InvalidAuthError,
   SaltRequired,
   TransactionFailedError,
@@ -782,9 +781,6 @@ export class SplitV2Client extends SplitV2Transactions {
     const functionChainId = this._getReadOnlyFunctionChainId(
       createSplitArgs.chainId,
     )
-    if (!functionChainId)
-      throw new InvalidArgumentError('Please pass in the chainId you are using')
-
     const factory = this._getSplitV2FactoryContract(
       createSplitArgs.splitType ?? SplitV2Type.Pull,
       functionChainId,
@@ -847,9 +843,6 @@ export class SplitV2Client extends SplitV2Transactions {
     const functionChainId = this._getReadOnlyFunctionChainId(
       createSplitArgs.chainId,
     )
-    if (!functionChainId)
-      throw new InvalidArgumentError('Please pass in the chainId you are using')
-
     const factory = this._getSplitV2FactoryContract(
       createSplitArgs.splitType ?? SplitV2Type.Pull,
       functionChainId,

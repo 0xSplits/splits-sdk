@@ -33,7 +33,6 @@ import {
   splitMainPolygonAbi,
 } from '../constants/abi/splitMain'
 import {
-  InvalidArgumentError,
   InvalidAuthError,
   TransactionFailedError,
   UnsupportedChainIdError,
@@ -1071,9 +1070,6 @@ export class SplitV1Client extends SplitV1Transactions {
     validateAddress(token)
 
     const functionChainId = this._getReadOnlyFunctionChainId(chainId)
-    if (!functionChainId)
-      throw new InvalidArgumentError('Please pass in the chainId you are using')
-
     const splitMainContract = this._getSplitMainContract(functionChainId)
 
     const balance =
@@ -1106,9 +1102,6 @@ export class SplitV1Client extends SplitV1Transactions {
     const distributorFee = getBigIntFromPercent(distributorFeePercent)
 
     const functionChainId = this._getReadOnlyFunctionChainId(chainId)
-    if (!functionChainId)
-      throw new InvalidArgumentError('Please pass in the chainId you are using')
-
     const splitMainContract = this._getSplitMainContract(functionChainId)
 
     const splitAddress =
@@ -1138,9 +1131,6 @@ export class SplitV1Client extends SplitV1Transactions {
     validateAddress(splitAddress)
 
     const functionChainId = this._getReadOnlyFunctionChainId(chainId)
-    if (!functionChainId)
-      throw new InvalidArgumentError('Please pass in the chainId you are using')
-
     const splitMainContract = this._getSplitMainContract(functionChainId)
 
     const controller = await splitMainContract.read.getController([
@@ -1162,9 +1152,6 @@ export class SplitV1Client extends SplitV1Transactions {
     validateAddress(splitAddress)
 
     const functionChainId = this._getReadOnlyFunctionChainId(chainId)
-    if (!functionChainId)
-      throw new InvalidArgumentError('Please pass in the chainId you are using')
-
     const splitMainContract = this._getSplitMainContract(functionChainId)
 
     const newPotentialController =
@@ -1187,9 +1174,6 @@ export class SplitV1Client extends SplitV1Transactions {
     validateAddress(splitAddress)
 
     const functionChainId = this._getReadOnlyFunctionChainId(chainId)
-    if (!functionChainId)
-      throw new InvalidArgumentError('Please pass in the chainId you are using')
-
     const splitMainContract = this._getSplitMainContract(functionChainId)
 
     const hash = await splitMainContract.read.getHash([
