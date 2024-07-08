@@ -142,12 +142,12 @@ class SplitV1Transactions extends BaseTransactions {
     validateAddress(splitAddress)
     validateSplitInputs({ recipients, distributorFeePercent })
 
-    const functionChainId = this._getFunctionChainId(chainId)
-
     if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
-      await this._requireController(splitAddress, functionChainId)
+      await this._requireController(splitAddress)
     }
+
+    const functionChainId = this._getFunctionChainId(chainId)
 
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
@@ -248,12 +248,12 @@ class SplitV1Transactions extends BaseTransactions {
     validateAddress(token)
     validateSplitInputs({ recipients, distributorFeePercent })
 
-    const functionChainId = this._getFunctionChainId(chainId)
-
     if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
-      await this._requireController(splitAddress, functionChainId)
+      await this._requireController(splitAddress)
     }
+
+    const functionChainId = this._getFunctionChainId(chainId)
 
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(recipients)
@@ -328,12 +328,12 @@ class SplitV1Transactions extends BaseTransactions {
   }: InitiateControlTransferConfig): Promise<TransactionFormat> {
     validateAddress(splitAddress)
 
-    const functionChainId = this._getFunctionChainId(chainId)
-
     if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
-      await this._requireController(splitAddress, functionChainId)
+      await this._requireController(splitAddress)
     }
+
+    const functionChainId = this._getFunctionChainId(chainId)
 
     const result = await this._executeContractFunction({
       contractAddress: getSplitMainAddress(functionChainId),
@@ -353,12 +353,12 @@ class SplitV1Transactions extends BaseTransactions {
   }: CancelControlTransferConfig): Promise<TransactionFormat> {
     validateAddress(splitAddress)
 
-    const functionChainId = this._getFunctionChainId(chainId)
-
     if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
-      await this._requireController(splitAddress, functionChainId)
+      await this._requireController(splitAddress)
     }
+
+    const functionChainId = this._getFunctionChainId(chainId)
 
     const result = await this._executeContractFunction({
       contractAddress: getSplitMainAddress(functionChainId),
@@ -378,12 +378,12 @@ class SplitV1Transactions extends BaseTransactions {
   }: AcceptControlTransferConfig): Promise<TransactionFormat> {
     validateAddress(splitAddress)
 
-    const functionChainId = this._getFunctionChainId(chainId)
-
     if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
-      await this._requireNewPotentialController(splitAddress, functionChainId)
+      await this._requireNewPotentialController(splitAddress)
     }
+
+    const functionChainId = this._getFunctionChainId(chainId)
 
     const result = await this._executeContractFunction({
       contractAddress: getSplitMainAddress(functionChainId),
@@ -403,12 +403,12 @@ class SplitV1Transactions extends BaseTransactions {
   }: MakeSplitImmutableConfig): Promise<TransactionFormat> {
     validateAddress(splitAddress)
 
-    const functionChainId = this._getFunctionChainId(chainId)
-
     if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
-      await this._requireController(splitAddress, functionChainId)
+      await this._requireController(splitAddress)
     }
+
+    const functionChainId = this._getFunctionChainId(chainId)
 
     const result = await this._executeContractFunction({
       contractAddress: getSplitMainAddress(functionChainId),
@@ -510,7 +510,8 @@ class SplitV1Transactions extends BaseTransactions {
     return result
   }
 
-  private async _requireController(splitAddress: string, chainId: number) {
+  private async _requireController(splitAddress: string) {
+    const chainId = this._walletClient!.chain.id
     const splitMainContract = this._getSplitMainContract(chainId)
     const controller = await splitMainContract.read.getController([
       getAddress(splitAddress),
@@ -524,10 +525,8 @@ class SplitV1Transactions extends BaseTransactions {
       )
   }
 
-  private async _requireNewPotentialController(
-    splitAddress: string,
-    chainId: number,
-  ) {
+  private async _requireNewPotentialController(splitAddress: string) {
+    const chainId = this._walletClient!.chain.id
     const splitMainContract = this._getSplitMainContract(chainId)
     const newPotentialController =
       await splitMainContract.read.getNewPotentialController([

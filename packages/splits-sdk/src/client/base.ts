@@ -111,24 +111,6 @@ class BaseClient {
     this._requirePublicClient(chainId)
   }
 
-  protected _getFunctionChainId(argumentChainId?: number) {
-    const functionChainId =
-      this._walletClient?.chain.id ?? argumentChainId ?? this._chainId
-    if (!functionChainId)
-      throw new InvalidArgumentError('Please pass in the chainId you are using')
-
-    return functionChainId
-  }
-
-  // Ignore wallet client here
-  protected _getReadOnlyFunctionChainId(argumentChainId?: number) {
-    const functionChainId = argumentChainId ?? this._chainId
-    if (!functionChainId)
-      throw new InvalidArgumentError('Please pass in the chainId you are using')
-
-    return functionChainId
-  }
-
   protected _getPublicClient(chainId: number): PublicClient<Transport, Chain> {
     if (!this._supportedChainIds.includes(chainId))
       throw new UnsupportedChainIdError(chainId, this._supportedChainIds)
@@ -252,6 +234,23 @@ export class BaseTransactions extends BaseClient {
     if (typeof callData === 'string') return false
 
     return true
+  }
+
+  protected _getFunctionChainId(argumentChainId?: number) {
+    if (this._shouldRequireWalletClient) {
+      return this._walletClient!.chain.id
+    }
+
+    return this._getReadOnlyFunctionChainId(argumentChainId)
+  }
+
+  // Ignore wallet client here
+  protected _getReadOnlyFunctionChainId(argumentChainId?: number) {
+    const functionChainId = argumentChainId ?? this._chainId
+    if (!functionChainId)
+      throw new InvalidArgumentError('Please pass in the chainId you are using')
+
+    return functionChainId
   }
 
   async _multicallTransaction({

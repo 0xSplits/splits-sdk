@@ -559,7 +559,7 @@ export class WarehouseClient extends WarehouseTransactions {
   }> {
     validateAddress(tokenAddress)
 
-    const functionChainId = this._getFunctionChainId(chainId)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
     const name = await this._getWarehouseContract(functionChainId).read.name([
       fromHex(tokenAddress, 'bigint'),
     ])
