@@ -13,7 +13,6 @@ import {
   InvalidConfigError,
   MissingPublicClientError,
   MissingWalletClientError,
-  UnsupportedChainIdError,
 } from '../errors'
 import * as utils from '../utils'
 import * as swapperUtils from '../utils/swapper'
@@ -109,6 +108,9 @@ const mockWalletClient = jest.fn(() => {
     account: {
       address: CONTROLLER_ADDRESS,
     },
+    chain: {
+      id: 1,
+    },
     writeContract: jest.fn(() => {
       return '0xhash'
     }),
@@ -120,41 +122,6 @@ describe('Client config validation', () => {
     expect(
       () => new TemplatesClient({ chainId: 1, includeEnsNames: true }),
     ).toThrow(InvalidConfigError)
-  })
-
-  test('Invalid chain id fails', () => {
-    expect(() => new TemplatesClient({ chainId: 51 })).toThrow(
-      UnsupportedChainIdError,
-    )
-  })
-
-  test('Ethereum chain ids pass', () => {
-    expect(() => new TemplatesClient({ chainId: 1 })).not.toThrow()
-  })
-
-  test('Polygon chain ids pass', () => {
-    expect(() => new TemplatesClient({ chainId: 137 })).not.toThrow()
-  })
-
-  test('Optimism chain ids pass', () => {
-    expect(() => new TemplatesClient({ chainId: 10 })).not.toThrow()
-  })
-
-  test('Arbitrum chain ids pass', () => {
-    expect(() => new TemplatesClient({ chainId: 42161 })).not.toThrow()
-  })
-
-  test('Zora chain ids pass', () => {
-    expect(() => new TemplatesClient({ chainId: 7777777 })).not.toThrow()
-  })
-
-  test('Base chain ids pass', () => {
-    expect(() => new TemplatesClient({ chainId: 8453 })).not.toThrow()
-  })
-
-  test('Other chain ids pass', () => {
-    expect(() => new TemplatesClient({ chainId: 100 })).not.toThrow()
-    expect(() => new TemplatesClient({ chainId: 56 })).not.toThrow()
   })
 })
 
@@ -209,6 +176,7 @@ describe('Template writes', () => {
     test('Create recoup fails with no provider', async () => {
       const badClient = new TemplatesClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(
@@ -327,6 +295,7 @@ describe('Template writes', () => {
     test('Create diversifier fails with no provider', async () => {
       const badClient = new TemplatesClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(

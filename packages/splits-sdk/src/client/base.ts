@@ -130,13 +130,16 @@ class BaseClient {
   }
 
   protected _getPublicClient(chainId: number): PublicClient<Transport, Chain> {
+    if (!this._supportedChainIds.includes(chainId))
+      throw new UnsupportedChainIdError(chainId, this._supportedChainIds)
+
     if (this._publicClients && this._publicClients[chainId]) {
       return this._publicClients[chainId]
     }
 
     if (!this._publicClient)
       throw new MissingPublicClientError(
-        'Public client required to perform this action, please update your call to the constructor',
+        `Public client required on chain ${chainId} to perform this action, please update your call to the constructor`,
       )
 
     return this._publicClient

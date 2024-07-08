@@ -15,7 +15,6 @@ import {
   InvalidConfigError,
   MissingPublicClientError,
   MissingWalletClientError,
-  UnsupportedChainIdError,
 } from '../errors'
 import * as swapperUtils from '../utils/swapper'
 import {
@@ -106,6 +105,9 @@ const mockWalletClient = jest.fn(() => {
     account: {
       address: OWNER_ADDRESS,
     },
+    chain: {
+      id: 1,
+    },
     writeContract: jest.fn(() => {
       return '0xhash'
     }),
@@ -115,6 +117,9 @@ const mockWalletClientNonOwner = jest.fn(() => {
   return {
     account: {
       address: '0xnotOwner',
+    },
+    chain: {
+      id: 1,
     },
     writeContract: jest.fn(() => {
       return '0xhash'
@@ -127,41 +132,6 @@ describe('Client config validation', () => {
     expect(
       () => new SwapperClient({ chainId: 1, includeEnsNames: true }),
     ).toThrow(InvalidConfigError)
-  })
-
-  test('Invalid chain id fails', () => {
-    expect(() => new SwapperClient({ chainId: 51 })).toThrow(
-      UnsupportedChainIdError,
-    )
-  })
-
-  test('Ethereum chain ids pass', () => {
-    expect(() => new SwapperClient({ chainId: 1 })).not.toThrow()
-  })
-
-  test('Polygon chain id pass', () => {
-    expect(() => new SwapperClient({ chainId: 137 })).not.toThrow()
-  })
-
-  test('Optimism chain id pass', () => {
-    expect(() => new SwapperClient({ chainId: 10 })).not.toThrow()
-  })
-
-  test('Arbitrum chain ids pass (test chain fails)', () => {
-    expect(() => new SwapperClient({ chainId: 42161 })).not.toThrow()
-  })
-
-  test('Zora chain ids fail', () => {
-    expect(() => new SwapperClient({ chainId: 7777777 })).toThrow()
-  })
-
-  test('Base chain ids pass', () => {
-    expect(() => new SwapperClient({ chainId: 8453 })).not.toThrow()
-  })
-
-  test('Other chain ids fail', () => {
-    expect(() => new SwapperClient({ chainId: 100 })).toThrow()
-    expect(() => new SwapperClient({ chainId: 56 })).toThrow()
   })
 })
 
@@ -220,6 +190,7 @@ describe('Swapper writes', () => {
     test('Create swapper fails with no provider', async () => {
       const badClient = new SwapperClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(
@@ -322,6 +293,7 @@ describe('Swapper writes', () => {
     test('Set beneficiary fails with no provider', async () => {
       const badClient = new SwapperClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(
@@ -400,6 +372,7 @@ describe('Swapper writes', () => {
     test('Set token to beneficiary fails with no provider', async () => {
       const badClient = new SwapperClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(
@@ -478,6 +451,7 @@ describe('Swapper writes', () => {
     test('Set oracle fails with no provider', async () => {
       const badClient = new SwapperClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(
@@ -556,6 +530,7 @@ describe('Swapper writes', () => {
     test('Set default scale fails with no provider', async () => {
       const badClient = new SwapperClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(
@@ -654,6 +629,7 @@ describe('Swapper writes', () => {
     test('Set scale factor overrides fails with no provider', async () => {
       const badClient = new SwapperClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(
@@ -739,6 +715,7 @@ describe('Swapper writes', () => {
     test('Set paused fails with no provider', async () => {
       const badClient = new SwapperClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(
@@ -821,6 +798,7 @@ describe('Swapper writes', () => {
     test('Exec calls fails with no provider', async () => {
       const badClient = new SwapperClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(
