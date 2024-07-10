@@ -155,6 +155,9 @@ export const fetchContractBalancesWithAlchemy: (
 
     erc20Balances.tokenBalances.map(
       (balanceData: { contractAddress: string; tokenBalance: string }) => {
+        // Failed to fetch token data, not a valid erc20
+        if (!erc20TokenData[balanceData.contractAddress]) return
+
         const formattedAddress = getAddress(balanceData.contractAddress)
 
         const rawAmount = BigInt(balanceData.tokenBalance)
