@@ -238,6 +238,16 @@ export class BaseTransactions extends BaseClient {
 
   protected _getFunctionChainId(argumentChainId?: number) {
     if (this._shouldRequireWalletClient) {
+      if (
+        argumentChainId !== undefined &&
+        this._walletClient!.chain.id !== argumentChainId
+      ) {
+        throw new InvalidArgumentError(
+          `Passed in chain id ${argumentChainId} does not match walletClient chain id: ${
+            this._walletClient!.chain.id
+          }.`,
+        )
+      }
       return this._walletClient!.chain.id
     }
 
