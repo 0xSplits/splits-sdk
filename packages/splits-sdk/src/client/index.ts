@@ -1,4 +1,4 @@
-import { TransactionType } from '../constants'
+import { ALL_CHAIN_IDS, TransactionType } from '../constants'
 import { SplitsClientConfig } from '../types'
 import {
   BaseClientMixin,
@@ -36,7 +36,7 @@ export class SplitsClient extends BaseTransactions {
   constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Transaction,
-      supportedChainIds: [],
+      supportedChainIds: ALL_CHAIN_IDS,
       ...clientArgs,
     })
     this.waterfall = new WaterfallClient(clientArgs)
@@ -73,7 +73,7 @@ class SplitsClientGasEstimates extends BaseTransactions {
   constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.GasEstimate,
-      supportedChainIds: [],
+      supportedChainIds: ALL_CHAIN_IDS,
       ...clientArgs,
     })
   }
