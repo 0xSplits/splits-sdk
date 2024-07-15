@@ -47,6 +47,16 @@ export const useSplitsClient = (config?: SplitsClientConfig): SplitsClient => {
     }
   }, [apiKey, serverURL])
 
+  // Since publicClients is an array, if it gets set directly it'll be considered "new" on each render
+  const stringPublicClients =
+    config && 'publicClients' in config
+      ? JSON.stringify(config.publicClients)
+      : undefined
+  const publicClients = useMemo(() => {
+    if (stringPublicClients) return config!.publicClients
+    return context.splitsClient._publicClients
+  }, [stringPublicClients])
+
   const chainId =
     config && 'chainId' in config
       ? config.chainId
@@ -69,8 +79,9 @@ export const useSplitsClient = (config?: SplitsClientConfig): SplitsClient => {
       : context.splitsClient._ensPublicClient
   useEffect(() => {
     context.initClient({
-      chainId: chainId!,
+      chainId,
       publicClient,
+      publicClients,
       walletClient,
       apiConfig,
       includeEnsNames,
@@ -79,6 +90,7 @@ export const useSplitsClient = (config?: SplitsClientConfig): SplitsClient => {
   }, [
     chainId,
     publicClient,
+    publicClients,
     walletClient,
     apiConfig,
     includeEnsNames,
