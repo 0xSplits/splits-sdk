@@ -106,7 +106,8 @@ export class DataClient {
         'Must include a mainnet public client if includeEnsNames is set to true',
       )
 
-    this._ensPublicClient = ensPublicClient ?? publicClient
+    this._ensPublicClient =
+      ensPublicClient ?? publicClients?.[1] ?? publicClient
     this._publicClient = publicClient
     this._publicClients = publicClients
     this._includeEnsNames = includeEnsNames
