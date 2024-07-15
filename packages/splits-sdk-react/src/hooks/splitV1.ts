@@ -34,7 +34,7 @@ export const useSplitsClient = (config?: SplitsClientConfig): SplitsClient => {
     config && 'apiConfig' in config
       ? config.apiConfig!.apiKey
       : context.splitsClient._apiConfig?.apiKey
-  const serverUrl =
+  const serverURL =
     config && 'apiConfig' in config
       ? config.apiConfig!.serverURL
       : context.splitsClient._apiConfig?.serverURL
@@ -43,9 +43,9 @@ export const useSplitsClient = (config?: SplitsClientConfig): SplitsClient => {
 
     return {
       apiKey,
-      serverUrl,
+      serverURL,
     }
-  }, [apiKey, serverUrl])
+  }, [apiKey, serverURL])
 
   const chainId =
     config && 'chainId' in config
