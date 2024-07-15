@@ -83,24 +83,10 @@ const polygonAbiChainIds = [
 type SplitMainEthereumAbiType = typeof splitMainEthereumAbi
 
 class SplitV1Transactions extends BaseTransactions {
-  constructor({
-    transactionType,
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig & TransactionConfig) {
+  constructor(transactionClientArgs: SplitsClientConfig & TransactionConfig) {
     super({
-      transactionType,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
       supportedChainIds: SPLITS_SUPPORTED_CHAIN_IDS,
+      ...transactionClientArgs,
     })
   }
 
@@ -572,40 +558,14 @@ export class SplitV1Client extends SplitV1Transactions {
   readonly callData: SplitV1CallData
   readonly estimateGas: SplitV1GasEstimates
 
-  constructor({
-    chainId,
-    publicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-    ensPublicClient,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Transaction,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
 
-    this.callData = new SplitV1CallData({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      apiConfig,
-      walletClient,
-      includeEnsNames,
-    })
-    this.estimateGas = new SplitV1GasEstimates({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      apiConfig,
-      walletClient,
-      includeEnsNames,
-    })
+    this.callData = new SplitV1CallData(clientArgs)
+    this.estimateGas = new SplitV1GasEstimates(clientArgs)
   }
 
   getEventTopics(chainId: number) {
@@ -1190,22 +1150,10 @@ applyMixins(SplitV1Client, [BaseClientMixin])
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 class SplitV1GasEstimates extends SplitV1Transactions {
-  constructor({
-    chainId,
-    publicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-    ensPublicClient,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.GasEstimate,
-      chainId,
-      publicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-      ensPublicClient,
+      ...clientArgs,
     })
   }
 
@@ -1297,22 +1245,10 @@ interface SplitV1GasEstimates extends BaseGasEstimatesMixin {}
 applyMixins(SplitV1GasEstimates, [BaseGasEstimatesMixin])
 
 class SplitV1CallData extends SplitV1Transactions {
-  constructor({
-    chainId,
-    publicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-    ensPublicClient,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.CallData,
-      chainId,
-      publicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-      ensPublicClient,
+      ...clientArgs,
     })
   }
 

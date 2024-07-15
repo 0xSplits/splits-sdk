@@ -20,24 +20,10 @@ import { validateAddress } from '../utils/validation'
 type UniV3OracleAbi = typeof uniV3OracleAbi
 
 class OracleTransactions extends BaseTransactions {
-  constructor({
-    transactionType,
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig & TransactionConfig) {
+  constructor(transactionClientArgs: SplitsClientConfig & TransactionConfig) {
     super({
-      transactionType,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
       supportedChainIds: ORACLE_CHAIN_IDS,
+      ...transactionClientArgs,
     })
   }
 
@@ -58,22 +44,10 @@ class OracleTransactions extends BaseTransactions {
 }
 
 export class OracleClient extends OracleTransactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Transaction,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 

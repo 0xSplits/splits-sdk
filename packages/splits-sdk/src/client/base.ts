@@ -136,23 +136,9 @@ export class BaseTransactions extends BaseClient {
 
   constructor({
     transactionType,
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    supportedChainIds,
-    includeEnsNames = false,
+    ...baseClientArgs
   }: BaseClientConfig & TransactionConfig) {
-    super({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      supportedChainIds,
-      includeEnsNames,
-    })
+    super(baseClientArgs)
 
     this._transactionType = transactionType
     this._shouldRequireWalletClient = [

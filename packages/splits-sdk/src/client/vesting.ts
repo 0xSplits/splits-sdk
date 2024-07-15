@@ -43,24 +43,10 @@ type VestingAbi = typeof vestingAbi
 type VestingFactoryAbi = typeof vestingFactoryAbi
 
 class VestingTransactions extends BaseTransactions {
-  constructor({
-    transactionType,
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig & TransactionConfig) {
+  constructor(transactionClientArgs: SplitsClientConfig & TransactionConfig) {
     super({
-      transactionType,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
       supportedChainIds: VESTING_CHAIN_IDS,
+      ...transactionClientArgs,
     })
   }
 
@@ -161,22 +147,10 @@ export class VestingClient extends VestingTransactions {
   readonly callData: VestingCallData
   readonly estimateGas: VestingGasEstimates
 
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Transaction,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
 
     this.eventTopics = {
@@ -200,22 +174,8 @@ export class VestingClient extends VestingTransactions {
       ],
     }
 
-    this.callData = new VestingCallData({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
-    this.estimateGas = new VestingGasEstimates({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
+    this.callData = new VestingCallData(clientArgs)
+    this.estimateGas = new VestingGasEstimates(clientArgs)
   }
 
   // Write actions
@@ -425,22 +385,10 @@ applyMixins(VestingClient, [BaseClientMixin])
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 class VestingGasEstimates extends VestingTransactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.GasEstimate,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 
@@ -477,22 +425,10 @@ interface VestingGasEstimates extends BaseGasEstimatesMixin {}
 applyMixins(VestingGasEstimates, [BaseGasEstimatesMixin])
 
 class VestingCallData extends VestingTransactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.CallData,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 

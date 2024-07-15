@@ -47,24 +47,10 @@ import {
 } from '../utils/validation'
 
 class TemplatesTransactions extends BaseTransactions {
-  constructor({
-    transactionType,
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig & TransactionConfig) {
+  constructor(transactionClientArgs: SplitsClientConfig & TransactionConfig) {
     super({
-      transactionType,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
       supportedChainIds: TEMPLATES_CHAIN_IDS,
+      ...transactionClientArgs,
     })
   }
 
@@ -160,22 +146,10 @@ export class TemplatesClient extends TemplatesTransactions {
   readonly callData: TemplatesCallData
   readonly estimateGas: TemplatesGasEstimates
 
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Transaction,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
 
     this.eventTopics = {
@@ -194,22 +168,8 @@ export class TemplatesClient extends TemplatesTransactions {
       ],
     }
 
-    this.callData = new TemplatesCallData({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
-    this.estimateGas = new TemplatesGasEstimates({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
+    this.callData = new TemplatesCallData(clientArgs)
+    this.estimateGas = new TemplatesGasEstimates(clientArgs)
   }
 
   // Write actions
@@ -301,22 +261,10 @@ applyMixins(TemplatesClient, [BaseClientMixin])
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 class TemplatesGasEstimates extends TemplatesTransactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.GasEstimate,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 
@@ -344,22 +292,10 @@ interface TemplatesGasEstimates extends BaseGasEstimatesMixin {}
 applyMixins(TemplatesGasEstimates, [BaseGasEstimatesMixin])
 
 class TemplatesCallData extends TemplatesTransactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.CallData,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 

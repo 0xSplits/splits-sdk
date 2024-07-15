@@ -62,24 +62,10 @@ const VALID_ERC1271_SIG = '0x1626ba7e'
 
 // TODO:add validation to execute contract function
 class SplitV2Transactions extends BaseTransactions {
-  constructor({
-    transactionType,
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig & TransactionConfig) {
+  constructor(transactionClientArgs: SplitsClientConfig & TransactionConfig) {
     super({
-      transactionType,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
       supportedChainIds: SPLITS_V2_SUPPORTED_CHAIN_IDS,
+      ...transactionClientArgs,
     })
   }
 
@@ -477,22 +463,10 @@ export class SplitV2Client extends SplitV2Transactions {
   readonly estimateGas: SplitV2GasEstimates
   readonly sign: SplitV2Signature
 
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Transaction,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
     this.eventTopics = {
       splitCreated: [
@@ -533,30 +507,9 @@ export class SplitV2Client extends SplitV2Transactions {
       ],
     }
 
-    this.callData = new SplitV2CallData({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
-    this.estimateGas = new SplitV2GasEstimates({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
-    this.sign = new SplitV2Signature({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
+    this.callData = new SplitV2CallData(clientArgs)
+    this.estimateGas = new SplitV2GasEstimates(clientArgs)
+    this.sign = new SplitV2Signature(clientArgs)
   }
 
   async submitCreateSplitTransaction(
@@ -989,22 +942,10 @@ applyMixins(SplitV2Client, [BaseClientMixin])
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 class SplitV2GasEstimates extends SplitV2Transactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.GasEstimate,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 
@@ -1058,22 +999,10 @@ interface SplitV2GasEstimates extends BaseGasEstimatesMixin {}
 applyMixins(SplitV2GasEstimates, [BaseGasEstimatesMixin])
 
 class SplitV2CallData extends SplitV2Transactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.CallData,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 
@@ -1123,22 +1052,10 @@ class SplitV2CallData extends SplitV2Transactions {
 }
 
 class SplitV2Signature extends SplitV2Transactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Signature,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 

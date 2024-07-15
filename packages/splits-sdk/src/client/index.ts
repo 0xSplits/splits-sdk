@@ -33,136 +33,34 @@ export class SplitsClient extends BaseTransactions {
   readonly dataClient: DataClient | undefined
   readonly estimateGas: SplitsClientGasEstimates
 
-  constructor({
-    chainId,
-    publicClient,
-    publicClients,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-    ensPublicClient,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Transaction,
-      chainId,
-      publicClient,
-      publicClients,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-      ensPublicClient,
       supportedChainIds: [],
+      ...clientArgs,
     })
-    this.waterfall = new WaterfallClient({
-      chainId,
-      publicClient,
-      publicClients,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
-    this.liquidSplits = new LiquidSplitClient({
-      chainId,
-      publicClient,
-      publicClients,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
-    this.vesting = new VestingClient({
-      chainId,
-      publicClient,
-      publicClients,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
-    this.templates = new TemplatesClient({
-      chainId,
-      publicClient,
-      publicClients,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
-    this.oracle = new OracleClient({
-      chainId,
-      publicClient,
-      publicClients,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
-    this.swapper = new SwapperClient({
-      chainId,
-      publicClient,
-      publicClients,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
-    this.passThroughWallet = new PassThroughWalletClient({
-      chainId,
-      publicClient,
-      publicClients,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
-    this.splitV1 = new SplitV1Client({
-      chainId,
-      publicClient,
-      publicClients,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
-    this.splitV2 = new SplitV2Client({
-      chainId,
-      publicClient,
-      publicClients,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
-    this.warehouse = new WarehouseClient({
-      chainId,
-      publicClient,
-      publicClients,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
+    this.waterfall = new WaterfallClient(clientArgs)
+    this.liquidSplits = new LiquidSplitClient(clientArgs)
+    this.vesting = new VestingClient(clientArgs)
+    this.templates = new TemplatesClient(clientArgs)
+    this.oracle = new OracleClient(clientArgs)
+    this.swapper = new SwapperClient(clientArgs)
+    this.passThroughWallet = new PassThroughWalletClient(clientArgs)
+    this.splitV1 = new SplitV1Client(clientArgs)
+    this.splitV2 = new SplitV2Client(clientArgs)
+    this.warehouse = new WarehouseClient(clientArgs)
 
-    if (apiConfig) {
+    if (clientArgs.apiConfig) {
       this.dataClient = new DataClient({
-        publicClient,
-        publicClients,
-        ensPublicClient,
-        includeEnsNames,
-        apiConfig,
+        publicClient: clientArgs.publicClient,
+        publicClients: clientArgs.publicClients,
+        ensPublicClient: clientArgs.ensPublicClient,
+        includeEnsNames: clientArgs.includeEnsNames,
+        apiConfig: clientArgs.apiConfig,
       })
     }
 
-    this.estimateGas = new SplitsClientGasEstimates({
-      chainId,
-      publicClient,
-      publicClients,
-      walletClient,
-      ensPublicClient,
-      apiConfig,
-      includeEnsNames,
-    })
+    this.estimateGas = new SplitsClientGasEstimates(clientArgs)
   }
 }
 
@@ -172,23 +70,11 @@ applyMixins(SplitsClient, [BaseClientMixin])
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 class SplitsClientGasEstimates extends BaseTransactions {
-  constructor({
-    chainId,
-    publicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-    ensPublicClient,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.GasEstimate,
-      chainId,
-      publicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-      ensPublicClient,
       supportedChainIds: [],
+      ...clientArgs,
     })
   }
 }

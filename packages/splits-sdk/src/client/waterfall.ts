@@ -45,24 +45,10 @@ import { validateAddress, validateWaterfallTranches } from '../utils/validation'
 type WaterfallAbi = typeof waterfallAbi
 
 class WaterfallTransactions extends BaseTransactions {
-  constructor({
-    transactionType,
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig & TransactionConfig) {
+  constructor(transactionClientArgs: SplitsClientConfig & TransactionConfig) {
     super({
-      transactionType,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
       supportedChainIds: WATERFALL_CHAIN_IDS,
+      ...transactionClientArgs,
     })
   }
 
@@ -249,22 +235,10 @@ export class WaterfallClient extends WaterfallTransactions {
   readonly callData: WaterfallCallData
   readonly estimateGas: WaterfallGasEstimates
 
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Transaction,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
     this.eventTopics = {
       createWaterfallModule: [
@@ -293,22 +267,8 @@ export class WaterfallClient extends WaterfallTransactions {
       ],
     }
 
-    this.callData = new WaterfallCallData({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
-    this.estimateGas = new WaterfallGasEstimates({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
+    this.callData = new WaterfallCallData(clientArgs)
+    this.estimateGas = new WaterfallGasEstimates(clientArgs)
   }
 
   // Write actions
@@ -596,22 +556,10 @@ applyMixins(WaterfallClient, [BaseClientMixin])
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 class WaterfallGasEstimates extends WaterfallTransactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.GasEstimate,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 
@@ -660,22 +608,10 @@ interface WaterfallGasEstimates extends BaseGasEstimatesMixin {}
 applyMixins(WaterfallGasEstimates, [BaseGasEstimatesMixin])
 
 class WaterfallCallData extends WaterfallTransactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.CallData,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 

@@ -65,24 +65,10 @@ type SwapperAbi = typeof swapperAbi
 type UniV3SwapAbi = typeof uniV3SwapAbi
 
 class SwapperTransactions extends BaseTransactions {
-  constructor({
-    transactionType,
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig & TransactionConfig) {
+  constructor(transactionClientArgs: SplitsClientConfig & TransactionConfig) {
     super({
-      transactionType,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
       supportedChainIds: SWAPPER_CHAIN_IDS,
+      ...transactionClientArgs,
     })
   }
 
@@ -422,22 +408,10 @@ export class SwapperClient extends SwapperTransactions {
   readonly callData: SwapperCallData
   readonly estimateGas: SwapperGasEstimates
 
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Transaction,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
     this.eventTopics = {
       createSwapper: [
@@ -496,22 +470,8 @@ export class SwapperClient extends SwapperTransactions {
       ],
     }
 
-    this.callData = new SwapperCallData({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
-    this.estimateGas = new SwapperGasEstimates({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
+    this.callData = new SwapperCallData(clientArgs)
+    this.estimateGas = new SwapperGasEstimates(clientArgs)
   }
 
   // Write actions
@@ -923,22 +883,10 @@ applyMixins(SwapperClient, [BaseClientMixin])
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 class SwapperGasEstimates extends SwapperTransactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.GasEstimate,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 
@@ -1018,22 +966,10 @@ interface SwapperGasEstimates extends BaseGasEstimatesMixin {}
 applyMixins(SwapperGasEstimates, [BaseGasEstimatesMixin])
 
 class SwapperCallData extends SwapperTransactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.CallData,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 

@@ -58,24 +58,10 @@ const nativeTokenAddress: Address = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
 class WarehouseTransactions extends BaseTransactions {
   protected readonly _warehouseAbi
 
-  constructor({
-    transactionType,
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig & TransactionConfig) {
+  constructor(transactionClientArgs: SplitsClientConfig & TransactionConfig) {
     super({
-      transactionType,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
       supportedChainIds: SPLITS_V2_SUPPORTED_CHAIN_IDS,
+      ...transactionClientArgs,
     })
 
     this._warehouseAbi = warehouseAbi
@@ -465,22 +451,10 @@ export class WarehouseClient extends WarehouseTransactions {
   readonly estimateGas: WarehouseGasEstimates
   readonly sign: WarehouseSignature
 
-  constructor({
-    chainId,
-    publicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-    ensPublicClient,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Transaction,
-      chainId,
-      publicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-      ensPublicClient,
+      ...clientArgs,
     })
 
     this.eventTopics = {
@@ -522,32 +496,9 @@ export class WarehouseClient extends WarehouseTransactions {
       ],
     }
 
-    this.callData = new WarehouseCallData({
-      chainId,
-      publicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-      ensPublicClient,
-    })
-
-    this.estimateGas = new WarehouseGasEstimates({
-      chainId,
-      publicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-      ensPublicClient,
-    })
-
-    this.sign = new WarehouseSignature({
-      chainId,
-      publicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-      ensPublicClient,
-    })
+    this.callData = new WarehouseCallData(clientArgs)
+    this.estimateGas = new WarehouseGasEstimates(clientArgs)
+    this.sign = new WarehouseSignature(clientArgs)
   }
 
   // ERC6909 Metadata
@@ -1072,22 +1023,10 @@ applyMixins(WarehouseClient, [BaseClientMixin])
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 class WarehouseGasEstimates extends WarehouseTransactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.GasEstimate,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 
@@ -1233,22 +1172,10 @@ interface WarehouseGasEstimates extends BaseGasEstimatesMixin {}
 applyMixins(WarehouseGasEstimates, [BaseGasEstimatesMixin])
 
 class WarehouseCallData extends WarehouseTransactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.CallData,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 
@@ -1390,22 +1317,10 @@ class WarehouseCallData extends WarehouseTransactions {
 }
 
 class WarehouseSignature extends WarehouseTransactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Signature,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 

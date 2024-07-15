@@ -43,24 +43,10 @@ import { validateAddress } from '../utils/validation'
 type PassThroughWalletAbi = typeof passThroughWalletAbi
 
 class PassThroughWalletTransactions extends BaseTransactions {
-  constructor({
-    transactionType,
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig & TransactionConfig) {
+  constructor(transactionClientArgs: SplitsClientConfig & TransactionConfig) {
     super({
-      transactionType,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
       supportedChainIds: PASS_THROUGH_WALLET_CHAIN_IDS,
+      ...transactionClientArgs,
     })
   }
 
@@ -221,22 +207,10 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
   readonly callData: PassThroughWalletCallData
   readonly estimateGas: PassThroughWalletGasEstimates
 
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Transaction,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
 
     this.eventTopics = {
@@ -272,22 +246,8 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
       ],
     }
 
-    this.callData = new PassThroughWalletCallData({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
-    this.estimateGas = new PassThroughWalletGasEstimates({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
+    this.callData = new PassThroughWalletCallData(clientArgs)
+    this.estimateGas = new PassThroughWalletGasEstimates(clientArgs)
   }
 
   // Write actions
@@ -477,22 +437,10 @@ applyMixins(PassThroughWalletClient, [BaseClientMixin])
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 class PassThroughWalletGasEstimates extends PassThroughWalletTransactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.GasEstimate,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 
@@ -539,22 +487,10 @@ interface PassThroughWalletGasEstimates extends BaseGasEstimatesMixin {}
 applyMixins(PassThroughWalletGasEstimates, [BaseGasEstimatesMixin])
 
 class PassThroughWalletCallData extends PassThroughWalletTransactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.CallData,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 

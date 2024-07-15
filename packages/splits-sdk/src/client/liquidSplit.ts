@@ -56,24 +56,10 @@ import {
 type LS1155Abi = typeof ls1155CloneAbi
 
 class LiquidSplitTransactions extends BaseTransactions {
-  constructor({
-    transactionType,
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig & TransactionConfig) {
+  constructor(transactionClientArgs: SplitsClientConfig & TransactionConfig) {
     super({
-      transactionType,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
       supportedChainIds: LIQUID_SPLIT_CHAIN_IDS,
+      ...transactionClientArgs,
     })
   }
 
@@ -218,22 +204,10 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
   readonly callData: LiquidSplitCallData
   readonly estimateGas: LiquidSplitGasEstimates
 
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Transaction,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
 
     this.eventTopics = {
@@ -265,22 +239,8 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
       ],
     }
 
-    this.callData = new LiquidSplitCallData({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
-    this.estimateGas = new LiquidSplitGasEstimates({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
+    this.callData = new LiquidSplitCallData(clientArgs)
+    this.estimateGas = new LiquidSplitGasEstimates(clientArgs)
   }
 
   // Write actions
@@ -540,22 +500,10 @@ applyMixins(LiquidSplitClient, [BaseClientMixin])
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 class LiquidSplitGasEstimates extends LiquidSplitTransactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.GasEstimate,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 
@@ -597,22 +545,10 @@ interface LiquidSplitGasEstimates extends BaseGasEstimatesMixin {}
 applyMixins(LiquidSplitGasEstimates, [BaseGasEstimatesMixin])
 
 class LiquidSplitCallData extends LiquidSplitTransactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.CallData,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 
