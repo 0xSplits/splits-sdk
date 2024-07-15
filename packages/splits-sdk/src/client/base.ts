@@ -77,6 +77,7 @@ class BaseClient {
     if (apiConfig) {
       this._dataClient = new DataClient({
         publicClient,
+        publicClients,
         ensPublicClient,
         apiConfig,
         includeEnsNames,

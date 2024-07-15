@@ -36,6 +36,7 @@ export class SplitsClient extends BaseTransactions {
   constructor({
     chainId,
     publicClient,
+    publicClients,
     walletClient,
     apiConfig,
     includeEnsNames = false,
@@ -45,6 +46,7 @@ export class SplitsClient extends BaseTransactions {
       transactionType: TransactionType.Transaction,
       chainId,
       publicClient,
+      publicClients,
       walletClient,
       apiConfig,
       includeEnsNames,
@@ -54,6 +56,7 @@ export class SplitsClient extends BaseTransactions {
     this.waterfall = new WaterfallClient({
       chainId,
       publicClient,
+      publicClients,
       ensPublicClient,
       walletClient,
       apiConfig,
@@ -62,6 +65,7 @@ export class SplitsClient extends BaseTransactions {
     this.liquidSplits = new LiquidSplitClient({
       chainId,
       publicClient,
+      publicClients,
       ensPublicClient,
       walletClient,
       apiConfig,
@@ -70,6 +74,7 @@ export class SplitsClient extends BaseTransactions {
     this.vesting = new VestingClient({
       chainId,
       publicClient,
+      publicClients,
       ensPublicClient,
       walletClient,
       apiConfig,
@@ -78,6 +83,7 @@ export class SplitsClient extends BaseTransactions {
     this.templates = new TemplatesClient({
       chainId,
       publicClient,
+      publicClients,
       ensPublicClient,
       walletClient,
       apiConfig,
@@ -86,6 +92,7 @@ export class SplitsClient extends BaseTransactions {
     this.oracle = new OracleClient({
       chainId,
       publicClient,
+      publicClients,
       ensPublicClient,
       walletClient,
       apiConfig,
@@ -94,6 +101,7 @@ export class SplitsClient extends BaseTransactions {
     this.swapper = new SwapperClient({
       chainId,
       publicClient,
+      publicClients,
       ensPublicClient,
       walletClient,
       apiConfig,
@@ -102,6 +110,7 @@ export class SplitsClient extends BaseTransactions {
     this.passThroughWallet = new PassThroughWalletClient({
       chainId,
       publicClient,
+      publicClients,
       ensPublicClient,
       walletClient,
       apiConfig,
@@ -110,6 +119,7 @@ export class SplitsClient extends BaseTransactions {
     this.splitV1 = new SplitV1Client({
       chainId,
       publicClient,
+      publicClients,
       ensPublicClient,
       walletClient,
       apiConfig,
@@ -118,6 +128,7 @@ export class SplitsClient extends BaseTransactions {
     this.splitV2 = new SplitV2Client({
       chainId,
       publicClient,
+      publicClients,
       ensPublicClient,
       walletClient,
       apiConfig,
@@ -126,6 +137,7 @@ export class SplitsClient extends BaseTransactions {
     this.warehouse = new WarehouseClient({
       chainId,
       publicClient,
+      publicClients,
       ensPublicClient,
       walletClient,
       apiConfig,
@@ -135,6 +147,7 @@ export class SplitsClient extends BaseTransactions {
     if (apiConfig) {
       this.dataClient = new DataClient({
         publicClient,
+        publicClients,
         ensPublicClient,
         includeEnsNames,
         apiConfig,
@@ -144,6 +157,7 @@ export class SplitsClient extends BaseTransactions {
     this.estimateGas = new SplitsClientGasEstimates({
       chainId,
       publicClient,
+      publicClients,
       walletClient,
       ensPublicClient,
       apiConfig,
