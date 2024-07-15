@@ -36,7 +36,7 @@ import { DataClient } from './data'
 
 class BaseClient {
   readonly _chainId: number | undefined // DEPRECATED
-  readonly _ensPublicClient: PublicClient<Transport, Chain> | undefined
+  readonly _ensPublicClient: PublicClient<Transport, Chain> | undefined // DEPRECATED
   readonly _walletClient: WalletClient<Transport, Chain, Account> | undefined
   readonly _publicClient: PublicClient<Transport, Chain> | undefined // DEPRECATED
   readonly _publicClients:
@@ -65,7 +65,7 @@ class BaseClient {
       )
 
     this._ensPublicClient =
-      ensPublicClient ?? publicClients?.[1] ?? publicClient
+      publicClients?.[1] ?? ensPublicClient ?? publicClient
     this._publicClient = publicClient
     this._publicClients = publicClients
     this._chainId = chainId

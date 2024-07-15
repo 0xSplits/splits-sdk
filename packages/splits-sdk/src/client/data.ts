@@ -84,7 +84,7 @@ import {
 } from '../utils'
 
 export class DataClient {
-  readonly _ensPublicClient: PublicClient<Transport, Chain> | undefined
+  readonly _ensPublicClient: PublicClient<Transport, Chain> | undefined // DEPRECATED
   readonly _publicClient: PublicClient<Transport, Chain> | undefined // DEPRECATED
   readonly _publicClients:
     | {
@@ -101,13 +101,18 @@ export class DataClient {
     apiConfig,
     includeEnsNames = false,
   }: DataClientConfig) {
-    if (includeEnsNames && !publicClient && !ensPublicClient)
+    if (
+      includeEnsNames &&
+      !publicClient &&
+      !publicClients?.[1] &&
+      !ensPublicClient
+    )
       throw new InvalidConfigError(
         'Must include a mainnet public client if includeEnsNames is set to true',
       )
 
     this._ensPublicClient =
-      ensPublicClient ?? publicClients?.[1] ?? publicClient
+      publicClients?.[1] ?? ensPublicClient ?? publicClient
     this._publicClient = publicClient
     this._publicClients = publicClients
     this._includeEnsNames = includeEnsNames
