@@ -38,6 +38,9 @@ export type ApiConfig = {
 
 export type DataClientConfig = {
   publicClient?: PublicClient<Transport, Chain>
+  publicClients?: {
+    [chainId: number]: PublicClient<Transport, Chain>
+  }
   apiConfig: ApiConfig
   includeEnsNames?: boolean
   // ensPublicClient can be used to fetch ens names when publicClient is not on mainnet (reverseRecords
