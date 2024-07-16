@@ -12,12 +12,10 @@ import {
   parseEther,
   zeroAddress,
 } from 'viem'
-import { ChainId } from '../constants'
 import {
   InvalidConfigError,
   MissingPublicClientError,
   MissingWalletClientError,
-  UnsupportedChainIdError,
 } from '../errors'
 import { WarehouseClient } from './warehouse'
 import { base, foundry, mainnet } from 'viem/chains'
@@ -36,59 +34,6 @@ describe('Client config validation', () => {
     expect(
       () => new WarehouseClient({ chainId: 1, includeEnsNames: true }),
     ).toThrow(InvalidConfigError)
-  })
-
-  test('Invalid chain id fails', () => {
-    expect(() => new WarehouseClient({ chainId: 51 })).toThrow(
-      UnsupportedChainIdError,
-    )
-  })
-
-  test('Ethereum chain ids pass', () => {
-    expect(
-      () => new WarehouseClient({ chainId: ChainId.MAINNET }),
-    ).not.toThrow()
-    expect(
-      () => new WarehouseClient({ chainId: ChainId.HOLESKY }),
-    ).not.toThrow()
-    expect(
-      () => new WarehouseClient({ chainId: ChainId.SEPOLIA }),
-    ).not.toThrow()
-  })
-
-  test('Polygon chain ids pass', () => {
-    expect(
-      () => new WarehouseClient({ chainId: ChainId.POLYGON }),
-    ).not.toThrow()
-  })
-
-  test('Optimism chain ids pass', () => {
-    expect(
-      () => new WarehouseClient({ chainId: ChainId.OPTIMISM }),
-    ).not.toThrow()
-    expect(
-      () => new WarehouseClient({ chainId: ChainId.OPTIMISM_SEPOLIA }),
-    ).not.toThrow()
-  })
-
-  test('Arbitrum chain ids pass', () => {
-    expect(
-      () => new WarehouseClient({ chainId: ChainId.ARBITRUM }),
-    ).not.toThrow()
-  })
-
-  test('Zora chain ids pass', () => {
-    expect(() => new WarehouseClient({ chainId: ChainId.ZORA })).not.toThrow()
-    expect(
-      () => new WarehouseClient({ chainId: ChainId.ZORA_SEPOLIA }),
-    ).not.toThrow()
-  })
-
-  test('Base chain ids pass', () => {
-    expect(() => new WarehouseClient({ chainId: ChainId.BASE })).not.toThrow()
-    expect(
-      () => new WarehouseClient({ chainId: ChainId.BASE_SEPOLIA }),
-    ).not.toThrow()
   })
 })
 
@@ -115,6 +60,7 @@ describe('Warehouse writes', () => {
     test('fails with no provider', async () => {
       const badClient = new WarehouseClient({
         chainId: 1,
+        walletClient: walletClient(ALICE),
       })
 
       await expect(
@@ -193,6 +139,7 @@ describe('Warehouse writes', () => {
     test('fails with no provider', async () => {
       const badClient = new WarehouseClient({
         chainId: 1,
+        walletClient: walletClient(ALICE),
       })
 
       await expect(
@@ -273,6 +220,7 @@ describe('Warehouse writes', () => {
     test('fails with no provider', async () => {
       const badClient = new WarehouseClient({
         chainId: 1,
+        walletClient: walletClient(ALICE),
       })
 
       await expect(
@@ -337,6 +285,7 @@ describe('Warehouse writes', () => {
     test('fails with no provider', async () => {
       const badClient = new WarehouseClient({
         chainId: 1,
+        walletClient: walletClient(ALICE),
       })
 
       await expect(
@@ -394,6 +343,7 @@ describe('Warehouse writes', () => {
     test('fails with no provider', async () => {
       const badClient = new WarehouseClient({
         chainId: 1,
+        walletClient: walletClient(ALICE),
       })
 
       await expect(
@@ -447,6 +397,7 @@ describe('Warehouse writes', () => {
     test('fails with no provider', async () => {
       const badClient = new WarehouseClient({
         chainId: 1,
+        walletClient: walletClient(ALICE),
       })
 
       await expect(
@@ -496,6 +447,7 @@ describe('Warehouse writes', () => {
     test('fails with no provider', async () => {
       const badClient = new WarehouseClient({
         chainId: 1,
+        walletClient: walletClient(ALICE),
       })
 
       await expect(
@@ -553,6 +505,7 @@ describe('Warehouse writes', () => {
     test('fails with no provider', async () => {
       const badClient = new WarehouseClient({
         chainId: 1,
+        walletClient: walletClient(ALICE),
       })
 
       await expect(
@@ -635,6 +588,7 @@ describe('Warehouse writes', () => {
     test('fails with no provider', async () => {
       const badClient = new WarehouseClient({
         chainId: 1,
+        walletClient: walletClient(ALICE),
       })
 
       await expect(
@@ -696,6 +650,7 @@ describe('Warehouse writes', () => {
     test('fails with no provider', async () => {
       const badClient = new WarehouseClient({
         chainId: 1,
+        walletClient: walletClient(ALICE),
       })
 
       await expect(
@@ -764,6 +719,7 @@ describe('Warehouse writes', () => {
     test('fails with no provider', async () => {
       const badClient = new WarehouseClient({
         chainId: 1,
+        walletClient: walletClient(ALICE),
       })
 
       await expect(
@@ -829,6 +785,7 @@ describe('Warehouse writes', () => {
     test('fails with no provider', async () => {
       const badClient = new WarehouseClient({
         chainId: 1,
+        walletClient: walletClient(ALICE),
       })
 
       await expect(
@@ -902,6 +859,7 @@ describe('Warehouse writes', () => {
     test('fails with no provider', async () => {
       const badClient = new WarehouseClient({
         chainId: 1,
+        walletClient: walletClient(ALICE),
       })
 
       await expect(
@@ -975,6 +933,7 @@ describe('Warehouse writes', () => {
     test('fails with no provider', async () => {
       const badClient = new WarehouseClient({
         chainId: 1,
+        walletClient: walletClient(ALICE),
       })
 
       await expect(
@@ -1042,6 +1001,7 @@ describe('Warehouse reads', () => {
     test('fails with no provider', async () => {
       const badClient = new WarehouseClient({
         chainId: 1,
+        walletClient: walletClient(ALICE),
       })
 
       await expect(
@@ -1067,6 +1027,7 @@ describe('Warehouse reads', () => {
     test('fails with no provider', async () => {
       const badClient = new WarehouseClient({
         chainId: 1,
+        walletClient: walletClient(ALICE),
       })
 
       await expect(
@@ -1092,6 +1053,7 @@ describe('Warehouse reads', () => {
     test('fails with no provider', async () => {
       const badClient = new WarehouseClient({
         chainId: 1,
+        walletClient: walletClient(ALICE),
       })
 
       await expect(
@@ -1117,6 +1079,7 @@ describe('Warehouse reads', () => {
     test('fails with no provider', async () => {
       const badClient = new WarehouseClient({
         chainId: 1,
+        walletClient: walletClient(ALICE),
       })
 
       await expect(
@@ -1143,6 +1106,7 @@ describe('Warehouse reads', () => {
     test('fails with no provider', async () => {
       const badClient = new WarehouseClient({
         chainId: 1,
+        walletClient: walletClient(ALICE),
       })
 
       await expect(
@@ -1170,6 +1134,7 @@ describe('Warehouse reads', () => {
     test('fails with no provider', async () => {
       const badClient = new WarehouseClient({
         chainId: 1,
+        walletClient: walletClient(ALICE),
       })
 
       await expect(async () => await badClient.eip712Domain()).rejects.toThrow(
@@ -1190,6 +1155,7 @@ describe('Warehouse reads', () => {
     test('fails with no provider', async () => {
       const badClient = new WarehouseClient({
         chainId: 1,
+        walletClient: walletClient(ALICE),
       })
 
       await expect(
@@ -1217,6 +1183,7 @@ describe('Warehouse reads', () => {
     test('fails with no provider', async () => {
       const badClient = new WarehouseClient({
         chainId: 1,
+        walletClient: walletClient(ALICE),
       })
 
       await expect(
@@ -1243,6 +1210,7 @@ describe('Warehouse reads', () => {
       test('fails with no provider', async () => {
         const badClient = new WarehouseClient({
           chainId: 1,
+          walletClient: walletClient(ALICE),
         })
 
         await expect(

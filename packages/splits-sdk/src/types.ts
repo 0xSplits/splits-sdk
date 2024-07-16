@@ -38,6 +38,9 @@ export type ApiConfig = {
 
 export type DataClientConfig = {
   publicClient?: PublicClient<Transport, Chain>
+  publicClients?: {
+    [chainId: number]: PublicClient<Transport, Chain>
+  }
   apiConfig: ApiConfig
   includeEnsNames?: boolean
   // ensPublicClient can be used to fetch ens names when publicClient is not on mainnet (reverseRecords
@@ -47,14 +50,21 @@ export type DataClientConfig = {
 
 // Splits
 export type SplitsClientConfig = {
-  chainId: number
+  chainId?: number
   publicClient?: PublicClient<Transport, Chain>
+  publicClients?: {
+    [chainId: number]: PublicClient<Transport, Chain>
+  }
   walletClient?: WalletClient<Transport, Chain, Account>
   apiConfig?: ApiConfig
   includeEnsNames?: boolean
   // ensPublicClient can be used to fetch ens names when publicClient is not on mainnet (reverseRecords
   // only works on mainnet).
   ensPublicClient?: PublicClient<Transport, Chain>
+}
+
+export type BaseClientConfig = SplitsClientConfig & {
+  supportedChainIds: number[]
 }
 
 export type TransactionConfig = {
@@ -66,22 +76,29 @@ export type SplitRecipient = {
   percentAllocation: number
 }
 
+export type ReadContractArgs = {
+  chainId?: number
+}
+
 export type CreateSplitConfig = {
   recipients: SplitRecipient[]
   distributorFeePercent: number
   controller?: string
+  chainId?: number
 } & TransactionOverridesDict
 
 export type UpdateSplitConfig = {
   splitAddress: string
   recipients: SplitRecipient[]
   distributorFeePercent: number
+  chainId?: number
 } & TransactionOverridesDict
 
 export type DistributeTokenConfig = {
   splitAddress: string
   token: string
   distributorAddress?: string
+  chainId?: number
 } & TransactionOverridesDict
 
 export type UpdateSplitAndDistributeTokenConfig = {
@@ -90,28 +107,34 @@ export type UpdateSplitAndDistributeTokenConfig = {
   recipients: SplitRecipient[]
   distributorFeePercent: number
   distributorAddress?: string
+  chainId?: number
 } & TransactionOverridesDict
 
 export type WithdrawFundsConfig = {
   address: string
   tokens: string[]
+  chainId?: number
 } & TransactionOverridesDict
 
 export type InitiateControlTransferConfig = {
   splitAddress: string
   newController: string
+  chainId?: number
 } & TransactionOverridesDict
 
 export type CancelControlTransferConfig = {
   splitAddress: string
+  chainId?: number
 } & TransactionOverridesDict
 
 export type AcceptControlTransferConfig = {
   splitAddress: string
+  chainId?: number
 } & TransactionOverridesDict
 
 export type MakeSplitImmutableConfig = {
   splitAddress: string
+  chainId?: number
 } & TransactionOverridesDict
 
 export type BatchDistributeAndWithdrawConfig = {
@@ -119,17 +142,20 @@ export type BatchDistributeAndWithdrawConfig = {
   tokens: string[]
   recipientAddresses: string[]
   distributorAddress?: string
+  chainId?: number
 }
 
 export type BatchDistributeAndWithdrawForAllConfig = {
   splitAddress: string
   tokens: string[]
   distributorAddress?: string
+  chainId?: number
 }
 
 export type GetSplitBalanceConfig = {
   splitAddress: string
   token?: string
+  chainId?: number
 }
 
 // Warehouse
@@ -276,6 +302,7 @@ export type CreateSplitV2Config = {
   ownerAddress?: Address
   creatorAddress?: Address
   salt?: Hex
+  chainId?: number
 } & TransactionOverridesDict
 
 export type UpdateSplitV2Config = {
@@ -289,6 +316,7 @@ export type DistributeSplitConfig = {
   splitAddress: Address
   tokenAddress: Address
   distributorAddress?: Address
+  chainId?: number
 } & TransactionOverridesDict
 
 export type TransferOwnershipConfig = {
@@ -320,6 +348,7 @@ export type CreateWaterfallConfig = {
   token: string
   tranches: WaterfallTrancheInput[]
   nonWaterfallRecipient?: string
+  chainId?: number
 } & TransactionOverridesDict
 
 export type WaterfallFundsConfig = {
@@ -331,6 +360,7 @@ export type RecoverNonWaterfallFundsConfig = {
   waterfallModuleAddress: string
   token: string
   recipient?: string
+  chainId?: number
 } & TransactionOverridesDict
 
 export type WithdrawWaterfallPullFundsConfig = {
@@ -342,6 +372,7 @@ export type WithdrawWaterfallPullFundsConfig = {
 export type CreateVestingConfig = {
   beneficiary: string
   vestingPeriodSeconds: number
+  chainId?: number
 } & TransactionOverridesDict
 
 export type StartVestConfig = {
@@ -359,12 +390,14 @@ export type CreateLiquidSplitConfig = {
   recipients: SplitRecipient[]
   distributorFeePercent: number
   owner?: string
+  chainId?: number
 } & TransactionOverridesDict
 
 export type DistributeLiquidSplitTokenConfig = {
   liquidSplitAddress: string
   token: string
   distributorAddress?: string
+  chainId?: number
 } & TransactionOverridesDict
 
 export type TransferLiquidSplitOwnershipConfig = {
@@ -387,6 +420,7 @@ export type CreateRecoupConfig = {
   tranches: RecoupTrancheInput[]
   nonWaterfallRecipientAddress?: string
   nonWaterfallRecipientTrancheIndex?: number
+  chainId?: number
 } & TransactionOverridesDict
 
 // Pass through wallet
@@ -394,6 +428,7 @@ export type CreatePassThroughWalletConfig = {
   owner: string
   paused?: boolean
   passThrough: string
+  chainId?: number
 } & TransactionOverridesDict
 
 export type PassThroughTokensConfig = {
@@ -468,6 +503,7 @@ export type UniV3FlashSwapConfig = {
     amountOutMin: bigint
   }[]
   transactionTimeLimit?: number
+  chainId?: number
 } & TransactionOverridesDict
 
 export type SwapperExecCallsConfig = {
@@ -521,6 +557,7 @@ export type CreateDiversifierConfig = {
   paused?: boolean
   oracleParams: ParseOracleParams
   recipients: DiversifierRecipient[]
+  chainId?: number
 } & TransactionOverridesDict
 
 // OUTPUTS

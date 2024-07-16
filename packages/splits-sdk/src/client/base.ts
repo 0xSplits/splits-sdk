@@ -15,16 +15,18 @@ import {
 import { MULTICALL_3_ADDRESS, TransactionType } from '../constants'
 import { multicallAbi } from '../constants/abi/multicall'
 import {
+  InvalidArgumentError,
   InvalidConfigError,
   MissingDataClientError,
   MissingPublicClientError,
   MissingWalletClientError,
+  UnsupportedChainIdError,
 } from '../errors'
 import type {
   ApiConfig,
+  BaseClientConfig,
   CallData,
   MulticallConfig,
-  SplitsClientConfig,
   TransactionConfig,
   TransactionFormat,
   TransactionOverrides,
@@ -33,37 +35,49 @@ import type {
 import { DataClient } from './data'
 
 class BaseClient {
-  readonly _chainId: number
-  readonly _ensPublicClient: PublicClient<Transport, Chain> | undefined
+  readonly _chainId: number | undefined // DEPRECATED
+  readonly _ensPublicClient: PublicClient<Transport, Chain> | undefined // DEPRECATED
   readonly _walletClient: WalletClient<Transport, Chain, Account> | undefined
-  readonly _publicClient: PublicClient<Transport, Chain> | undefined
+  readonly _publicClient: PublicClient<Transport, Chain> | undefined // DEPRECATED
+  readonly _publicClients:
+    | {
+        [chainId: number]: PublicClient<Transport, Chain>
+      }
+    | undefined
   readonly _apiConfig: ApiConfig | undefined
   readonly _includeEnsNames: boolean
   readonly _dataClient: DataClient | undefined
+  readonly _supportedChainIds: number[]
 
   constructor({
     chainId,
     publicClient,
+    publicClients,
     ensPublicClient,
     walletClient,
     apiConfig,
+    supportedChainIds,
     includeEnsNames = false,
-  }: SplitsClientConfig) {
+  }: BaseClientConfig) {
     if (includeEnsNames && !publicClient && !ensPublicClient)
       throw new InvalidConfigError(
         'Must include a mainnet public client if includeEnsNames is set to true',
       )
 
-    this._ensPublicClient = ensPublicClient ?? publicClient
+    this._ensPublicClient =
+      publicClients?.[1] ?? ensPublicClient ?? publicClient
     this._publicClient = publicClient
+    this._publicClients = publicClients
     this._chainId = chainId
     this._walletClient = walletClient
     this._includeEnsNames = includeEnsNames
     this._apiConfig = apiConfig
+    this._supportedChainIds = supportedChainIds
 
     if (apiConfig) {
       this._dataClient = new DataClient({
         publicClient,
+        publicClients,
         ensPublicClient,
         apiConfig,
         includeEnsNames,
@@ -78,15 +92,11 @@ class BaseClient {
       )
   }
 
-  protected _requirePublicClient() {
-    if (!this._publicClient)
-      throw new MissingPublicClientError(
-        'Public client required to perform this action, please update your call to the constructor',
-      )
+  protected _requirePublicClient(chainId: number) {
+    this._getPublicClient(chainId)
   }
 
   protected _requireWalletClient() {
-    this._requirePublicClient()
     if (!this._walletClient)
       throw new MissingWalletClientError(
         'Wallet client required to perform this action, please update your call to the constructor',
@@ -95,6 +105,28 @@ class BaseClient {
       throw new MissingWalletClientError(
         'Wallet client must have an account attached to it to perform this action, please update your wallet client passed into the constructor',
       )
+
+    const chainId = this._walletClient.chain.id
+    if (!this._supportedChainIds.includes(chainId))
+      throw new UnsupportedChainIdError(chainId, this._supportedChainIds)
+
+    this._requirePublicClient(chainId)
+  }
+
+  protected _getPublicClient(chainId: number): PublicClient<Transport, Chain> {
+    if (!this._supportedChainIds.includes(chainId))
+      throw new UnsupportedChainIdError(chainId, this._supportedChainIds)
+
+    if (this._publicClients && this._publicClients[chainId]) {
+      return this._publicClients[chainId]
+    }
+
+    if (!this._publicClient)
+      throw new MissingPublicClientError(
+        `Public client required on chain ${chainId} to perform this action, please update your call to the constructor`,
+      )
+
+    return this._publicClient
   }
 }
 
@@ -104,21 +136,9 @@ export class BaseTransactions extends BaseClient {
 
   constructor({
     transactionType,
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig & TransactionConfig) {
-    super({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
+    ...baseClientArgs
+  }: BaseClientConfig & TransactionConfig) {
+    super(baseClientArgs)
 
     this._transactionType = transactionType
     this._shouldRequireWalletClient = [
@@ -142,15 +162,15 @@ export class BaseTransactions extends BaseClient {
     transactionOverrides: TransactionOverrides
     value?: bigint
   }) {
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error()
     if (this._shouldRequireWalletClient) {
       this._requireWalletClient()
     }
 
     if (this._transactionType === TransactionType.GasEstimate) {
       if (!this._walletClient?.account) throw new Error()
-      const gasEstimate = await this._publicClient.estimateContractGas({
+      const publicClient = this._getPublicClient(this._walletClient.chain.id)
+
+      const gasEstimate = await publicClient.estimateContractGas({
         address: contractAddress,
         abi: contractAbi,
         functionName,
@@ -174,7 +194,8 @@ export class BaseTransactions extends BaseClient {
       }
     } else if (this._transactionType === TransactionType.Transaction) {
       if (!this._walletClient?.account) throw new Error()
-      const { request } = await this._publicClient.simulateContract({
+      const publicClient = this._getPublicClient(this._walletClient.chain.id)
+      const { request } = await publicClient.simulateContract({
         address: contractAddress,
         abi: contractAbi,
         functionName,
@@ -201,6 +222,33 @@ export class BaseTransactions extends BaseClient {
     if (typeof callData === 'string') return false
 
     return true
+  }
+
+  protected _getFunctionChainId(argumentChainId?: number) {
+    if (this._shouldRequireWalletClient) {
+      if (
+        argumentChainId !== undefined &&
+        this._walletClient!.chain.id !== argumentChainId
+      ) {
+        throw new InvalidArgumentError(
+          `Passed in chain id ${argumentChainId} does not match walletClient chain id: ${
+            this._walletClient!.chain.id
+          }.`,
+        )
+      }
+      return this._walletClient!.chain.id
+    }
+
+    return this._getReadOnlyFunctionChainId(argumentChainId)
+  }
+
+  // Ignore wallet client here
+  protected _getReadOnlyFunctionChainId(argumentChainId?: number) {
+    const functionChainId = argumentChainId ?? this._chainId
+    if (!functionChainId)
+      throw new InvalidArgumentError('Please pass in the chainId you are using')
+
+    return functionChainId
   }
 
   async _multicallTransaction({
@@ -238,10 +286,11 @@ export class BaseClientMixin extends BaseTransactions {
     eventTopics: Hex[]
     includeAll?: boolean
   }): Promise<Log[]> {
-    if (!this._publicClient)
-      throw new Error('Public client required to get transaction events')
+    this._requireWalletClient()
+    const chainId = this._walletClient!.chain.id
+    const publicClient = this._getPublicClient(chainId)
 
-    const transaction = await this._publicClient.waitForTransactionReceipt({
+    const transaction = await publicClient.waitForTransactionReceipt({
       hash: txHash,
     })
     if (transaction.status === 'success') {
@@ -269,9 +318,6 @@ export class BaseClientMixin extends BaseTransactions {
   }
 
   async multicall(multicallArgs: MulticallConfig): Promise<{ events: Log[] }> {
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error()
-
     const { txHash } = await this.submitMulticallTransaction(multicallArgs)
     const events = await this.getTransactionEvents({
       txHash,

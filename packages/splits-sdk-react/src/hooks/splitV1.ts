@@ -34,7 +34,7 @@ export const useSplitsClient = (config?: SplitsClientConfig): SplitsClient => {
     config && 'apiConfig' in config
       ? config.apiConfig!.apiKey
       : context.splitsClient._apiConfig?.apiKey
-  const serverUrl =
+  const serverURL =
     config && 'apiConfig' in config
       ? config.apiConfig!.serverURL
       : context.splitsClient._apiConfig?.serverURL
@@ -43,9 +43,19 @@ export const useSplitsClient = (config?: SplitsClientConfig): SplitsClient => {
 
     return {
       apiKey,
-      serverUrl,
+      serverURL,
     }
-  }, [apiKey, serverUrl])
+  }, [apiKey, serverURL])
+
+  // Since publicClients is an array, if it gets set directly it'll be considered "new" on each render
+  const stringPublicClients =
+    config && 'publicClients' in config
+      ? JSON.stringify(config.publicClients)
+      : undefined
+  const publicClients = useMemo(() => {
+    if (stringPublicClients) return config!.publicClients
+    return context.splitsClient._publicClients
+  }, [stringPublicClients])
 
   const chainId =
     config && 'chainId' in config
@@ -69,8 +79,9 @@ export const useSplitsClient = (config?: SplitsClientConfig): SplitsClient => {
       : context.splitsClient._ensPublicClient
   useEffect(() => {
     context.initClient({
-      chainId: chainId!,
+      chainId,
       publicClient,
+      publicClients,
       walletClient,
       apiConfig,
       includeEnsNames,
@@ -79,6 +90,7 @@ export const useSplitsClient = (config?: SplitsClientConfig): SplitsClient => {
   }, [
     chainId,
     publicClient,
+    publicClients,
     walletClient,
     apiConfig,
     includeEnsNames,
@@ -113,6 +125,12 @@ export const useCreateSplit = (): {
         setError(undefined)
         setTxHash(undefined)
 
+        const chainId = splitsClient._walletClient?.chain.id
+        if (!chainId) {
+          throw new Error('Wallet client required')
+        }
+        const eventTopics = splitsClient.getEventTopics(chainId)
+
         const { txHash: hash } =
           await splitsClient.submitCreateSplitTransaction(argsDict)
 
@@ -121,7 +139,7 @@ export const useCreateSplit = (): {
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics: splitsClient.eventTopics.createSplit,
+          eventTopics: eventTopics.createSplit,
         })
 
         const splitMainAbi =
@@ -178,6 +196,12 @@ export const useUpdateSplit = (): {
         setError(undefined)
         setTxHash(undefined)
 
+        const chainId = splitsClient._walletClient?.chain.id
+        if (!chainId) {
+          throw new Error('Wallet client required')
+        }
+        const eventTopics = splitsClient.getEventTopics(chainId)
+
         const { txHash: hash } =
           await splitsClient.submitUpdateSplitTransaction(argsDict)
 
@@ -186,7 +210,7 @@ export const useUpdateSplit = (): {
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics: splitsClient.eventTopics.updateSplit,
+          eventTopics: eventTopics.updateSplit,
         })
 
         setStatus('complete')
@@ -225,6 +249,12 @@ export const useDistributeToken = (): {
         setError(undefined)
         setTxHash(undefined)
 
+        const chainId = splitsClient._walletClient?.chain.id
+        if (!chainId) {
+          throw new Error('Wallet client required')
+        }
+        const eventTopics = splitsClient.getEventTopics(chainId)
+
         const { txHash: hash } =
           await splitsClient.submitDistributeTokenTransaction(argsDict)
 
@@ -233,7 +263,7 @@ export const useDistributeToken = (): {
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics: splitsClient.eventTopics.distributeToken,
+          eventTopics: eventTopics.distributeToken,
         })
 
         setStatus('complete')
@@ -274,6 +304,12 @@ export const useUpdateSplitAndDistributeToken = (): {
         setError(undefined)
         setTxHash(undefined)
 
+        const chainId = splitsClient._walletClient?.chain.id
+        if (!chainId) {
+          throw new Error('Wallet client required')
+        }
+        const eventTopics = splitsClient.getEventTopics(chainId)
+
         const { txHash: hash } =
           await splitsClient.submitUpdateSplitAndDistributeTokenTransaction(
             argsDict,
@@ -284,7 +320,7 @@ export const useUpdateSplitAndDistributeToken = (): {
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics: splitsClient.eventTopics.updateSplitAndDistributeToken,
+          eventTopics: eventTopics.updateSplitAndDistributeToken,
         })
 
         setStatus('complete')
@@ -323,6 +359,12 @@ export const useWithdrawFunds = (): {
         setError(undefined)
         setTxHash(undefined)
 
+        const chainId = splitsClient._walletClient?.chain.id
+        if (!chainId) {
+          throw new Error('Wallet client required')
+        }
+        const eventTopics = splitsClient.getEventTopics(chainId)
+
         const { txHash: hash } =
           await splitsClient.submitWithdrawFundsTransaction(argsDict)
 
@@ -331,7 +373,7 @@ export const useWithdrawFunds = (): {
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics: splitsClient.eventTopics.withdrawFunds,
+          eventTopics: eventTopics.withdrawFunds,
         })
 
         setStatus('complete')
@@ -372,6 +414,12 @@ export const useInitiateControlTransfer = (): {
         setError(undefined)
         setTxHash(undefined)
 
+        const chainId = splitsClient._walletClient?.chain.id
+        if (!chainId) {
+          throw new Error('Wallet client required')
+        }
+        const eventTopics = splitsClient.getEventTopics(chainId)
+
         const { txHash: hash } =
           await splitsClient.submitInitiateControlTransferTransaction(argsDict)
 
@@ -380,7 +428,7 @@ export const useInitiateControlTransfer = (): {
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics: splitsClient.eventTopics.initiateControlTransfer,
+          eventTopics: eventTopics.initiateControlTransfer,
         })
 
         setStatus('complete')
@@ -421,6 +469,12 @@ export const useCancelControlTransfer = (): {
         setError(undefined)
         setTxHash(undefined)
 
+        const chainId = splitsClient._walletClient?.chain.id
+        if (!chainId) {
+          throw new Error('Wallet client required')
+        }
+        const eventTopics = splitsClient.getEventTopics(chainId)
+
         const { txHash: hash } =
           await splitsClient.submitCancelControlTransferTransaction(argsDict)
 
@@ -429,7 +483,7 @@ export const useCancelControlTransfer = (): {
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics: splitsClient.eventTopics.cancelControlTransfer,
+          eventTopics: eventTopics.cancelControlTransfer,
         })
 
         setStatus('complete')
@@ -470,6 +524,12 @@ export const useAcceptControlTransfer = (): {
         setError(undefined)
         setTxHash(undefined)
 
+        const chainId = splitsClient._walletClient?.chain.id
+        if (!chainId) {
+          throw new Error('Wallet client required')
+        }
+        const eventTopics = splitsClient.getEventTopics(chainId)
+
         const { txHash: hash } =
           await splitsClient.submitAcceptControlTransferTransaction(argsDict)
 
@@ -478,7 +538,7 @@ export const useAcceptControlTransfer = (): {
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics: splitsClient.eventTopics.acceptControlTransfer,
+          eventTopics: eventTopics.acceptControlTransfer,
         })
 
         setStatus('complete')
@@ -519,6 +579,12 @@ export const useMakeSplitImmutable = (): {
         setError(undefined)
         setTxHash(undefined)
 
+        const chainId = splitsClient._walletClient?.chain.id
+        if (!chainId) {
+          throw new Error('Wallet client required')
+        }
+        const eventTopics = splitsClient.getEventTopics(chainId)
+
         const { txHash: hash } =
           await splitsClient.submitMakeSplitImmutableTransaction(argsDict)
 
@@ -527,7 +593,7 @@ export const useMakeSplitImmutable = (): {
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics: splitsClient.eventTopics.makeSplitImmutable,
+          eventTopics: eventTopics.makeSplitImmutable,
         })
 
         setStatus('complete')

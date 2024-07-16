@@ -84,34 +84,57 @@ import {
 } from '../utils'
 
 export class DataClient {
-  readonly _ensPublicClient: PublicClient<Transport, Chain> | undefined
-  readonly _publicClient: PublicClient<Transport, Chain> | undefined
+  readonly _ensPublicClient: PublicClient<Transport, Chain> | undefined // DEPRECATED
+  readonly _publicClient: PublicClient<Transport, Chain> | undefined // DEPRECATED
+  readonly _publicClients:
+    | {
+        [chainId: number]: PublicClient<Transport, Chain>
+      }
+    | undefined
   private readonly _graphqlClient: Client | undefined
   readonly _includeEnsNames: boolean
 
   constructor({
     publicClient,
+    publicClients,
     ensPublicClient,
     apiConfig,
     includeEnsNames = false,
   }: DataClientConfig) {
-    if (includeEnsNames && !publicClient && !ensPublicClient)
+    if (
+      includeEnsNames &&
+      !publicClient &&
+      !publicClients?.[1] &&
+      !ensPublicClient
+    )
       throw new InvalidConfigError(
         'Must include a mainnet public client if includeEnsNames is set to true',
       )
 
-    this._ensPublicClient = ensPublicClient ?? publicClient
+    this._ensPublicClient =
+      publicClients?.[1] ?? ensPublicClient ?? publicClient
     this._publicClient = publicClient
+    this._publicClients = publicClients
     this._includeEnsNames = includeEnsNames
 
     this._graphqlClient = getGraphqlClient(apiConfig)
   }
 
-  protected _requirePublicClient() {
+  protected _requirePublicClient(chainId: number) {
+    this._getPublicClient(chainId)
+  }
+
+  protected _getPublicClient(chainId: number): PublicClient<Transport, Chain> {
+    if (this._publicClients && this._publicClients[chainId]) {
+      return this._publicClients[chainId]
+    }
+
     if (!this._publicClient)
       throw new MissingPublicClientError(
-        'Public client required to perform this action, please update your call to the constructor',
+        `Public client required on chain ${chainId} to perform this action, please update your call to the constructor`,
       )
+
+    return this._publicClient
   }
 
   protected async _makeGqlRequest<ResponseType>(
@@ -322,7 +345,7 @@ export class DataClient {
     distributed: FormattedTokenBalances
     activeBalances?: FormattedTokenBalances
   }> {
-    const functionPublicClient = this._publicClient
+    const functionPublicClient = this._getPublicClient(chainId)
 
     const response = await this._loadAccount(accountAddress, chainId)
 
@@ -474,10 +497,7 @@ export class DataClient {
     erc20TokenList?: string[]
   }): Promise<FormattedContractEarnings> {
     validateAddress(contractAddress)
-    if (includeActiveBalances && !this._publicClient)
-      throw new MissingPublicClientError(
-        'Public client required to get contract active balances. Please update your call to the SplitsClient constructor with a valid public client, or set includeActiveBalances to false',
-      )
+    if (includeActiveBalances) this._requirePublicClient(chainId)
 
     const { distributed, activeBalances } = await this._getAccountBalances({
       chainId,
@@ -515,7 +535,7 @@ export class DataClient {
     accountAddress: string
   }): Promise<SplitsContract | undefined> {
     validateAddress(accountAddress)
-    this._requirePublicClient()
+    this._requirePublicClient(chainId)
 
     const response = await this._loadAccount(accountAddress, chainId)
 
@@ -584,8 +604,7 @@ export class DataClient {
     erc20TokenList?: string[]
   }): Promise<FormattedSplitEarnings> {
     validateAddress(splitAddress)
-    if (includeActiveBalances && !this._publicClient)
-      this._requirePublicClient()
+    if (includeActiveBalances) this._requirePublicClient(chainId)
 
     const { distributed, activeBalances } = await this._getAccountBalances({
       chainId,
@@ -717,7 +736,7 @@ export class DataClient {
         chainId,
       )
 
-    return await this.formatLiquidSplit(response)
+    return await this.formatLiquidSplit(chainId, response)
   }
 
   async getSwapperMetadata({
@@ -790,7 +809,7 @@ export class DataClient {
     else if (gqlAccount.type === 'waterfall')
       return await this.formatWaterfallModule(chainId, gqlAccount)
     else if (gqlAccount.type === 'liquidSplit')
-      return await this.formatLiquidSplit(gqlAccount)
+      return await this.formatLiquidSplit(chainId, gqlAccount)
     else if (gqlAccount.type === 'swapper')
       return await this.formatSwapper(gqlAccount)
   }
@@ -799,13 +818,13 @@ export class DataClient {
     chainId: number,
     gqlWaterfallModule: IWaterfallModule,
   ): Promise<WaterfallModule> {
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error()
+    this._requirePublicClient(chainId)
+    const publicClient = this._getPublicClient(chainId)
 
     const tokenData = await getTokenData(
       chainId,
       getAddress(gqlWaterfallModule.token),
-      this._publicClient,
+      publicClient,
     )
 
     const waterfallModule = protectedFormatWaterfallModule(
@@ -823,10 +842,7 @@ export class DataClient {
             ? [waterfallModule.nonWaterfallRecipient]
             : [],
         )
-      await addEnsNames(
-        this._ensPublicClient ?? this._publicClient,
-        ensRecipients,
-      )
+      await addEnsNames(this._ensPublicClient ?? publicClient, ensRecipients)
     }
 
     return waterfallModule
@@ -836,9 +852,8 @@ export class DataClient {
     chainId: number,
     gqlVestingModule: IVestingModule,
   ): Promise<VestingModule> {
-    this._requirePublicClient()
-    const publicClient = this._publicClient
-    if (!publicClient) throw new Error()
+    this._requirePublicClient(chainId)
+    const publicClient = this._getPublicClient(chainId)
 
     const tokenIds = Array.from(
       new Set(gqlVestingModule.streams?.map((stream) => stream.token) ?? []),
@@ -886,9 +901,10 @@ export class DataClient {
   }
 
   private async formatLiquidSplit(
+    chainId: number,
     gqlLiquidSplit: ILiquidSplit,
   ): Promise<LiquidSplit> {
-    this._requirePublicClient()
+    this._requirePublicClient(chainId)
 
     const liquidSplit = protectedFormatLiquidSplit(gqlLiquidSplit)
     if (this._includeEnsNames) {

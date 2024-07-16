@@ -1,11 +1,7 @@
 import { Chain, Hex, PublicClient, Transport } from 'viem'
 
 import { OracleClient } from './oracle'
-import {
-  InvalidConfigError,
-  MissingPublicClientError,
-  UnsupportedChainIdError,
-} from '../errors'
+import { InvalidConfigError, MissingPublicClientError } from '../errors'
 import { validateAddress } from '../utils/validation'
 import { readActions } from '../testing/mocks/oracle'
 import { MockViemContract } from '../testing/mocks/viemContract'
@@ -31,52 +27,6 @@ describe('Client config validation', () => {
     expect(
       () => new OracleClient({ chainId: 1, includeEnsNames: true }),
     ).toThrow(InvalidConfigError)
-  })
-
-  test('Invalid chain id fails', () => {
-    expect(() => new OracleClient({ chainId: 51 })).toThrow(
-      UnsupportedChainIdError,
-    )
-  })
-
-  test('Ethereum chain ids pass', () => {
-    expect(() => new OracleClient({ chainId: 1 })).not.toThrow()
-  })
-
-  test('Polygon chain id pass', () => {
-    expect(() => new OracleClient({ chainId: 137 })).not.toThrow()
-  })
-  test('Mumbai chain id fail', () => {
-    expect(() => new OracleClient({ chainId: 80001 })).toThrow()
-  })
-
-  test('Optimism chain id pass', () => {
-    expect(() => new OracleClient({ chainId: 10 })).not.toThrow()
-  })
-  test('Optimism goerli chain id fail', () => {
-    expect(() => new OracleClient({ chainId: 420 })).toThrow()
-  })
-
-  test('Arbitrum chain ids pass (test chain fails)', () => {
-    expect(() => new OracleClient({ chainId: 42161 })).not.toThrow()
-    expect(() => new OracleClient({ chainId: 421613 })).toThrow()
-  })
-
-  test('Zora chain ids fail', () => {
-    expect(() => new OracleClient({ chainId: 7777777 })).toThrow()
-    expect(() => new OracleClient({ chainId: 999 })).toThrow()
-  })
-
-  test('Base chain ids pass', () => {
-    expect(() => new OracleClient({ chainId: 8453 })).not.toThrow()
-  })
-
-  test('Other chain ids fail', () => {
-    expect(() => new OracleClient({ chainId: 100 })).toThrow()
-    expect(() => new OracleClient({ chainId: 250 })).toThrow()
-    expect(() => new OracleClient({ chainId: 43114 })).toThrow()
-    expect(() => new OracleClient({ chainId: 56 })).toThrow()
-    expect(() => new OracleClient({ chainId: 1313161554 })).toThrow()
   })
 })
 

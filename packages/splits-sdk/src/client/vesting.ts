@@ -25,11 +25,12 @@ import {
 } from '../constants'
 import { vestingFactoryAbi } from '../constants/abi/vestingFactory'
 import { vestingAbi } from '../constants/abi/vesting'
-import { TransactionFailedError, UnsupportedChainIdError } from '../errors'
+import { TransactionFailedError } from '../errors'
 import { applyMixins } from './mixin'
 import type {
   CallData,
   CreateVestingConfig,
+  ReadContractArgs,
   ReleaseVestedFundsConfig,
   SplitsClientConfig,
   StartVestConfig,
@@ -42,29 +43,17 @@ type VestingAbi = typeof vestingAbi
 type VestingFactoryAbi = typeof vestingFactoryAbi
 
 class VestingTransactions extends BaseTransactions {
-  constructor({
-    transactionType,
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig & TransactionConfig) {
+  constructor(transactionClientArgs: SplitsClientConfig & TransactionConfig) {
     super({
-      transactionType,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      supportedChainIds: VESTING_CHAIN_IDS,
+      ...transactionClientArgs,
     })
   }
 
   protected async _createVestingModuleTransaction({
     beneficiary,
     vestingPeriodSeconds,
+    chainId,
     transactionOverrides = {},
   }: CreateVestingConfig): Promise<TransactionFormat> {
     validateAddress(beneficiary)
@@ -72,8 +61,10 @@ class VestingTransactions extends BaseTransactions {
 
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
+    const functionChainId = this._getFunctionChainId(chainId)
+
     const result = await this._executeContractFunction({
-      contractAddress: getVestingFactoryAddress(this._chainId),
+      contractAddress: getVestingFactoryAddress(functionChainId),
       contractAbi: vestingFactoryAbi,
       functionName: 'createVestingModule',
       functionArgs: [beneficiary, vestingPeriodSeconds],
@@ -124,26 +115,28 @@ class VestingTransactions extends BaseTransactions {
 
   protected _getVestingContract(
     vestingModule: string,
+    chainId: number,
   ): GetContractReturnType<VestingAbi, PublicClient<Transport, Chain>> {
+    const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getAddress(vestingModule),
       abi: vestingAbi,
       // @ts-expect-error v1/v2 viem support
-      client: this._publicClient,
-      publicClient: this._publicClient,
+      client: publicClient,
+      publicClient: publicClient,
     })
   }
 
-  protected _getVestingFactoryContract(): GetContractReturnType<
-    VestingFactoryAbi,
-    PublicClient<Transport, Chain>
-  > {
+  protected _getVestingFactoryContract(
+    chainId: number,
+  ): GetContractReturnType<VestingFactoryAbi, PublicClient<Transport, Chain>> {
+    const publicClient = this._getPublicClient(chainId)
     return getContract({
-      address: getVestingFactoryAddress(this._chainId),
+      address: getVestingFactoryAddress(chainId),
       abi: vestingFactoryAbi,
       // @ts-expect-error v1/v2 viem support
-      client: this._publicClient,
-      publicClient: this._publicClient,
+      client: publicClient,
+      publicClient: publicClient,
     })
   }
 }
@@ -154,26 +147,11 @@ export class VestingClient extends VestingTransactions {
   readonly callData: VestingCallData
   readonly estimateGas: VestingGasEstimates
 
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Transaction,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
-
-    if (!VESTING_CHAIN_IDS.includes(chainId))
-      throw new UnsupportedChainIdError(chainId, VESTING_CHAIN_IDS)
 
     this.eventTopics = {
       createVestingModule: [
@@ -196,22 +174,8 @@ export class VestingClient extends VestingTransactions {
       ],
     }
 
-    this.callData = new VestingCallData({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
-    this.estimateGas = new VestingGasEstimates({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
+    this.callData = new VestingCallData(clientArgs)
+    this.estimateGas = new VestingGasEstimates(clientArgs)
   }
 
   // Write actions
@@ -231,9 +195,6 @@ export class VestingClient extends VestingTransactions {
     vestingModuleAddress: string
     event: Log
   }> {
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error()
-
     const { txHash } =
       await this.submitCreateVestingModuleTransaction(createVestingArgs)
     const events = await this.getTransactionEvents({
@@ -269,9 +230,6 @@ export class VestingClient extends VestingTransactions {
   async startVest(startVestArgs: StartVestConfig): Promise<{
     events: Log[]
   }> {
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error()
-
     const { txHash } = await this.submitStartVestTransaction(startVestArgs)
     const events = await this.getTransactionEvents({
       txHash,
@@ -297,9 +255,6 @@ export class VestingClient extends VestingTransactions {
   ): Promise<{
     events: Log[]
   }> {
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error()
-
     const { txHash } =
       await this.submitReleaseVestedFundsTransaction(releaseFundsArgs)
     const events = await this.getTransactionEvents({
@@ -313,15 +268,18 @@ export class VestingClient extends VestingTransactions {
   async predictVestingModuleAddress({
     beneficiary,
     vestingPeriodSeconds,
+    chainId,
   }: CreateVestingConfig): Promise<{
     address: Address
     exists: boolean
   }> {
     validateAddress(beneficiary)
     validateVestingPeriod(vestingPeriodSeconds)
-    this._requirePublicClient()
 
-    const vestingModuleFactoryContract = this._getVestingFactoryContract()
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+
+    const vestingModuleFactoryContract =
+      this._getVestingFactoryContract(functionChainId)
     const [address, exists] =
       await vestingModuleFactoryContract.read.predictVestingModuleAddress([
         getAddress(beneficiary),
@@ -336,15 +294,19 @@ export class VestingClient extends VestingTransactions {
 
   async getBeneficiary({
     vestingModuleAddress,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     vestingModuleAddress: string
   }): Promise<{
     beneficiary: Address
   }> {
     validateAddress(vestingModuleAddress)
-    this._requirePublicClient()
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
 
-    const vestingContract = this._getVestingContract(vestingModuleAddress)
+    const vestingContract = this._getVestingContract(
+      vestingModuleAddress,
+      functionChainId,
+    )
     const beneficiary = await vestingContract.read.beneficiary()
 
     return { beneficiary }
@@ -352,15 +314,19 @@ export class VestingClient extends VestingTransactions {
 
   async getVestingPeriod({
     vestingModuleAddress,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     vestingModuleAddress: string
   }): Promise<{
     vestingPeriod: bigint
   }> {
     validateAddress(vestingModuleAddress)
-    this._requirePublicClient()
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
 
-    const vestingContract = this._getVestingContract(vestingModuleAddress)
+    const vestingContract = this._getVestingContract(
+      vestingModuleAddress,
+      functionChainId,
+    )
     const vestingPeriod = await vestingContract.read.vestingPeriod()
 
     return { vestingPeriod }
@@ -369,16 +335,20 @@ export class VestingClient extends VestingTransactions {
   async getVestedAmount({
     vestingModuleAddress,
     streamId,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     vestingModuleAddress: string
     streamId: string
   }): Promise<{
     amount: bigint
   }> {
     validateAddress(vestingModuleAddress)
-    this._requirePublicClient()
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
 
-    const vestingContract = this._getVestingContract(vestingModuleAddress)
+    const vestingContract = this._getVestingContract(
+      vestingModuleAddress,
+      functionChainId,
+    )
     const amount = await vestingContract.read.vested([BigInt(streamId)])
 
     return { amount }
@@ -387,16 +357,20 @@ export class VestingClient extends VestingTransactions {
   async getVestedAndUnreleasedAmount({
     vestingModuleAddress,
     streamId,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     vestingModuleAddress: string
     streamId: string
   }): Promise<{
     amount: bigint
   }> {
     validateAddress(vestingModuleAddress)
-    this._requirePublicClient()
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
 
-    const vestingContract = this._getVestingContract(vestingModuleAddress)
+    const vestingContract = this._getVestingContract(
+      vestingModuleAddress,
+      functionChainId,
+    )
     const amount = await vestingContract.read.vestedAndUnreleased([
       BigInt(streamId),
     ])
@@ -411,22 +385,10 @@ applyMixins(VestingClient, [BaseClientMixin])
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 class VestingGasEstimates extends VestingTransactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.GasEstimate,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 
@@ -463,22 +425,10 @@ interface VestingGasEstimates extends BaseGasEstimatesMixin {}
 applyMixins(VestingGasEstimates, [BaseGasEstimatesMixin])
 
 class VestingCallData extends VestingTransactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.CallData,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 

@@ -15,7 +15,6 @@ import {
   InvalidConfigError,
   MissingPublicClientError,
   MissingWalletClientError,
-  UnsupportedChainIdError,
 } from '../errors'
 import { validateAddress } from '../utils/validation'
 import { writeActions as factoryWriteActions } from '../testing/mocks/passThroughWalletFactory'
@@ -78,6 +77,9 @@ const mockWalletClient = jest.fn(() => {
     account: {
       address: OWNER_ADDRESS,
     },
+    chain: {
+      id: 1,
+    },
     writeContract: jest.fn(() => {
       return '0xhash'
     }),
@@ -87,6 +89,9 @@ const mockWalletClientNonOwner = jest.fn(() => {
   return {
     account: {
       address: '0xnotOwner',
+    },
+    chain: {
+      id: 1,
     },
     writeContract: jest.fn(() => {
       return '0xhash'
@@ -99,41 +104,6 @@ describe('Client config validation', () => {
     expect(
       () => new PassThroughWalletClient({ chainId: 1, includeEnsNames: true }),
     ).toThrow(InvalidConfigError)
-  })
-
-  test('Invalid chain id fails', () => {
-    expect(() => new PassThroughWalletClient({ chainId: 51 })).toThrow(
-      UnsupportedChainIdError,
-    )
-  })
-
-  test('Ethereum chain ids pass', () => {
-    expect(() => new PassThroughWalletClient({ chainId: 1 })).not.toThrow()
-  })
-
-  test('Polygon chain id pass', () => {
-    expect(() => new PassThroughWalletClient({ chainId: 137 })).not.toThrow()
-  })
-
-  test('Optimism chain id pass', () => {
-    expect(() => new PassThroughWalletClient({ chainId: 10 })).not.toThrow()
-  })
-
-  test('Arbitrum chain ids pass (test chain fails)', () => {
-    expect(() => new PassThroughWalletClient({ chainId: 42161 })).not.toThrow()
-  })
-
-  test('Zora chain ids fail', () => {
-    expect(() => new PassThroughWalletClient({ chainId: 7777777 })).toThrow()
-  })
-
-  test('Base chain ids pass', () => {
-    expect(() => new PassThroughWalletClient({ chainId: 8453 })).not.toThrow()
-  })
-
-  test('Other chain ids fail', () => {
-    expect(() => new PassThroughWalletClient({ chainId: 100 })).toThrow()
-    expect(() => new PassThroughWalletClient({ chainId: 56 })).toThrow()
   })
 })
 
@@ -182,6 +152,7 @@ describe('Pass through wallet writes', () => {
     test('Create pass through wallet fails with no provider', async () => {
       const badClient = new PassThroughWalletClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(
@@ -253,6 +224,7 @@ describe('Pass through wallet writes', () => {
     test('Pass through tokens fails with no provider', async () => {
       const badClient = new PassThroughWalletClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(
@@ -315,6 +287,7 @@ describe('Pass through wallet writes', () => {
     test('Set pass through fails with no provider', async () => {
       const badClient = new PassThroughWalletClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(
@@ -391,6 +364,7 @@ describe('Pass through wallet writes', () => {
     test('Set paused fails with no provider', async () => {
       const badClient = new PassThroughWalletClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(
@@ -473,6 +447,7 @@ describe('Pass through wallet writes', () => {
     test('Exec calls fails with no provider', async () => {
       const badClient = new PassThroughWalletClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(

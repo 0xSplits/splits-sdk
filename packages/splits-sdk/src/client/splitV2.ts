@@ -14,7 +14,6 @@ import {
   zeroAddress,
 } from 'viem'
 import {
-  SPLITS_SUPPORTED_CHAIN_IDS,
   SPLITS_V2_SUPPORTED_CHAIN_IDS,
   TransactionType,
   ZERO,
@@ -27,7 +26,6 @@ import {
   InvalidAuthError,
   SaltRequired,
   TransactionFailedError,
-  UnsupportedChainIdError,
 } from '../errors'
 import {
   CallData,
@@ -64,23 +62,10 @@ const VALID_ERC1271_SIG = '0x1626ba7e'
 
 // TODO:add validation to execute contract function
 class SplitV2Transactions extends BaseTransactions {
-  constructor({
-    transactionType,
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig & TransactionConfig) {
+  constructor(transactionClientArgs: SplitsClientConfig & TransactionConfig) {
     super({
-      transactionType,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      supportedChainIds: SPLITS_V2_SUPPORTED_CHAIN_IDS,
+      ...transactionClientArgs,
     })
   }
 
@@ -92,6 +77,7 @@ class SplitV2Transactions extends BaseTransactions {
     ownerAddress: controllerAddress = zeroAddress,
     creatorAddress = zeroAddress,
     salt,
+    chainId,
     transactionOverrides = {},
   }: CreateSplitV2Config): Promise<TransactionFormat> {
     const {
@@ -109,8 +95,9 @@ class SplitV2Transactions extends BaseTransactions {
     validateAddress(controllerAddress)
     validateAddress(creatorAddress)
 
-    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
+
+    const functionChainId = this._getFunctionChainId(chainId)
 
     const functionName = salt ? 'createSplitDeterministic' : 'createSplit'
     const functionArgs = [
@@ -126,7 +113,7 @@ class SplitV2Transactions extends BaseTransactions {
     if (salt) functionArgs.push(salt)
 
     return this._executeContractFunction({
-      contractAddress: getSplitV2FactoryAddress(this._chainId, splitType),
+      contractAddress: getSplitV2FactoryAddress(functionChainId, splitType),
       contractAbi: splitV2FactoryABI,
       functionName,
       functionArgs,
@@ -142,7 +129,6 @@ class SplitV2Transactions extends BaseTransactions {
     validateAddress(splitAddress)
     validateAddress(newController)
 
-    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
     await this._requireOwner(splitAddress)
 
@@ -162,7 +148,6 @@ class SplitV2Transactions extends BaseTransactions {
   }: SetPausedConfig): Promise<TransactionFormat> {
     validateAddress(splitAddress)
 
-    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
     await this._requireOwner(splitAddress)
 
@@ -183,7 +168,6 @@ class SplitV2Transactions extends BaseTransactions {
     validateAddress(splitAddress)
     calls.map((call) => validateAddress(call.to))
 
-    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
     this._requireOwner(splitAddress)
 
@@ -217,7 +201,6 @@ class SplitV2Transactions extends BaseTransactions {
     validateAddress(splitAddress)
     recipientAddresses.map((recipient) => validateAddress(recipient))
 
-    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
     this._requireOwner(splitAddress)
 
@@ -241,22 +224,28 @@ class SplitV2Transactions extends BaseTransactions {
     splitAddress,
     tokenAddress: token,
     distributorAddress = this._walletClient?.account.address as Address,
+    chainId,
     transactionOverrides = {},
   }: DistributeSplitConfig): Promise<TransactionFormat> {
     validateAddress(splitAddress)
     validateAddress(token)
     validateAddress(distributorAddress)
 
-    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
+
+    const functionChainId = this._getFunctionChainId(chainId)
+
     let split: Split
 
     if (this._dataClient)
       split = await this._dataClient.getSplitMetadata({
-        chainId: this._chainId,
+        chainId: functionChainId,
         splitAddress,
       })
-    else split = (await this._getSplitMetadataViaProvider(splitAddress)).split
+    else
+      split = (
+        await this._getSplitMetadataViaProvider(splitAddress, functionChainId)
+      ).split
 
     const recipientAddresses = split.recipients.map(
       (recipient) => recipient.recipient.address,
@@ -289,41 +278,46 @@ class SplitV2Transactions extends BaseTransactions {
     })
   }
 
-  async _paused(splitAddress: Address): Promise<boolean> {
-    this._requirePublicClient()
-    return this._getSplitV2Contract(splitAddress).read.paused()
-  }
-
-  async _owner(splitAddress: Address): Promise<Address> {
-    this._requirePublicClient()
-    return this._getSplitV2Contract(splitAddress).read.owner()
-  }
-
-  async _getSplitMetadataViaProvider(
+  protected async _paused(
     splitAddress: Address,
+    chainId: number,
+  ): Promise<boolean> {
+    return this._getSplitV2Contract(splitAddress, chainId).read.paused()
+  }
+
+  protected async _owner(
+    splitAddress: Address,
+    chainId: number,
+  ): Promise<Address> {
+    return this._getSplitV2Contract(splitAddress, chainId).read.owner()
+  }
+
+  protected async _getSplitMetadataViaProvider(
+    splitAddress: Address,
+    chainId: number,
   ): Promise<{ split: Split }> {
-    this._requirePublicClient()
+    const publicClient = this._getPublicClient(chainId)
 
     const [createLogs, owner, paused] = await Promise.all([
-      this._publicClient?.getLogs({
+      publicClient.getLogs({
         event: splitCreatedEvent,
         address: [
-          getSplitV2FactoryAddress(this._chainId, SplitV2Type.Pull),
-          getSplitV2FactoryAddress(this._chainId, SplitV2Type.Push),
+          getSplitV2FactoryAddress(chainId, SplitV2Type.Pull),
+          getSplitV2FactoryAddress(chainId, SplitV2Type.Push),
         ],
         args: {
           split: splitAddress,
         },
         strict: true,
-        fromBlock: getSplitV2FactoriesStartBlock(this._chainId),
+        fromBlock: getSplitV2FactoriesStartBlock(chainId),
       }),
-      this._owner(splitAddress),
-      this._paused(splitAddress),
+      this._owner(splitAddress, chainId),
+      this._paused(splitAddress, chainId),
     ])
 
     if (!createLogs) throw new Error('Split not found')
 
-    const updateLogs = await this._publicClient?.getLogs({
+    const updateLogs = await publicClient.getLogs({
       address: splitAddress,
       event: splitUpdatedEvent,
       strict: true,
@@ -351,7 +345,7 @@ class SplitV2Transactions extends BaseTransactions {
       distributorFeePercent: fromBigIntToPercent(
         createLogs[0].args.splitParams.distributionIncentive,
       ),
-      distributeDirection: getSplitType(this._chainId, createLogs[0].address),
+      distributeDirection: getSplitType(chainId, createLogs[0].address),
       type: 'SplitV2',
       controller: {
         address: owner,
@@ -396,39 +390,45 @@ class SplitV2Transactions extends BaseTransactions {
 
   protected _getSplitV2Contract(
     splitAddress: Address,
+    chainId: number,
   ): GetContractReturnType<SplitV2ABI, PublicClient<Transport, Chain>> {
     validateAddress(splitAddress)
+    const publicClient = this._getPublicClient(chainId)
 
     return getContract({
       address: splitAddress,
       abi: splitV2ABI,
       // @ts-expect-error v1/v2 viem support
-      client: this._publicClient,
-      publicClient: this._publicClient,
+      client: publicClient,
+      publicClient: publicClient,
       walletClient: this._walletClient,
     })
   }
 
   protected _getSplitV2FactoryContract(
     splitType: SplitV2Type,
+    chainId: number,
   ): GetContractReturnType<SplitFactoryABI, PublicClient<Transport, Chain>> {
+    const publicClient = this._getPublicClient(chainId)
+
     return getContract({
-      address: getSplitV2FactoryAddress(this._chainId, splitType),
+      address: getSplitV2FactoryAddress(chainId, splitType),
       abi: splitV2FactoryABI,
       // @ts-expect-error v1/v2 viem support
-      client: this._publicClient,
-      publicClient: this._publicClient,
+      client: publicClient,
+      publicClient: publicClient,
       walletClient: this._walletClient,
     })
   }
 
   protected async _eip712Domain(
     splitAddress: Address,
+    chainId: number,
   ): Promise<{ domain: TypedDataDomain }> {
-    this._requirePublicClient()
-
-    const eip712Domain =
-      await this._getSplitV2Contract(splitAddress).read.eip712Domain()
+    const eip712Domain = await this._getSplitV2Contract(
+      splitAddress,
+      chainId,
+    ).read.eip712Domain()
 
     return {
       domain: {
@@ -442,7 +442,10 @@ class SplitV2Transactions extends BaseTransactions {
   }
 
   protected async _requireOwner(splitAddress: Address) {
-    const ownerAddress = await this._owner(splitAddress)
+    const ownerAddress = await this._owner(
+      splitAddress,
+      this._walletClient!.chain.id,
+    )
 
     const walletAddress = this._walletClient!.account.address
 
@@ -460,27 +463,11 @@ export class SplitV2Client extends SplitV2Transactions {
   readonly estimateGas: SplitV2GasEstimates
   readonly sign: SplitV2Signature
 
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Transaction,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
-
-    if (!SPLITS_V2_SUPPORTED_CHAIN_IDS.includes(chainId))
-      throw new UnsupportedChainIdError(chainId, SPLITS_SUPPORTED_CHAIN_IDS)
-
     this.eventTopics = {
       splitCreated: [
         encodeEventTopics({
@@ -520,30 +507,9 @@ export class SplitV2Client extends SplitV2Transactions {
       ],
     }
 
-    this.callData = new SplitV2CallData({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
-    this.estimateGas = new SplitV2GasEstimates({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
-    this.sign = new SplitV2Signature({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
+    this.callData = new SplitV2CallData(clientArgs)
+    this.estimateGas = new SplitV2GasEstimates(clientArgs)
+    this.sign = new SplitV2Signature(clientArgs)
   }
 
   async submitCreateSplitTransaction(
@@ -765,10 +731,12 @@ export class SplitV2Client extends SplitV2Transactions {
     validateAddress(createSplitArgs.creatorAddress)
     recipientAddresses.map((recipient) => validateAddress(recipient))
 
-    this._requirePublicClient()
-
+    const functionChainId = this._getReadOnlyFunctionChainId(
+      createSplitArgs.chainId,
+    )
     const factory = this._getSplitV2FactoryContract(
       createSplitArgs.splitType ?? SplitV2Type.Pull,
+      functionChainId,
     )
 
     let splitAddress
@@ -824,10 +792,13 @@ export class SplitV2Client extends SplitV2Transactions {
 
     validateAddress(createSplitArgs.ownerAddress)
     recipientAddresses.map((recipient) => validateAddress(recipient))
-    this._requirePublicClient()
 
+    const functionChainId = this._getReadOnlyFunctionChainId(
+      createSplitArgs.chainId,
+    )
     const factory = this._getSplitV2FactoryContract(
       createSplitArgs.splitType ?? SplitV2Type.Pull,
+      functionChainId,
     )
 
     if (!createSplitArgs.salt) throw new SaltRequired()
@@ -851,18 +822,22 @@ export class SplitV2Client extends SplitV2Transactions {
   async getSplitBalance({
     splitAddress,
     tokenAddress,
+    chainId,
   }: {
     splitAddress: Address
     tokenAddress: Address
+    chainId?: number
   }): Promise<{
     splitBalance: bigint
     warehouseBalance: bigint
   }> {
     validateAddress(tokenAddress)
 
-    this._requirePublicClient()
-
-    const splitContract = this._getSplitV2Contract(splitAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const splitContract = this._getSplitV2Contract(
+      splitAddress,
+      functionChainId,
+    )
 
     const [splitBalance, warehouseBalance] =
       await splitContract.read.getSplitBalance([tokenAddress])
@@ -876,13 +851,17 @@ export class SplitV2Client extends SplitV2Transactions {
   async getReplaySafeHash({
     splitAddress,
     hash,
+    chainId,
   }: {
     splitAddress: Address
     hash: Hex
+    chainId?: number
   }): Promise<{ hash: Hex }> {
-    this._requirePublicClient()
-
-    const splitContract = this._getSplitV2Contract(splitAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const splitContract = this._getSplitV2Contract(
+      splitAddress,
+      functionChainId,
+    )
 
     const replaySafeHash = await splitContract.read.replaySafeHash([hash])
 
@@ -895,16 +874,20 @@ export class SplitV2Client extends SplitV2Transactions {
     splitAddress,
     hash,
     signature,
+    chainId,
   }: {
     splitAddress: Address
     hash: Hex
     signature: Hex
+    chainId?: number
   }): Promise<{ isValid: boolean }> {
     validateAddress(splitAddress)
 
-    this._requirePublicClient()
-
-    const splitContract = this._getSplitV2Contract(splitAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const splitContract = this._getSplitV2Contract(
+      splitAddress,
+      functionChainId,
+    )
 
     return {
       isValid:
@@ -915,24 +898,40 @@ export class SplitV2Client extends SplitV2Transactions {
 
   async eip712Domain({
     splitAddress,
+    chainId,
   }: {
     splitAddress: Address
+    chainId?: number
   }): Promise<{ domain: TypedDataDomain }> {
-    this._requirePublicClient()
-    return this._eip712Domain(splitAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    return this._eip712Domain(splitAddress, functionChainId)
   }
 
-  async paused({ splitAddress }: { splitAddress: Address }): Promise<{
+  async paused({
+    splitAddress,
+    chainId,
+  }: {
+    splitAddress: Address
+    chainId?: number
+  }): Promise<{
     paused: boolean
   }> {
-    const paused = await this._paused(splitAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const paused = await this._paused(splitAddress, functionChainId)
     return { paused }
   }
 
-  async owner({ splitAddress }: { splitAddress: Address }): Promise<{
+  async owner({
+    splitAddress,
+    chainId,
+  }: {
+    splitAddress: Address
+    chainId?: number
+  }): Promise<{
     ownerAddress: Address
   }> {
-    const ownerAddress = await this._owner(splitAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const ownerAddress = await this._owner(splitAddress, functionChainId)
     return { ownerAddress }
   }
 }
@@ -943,22 +942,10 @@ applyMixins(SplitV2Client, [BaseClientMixin])
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 class SplitV2GasEstimates extends SplitV2Transactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.GasEstimate,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 
@@ -1012,22 +999,10 @@ interface SplitV2GasEstimates extends BaseGasEstimatesMixin {}
 applyMixins(SplitV2GasEstimates, [BaseGasEstimatesMixin])
 
 class SplitV2CallData extends SplitV2Transactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.CallData,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 
@@ -1077,30 +1052,20 @@ class SplitV2CallData extends SplitV2Transactions {
 }
 
 class SplitV2Signature extends SplitV2Transactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Signature,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 
   async signData(
     splitAddress: Address,
     data: Hex,
+    chainId?: number,
   ): Promise<{ signature: Hex }> {
-    const { domain } = await this._eip712Domain(splitAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const { domain } = await this._eip712Domain(splitAddress, functionChainId)
 
     this._requireWalletClient()
 

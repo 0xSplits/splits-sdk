@@ -12,7 +12,7 @@ import {
   parseEther,
   zeroAddress,
 } from 'viem'
-import { ChainId, getSplitV2FactoryAddress } from '../constants'
+import { getSplitV2FactoryAddress } from '../constants'
 import {
   InvalidConfigError,
   InvalidDistributorFeePercentErrorV2,
@@ -20,7 +20,6 @@ import {
   MissingPublicClientError,
   MissingWalletClientError,
   SaltRequired,
-  UnsupportedChainIdError,
 } from '../errors'
 import { SplitV2Client } from './splitV2'
 import { base, mainnet } from 'viem/chains'
@@ -36,47 +35,6 @@ describe('Client config validation', () => {
     expect(
       () => new SplitV2Client({ chainId: 1, includeEnsNames: true }),
     ).toThrow(InvalidConfigError)
-  })
-
-  test('Invalid chain id fails', () => {
-    expect(() => new SplitV2Client({ chainId: 51 })).toThrow(
-      UnsupportedChainIdError,
-    )
-  })
-
-  test('Ethereum chain ids pass', () => {
-    expect(() => new SplitV2Client({ chainId: ChainId.MAINNET })).not.toThrow()
-    expect(() => new SplitV2Client({ chainId: ChainId.HOLESKY })).not.toThrow()
-    expect(() => new SplitV2Client({ chainId: ChainId.SEPOLIA })).not.toThrow()
-  })
-
-  test('Polygon chain ids pass', () => {
-    expect(() => new SplitV2Client({ chainId: ChainId.POLYGON })).not.toThrow()
-  })
-
-  test('Optimism chain ids pass', () => {
-    expect(() => new SplitV2Client({ chainId: ChainId.OPTIMISM })).not.toThrow()
-    expect(
-      () => new SplitV2Client({ chainId: ChainId.OPTIMISM_SEPOLIA }),
-    ).not.toThrow()
-  })
-
-  test('Arbitrum chain ids pass', () => {
-    expect(() => new SplitV2Client({ chainId: ChainId.ARBITRUM })).not.toThrow()
-  })
-
-  test('Zora chain ids pass', () => {
-    expect(() => new SplitV2Client({ chainId: ChainId.ZORA })).not.toThrow()
-    expect(
-      () => new SplitV2Client({ chainId: ChainId.ZORA_SEPOLIA }),
-    ).not.toThrow()
-  })
-
-  test('Base chain ids pass', () => {
-    expect(() => new SplitV2Client({ chainId: ChainId.BASE })).not.toThrow()
-    expect(
-      () => new SplitV2Client({ chainId: ChainId.BASE_SEPOLIA }),
-    ).not.toThrow()
   })
 })
 
@@ -121,6 +79,7 @@ describe('Split v2 writes', () => {
     test('fails with no provider', async () => {
       const badClient = new SplitV2Client({
         chainId: 1,
+        walletClient: walletClient(ALICE),
       })
 
       await expect(
@@ -167,7 +126,9 @@ describe('Split v2 writes', () => {
       })
 
       expect(getAddress(event.address)).toEqual(
-        getAddress(getSplitV2FactoryAddress(client._chainId, SplitV2Type.Pull)),
+        getAddress(
+          getSplitV2FactoryAddress(client._chainId!, SplitV2Type.Pull),
+        ),
       )
       expect(decodedLog.eventName).toEqual('SplitCreated')
       if (decodedLog.eventName === 'SplitCreated') {
@@ -199,7 +160,9 @@ describe('Split v2 writes', () => {
       })
 
       expect(getAddress(event.address)).toEqual(
-        getAddress(getSplitV2FactoryAddress(client._chainId, SplitV2Type.Pull)),
+        getAddress(
+          getSplitV2FactoryAddress(client._chainId!, SplitV2Type.Pull),
+        ),
       )
       expect(decodedLog.eventName).toEqual('SplitCreated')
       if (decodedLog.eventName === 'SplitCreated') {
@@ -232,7 +195,9 @@ describe('Split v2 writes', () => {
       })
 
       expect(getAddress(event.address)).toEqual(
-        getAddress(getSplitV2FactoryAddress(client._chainId, SplitV2Type.Push)),
+        getAddress(
+          getSplitV2FactoryAddress(client._chainId!, SplitV2Type.Push),
+        ),
       )
       expect(decodedLog.eventName).toEqual('SplitCreated')
       if (decodedLog.eventName === 'SplitCreated') {
@@ -266,7 +231,9 @@ describe('Split v2 writes', () => {
       })
 
       expect(getAddress(event.address)).toEqual(
-        getAddress(getSplitV2FactoryAddress(client._chainId, SplitV2Type.Push)),
+        getAddress(
+          getSplitV2FactoryAddress(client._chainId!, SplitV2Type.Push),
+        ),
       )
       expect(decodedLog.eventName).toEqual('SplitCreated')
       if (decodedLog.eventName === 'SplitCreated') {
@@ -340,6 +307,7 @@ describe('Split v2 writes', () => {
     test('fails with no provider', async () => {
       const badClient = new SplitV2Client({
         chainId: 1,
+        walletClient: walletClient(ALICE),
       })
 
       await expect(
@@ -402,6 +370,7 @@ describe('Split v2 writes', () => {
     test('fails with no provider', async () => {
       const badClient = new SplitV2Client({
         chainId: 1,
+        walletClient: walletClient(ALICE),
       })
 
       await expect(
@@ -463,6 +432,7 @@ describe('Split v2 writes', () => {
     test('fails with no provider', async () => {
       const badClient = new SplitV2Client({
         chainId: 1,
+        walletClient: walletClient(ALICE),
       })
 
       await expect(
@@ -524,6 +494,7 @@ describe('Split v2 writes', () => {
     test('fails with no provider', async () => {
       const badClient = new SplitV2Client({
         chainId: 1,
+        walletClient: walletClient(ALICE),
       })
 
       await expect(
@@ -595,6 +566,7 @@ describe('Split v2 writes', () => {
     test('fails with no provider', async () => {
       const badClient = new SplitV2Client({
         chainId: 1,
+        walletClient: walletClient(ALICE),
       })
 
       await expect(

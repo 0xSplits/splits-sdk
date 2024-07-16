@@ -14,10 +14,8 @@ import {
   InvalidConfigError,
   MissingPublicClientError,
   MissingWalletClientError,
-  UnsupportedChainIdError,
 } from '../errors'
 import { validateAddress, validateVestingPeriod } from '../utils/validation'
-import { MockGraphqlClient } from '../testing/mocks/graphql'
 import {
   writeActions as factoryWriteActions,
   readActions as factoryReadActions,
@@ -82,6 +80,9 @@ const mockWalletClient = jest.fn(() => {
     account: {
       address: '0xsigner',
     },
+    chain: {
+      id: 1,
+    },
     writeContract: jest.fn(() => {
       return '0xhash'
     }),
@@ -93,41 +94,6 @@ describe('Client config validation', () => {
     expect(
       () => new VestingClient({ chainId: 1, includeEnsNames: true }),
     ).toThrow(InvalidConfigError)
-  })
-
-  test('Invalid chain id fails', () => {
-    expect(() => new VestingClient({ chainId: 51 })).toThrow(
-      UnsupportedChainIdError,
-    )
-  })
-
-  test('Ethereum chain ids pass', () => {
-    expect(() => new VestingClient({ chainId: 1 })).not.toThrow()
-  })
-
-  test('Polygon chain ids pass', () => {
-    expect(() => new VestingClient({ chainId: 137 })).not.toThrow()
-  })
-
-  test('Optimism chain ids pass', () => {
-    expect(() => new VestingClient({ chainId: 10 })).not.toThrow()
-  })
-
-  test('Arbitrum chain ids pass', () => {
-    expect(() => new VestingClient({ chainId: 42161 })).not.toThrow()
-  })
-
-  test('Zora chain ids pass', () => {
-    expect(() => new VestingClient({ chainId: 7777777 })).not.toThrow()
-  })
-
-  test('Base chain ids pass', () => {
-    expect(() => new VestingClient({ chainId: 8453 })).not.toThrow()
-  })
-
-  test('Other chain ids pass', () => {
-    expect(() => new VestingClient({ chainId: 100 })).not.toThrow()
-    expect(() => new VestingClient({ chainId: 56 })).not.toThrow()
   })
 })
 
@@ -175,6 +141,7 @@ describe('Vesting writes', () => {
     test('Create veingst fails with no provider', async () => {
       const badClient = new VestingClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(
@@ -241,6 +208,7 @@ describe('Vesting writes', () => {
     test('Start vest fails with no provider', async () => {
       const badClient = new VestingClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(
@@ -303,6 +271,7 @@ describe('Vesting writes', () => {
     test('Release vested funds fails with no provider', async () => {
       const badClient = new VestingClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(
@@ -533,14 +502,4 @@ describe('Vesting reads', () => {
       expect(readActions.vestedAndUnreleased).toBeCalledWith([BigInt(streamId)])
     })
   })
-})
-
-const mockGqlClient = new MockGraphqlClient()
-jest.mock('graphql-request', () => {
-  return {
-    GraphQLClient: jest.fn().mockImplementation(() => {
-      return mockGqlClient
-    }),
-    gql: jest.fn(),
-  }
 })

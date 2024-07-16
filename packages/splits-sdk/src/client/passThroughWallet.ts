@@ -25,11 +25,7 @@ import {
 } from '../constants'
 import { passThroughWalletFactoryAbi } from '../constants/abi/passThroughWalletFactory'
 import { passThroughWalletAbi } from '../constants/abi/passThroughWallet'
-import {
-  InvalidAuthError,
-  TransactionFailedError,
-  UnsupportedChainIdError,
-} from '../errors'
+import { InvalidAuthError, TransactionFailedError } from '../errors'
 import { applyMixins } from './mixin'
 import type {
   CallData,
@@ -47,23 +43,10 @@ import { validateAddress } from '../utils/validation'
 type PassThroughWalletAbi = typeof passThroughWalletAbi
 
 class PassThroughWalletTransactions extends BaseTransactions {
-  constructor({
-    transactionType,
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig & TransactionConfig) {
+  constructor(transactionClientArgs: SplitsClientConfig & TransactionConfig) {
     super({
-      transactionType,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      supportedChainIds: PASS_THROUGH_WALLET_CHAIN_IDS,
+      ...transactionClientArgs,
     })
   }
 
@@ -71,14 +54,17 @@ class PassThroughWalletTransactions extends BaseTransactions {
     owner,
     paused = false,
     passThrough,
+    chainId,
     transactionOverrides = {},
   }: CreatePassThroughWalletConfig): Promise<TransactionFormat> {
     validateAddress(owner)
     validateAddress(passThrough)
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
+    const functionChainId = this._getFunctionChainId(chainId)
+
     const result = await this._executeContractFunction({
-      contractAddress: getPassThroughWalletFactoryAddress(this._chainId),
+      contractAddress: getPassThroughWalletFactoryAddress(functionChainId),
       contractAbi: passThroughWalletFactoryAbi,
       functionName: 'createPassThroughWallet',
       functionArgs: [[owner, paused, passThrough]],
@@ -181,13 +167,14 @@ class PassThroughWalletTransactions extends BaseTransactions {
   }
 
   private async _requireOwner(passThroughWalletAddress: string) {
-    const passThroughWalletContract = this._getPassThroughWalletContract(
-      passThroughWalletAddress,
-    )
-    const owner = await passThroughWalletContract.read.owner()
-
     this._requireWalletClient()
     const walletAddress = this._walletClient!.account?.address
+
+    const passThroughWalletContract = this._getPassThroughWalletContract(
+      passThroughWalletAddress,
+      this._walletClient!.chain.id,
+    )
+    const owner = await passThroughWalletContract.read.owner()
 
     if (owner !== walletAddress)
       throw new InvalidAuthError(
@@ -197,16 +184,19 @@ class PassThroughWalletTransactions extends BaseTransactions {
 
   protected _getPassThroughWalletContract(
     passThroughWallet: string,
+    chainId: number,
   ): GetContractReturnType<
     PassThroughWalletAbi,
     PublicClient<Transport, Chain>
   > {
+    const publicClient = this._getPublicClient(chainId)
+
     return getContract({
       address: getAddress(passThroughWallet),
       abi: passThroughWalletAbi,
       // @ts-expect-error v1/v2 viem support
-      client: this._publicClient,
-      publicClient: this._publicClient,
+      client: publicClient,
+      publicClient: publicClient,
     })
   }
 }
@@ -217,26 +207,11 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
   readonly callData: PassThroughWalletCallData
   readonly estimateGas: PassThroughWalletGasEstimates
 
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Transaction,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
-
-    if (!PASS_THROUGH_WALLET_CHAIN_IDS.includes(chainId))
-      throw new UnsupportedChainIdError(chainId, PASS_THROUGH_WALLET_CHAIN_IDS)
 
     this.eventTopics = {
       createPassThroughWallet: [
@@ -271,22 +246,8 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
       ],
     }
 
-    this.callData = new PassThroughWalletCallData({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
-    this.estimateGas = new PassThroughWalletGasEstimates({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
+    this.callData = new PassThroughWalletCallData(clientArgs)
+    this.estimateGas = new PassThroughWalletGasEstimates(clientArgs)
   }
 
   // Write actions
@@ -431,9 +392,6 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
   async execCalls(args: PassThroughWalletExecCallsConfig): Promise<{
     event: Log
   }> {
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error()
-
     const { txHash } = await this.submitExecCallsTransaction(args)
     const events = await this.getTransactionEvents({
       txHash,
@@ -451,16 +409,19 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
   // Read actions
   async getPassThrough({
     passThroughWalletAddress,
+    chainId,
   }: {
     passThroughWalletAddress: string
+    chainId?: number
   }): Promise<{
     passThrough: string
   }> {
     validateAddress(passThroughWalletAddress)
-    this._requirePublicClient()
 
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
     const passThroughWalletContract = this._getPassThroughWalletContract(
       passThroughWalletAddress,
+      functionChainId,
     )
     const passThrough = await passThroughWalletContract.read.passThrough()
 
@@ -476,22 +437,10 @@ applyMixins(PassThroughWalletClient, [BaseClientMixin])
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 class PassThroughWalletGasEstimates extends PassThroughWalletTransactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.GasEstimate,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 
@@ -538,22 +487,10 @@ interface PassThroughWalletGasEstimates extends BaseGasEstimatesMixin {}
 applyMixins(PassThroughWalletGasEstimates, [BaseGasEstimatesMixin])
 
 class PassThroughWalletCallData extends PassThroughWalletTransactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.CallData,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 
