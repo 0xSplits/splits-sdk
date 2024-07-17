@@ -508,7 +508,6 @@ type GqlSwapDiversifierFundsBalance = {
   inputAmount: Scalars['String']
   outputToken: GqlToken
   outputAmount: Scalars['String']
-  recipient: GqlReceiveOwnerSwappedDiversifierFundsEvent
   ownerSwapDiversifierFundsEvent: GqlOwnerSwapDiversifierFundsEvent
 }
 
