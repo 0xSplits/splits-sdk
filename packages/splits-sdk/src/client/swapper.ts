@@ -28,17 +28,14 @@ import {
 import { swapperFactoryAbi } from '../constants/abi/swapperFactory'
 import { uniV3SwapAbi } from '../constants/abi/uniV3Swap'
 import { swapperAbi } from '../constants/abi/swapper'
-import {
-  InvalidAuthError,
-  TransactionFailedError,
-  UnsupportedChainIdError,
-} from '../errors'
+import { InvalidAuthError, TransactionFailedError } from '../errors'
 import { applyMixins } from './mixin'
 import type {
   CallData,
   ContractQuoteParams,
   ContractSwapperExactInputParams,
   CreateSwapperConfig,
+  ReadContractArgs,
   SplitsClientConfig,
   SwapperExecCallsConfig,
   SwapperPauseConfig,
@@ -68,23 +65,10 @@ type SwapperAbi = typeof swapperAbi
 type UniV3SwapAbi = typeof uniV3SwapAbi
 
 class SwapperTransactions extends BaseTransactions {
-  constructor({
-    transactionType,
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig & TransactionConfig) {
+  constructor(transactionClientArgs: SplitsClientConfig & TransactionConfig) {
     super({
-      transactionType,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      supportedChainIds: SWAPPER_CHAIN_IDS,
+      ...transactionClientArgs,
     })
   }
 
@@ -139,14 +123,15 @@ class SwapperTransactions extends BaseTransactions {
     excessRecipient,
     inputAssets,
     transactionTimeLimit = 300,
+    chainId,
     transactionOverrides = {},
   }: UniV3FlashSwapConfig): Promise<TransactionFormat> {
     validateAddress(swapperAddress)
     validateUniV3SwapInputAssets(inputAssets)
 
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error('Public client required')
     if (this._shouldRequireWalletClient) this._requireWalletClient()
+
+    const functionChainId = this._getFunctionChainId(chainId)
 
     const excessRecipientAddress = excessRecipient
       ? excessRecipient
@@ -159,7 +144,7 @@ class SwapperTransactions extends BaseTransactions {
 
     // TO DO: handle bad swapper id/no metadata found
     const { tokenToBeneficiary } = await this._dataClient!.getSwapperMetadata({
-      chainId: this._chainId,
+      chainId: functionChainId,
       swapperAddress,
     })
 
@@ -373,10 +358,13 @@ class SwapperTransactions extends BaseTransactions {
   }
 
   private async _requireOwner(swapperAddress: string) {
-    const swapperContract = this._getSwapperContract(swapperAddress)
-    const owner = await swapperContract.read.owner()
-
     this._requireWalletClient()
+
+    const swapperContract = this._getSwapperContract(
+      swapperAddress,
+      this._walletClient!.chain.id,
+    )
+    const owner = await swapperContract.read.owner()
 
     const walletAddress = this._walletClient!.account.address
 
@@ -386,28 +374,30 @@ class SwapperTransactions extends BaseTransactions {
       )
   }
 
-  protected _getUniV3SwapContract(): GetContractReturnType<
-    UniV3SwapAbi,
-    PublicClient<Transport, Chain>
-  > {
+  protected _getUniV3SwapContract(
+    chainId: number,
+  ): GetContractReturnType<UniV3SwapAbi, PublicClient<Transport, Chain>> {
+    const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getUniV3SwapAddress(),
       abi: uniV3SwapAbi,
       // @ts-expect-error v1/v2 viem support
-      client: this._publicClient,
-      publicClient: this._publicClient,
+      client: publicClient,
+      publicClient: publicClient,
     })
   }
 
   protected _getSwapperContract(
     swapper: string,
+    chainId: number,
   ): GetContractReturnType<SwapperAbi, PublicClient<Transport, Chain>> {
+    const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getAddress(swapper),
       abi: swapperAbi,
       // @ts-expect-error v1/v2 viem support
-      client: this._publicClient,
-      publicClient: this._publicClient,
+      client: publicClient,
+      publicClient: publicClient,
     })
   }
 }
@@ -418,27 +408,11 @@ export class SwapperClient extends SwapperTransactions {
   readonly callData: SwapperCallData
   readonly estimateGas: SwapperGasEstimates
 
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Transaction,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
-
-    if (!SWAPPER_CHAIN_IDS.includes(chainId))
-      throw new UnsupportedChainIdError(chainId, SWAPPER_CHAIN_IDS)
-
     this.eventTopics = {
       createSwapper: [
         encodeEventTopics({
@@ -496,22 +470,8 @@ export class SwapperClient extends SwapperTransactions {
       ],
     }
 
-    this.callData = new SwapperCallData({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
-    this.estimateGas = new SwapperGasEstimates({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
+    this.callData = new SwapperCallData(clientArgs)
+    this.estimateGas = new SwapperGasEstimates(clientArgs)
   }
 
   // Write actions
@@ -740,9 +700,6 @@ export class SwapperClient extends SwapperTransactions {
   ): Promise<{
     event: Log
   }> {
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error()
-
     const { txHash } =
       await this.submitSetDefaultScaledOfferFactorTransaction(args)
     const events = await this.getTransactionEvents({
@@ -775,9 +732,6 @@ export class SwapperClient extends SwapperTransactions {
   ): Promise<{
     event: Log
   }> {
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error()
-
     const { txHash } =
       await this.submitSetScaledOfferFactorOverridesTransaction(args)
     const events = await this.getTransactionEvents({
@@ -796,15 +750,19 @@ export class SwapperClient extends SwapperTransactions {
   // Read actions
   async getBeneficiary({
     swapperAddress,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     swapperAddress: string
   }): Promise<{
     beneficiary: Address
   }> {
     validateAddress(swapperAddress)
-    this._requirePublicClient()
 
-    const swapperContract = this._getSwapperContract(swapperAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const swapperContract = this._getSwapperContract(
+      swapperAddress,
+      functionChainId,
+    )
     const beneficiary = await swapperContract.read.beneficiary()
 
     return {
@@ -814,15 +772,19 @@ export class SwapperClient extends SwapperTransactions {
 
   async getTokenToBeneficiary({
     swapperAddress,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     swapperAddress: string
   }): Promise<{
     tokenToBeneficiary: Address
   }> {
     validateAddress(swapperAddress)
-    this._requirePublicClient()
 
-    const swapperContract = this._getSwapperContract(swapperAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const swapperContract = this._getSwapperContract(
+      swapperAddress,
+      functionChainId,
+    )
     const tokenToBeneficiary = await swapperContract.read.tokenToBeneficiary()
 
     return {
@@ -830,13 +792,19 @@ export class SwapperClient extends SwapperTransactions {
     }
   }
 
-  async getOracle({ swapperAddress }: { swapperAddress: string }): Promise<{
+  async getOracle({
+    swapperAddress,
+    chainId,
+  }: ReadContractArgs & { swapperAddress: string }): Promise<{
     oracle: Address
   }> {
     validateAddress(swapperAddress)
-    this._requirePublicClient()
 
-    const swapperContract = this._getSwapperContract(swapperAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const swapperContract = this._getSwapperContract(
+      swapperAddress,
+      functionChainId,
+    )
     const oracle = await swapperContract.read.oracle()
 
     return {
@@ -846,15 +814,19 @@ export class SwapperClient extends SwapperTransactions {
 
   async getDefaultScaledOfferFactor({
     swapperAddress,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     swapperAddress: string
   }): Promise<{
     defaultScaledOfferFactor: number
   }> {
     validateAddress(swapperAddress)
-    this._requirePublicClient()
 
-    const swapperContract = this._getSwapperContract(swapperAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const swapperContract = this._getSwapperContract(
+      swapperAddress,
+      functionChainId,
+    )
     const defaultScaledOfferFactor =
       await swapperContract.read.defaultScaledOfferFactor()
 
@@ -866,7 +838,8 @@ export class SwapperClient extends SwapperTransactions {
   async getScaledOfferFactorOverrides({
     swapperAddress,
     quotePairs,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     swapperAddress: string
     quotePairs: {
       base: string
@@ -880,7 +853,6 @@ export class SwapperClient extends SwapperTransactions {
       validateAddress(quotePair.base)
       validateAddress(quotePair.quote)
     })
-    this._requirePublicClient()
 
     const formattedQuotePairs = quotePairs.map((quotePair) => {
       return {
@@ -889,7 +861,11 @@ export class SwapperClient extends SwapperTransactions {
       }
     })
 
-    const swapperContract = this._getSwapperContract(swapperAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const swapperContract = this._getSwapperContract(
+      swapperAddress,
+      functionChainId,
+    )
     const scaledOfferFactorOverrides =
       await swapperContract.read.getPairScaledOfferFactors([
         formattedQuotePairs,
@@ -907,22 +883,10 @@ applyMixins(SwapperClient, [BaseClientMixin])
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 class SwapperGasEstimates extends SwapperTransactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.GasEstimate,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 
@@ -1002,22 +966,10 @@ interface SwapperGasEstimates extends BaseGasEstimatesMixin {}
 applyMixins(SwapperGasEstimates, [BaseGasEstimatesMixin])
 
 class SwapperCallData extends SwapperTransactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.CallData,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 

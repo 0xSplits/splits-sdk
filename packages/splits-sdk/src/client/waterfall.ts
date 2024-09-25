@@ -26,15 +26,12 @@ import {
 } from '../constants'
 import { waterfallFactoryAbi } from '../constants/abi/waterfallFactory'
 import { waterfallAbi } from '../constants/abi/waterfall'
-import {
-  InvalidArgumentError,
-  TransactionFailedError,
-  UnsupportedChainIdError,
-} from '../errors'
+import { InvalidArgumentError, TransactionFailedError } from '../errors'
 import { applyMixins } from './mixin'
 import type {
   CallData,
   CreateWaterfallConfig,
+  ReadContractArgs,
   RecoverNonWaterfallFundsConfig,
   SplitsClientConfig,
   TransactionConfig,
@@ -48,23 +45,10 @@ import { validateAddress, validateWaterfallTranches } from '../utils/validation'
 type WaterfallAbi = typeof waterfallAbi
 
 class WaterfallTransactions extends BaseTransactions {
-  constructor({
-    transactionType,
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig & TransactionConfig) {
+  constructor(transactionClientArgs: SplitsClientConfig & TransactionConfig) {
     super({
-      transactionType,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      supportedChainIds: WATERFALL_CHAIN_IDS,
+      ...transactionClientArgs,
     })
   }
 
@@ -72,27 +56,29 @@ class WaterfallTransactions extends BaseTransactions {
     token,
     tranches,
     nonWaterfallRecipient = zeroAddress,
+    chainId,
     transactionOverrides = {},
   }: CreateWaterfallConfig): Promise<TransactionFormat> {
     validateAddress(token)
     validateAddress(nonWaterfallRecipient)
     validateWaterfallTranches(tranches)
-    this._requirePublicClient()
-    if (!this._publicClient) throw new Error('Public client required')
     if (this._shouldRequireWalletClient) this._requireWalletClient()
+
+    const functionChainId = this._getFunctionChainId(chainId)
+    const publicClient = this._getPublicClient(functionChainId)
 
     const formattedToken = getAddress(token)
     const formattedNonWaterfallRecipient = getAddress(nonWaterfallRecipient)
 
     const [recipients, trancheSizes] = await getTrancheRecipientsAndSizes(
-      this._chainId,
+      functionChainId,
       formattedToken,
       tranches,
-      this._publicClient,
+      publicClient,
     )
 
     const result = await this._executeContractFunction({
-      contractAddress: getWaterfallFactoryAddress(this._chainId),
+      contractAddress: getWaterfallFactoryAddress(functionChainId),
       contractAbi: waterfallFactoryAbi,
       functionName: 'createWaterfallModule',
       functionArgs: [
@@ -129,16 +115,21 @@ class WaterfallTransactions extends BaseTransactions {
     waterfallModuleAddress,
     token,
     recipient = zeroAddress,
+    chainId,
     transactionOverrides = {},
   }: RecoverNonWaterfallFundsConfig): Promise<TransactionFormat> {
     validateAddress(waterfallModuleAddress)
     validateAddress(token)
     validateAddress(recipient)
     this._requireWalletClient()
+
+    const functionChainId = this._getFunctionChainId(chainId)
+
     await this._validateRecoverTokensWaterfallData({
       waterfallModuleAddress,
       token,
       recipient,
+      chainId: functionChainId,
     })
 
     const result = await this._executeContractFunction({
@@ -176,14 +167,16 @@ class WaterfallTransactions extends BaseTransactions {
     waterfallModuleAddress,
     token,
     recipient,
+    chainId,
   }: {
     waterfallModuleAddress: string
     token: string
     recipient: string
+    chainId: number
   }) {
     this._requireDataClient()
     const waterfallMetadata = await this._dataClient!.getWaterfallMetadata({
-      chainId: this._chainId,
+      chainId,
       waterfallModuleAddress,
     })
 
@@ -223,13 +216,15 @@ class WaterfallTransactions extends BaseTransactions {
 
   protected _getWaterfallContract(
     waterfallModule: string,
+    chainId: number,
   ): GetContractReturnType<WaterfallAbi, PublicClient<Transport, Chain>> {
+    const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getAddress(waterfallModule),
       abi: waterfallAbi,
       // @ts-expect-error v1/v2 viem support
-      client: this._publicClient,
-      publicClient: this._publicClient,
+      client: publicClient,
+      publicClient: publicClient,
     })
   }
 }
@@ -240,27 +235,11 @@ export class WaterfallClient extends WaterfallTransactions {
   readonly callData: WaterfallCallData
   readonly estimateGas: WaterfallGasEstimates
 
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Transaction,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
-
-    if (!WATERFALL_CHAIN_IDS.includes(chainId))
-      throw new UnsupportedChainIdError(chainId, WATERFALL_CHAIN_IDS)
-
     this.eventTopics = {
       createWaterfallModule: [
         encodeEventTopics({
@@ -288,22 +267,8 @@ export class WaterfallClient extends WaterfallTransactions {
       ],
     }
 
-    this.callData = new WaterfallCallData({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
-    this.estimateGas = new WaterfallGasEstimates({
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
+    this.callData = new WaterfallCallData(clientArgs)
+    this.estimateGas = new WaterfallGasEstimates(clientArgs)
   }
 
   // Write actions
@@ -446,15 +411,19 @@ export class WaterfallClient extends WaterfallTransactions {
   // Read actions
   async getDistributedFunds({
     waterfallModuleAddress,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     waterfallModuleAddress: string
   }): Promise<{
     distributedFunds: bigint
   }> {
     validateAddress(waterfallModuleAddress)
-    this._requirePublicClient()
 
-    const contract = this._getWaterfallContract(waterfallModuleAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const contract = this._getWaterfallContract(
+      waterfallModuleAddress,
+      functionChainId,
+    )
     const distributedFunds = await contract.read.distributedFunds()
 
     return {
@@ -464,15 +433,19 @@ export class WaterfallClient extends WaterfallTransactions {
 
   async getFundsPendingWithdrawal({
     waterfallModuleAddress,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     waterfallModuleAddress: string
   }): Promise<{
     fundsPendingWithdrawal: bigint
   }> {
     validateAddress(waterfallModuleAddress)
-    this._requirePublicClient()
 
-    const waterfallContract = this._getWaterfallContract(waterfallModuleAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const waterfallContract = this._getWaterfallContract(
+      waterfallModuleAddress,
+      functionChainId,
+    )
     const fundsPendingWithdrawal =
       await waterfallContract.read.fundsPendingWithdrawal()
 
@@ -483,16 +456,20 @@ export class WaterfallClient extends WaterfallTransactions {
 
   async getTranches({
     waterfallModuleAddress,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     waterfallModuleAddress: string
   }): Promise<{
     recipients: Address[]
     thresholds: bigint[]
   }> {
     validateAddress(waterfallModuleAddress)
-    this._requirePublicClient()
 
-    const waterfallContract = this._getWaterfallContract(waterfallModuleAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const waterfallContract = this._getWaterfallContract(
+      waterfallModuleAddress,
+      functionChainId,
+    )
     const [recipients, thresholds] = await waterfallContract.read.getTranches()
 
     return {
@@ -503,15 +480,19 @@ export class WaterfallClient extends WaterfallTransactions {
 
   async getNonWaterfallRecipient({
     waterfallModuleAddress,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     waterfallModuleAddress: string
   }): Promise<{
     nonWaterfallRecipient: Address
   }> {
     validateAddress(waterfallModuleAddress)
-    this._requirePublicClient()
 
-    const waterfallContract = this._getWaterfallContract(waterfallModuleAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const waterfallContract = this._getWaterfallContract(
+      waterfallModuleAddress,
+      functionChainId,
+    )
     const nonWaterfallRecipient =
       await waterfallContract.read.nonWaterfallRecipient()
 
@@ -522,15 +503,19 @@ export class WaterfallClient extends WaterfallTransactions {
 
   async getToken({
     waterfallModuleAddress,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     waterfallModuleAddress: string
   }): Promise<{
     token: Address
   }> {
     validateAddress(waterfallModuleAddress)
-    this._requirePublicClient()
 
-    const waterfallContract = this._getWaterfallContract(waterfallModuleAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const waterfallContract = this._getWaterfallContract(
+      waterfallModuleAddress,
+      functionChainId,
+    )
     const token = await waterfallContract.read.token()
 
     return {
@@ -541,16 +526,20 @@ export class WaterfallClient extends WaterfallTransactions {
   async getPullBalance({
     waterfallModuleAddress,
     address,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     waterfallModuleAddress: string
     address: string
   }): Promise<{
     pullBalance: bigint
   }> {
     validateAddress(waterfallModuleAddress)
-    this._requirePublicClient()
 
-    const waterfallContract = this._getWaterfallContract(waterfallModuleAddress)
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const waterfallContract = this._getWaterfallContract(
+      waterfallModuleAddress,
+      functionChainId,
+    )
     const pullBalance = await waterfallContract.read.getPullBalance([
       getAddress(address),
     ])
@@ -567,22 +556,10 @@ applyMixins(WaterfallClient, [BaseClientMixin])
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 class WaterfallGasEstimates extends WaterfallTransactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.GasEstimate,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 
@@ -631,22 +608,10 @@ interface WaterfallGasEstimates extends BaseGasEstimatesMixin {}
 applyMixins(WaterfallGasEstimates, [BaseGasEstimatesMixin])
 
 class WaterfallCallData extends WaterfallTransactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.CallData,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 

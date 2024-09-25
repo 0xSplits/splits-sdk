@@ -21,6 +21,7 @@ import {
 } from './base'
 import {
   CallData,
+  ReadContractArgs,
   SplitsClientConfig,
   TransactionConfig,
   TransactionFormat,
@@ -46,7 +47,7 @@ import {
   SPLITS_V2_SUPPORTED_CHAIN_IDS,
   getWarehouseAddress,
 } from '../constants'
-import { TransactionFailedError, UnsupportedChainIdError } from '../errors'
+import { TransactionFailedError } from '../errors'
 import { applyMixins } from './mixin'
 import { getNumberFromPercent, validateAddress } from '../utils'
 
@@ -56,37 +57,25 @@ const nativeTokenAddress: Address = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
 
 class WarehouseTransactions extends BaseTransactions {
   protected readonly _warehouseAbi
-  protected readonly _warehouseContract: GetContractReturnType<
-    WarehouseAbiType,
-    PublicClient<Transport, Chain>
-  >
 
-  constructor({
-    transactionType,
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig & TransactionConfig) {
+  constructor(transactionClientArgs: SplitsClientConfig & TransactionConfig) {
     super({
-      transactionType,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-    })
-
-    this._warehouseContract = getContract({
-      address: getWarehouseAddress(),
-      abi: warehouseAbi,
-      publicClient: this._publicClient,
+      supportedChainIds: SPLITS_V2_SUPPORTED_CHAIN_IDS,
+      ...transactionClientArgs,
     })
 
     this._warehouseAbi = warehouseAbi
+  }
+
+  protected _getWarehouseContract(
+    chainId: number,
+  ): GetContractReturnType<WarehouseAbiType, PublicClient<Transport, Chain>> {
+    const publicClient = this._getPublicClient(chainId)
+    return getContract({
+      address: getWarehouseAddress(),
+      abi: warehouseAbi,
+      publicClient: publicClient,
+    })
   }
 
   protected async _transfer({
@@ -98,11 +87,10 @@ class WarehouseTransactions extends BaseTransactions {
     validateAddress(receiver)
     validateAddress(token)
 
-    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const result = await this._executeContractFunction({
-      contractAddress: this._warehouseContract.address,
+      contractAddress: getWarehouseAddress(),
       contractAbi: warehouseAbi,
       functionName: 'transfer',
       functionArgs: [receiver, fromHex(token, 'bigint'), amount],
@@ -123,11 +111,10 @@ class WarehouseTransactions extends BaseTransactions {
     validateAddress(receiver)
     validateAddress(token)
 
-    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const result = await this._executeContractFunction({
-      contractAddress: this._warehouseContract.address,
+      contractAddress: getWarehouseAddress(),
       contractAbi: warehouseAbi,
       functionName: 'transferFrom',
       functionArgs: [sender, receiver, fromHex(token, 'bigint'), amount],
@@ -146,11 +133,10 @@ class WarehouseTransactions extends BaseTransactions {
     validateAddress(spender)
     validateAddress(token)
 
-    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const result = await this._executeContractFunction({
-      contractAddress: this._warehouseContract.address,
+      contractAddress: getWarehouseAddress(),
       contractAbi: warehouseAbi,
       functionName: 'approve',
       functionArgs: [spender, fromHex(token, 'bigint'), amount],
@@ -167,11 +153,10 @@ class WarehouseTransactions extends BaseTransactions {
   }: WarehouseSetOperatorConfig): Promise<TransactionFormat> {
     validateAddress(operator)
 
-    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const result = await this._executeContractFunction({
-      contractAddress: this._warehouseContract.address,
+      contractAddress: getWarehouseAddress(),
       contractAbi: warehouseAbi,
       functionName: 'setOperator',
       functionArgs: [operator, approved],
@@ -185,11 +170,10 @@ class WarehouseTransactions extends BaseTransactions {
     nonce,
     transactionOverrides = {},
   }: WarehouseInvalidateNonceConfig): Promise<TransactionFormat> {
-    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const result = await this._executeContractFunction({
-      contractAddress: this._warehouseContract.address,
+      contractAddress: getWarehouseAddress(),
       contractAbi: warehouseAbi,
       functionName: 'invalidateNonce',
       functionArgs: [nonce],
@@ -212,11 +196,10 @@ class WarehouseTransactions extends BaseTransactions {
     validateAddress(token)
     validateAddress(target)
 
-    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const result = await this._executeContractFunction({
-      contractAddress: this._warehouseContract.address,
+      contractAddress: getWarehouseAddress(),
       contractAbi: warehouseAbi,
       functionName: 'temporaryApproveAndCall',
       functionArgs: [
@@ -251,11 +234,10 @@ class WarehouseTransactions extends BaseTransactions {
     validateAddress(token)
     validateAddress(target)
 
-    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const result = await this._executeContractFunction({
-      contractAddress: this._warehouseContract.address,
+      contractAddress: getWarehouseAddress(),
       contractAbi: warehouseAbi,
       functionName: 'temporaryApproveAndCallBySig',
       functionArgs: [
@@ -291,11 +273,10 @@ class WarehouseTransactions extends BaseTransactions {
     validateAddress(spender)
     validateAddress(token)
 
-    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const result = await this._executeContractFunction({
-      contractAddress: this._warehouseContract.address,
+      contractAddress: getWarehouseAddress(),
       contractAbi: warehouseAbi,
       functionName: 'approveBySig',
       functionArgs: [
@@ -323,11 +304,10 @@ class WarehouseTransactions extends BaseTransactions {
     validateAddress(receiver)
     validateAddress(token)
 
-    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const result = await this._executeContractFunction({
-      contractAddress: this._warehouseContract.address,
+      contractAddress: getWarehouseAddress(),
       contractAbi: warehouseAbi,
       functionName: 'deposit',
       functionArgs: [receiver, token, amount],
@@ -347,11 +327,10 @@ class WarehouseTransactions extends BaseTransactions {
     receivers.map((receiver) => validateAddress(receiver))
     validateAddress(token)
 
-    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const result = await this._executeContractFunction({
-      contractAddress: this._warehouseContract.address,
+      contractAddress: getWarehouseAddress(),
       contractAbi: warehouseAbi,
       functionName: 'batchDeposit',
       functionArgs: [receivers, token, amounts],
@@ -370,11 +349,10 @@ class WarehouseTransactions extends BaseTransactions {
     validateAddress(owner)
     validateAddress(token)
 
-    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const result = await this._executeContractFunction({
-      contractAddress: this._warehouseContract.address,
+      contractAddress: getWarehouseAddress(),
       contractAbi: warehouseAbi,
       functionName: 'withdraw',
       functionArgs: [owner, token],
@@ -395,11 +373,10 @@ class WarehouseTransactions extends BaseTransactions {
     tokens.map((token) => validateAddress(token))
     validateAddress(withdrawer)
 
-    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const result = await this._executeContractFunction({
-      contractAddress: this._warehouseContract.address,
+      contractAddress: getWarehouseAddress(),
       contractAbi: warehouseAbi,
       functionName: 'withdraw',
       functionArgs: [owner, tokens, amounts, withdrawer],
@@ -418,11 +395,10 @@ class WarehouseTransactions extends BaseTransactions {
     receivers.map((receiver) => validateAddress(receiver))
     validateAddress(token)
 
-    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const result = await this._executeContractFunction({
-      contractAddress: this._warehouseContract.address,
+      contractAddress: getWarehouseAddress(),
       contractAbi: warehouseAbi,
       functionName: 'batchTransfer',
       functionArgs: [receivers, token, amounts],
@@ -437,11 +413,10 @@ class WarehouseTransactions extends BaseTransactions {
     paused,
     transactionOverrides = {},
   }: WarehouseSetWithdrawConfig): Promise<TransactionFormat> {
-    this._requirePublicClient()
     if (this._shouldRequireWalletClient) this._requireWalletClient()
 
     const result = await this._executeContractFunction({
-      contractAddress: this._warehouseContract.address,
+      contractAddress: getWarehouseAddress(),
       contractAbi: warehouseAbi,
       functionName: 'setWithdrawConfig',
       functionArgs: [{ incentive: getNumberFromPercent(incentive), paused }],
@@ -451,10 +426,11 @@ class WarehouseTransactions extends BaseTransactions {
     return result
   }
 
-  protected async _eip712Domain(): Promise<{ domain: TypedDataDomain }> {
-    this._requirePublicClient()
-
-    const eip712Domain = await this._warehouseContract.read.eip712Domain()
+  protected async _eip712Domain(
+    chainId: number,
+  ): Promise<{ domain: TypedDataDomain }> {
+    const eip712Domain =
+      await this._getWarehouseContract(chainId).read.eip712Domain()
 
     return {
       domain: {
@@ -475,26 +451,11 @@ export class WarehouseClient extends WarehouseTransactions {
   readonly estimateGas: WarehouseGasEstimates
   readonly sign: WarehouseSignature
 
-  constructor({
-    chainId,
-    publicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-    ensPublicClient,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Transaction,
-      chainId,
-      publicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-      ensPublicClient,
+      ...clientArgs,
     })
-
-    if (!SPLITS_V2_SUPPORTED_CHAIN_IDS.includes(chainId))
-      throw new UnsupportedChainIdError(chainId, SPLITS_V2_SUPPORTED_CHAIN_IDS)
 
     this.eventTopics = {
       transfer: [
@@ -535,43 +496,22 @@ export class WarehouseClient extends WarehouseTransactions {
       ],
     }
 
-    this.callData = new WarehouseCallData({
-      chainId,
-      publicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-      ensPublicClient,
-    })
-
-    this.estimateGas = new WarehouseGasEstimates({
-      chainId,
-      publicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-      ensPublicClient,
-    })
-
-    this.sign = new WarehouseSignature({
-      chainId,
-      publicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
-      ensPublicClient,
-    })
+    this.callData = new WarehouseCallData(clientArgs)
+    this.estimateGas = new WarehouseGasEstimates(clientArgs)
+    this.sign = new WarehouseSignature(clientArgs)
   }
 
   // ERC6909 Metadata
-  async getName({ tokenAddress }: { tokenAddress: Address }): Promise<{
+  async getName({
+    tokenAddress,
+    chainId,
+  }: ReadContractArgs & { tokenAddress: Address }): Promise<{
     name: string
   }> {
     validateAddress(tokenAddress)
 
-    this._requirePublicClient()
-
-    const name = await this._warehouseContract.read.name([
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const name = await this._getWarehouseContract(functionChainId).read.name([
       fromHex(tokenAddress, 'bigint'),
     ])
 
@@ -580,32 +520,38 @@ export class WarehouseClient extends WarehouseTransactions {
     }
   }
 
-  async getSymbol({ tokenAddress }: { tokenAddress: Address }): Promise<{
+  async getSymbol({
+    tokenAddress,
+    chainId,
+  }: ReadContractArgs & { tokenAddress: Address }): Promise<{
     symbol: string
   }> {
     validateAddress(tokenAddress)
 
-    this._requirePublicClient()
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
 
-    const symbol = await this._warehouseContract.read.symbol([
-      fromHex(tokenAddress, 'bigint'),
-    ])
+    const symbol = await this._getWarehouseContract(
+      functionChainId,
+    ).read.symbol([fromHex(tokenAddress, 'bigint')])
 
     return {
       symbol,
     }
   }
 
-  async getDecimals({ tokenAddress }: { tokenAddress: Address }): Promise<{
+  async getDecimals({
+    tokenAddress,
+    chainId,
+  }: ReadContractArgs & { tokenAddress: Address }): Promise<{
     decimals: number
   }> {
     validateAddress(tokenAddress)
 
-    this._requirePublicClient()
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
 
-    const decimals = await this._warehouseContract.read.decimals([
-      fromHex(tokenAddress, 'bigint'),
-    ])
+    const decimals = await this._getWarehouseContract(
+      functionChainId,
+    ).read.decimals([fromHex(tokenAddress, 'bigint')])
 
     return {
       decimals,
@@ -615,16 +561,17 @@ export class WarehouseClient extends WarehouseTransactions {
   // Warehouse withdraw config
   async getWithdrawConfig({
     userAddress,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     userAddress: Address
   }): Promise<{ withdrawConfig: { incentive: number; paused: boolean } }> {
     validateAddress(userAddress)
 
-    this._requirePublicClient()
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
 
-    const config = await this._warehouseContract.read.withdrawConfig([
-      userAddress,
-    ])
+    const config = await this._getWarehouseContract(
+      functionChainId,
+    ).read.withdrawConfig([userAddress])
 
     return {
       withdrawConfig: {
@@ -638,45 +585,49 @@ export class WarehouseClient extends WarehouseTransactions {
   async isValidNonce({
     userAddress,
     userNonce,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     userAddress: Address
     userNonce: bigint
   }): Promise<{ isValidNonce: boolean }> {
     validateAddress(userAddress)
 
-    this._requirePublicClient()
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
 
-    const isValidNonce = await this._warehouseContract.read.isValidNonce([
-      userAddress,
-      userNonce,
-    ])
+    const isValidNonce = await this._getWarehouseContract(
+      functionChainId,
+    ).read.isValidNonce([userAddress, userNonce])
 
     return {
       isValidNonce,
     }
   }
 
-  async eip712Domain(): Promise<{ domain: TypedDataDomain }> {
-    return this._eip712Domain()
+  async eip712Domain(
+    args?: ReadContractArgs,
+  ): Promise<{ domain: TypedDataDomain }> {
+    const chainId = args?.chainId
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    return this._eip712Domain(functionChainId)
   }
 
   // ERC6909 read
   async isOperator({
     ownerAddress,
     operatorAddress,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     ownerAddress: Address
     operatorAddress: Address
   }): Promise<{ isOperator: boolean }> {
     validateAddress(ownerAddress)
     validateAddress(operatorAddress)
 
-    this._requirePublicClient()
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
 
-    const isOperator = await this._warehouseContract.read.isOperator([
-      ownerAddress,
-      operatorAddress,
-    ])
+    const isOperator = await this._getWarehouseContract(
+      functionChainId,
+    ).read.isOperator([ownerAddress, operatorAddress])
 
     return {
       isOperator,
@@ -686,19 +637,19 @@ export class WarehouseClient extends WarehouseTransactions {
   async balanceOf({
     ownerAddress,
     tokenAddress,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     ownerAddress: Address
     tokenAddress: Address
   }): Promise<{ balance: bigint }> {
     validateAddress(ownerAddress)
     validateAddress(tokenAddress)
 
-    this._requirePublicClient()
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
 
-    const balance = await this._warehouseContract.read.balanceOf([
-      ownerAddress,
-      fromHex(tokenAddress, 'bigint'),
-    ])
+    const balance = await this._getWarehouseContract(
+      functionChainId,
+    ).read.balanceOf([ownerAddress, fromHex(tokenAddress, 'bigint')])
 
     return {
       balance,
@@ -709,7 +660,8 @@ export class WarehouseClient extends WarehouseTransactions {
     ownerAddress,
     spenderAddress,
     tokenAddress,
-  }: {
+    chainId,
+  }: ReadContractArgs & {
     ownerAddress: Address
     spenderAddress: Address
     tokenAddress: Address
@@ -718,9 +670,11 @@ export class WarehouseClient extends WarehouseTransactions {
     validateAddress(spenderAddress)
     validateAddress(tokenAddress)
 
-    this._requirePublicClient()
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
 
-    const allowance = await this._warehouseContract.read.allowance([
+    const allowance = await this._getWarehouseContract(
+      functionChainId,
+    ).read.allowance([
       ownerAddress,
       spenderAddress,
       fromHex(tokenAddress, 'bigint'),
@@ -1069,22 +1023,10 @@ applyMixins(WarehouseClient, [BaseClientMixin])
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 class WarehouseGasEstimates extends WarehouseTransactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames = false,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.GasEstimate,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 
@@ -1230,22 +1172,10 @@ interface WarehouseGasEstimates extends BaseGasEstimatesMixin {}
 applyMixins(WarehouseGasEstimates, [BaseGasEstimatesMixin])
 
 class WarehouseCallData extends WarehouseTransactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.CallData,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 
@@ -1387,22 +1317,10 @@ class WarehouseCallData extends WarehouseTransactions {
 }
 
 class WarehouseSignature extends WarehouseTransactions {
-  constructor({
-    chainId,
-    publicClient,
-    ensPublicClient,
-    walletClient,
-    apiConfig,
-    includeEnsNames,
-  }: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig) {
     super({
       transactionType: TransactionType.Signature,
-      chainId,
-      publicClient,
-      ensPublicClient,
-      walletClient,
-      apiConfig,
-      includeEnsNames,
+      ...clientArgs,
     })
   }
 
@@ -1411,17 +1329,18 @@ class WarehouseSignature extends WarehouseTransactions {
   ): Promise<WarehouseApproveBySigConfig> {
     validateAddress(approveBySigArgs.spenderAddress)
     validateAddress(approveBySigArgs.tokenAddress)
+    this._requireWalletClient()
 
-    const { domain } = await this._eip712Domain()
+    const { domain } = await this._eip712Domain(this._walletClient!.chain.id)
 
     this._requireWalletClient()
 
-    const signature = await this._walletClient?.signTypedData({
+    const signature = await this._walletClient!.signTypedData({
       domain,
       types: SigTypes,
       primaryType: 'ERC6909XApproveAndCall',
       message: {
-        owner: this._walletClient.account.address,
+        owner: this._walletClient!.account.address,
         spender: approveBySigArgs.spenderAddress,
         temporary: false,
         operator: approveBySigArgs.operator,
@@ -1437,7 +1356,7 @@ class WarehouseSignature extends WarehouseTransactions {
     if (!signature) throw new Error('Error in signing data')
 
     return {
-      ownerAddress: this._walletClient?.account.address as Address,
+      ownerAddress: this._walletClient!.account.address as Address,
       signature,
       ...approveBySigArgs,
     }
@@ -1449,17 +1368,16 @@ class WarehouseSignature extends WarehouseTransactions {
     validateAddress(temporaryApproveAndCallBySigArgs.spenderAddress)
     validateAddress(temporaryApproveAndCallBySigArgs.tokenAddress)
     validateAddress(temporaryApproveAndCallBySigArgs.targetAddress)
-
-    const { domain } = await this._eip712Domain()
-
     this._requireWalletClient()
 
-    const signature = await this._walletClient?.signTypedData({
+    const { domain } = await this._eip712Domain(this._walletClient!.chain.id)
+
+    const signature = await this._walletClient!.signTypedData({
       domain,
       types: SigTypes,
       primaryType: 'ERC6909XApproveAndCall',
       message: {
-        owner: this._walletClient.account.address,
+        owner: this._walletClient!.account.address,
         spender: temporaryApproveAndCallBySigArgs.spenderAddress,
         temporary: true,
         operator: temporaryApproveAndCallBySigArgs.operator,
@@ -1475,7 +1393,7 @@ class WarehouseSignature extends WarehouseTransactions {
     if (!signature) throw new Error('Error in signing data')
 
     return {
-      ownerAddress: this._walletClient?.account.address as Address,
+      ownerAddress: this._walletClient!.account.address as Address,
       signature,
       ...temporaryApproveAndCallBySigArgs,
     }

@@ -154,7 +154,7 @@ export const ZORA_CHAIN_IDS = [ChainId.ZORA, ChainId.ZORA_SEPOLIA]
 export const BASE_CHAIN_IDS = [ChainId.BASE, ChainId.BASE_SEPOLIA]
 export const BLAST_CHAIN_IDS = [ChainId.BLAST]
 
-const ALL_CHAIN_IDS = [
+export const ALL_CHAIN_IDS = [
   ...ETHEREUM_CHAIN_IDS,
   ...ETHEREUM_TEST_CHAIN_IDS,
   ...POLYGON_CHAIN_IDS,

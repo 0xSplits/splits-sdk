@@ -13,7 +13,6 @@ import {
   InvalidConfigError,
   MissingPublicClientError,
   MissingWalletClientError,
-  UnsupportedChainIdError,
 } from '../errors'
 import * as utils from '../utils'
 import * as numberUtils from '../utils/numbers'
@@ -25,7 +24,6 @@ import {
   CONTROLLER_ADDRESS,
   NEW_CONTROLLER_ADDRESS,
 } from '../testing/constants'
-import { MockGraphqlClient } from '../testing/mocks/graphql'
 import { readActions, writeActions } from '../testing/mocks/splitMain'
 import type { Split } from '../types'
 import { MockViemContract } from '../testing/mocks/viemContract'
@@ -89,6 +87,9 @@ const mockWalletClient = jest.fn(() => {
     account: {
       address: CONTROLLER_ADDRESS,
     },
+    chain: {
+      id: 1,
+    },
     writeContract: jest.fn(() => {
       return '0xhash'
     }),
@@ -99,6 +100,9 @@ const mockWalletClientNonController = jest.fn(() => {
     account: {
       address: '0xnotController',
     },
+    chain: {
+      id: 1,
+    },
     writeContract: jest.fn(() => {
       return '0xhash'
     }),
@@ -108,6 +112,9 @@ const mockWalletClientNewController = jest.fn(() => {
   return {
     account: {
       address: NEW_CONTROLLER_ADDRESS,
+    },
+    chain: {
+      id: 1,
     },
     writeContract: jest.fn(() => {
       return '0xhash'
@@ -144,41 +151,6 @@ describe('Client config validation', () => {
           publicClient,
         }),
     ).not.toThrow()
-  })
-
-  test('Invalid chain id fails', () => {
-    expect(() => new SplitsClient({ chainId: 51 })).toThrow(
-      UnsupportedChainIdError,
-    )
-  })
-
-  test('Ethereum chain ids pass', () => {
-    expect(() => new SplitsClient({ chainId: 1 })).not.toThrow()
-  })
-
-  test('Polygon chain ids pass', () => {
-    expect(() => new SplitsClient({ chainId: 137 })).not.toThrow()
-  })
-
-  test('Optimism chain ids pass', () => {
-    expect(() => new SplitsClient({ chainId: 10 })).not.toThrow()
-  })
-
-  test('Arbitrum chain ids pass', () => {
-    expect(() => new SplitsClient({ chainId: 42161 })).not.toThrow()
-  })
-
-  test('Zora chain ids pass', () => {
-    expect(() => new SplitsClient({ chainId: 7777777 })).not.toThrow()
-  })
-
-  test('Base chain ids pass', () => {
-    expect(() => new SplitsClient({ chainId: 8453 })).not.toThrow()
-  })
-
-  test('Other chain ids pass', () => {
-    expect(() => new SplitsClient({ chainId: 100 })).not.toThrow()
-    expect(() => new SplitsClient({ chainId: 56 })).not.toThrow()
   })
 })
 
@@ -229,6 +201,7 @@ describe('SplitMain writes', () => {
     test('Create split fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(
@@ -279,7 +252,7 @@ describe('SplitMain writes', () => {
       )
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
-        eventTopics: [splitsClient.eventTopics.createSplit[0]],
+        eventTopics: [splitsClient.getEventTopics(1).createSplit[0]],
       })
     })
 
@@ -310,7 +283,7 @@ describe('SplitMain writes', () => {
       )
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
-        eventTopics: [splitsClient.eventTopics.createSplit[0]],
+        eventTopics: [splitsClient.getEventTopics(1).createSplit[0]],
       })
     })
   })
@@ -332,6 +305,7 @@ describe('SplitMain writes', () => {
     test('Update split fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(
@@ -403,7 +377,7 @@ describe('SplitMain writes', () => {
       )
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
-        eventTopics: [splitsClient.eventTopics.updateSplit[0]],
+        eventTopics: [splitsClient.getEventTopics(1).updateSplit[0]],
       })
     })
   })
@@ -448,6 +422,7 @@ describe('SplitMain writes', () => {
     test('Distribute token fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(
@@ -495,7 +470,7 @@ describe('SplitMain writes', () => {
       )
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
-        eventTopics: [splitsClient.eventTopics.distributeToken[0]],
+        eventTopics: [splitsClient.getEventTopics(1).distributeToken[0]],
       })
     })
 
@@ -522,7 +497,7 @@ describe('SplitMain writes', () => {
       )
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
-        eventTopics: [splitsClient.eventTopics.distributeToken[1]],
+        eventTopics: [splitsClient.getEventTopics(1).distributeToken[1]],
       })
     })
 
@@ -549,7 +524,7 @@ describe('SplitMain writes', () => {
       )
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
-        eventTopics: [splitsClient.eventTopics.distributeToken[0]],
+        eventTopics: [splitsClient.getEventTopics(1).distributeToken[0]],
       })
     })
 
@@ -578,7 +553,7 @@ describe('SplitMain writes', () => {
       )
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
-        eventTopics: [splitsClient.eventTopics.distributeToken[1]],
+        eventTopics: [splitsClient.getEventTopics(1).distributeToken[1]],
       })
     })
   })
@@ -610,6 +585,7 @@ describe('SplitMain writes', () => {
     test('Update and distribute fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(
@@ -689,7 +665,7 @@ describe('SplitMain writes', () => {
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
         eventTopics: [
-          splitsClient.eventTopics.updateSplitAndDistributeToken[1],
+          splitsClient.getEventTopics(1).updateSplitAndDistributeToken[1],
         ],
       })
     })
@@ -724,7 +700,7 @@ describe('SplitMain writes', () => {
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
         eventTopics: [
-          splitsClient.eventTopics.updateSplitAndDistributeToken[2],
+          splitsClient.getEventTopics(1).updateSplitAndDistributeToken[2],
         ],
       })
     })
@@ -759,7 +735,7 @@ describe('SplitMain writes', () => {
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
         eventTopics: [
-          splitsClient.eventTopics.updateSplitAndDistributeToken[1],
+          splitsClient.getEventTopics(1).updateSplitAndDistributeToken[1],
         ],
       })
     })
@@ -796,7 +772,7 @@ describe('SplitMain writes', () => {
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
         eventTopics: [
-          splitsClient.eventTopics.updateSplitAndDistributeToken[2],
+          splitsClient.getEventTopics(1).updateSplitAndDistributeToken[2],
         ],
       })
     })
@@ -817,6 +793,7 @@ describe('SplitMain writes', () => {
     test('Withdraw fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(
@@ -856,7 +833,7 @@ describe('SplitMain writes', () => {
       expect(writeActions.withdraw).toBeCalledWith(address, 1, ['0xerc20'])
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
-        eventTopics: [splitsClient.eventTopics.withdrawFunds[0]],
+        eventTopics: [splitsClient.getEventTopics(1).withdrawFunds[0]],
       })
     })
 
@@ -876,7 +853,7 @@ describe('SplitMain writes', () => {
       ])
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
-        eventTopics: [splitsClient.eventTopics.withdrawFunds[0]],
+        eventTopics: [splitsClient.getEventTopics(1).withdrawFunds[0]],
       })
     })
   })
@@ -897,6 +874,7 @@ describe('SplitMain writes', () => {
     test('Initiate transfer fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(
@@ -954,7 +932,9 @@ describe('SplitMain writes', () => {
       )
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
-        eventTopics: [splitsClient.eventTopics.initiateControlTransfer[0]],
+        eventTopics: [
+          splitsClient.getEventTopics(1).initiateControlTransfer[0],
+        ],
       })
     })
   })
@@ -976,6 +956,7 @@ describe('SplitMain writes', () => {
     test('Cancel transfer fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(
@@ -1026,7 +1007,7 @@ describe('SplitMain writes', () => {
       expect(writeActions.cancelControlTransfer).toBeCalledWith(splitAddress)
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
-        eventTopics: [splitsClient.eventTopics.cancelControlTransfer[0]],
+        eventTopics: [splitsClient.getEventTopics(1).cancelControlTransfer[0]],
       })
     })
   })
@@ -1046,6 +1027,7 @@ describe('SplitMain writes', () => {
     test('Accept transfer fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(
@@ -1107,7 +1089,7 @@ describe('SplitMain writes', () => {
       expect(writeActions.acceptControl).toBeCalledWith(splitAddress)
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
-        eventTopics: [splitsClient.eventTopics.acceptControlTransfer[0]],
+        eventTopics: [splitsClient.getEventTopics(1).acceptControlTransfer[0]],
       })
     })
   })
@@ -1129,6 +1111,7 @@ describe('SplitMain writes', () => {
     test('Make immutable fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(
@@ -1179,7 +1162,7 @@ describe('SplitMain writes', () => {
       expect(writeActions.makeSplitImmutable).toBeCalledWith(splitAddress)
       expect(getTransactionEventsSpy).toBeCalledWith({
         txHash: '0xhash',
-        eventTopics: [splitsClient.eventTopics.makeSplitImmutable[0]],
+        eventTopics: [splitsClient.getEventTopics(1).makeSplitImmutable[0]],
       })
     })
   })
@@ -1376,14 +1359,4 @@ describe('SplitMain reads', () => {
       expect(readActions.getHash).toBeCalledWith([splitAddress])
     })
   })
-})
-
-const mockGqlClient = new MockGraphqlClient()
-jest.mock('graphql-request', () => {
-  return {
-    GraphQLClient: jest.fn().mockImplementation(() => {
-      return mockGqlClient
-    }),
-    gql: jest.fn(),
-  }
 })

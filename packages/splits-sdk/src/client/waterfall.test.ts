@@ -16,12 +16,10 @@ import {
   InvalidConfigError,
   MissingPublicClientError,
   MissingWalletClientError,
-  UnsupportedChainIdError,
 } from '../errors'
 import * as utils from '../utils'
 import { validateAddress, validateWaterfallTranches } from '../utils/validation'
 import { TRANCHE_RECIPIENTS, TRANCHE_SIZES } from '../testing/constants'
-import { MockGraphqlClient } from '../testing/mocks/graphql'
 import { writeActions as factoryWriteActions } from '../testing/mocks/waterfallFactory'
 import {
   writeActions as moduleWriteActions,
@@ -91,6 +89,9 @@ const mockWalletClient = jest.fn(() => {
     account: {
       address: '0xsigner',
     },
+    chain: {
+      id: 1,
+    },
     writeContract: jest.fn(() => {
       return '0xhash'
     }),
@@ -102,41 +103,6 @@ describe('Client config validation', () => {
     expect(
       () => new WaterfallClient({ chainId: 1, includeEnsNames: true }),
     ).toThrow(InvalidConfigError)
-  })
-
-  test('Invalid chain id fails', () => {
-    expect(() => new WaterfallClient({ chainId: 51 })).toThrow(
-      UnsupportedChainIdError,
-    )
-  })
-
-  test('Ethereum chain ids pass', () => {
-    expect(() => new WaterfallClient({ chainId: 1 })).not.toThrow()
-  })
-
-  test('Polygon chain ids pass', () => {
-    expect(() => new WaterfallClient({ chainId: 137 })).not.toThrow()
-  })
-
-  test('Optimism chain ids pass', () => {
-    expect(() => new WaterfallClient({ chainId: 10 })).not.toThrow()
-  })
-
-  test('Arbitrum chain ids pass', () => {
-    expect(() => new WaterfallClient({ chainId: 42161 })).not.toThrow()
-  })
-
-  test('Zora chain ids pass', () => {
-    expect(() => new WaterfallClient({ chainId: 7777777 })).not.toThrow()
-  })
-
-  test('Base chain ids pass', () => {
-    expect(() => new WaterfallClient({ chainId: 8453 })).not.toThrow()
-  })
-
-  test('Other chain ids pass', () => {
-    expect(() => new WaterfallClient({ chainId: 100 })).not.toThrow()
-    expect(() => new WaterfallClient({ chainId: 56 })).not.toThrow()
   })
 })
 
@@ -196,6 +162,7 @@ describe('Waterfall writes', () => {
     test('Create waterfall fails with no provider', async () => {
       const badClient = new WaterfallClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(
@@ -307,6 +274,7 @@ describe('Waterfall writes', () => {
     test('Waterfall funds fails with no provider', async () => {
       const badClient = new WaterfallClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(
@@ -399,6 +367,7 @@ describe('Waterfall writes', () => {
     test('Recover non waterfall funds fails with no provider', async () => {
       const badClient = new WaterfallClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(
@@ -578,6 +547,7 @@ describe('Waterfall writes', () => {
     test('Withdraw pull funds fails with no provider', async () => {
       const badClient = new WaterfallClient({
         chainId: 1,
+        walletClient: new mockWalletClient(),
       })
 
       await expect(
@@ -838,14 +808,4 @@ describe('Waterfall reads', () => {
       expect(readActions.getPullBalance).toBeCalledWith([address])
     })
   })
-})
-
-const mockGqlClient = new MockGraphqlClient()
-jest.mock('graphql-request', () => {
-  return {
-    GraphQLClient: jest.fn().mockImplementation(() => {
-      return mockGqlClient
-    }),
-    gql: jest.fn(),
-  }
 })
