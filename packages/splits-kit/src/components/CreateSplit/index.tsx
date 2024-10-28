@@ -22,6 +22,7 @@ export interface ICreateSplitProps {
   defaultOwner?: IAddress
   defaultRecipients?: Recipient[]
   defaultDistributorFeeOptions?: number[]
+  linkToApp?: boolean
   width?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full'
   theme?: 'light' | 'dark' | 'system'
   displayChain?: boolean
@@ -31,12 +32,13 @@ export interface ICreateSplitProps {
 
 const CreateSplit = ({
   chainId,
-  type,
+  type = 'v2Push',
   salt,
   defaultDistributorFee = DEFAULT_DISTRIBUTOR_FEE,
   defaultOwner = ADDRESS_ZERO,
   defaultRecipients = DEFAULT_RECIPIENTS,
   defaultDistributorFeeOptions = DEFAULT_DISTRIBUTOR_FEE_OPTIONS,
+  linkToApp = true,
   width = 'lg',
   theme = 'system',
   displayChain = true,
@@ -63,6 +65,7 @@ const CreateSplit = ({
           chainId={chainId}
           type={type}
           salt={salt}
+          linkToApp={linkToApp}
           onSuccess={onSuccess}
           onError={onError}
         />

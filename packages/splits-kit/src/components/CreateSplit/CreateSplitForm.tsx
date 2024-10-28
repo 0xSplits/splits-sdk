@@ -23,22 +23,24 @@ export type CreateSplitType = 'v1' | 'v2Pull' | 'v2Push'
 
 const CreateSplitForm = ({
   chainId,
-  type = 'v2Push',
+  type,
   salt,
   defaultDistributorFee,
   defaultRecipients,
   defaultOwner,
   defaultDistributorFeeOptions,
+  linkToApp,
   onSuccess,
   onError,
 }: {
   chainId: SupportedChainId
-  type?: CreateSplitType
+  type: CreateSplitType
   salt?: Hex
   defaultDistributorFee: number
   defaultOwner: IAddress
   defaultRecipients: Recipient[]
   defaultDistributorFeeOptions: number[]
+  linkToApp: boolean
   onSuccess?: (events: Log[]) => void
   onError?: (error: RequestError) => void
 }) => {
@@ -156,41 +158,43 @@ const CreateSplitForm = ({
             }
             link="https://docs.splits.org/create#split"
           />
-          <InputRow
-            label="Distributor Fee"
-            input={
-              <NumberSelectInput
-                control={control}
-                inputName={'distributorFee'}
-                defaultVal={defaultDistributorFee}
-                setValue={setValue}
-                options={uniq([
-                  ...defaultDistributorFeeOptions,
-                  defaultDistributorFee,
-                ])
-                  .sort()
-                  .map((value) => {
-                    return {
-                      value,
-                      display: () => <span>{value}%</span>,
-                    }
-                  })
-                  .concat([
-                    {
-                      value: 0,
-                      display: () => <span>Manually distribute (0%)</span>,
-                    },
-                  ])}
-                placeholder={`${defaultDistributorFee}%`}
-                decimalScale={2}
-                suffix={`%`}
-                minVal={0.01}
-                maxVal={99.99}
-                hideSelectedValue={false}
-              />
-            }
-            link="https://docs.splits.org/distribute#distribution-bounty"
-          />
+          {defaultDistributorFeeOptions.length > 0 && (
+            <InputRow
+              label="Distributor Fee"
+              input={
+                <NumberSelectInput
+                  control={control}
+                  inputName={'distributorFee'}
+                  defaultVal={defaultDistributorFee}
+                  setValue={setValue}
+                  options={uniq([
+                    ...defaultDistributorFeeOptions,
+                    defaultDistributorFee,
+                  ])
+                    .sort()
+                    .map((value) => {
+                      return {
+                        value,
+                        display: () => <span>{value}%</span>,
+                      }
+                    })
+                    .concat([
+                      {
+                        value: 0,
+                        display: () => <span>Manually distribute (0%)</span>,
+                      },
+                    ])}
+                  placeholder={`${defaultDistributorFee}%`}
+                  decimalScale={2}
+                  suffix={`%`}
+                  minVal={0.01}
+                  maxVal={99.99}
+                  hideSelectedValue={false}
+                />
+              }
+              link="https://docs.splits.org/distribute#distribution-bounty"
+            />
+          )}
           <div className="my-5 flex flex-col space-y-1 text-center">
             <Tooltip
               isDisabled={isConnected && !isWrongChain}
@@ -206,15 +210,19 @@ const CreateSplitForm = ({
                 Create Split
               </Button>
             </Tooltip>
-            <span className="text-gray-400">or</span>
-            <div>
-              <Link
-                href={createOnSplitsAppLink}
-                className="font-medium text-gray-500 dark:text-gray-300"
-              >
-                Create on app.splits.org
-              </Link>
-            </div>
+            {linkToApp && (
+              <>
+                <span className="text-gray-400">or</span>
+                <div>
+                  <Link
+                    href={createOnSplitsAppLink}
+                    className="font-medium text-gray-500 dark:text-gray-300"
+                  >
+                    Create on app.splits.org
+                  </Link>
+                </div>
+              </>
+            )}
           </div>
         </form>
         <Disclaimer />
