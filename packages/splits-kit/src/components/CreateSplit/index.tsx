@@ -10,7 +10,6 @@ import ChainLogo from '../util/ChainLogo'
 import {
   DEFAULT_DISTRIBUTOR_FEE,
   DEFAULT_DISTRIBUTOR_FEE_OPTIONS,
-  DEFAULT_RECIPIENTS,
 } from '../../constants/splits'
 import { Hex, Log } from 'viem'
 
@@ -36,7 +35,7 @@ const CreateSplit = ({
   salt,
   defaultDistributorFee = DEFAULT_DISTRIBUTOR_FEE,
   defaultOwner = ADDRESS_ZERO,
-  defaultRecipients = DEFAULT_RECIPIENTS,
+  defaultRecipients = [],
   defaultDistributorFeeOptions = DEFAULT_DISTRIBUTOR_FEE_OPTIONS,
   linkToApp = true,
   width = 'lg',
