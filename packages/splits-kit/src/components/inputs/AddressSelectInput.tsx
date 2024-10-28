@@ -12,7 +12,6 @@ import {
 
 import AddressInput from './AddressInput'
 import SelectInput from './SelectInput'
-import { SupportedChainId } from '../../constants/chains'
 
 const AddressSelectInput = <FormType extends FieldValues>({
   control,
@@ -25,7 +24,7 @@ const AddressSelectInput = <FormType extends FieldValues>({
   validAddressDisplay,
   clearAddressDefaultValue = '',
   isDisabled = false,
-  chainId,
+  supportsEns,
 }: {
   control: Control<FormType>
   inputName: Path<FormType>
@@ -42,7 +41,7 @@ const AddressSelectInput = <FormType extends FieldValues>({
   validAddressDisplay?: (address: string) => JSX.Element
   clearAddressDefaultValue?: string
   isDisabled?: boolean
-  chainId?: SupportedChainId
+  supportsEns: boolean
 }): JSX.Element => {
   const inputVal = useWatch({
     control,
@@ -86,7 +85,6 @@ const AddressSelectInput = <FormType extends FieldValues>({
   if (selectedAddress === 'address')
     return (
       <AddressInput
-        chainId={chainId}
         control={control}
         inputName={inputName}
         setValue={setValue}
@@ -96,6 +94,7 @@ const AddressSelectInput = <FormType extends FieldValues>({
         onClearInput={clearAddress}
         autoFocus
         validAddressDisplay={validAddressDisplay}
+        supportsEns={supportsEns}
       />
     )
 

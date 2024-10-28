@@ -22,6 +22,7 @@ export interface ICreateSplitProps {
   defaultRecipients?: Recipient[]
   defaultDistributorFeeOptions?: number[]
   linkToApp?: boolean
+  supportsEns?: boolean
   width?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full'
   theme?: 'light' | 'dark' | 'system'
   displayChain?: boolean
@@ -38,6 +39,7 @@ const CreateSplit = ({
   defaultRecipients = [],
   defaultDistributorFeeOptions = DEFAULT_DISTRIBUTOR_FEE_OPTIONS,
   linkToApp = true,
+  supportsEns = true,
   width = 'lg',
   theme = 'system',
   displayChain = true,
@@ -65,6 +67,7 @@ const CreateSplit = ({
           type={type}
           salt={salt}
           linkToApp={linkToApp}
+          supportsEns={supportsEns}
           onSuccess={onSuccess}
           onError={onError}
         />

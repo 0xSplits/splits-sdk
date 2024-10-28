@@ -30,6 +30,7 @@ const CreateSplitForm = ({
   defaultOwner,
   defaultDistributorFeeOptions,
   linkToApp,
+  supportsEns,
   onSuccess,
   onError,
 }: {
@@ -41,6 +42,7 @@ const CreateSplitForm = ({
   defaultRecipients: Recipient[]
   defaultDistributorFeeOptions: number[]
   linkToApp: boolean
+  supportsEns: boolean
   onSuccess?: (events: Log[]) => void
   onError?: (error: RequestError) => void
 }) => {
@@ -144,16 +146,16 @@ const CreateSplitForm = ({
           </Link>
         </div>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-          <RecipientSetter chainId={chainId} />
+          <RecipientSetter supportsEns={supportsEns} />
           <InputRow
             label="Owner"
             input={
               <ControllerSelector
-                chainId={chainId}
                 control={control}
                 inputName={'owner'}
                 setValue={setValue}
                 setError={setError}
+                supportsEns={supportsEns}
               />
             }
             link="https://docs.splits.org/create#split"
