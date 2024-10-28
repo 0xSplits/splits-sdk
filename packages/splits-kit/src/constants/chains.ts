@@ -1,11 +1,7 @@
 import {
   mainnet,
-  goerli,
   polygon,
-  polygonMumbai,
-  optimismGoerli,
   optimism,
-  arbitrumGoerli,
   arbitrum,
   gnosis,
   fantom,
@@ -14,26 +10,29 @@ import {
   aurora,
   base,
   zora,
-  zoraTestnet,
+  sepolia,
+  optimismSepolia,
+  baseSepolia,
+  zoraSepolia,
 } from 'viem/chains'
 
 export const SupportedChainsList = [
   mainnet,
-  goerli,
   polygon,
-  polygonMumbai,
   optimism,
-  optimismGoerli,
   arbitrum,
-  arbitrumGoerli,
   gnosis,
   fantom,
   avalanche,
   bsc,
   aurora,
   zora,
-  zoraTestnet,
   base,
+
+  sepolia,
+  optimismSepolia,
+  baseSepolia,
+  zoraSepolia,
 ]
 
 type SupportedChain = (typeof SupportedChainsList)[number]
@@ -59,22 +58,8 @@ export const CHAIN_INFO: ChainInfo = {
       symbol: 'ETH',
     },
   },
-  [goerli.id]: {
-    label: 'Goerli',
-    logoUrl: '/networks/ethereum_logo.svg',
-    nativeCurrency: {
-      symbol: 'ETH',
-    },
-  },
   [polygon.id]: {
     label: 'Polygon',
-    logoUrl: '/networks/polygon_logo.svg',
-    nativeCurrency: {
-      symbol: 'MATIC',
-    },
-  },
-  [polygonMumbai.id]: {
-    label: 'Polygon Mumbai',
     logoUrl: '/networks/polygon_logo.svg',
     nativeCurrency: {
       symbol: 'MATIC',
@@ -87,22 +72,8 @@ export const CHAIN_INFO: ChainInfo = {
       symbol: 'ETH',
     },
   },
-  [optimismGoerli.id]: {
-    label: 'Optimism Goerli',
-    logoUrl: '/networks/optimism_logo.svg',
-    nativeCurrency: {
-      symbol: 'ETH',
-    },
-  },
   [arbitrum.id]: {
     label: 'Arbitrum',
-    logoUrl: '/networks/arbitrum_logo.svg',
-    nativeCurrency: {
-      symbol: 'ETH',
-    },
-  },
-  [arbitrumGoerli.id]: {
-    label: 'Arbitrum Goerli',
     logoUrl: '/networks/arbitrum_logo.svg',
     nativeCurrency: {
       symbol: 'ETH',
@@ -150,16 +121,38 @@ export const CHAIN_INFO: ChainInfo = {
       symbol: 'ETH',
     },
   },
-  [zoraTestnet.id]: {
-    label: 'Zora Goerli',
-    logoUrl: '/networks/zora_logo.svg',
+  [base.id]: {
+    label: 'Base',
+    logoUrl: '/networks/base_logo.svg',
     nativeCurrency: {
       symbol: 'ETH',
     },
   },
-  [base.id]: {
-    label: 'Base',
-    logoUrl: '/networks/base_logo.svg',
+
+  [sepolia.id]: {
+    label: 'Sepolia',
+    logoUrl: '/networks/ethereum_logo.svg',
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
+  },
+  [optimismSepolia.id]: {
+    label: 'Optimism Sepolia',
+    logoUrl: '/networks/optimism_logo.svg',
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
+  },
+  [baseSepolia.id]: {
+    label: 'Base Sepolia',
+    logoUrl: '/networks/base.svg',
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
+  },
+  [zoraSepolia.id]: {
+    label: 'Zora Sepolia',
+    logoUrl: '/networks/zora_logo.svg',
     nativeCurrency: {
       symbol: 'ETH',
     },

@@ -88,10 +88,10 @@ export const MultiChainPolygon: Story = {
 }
 
 export const MultiChainGoerli: Story = {
-  name: 'Multi Chain (Goerli)',
+  name: 'Multi Chain (Sepolia)',
   args: {
-    chainId: 5,
-    address: '0x755e8179972B5C5966A9d91214c73B3410c6c807',
+    chainId: 11155111,
+    address: '0x26b93AA3a7d43baAe7CeCBa39218FB77B2031F6f',
   },
 }
 

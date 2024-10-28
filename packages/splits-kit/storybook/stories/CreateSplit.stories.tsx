@@ -64,7 +64,7 @@ export const DefaultRecipients: Story = {
 
 export const MultiChain: Story = {
   args: {
-    chainId: 5,
+    chainId: 11155111,
     defaultDistributorFee: 0.01,
     defaultDistributorFeeOptions: [0.1, 1, 10],
     defaultController: '0xA8b2e53C70743309f8D668B52ea09158008FAf91',
