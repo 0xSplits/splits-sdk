@@ -14,13 +14,13 @@ import {
 import { XMarkIcon } from '@heroicons/react/20/solid'
 import { Dictionary } from 'lodash'
 import { isAddress } from 'viem'
+import { normalize } from 'viem/ens'
 import { useEnsName, useEnsAddress } from 'wagmi'
 
 import { MiniButton } from '../util/Button'
 import { shortenAddress, shortenENS } from '../../utils/address'
 import { IAddress } from '../../types'
 import SplitsAvatar from '../util/SplitsAvatar'
-import { normalize } from 'viem/ens'
 
 const AddressInput = <FormType extends FieldValues>({
   control,
