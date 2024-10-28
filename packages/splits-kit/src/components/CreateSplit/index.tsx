@@ -1,5 +1,6 @@
-import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
 import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
+import { Hex, Log } from 'viem'
+
 import CreateSplitForm, {
   CreateSplitType,
 } from '../CreateSplit/CreateSplitForm'
@@ -8,13 +9,17 @@ import ComponentLayout from '../util/ComponentLayout'
 import { IAddress, Recipient } from '../../types'
 import ChainLogo from '../util/ChainLogo'
 import {
+  CHAIN_INFO,
+  isSupportedChainId,
+  SupportedChainId,
+} from '../../constants/chains'
+import {
   DEFAULT_DISTRIBUTOR_FEE,
   DEFAULT_DISTRIBUTOR_FEE_OPTIONS,
 } from '../../constants/splits'
-import { Hex, Log } from 'viem'
 
 export interface ICreateSplitProps {
-  chainId: SupportedChainId
+  chainId: number
   type?: CreateSplitType
   salt?: Hex
   defaultDistributorFee?: number
@@ -53,7 +58,7 @@ const CreateSplit = ({
       theme={theme}
       title={'New Split contract'}
       corner={
-        displayChain
+        displayChain && isSupportedChainId(chainId)
           ? CHAIN_INFO[chainId] && <ChainLogo chainInfo={CHAIN_INFO[chainId]} />
           : undefined
       }
@@ -63,7 +68,7 @@ const CreateSplit = ({
           defaultOwner={defaultOwner}
           defaultRecipients={defaultRecipients}
           defaultDistributorFeeOptions={defaultDistributorFeeOptions}
-          chainId={chainId}
+          chainId={chainId as SupportedChainId}
           type={type}
           salt={salt}
           linkToApp={linkToApp}

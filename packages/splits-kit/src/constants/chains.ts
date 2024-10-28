@@ -38,6 +38,14 @@ export const SupportedChainsList = [
 type SupportedChain = (typeof SupportedChainsList)[number]
 export type SupportedChainId = SupportedChain['id']
 
+export const isSupportedChainId = (
+  chainId: number | undefined | null,
+): chainId is SupportedChainId => {
+  if (chainId === undefined || chainId === null) return false
+
+  return Object.keys(CHAIN_INFO).includes(String(chainId))
+}
+
 export interface L1ChainInfo {
   readonly label: string
   readonly logoUrl: string
