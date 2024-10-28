@@ -1,6 +1,8 @@
 import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
 import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
-import CreateSplitForm from '../CreateSplit/CreateSplitForm'
+import CreateSplitForm, {
+  CreateSplitType,
+} from '../CreateSplit/CreateSplitForm'
 import { ADDRESS_ZERO } from '../../constants/addresses'
 import ComponentLayout from '../util/ComponentLayout'
 import { IAddress, Recipient } from '../../types'
@@ -10,12 +12,14 @@ import {
   DEFAULT_DISTRIBUTOR_FEE_OPTIONS,
   DEFAULT_RECIPIENTS,
 } from '../../constants/splits'
-import { Log } from 'viem'
+import { Hex, Log } from 'viem'
 
 export interface ICreateSplitProps {
   chainId: SupportedChainId
+  type?: CreateSplitType
+  salt?: Hex
   defaultDistributorFee?: number
-  defaultController?: IAddress
+  defaultOwner?: IAddress
   defaultRecipients?: Recipient[]
   defaultDistributorFeeOptions?: number[]
   width?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full'
@@ -27,8 +31,10 @@ export interface ICreateSplitProps {
 
 const CreateSplit = ({
   chainId,
+  type,
+  salt,
   defaultDistributorFee = DEFAULT_DISTRIBUTOR_FEE,
-  defaultController = ADDRESS_ZERO,
+  defaultOwner = ADDRESS_ZERO,
   defaultRecipients = DEFAULT_RECIPIENTS,
   defaultDistributorFeeOptions = DEFAULT_DISTRIBUTOR_FEE_OPTIONS,
   width = 'lg',
@@ -51,10 +57,12 @@ const CreateSplit = ({
       body={
         <CreateSplitForm
           defaultDistributorFee={defaultDistributorFee}
-          defaultController={defaultController}
+          defaultOwner={defaultOwner}
           defaultRecipients={defaultRecipients}
           defaultDistributorFeeOptions={defaultDistributorFeeOptions}
           chainId={chainId}
+          type={type}
+          salt={salt}
           onSuccess={onSuccess}
           onError={onError}
         />

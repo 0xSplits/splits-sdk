@@ -1,9 +1,8 @@
 import { useCallback, useEffect } from 'react'
 import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
-import { useCreateSplit } from '@0xsplits/splits-sdk-react'
-import { CreateSplitConfig } from '@0xsplits/splits-sdk'
+import { useCreateSplit, useCreateSplitV2 } from '@0xsplits/splits-sdk-react'
 import { useForm, FormProvider } from 'react-hook-form'
-import { Log } from 'viem'
+import { Hex, Log } from 'viem'
 import { useAccount } from 'wagmi'
 import { sum, uniq } from 'lodash'
 
@@ -18,25 +17,33 @@ import InputRow from '../inputs/InputRow'
 import Tooltip from '../util/Tooltip'
 import Button from '../util/Button'
 import Link from '../util/Link'
+import { SplitV2Type } from '@0xsplits/splits-sdk/types'
+
+export type CreateSplitType = 'v1' | 'v2Pull' | 'v2Push'
 
 const CreateSplitForm = ({
   chainId,
+  type = 'v2Push',
+  salt,
   defaultDistributorFee,
   defaultRecipients,
-  defaultController,
+  defaultOwner,
   defaultDistributorFeeOptions,
   onSuccess,
   onError,
 }: {
   chainId: SupportedChainId
+  type?: CreateSplitType
+  salt?: Hex
   defaultDistributorFee: number
-  defaultController: IAddress
+  defaultOwner: IAddress
   defaultRecipients: Recipient[]
   defaultDistributorFeeOptions: number[]
   onSuccess?: (events: Log[]) => void
   onError?: (error: RequestError) => void
 }) => {
   const { createSplit, error } = useCreateSplit()
+  const { createSplit: createSplitV2, error: errorV2 } = useCreateSplitV2()
 
   useEffect(() => {
     if (error) {
@@ -44,7 +51,13 @@ const CreateSplitForm = ({
       console.error(error)
       onError && onError(error)
     }
-  }, [error, onError])
+
+    if (errorV2) {
+      // eslint-disable-next-line no-console
+      console.error(errorV2)
+      onError && onError(errorV2)
+    }
+  }, [error, errorV2, onError])
 
   const { isConnected, address: connectedAddress, chain } = useAccount()
 
@@ -52,7 +65,7 @@ const CreateSplitForm = ({
     mode: 'onChange',
     defaultValues: {
       recipients: defaultRecipients,
-      controller: defaultController,
+      owner: defaultOwner,
       distributorFee: defaultDistributorFee,
     },
   })
@@ -68,17 +81,35 @@ const CreateSplitForm = ({
 
   const onSubmit = useCallback(
     async (data: ICreateSplitForm) => {
-      const args: CreateSplitConfig = {
-        recipients: data.recipients,
-        distributorFeePercent: data.distributorFee,
-        controller: data.controller,
-      }
-      const result = await createSplit(args)
-      if (result) {
-        onSuccess && onSuccess(result)
+      if (type === 'v1') {
+        const args = {
+          recipients: data.recipients,
+          distributorFeePercent: data.distributorFee,
+          controller: data.owner,
+        }
+
+        const result = await createSplit(args)
+        if (result) {
+          onSuccess && onSuccess(result)
+        }
+      } else {
+        const args = {
+          recipients: data.recipients,
+          distributorFeePercent: data.distributorFee,
+          ownerAddress: data.owner,
+          creatorAddress: connectedAddress,
+          splitType: type === 'v2Pull' ? SplitV2Type.Pull : SplitV2Type.Push,
+          salt,
+          chainId,
+        }
+
+        const result = await createSplitV2(args)
+        if (result) {
+          onSuccess && onSuccess(result)
+        }
       }
     },
-    [createSplit, onSuccess],
+    [type, createSplit, onSuccess],
   )
 
   const recipientAllocationTotal = sum(
@@ -113,12 +144,12 @@ const CreateSplitForm = ({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
           <RecipientSetter chainId={chainId} />
           <InputRow
-            label="Controller"
+            label="Owner"
             input={
               <ControllerSelector
                 chainId={chainId}
                 control={control}
-                inputName={'controller'}
+                inputName={'owner'}
                 setValue={setValue}
                 setError={setError}
               />

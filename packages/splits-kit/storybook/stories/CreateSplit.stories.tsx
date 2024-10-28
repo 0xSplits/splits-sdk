@@ -24,8 +24,8 @@ const meta: Meta<typeof CreateSplit> = {
     chainId: {
       description: 'Chain ID of a supported network',
     },
-    defaultController: {
-      description: 'Default controller of the split contract',
+    defaultOwner: {
+      description: 'Default owner of the split contract',
       type: 'string',
     },
   },
@@ -65,9 +65,11 @@ export const DefaultRecipients: Story = {
 export const MultiChain: Story = {
   args: {
     chainId: 11155111,
+    type: 'v2Pull',
+    salt: '0x1',
     defaultDistributorFee: 0.01,
     defaultDistributorFeeOptions: [0.1, 1, 10],
-    defaultController: '0xA8b2e53C70743309f8D668B52ea09158008FAf91',
+    defaultOwner: '0xA8b2e53C70743309f8D668B52ea09158008FAf91',
     defaultRecipients: [
       {
         address: '0xA8b2e53C70743309f8D668B52ea09158008FAf91',
