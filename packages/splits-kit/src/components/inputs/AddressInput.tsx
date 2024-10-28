@@ -58,16 +58,19 @@ const AddressInput = <FormType extends FieldValues>({
   })
   const error = getNestedObj(errors, inputName) as FieldError
 
-  const { data, isError, isLoading } = useEnsName({
+  const { data: ensName, isLoading: isLoadingEnsName } = useEnsName({
     address: inputVal && isAddress(inputVal) ? inputVal : undefined,
     chainId,
   })
 
-  const { data: ensResolverData, isLoading: ensResolverLoading } =
-    useEnsAddress({
-      name: inputVal && inputVal.endsWith('.eth') ? inputVal : undefined,
-      chainId,
-    })
+  const {
+    data: ensResolverData,
+    isError: ensResolverError,
+    isLoading: ensResolverLoading,
+  } = useEnsAddress({
+    name: inputVal && inputVal.endsWith('.eth') ? inputVal : undefined,
+    chainId,
+  })
 
   const onValidEns = useCallback(
     (address: string) => {
@@ -88,16 +91,32 @@ const AddressInput = <FormType extends FieldValues>({
     [],
   )
 
+  // Handle ens input
   useEffect(() => {
-    if ((inputVal && !inputVal.endsWith('.eth')) || ensResolverLoading) return
+    if (!inputVal) return
+    if (!inputVal.endsWith('.eth') || ensResolverLoading) return
+
+    if (ensResolverError) {
+      onInvalidEns()
+      return
+    }
     if (ensResolverData) onValidEns(ensResolverData)
   }, [ensResolverData, ensResolverLoading, inputVal, onValidEns])
 
+  // Handle address input
   useEffect(() => {
-    if ((inputVal && inputVal.endsWith('.eth')) || isLoading) return
-    if (isError) onInvalidEns()
-    if (data) onValidAddressWithEns(data)
-  }, [data, inputVal, isError, isLoading, onInvalidEns, onValidAddressWithEns])
+    if (!inputVal) return
+    if (!isAddress(inputVal) || isLoadingEnsName) return
+
+    if (ensName) onValidAddressWithEns(ensName)
+  }, [
+    ensName,
+    inputVal,
+    ensResolverError,
+    isLoadingEnsName,
+    onInvalidEns,
+    onValidAddressWithEns,
+  ])
 
   const clearInput = useCallback(() => {
     const typedAddress = '' as PathValue<FormType, Path<FormType>>
