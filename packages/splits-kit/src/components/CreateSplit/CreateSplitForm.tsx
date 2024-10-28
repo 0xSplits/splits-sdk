@@ -3,7 +3,8 @@ import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
 import { useCreateSplit } from '@0xsplits/splits-sdk-react'
 import { CreateSplitConfig } from '@0xsplits/splits-sdk'
 import { useForm, FormProvider } from 'react-hook-form'
-import { useAccount, useNetwork } from 'wagmi'
+import { Log } from 'viem'
+import { useAccount } from 'wagmi'
 import { sum, uniq } from 'lodash'
 
 import { ControllerSelector } from '../CreateSplit/ControllerSelector'
@@ -17,7 +18,6 @@ import InputRow from '../inputs/InputRow'
 import Tooltip from '../util/Tooltip'
 import Button from '../util/Button'
 import Link from '../util/Link'
-import { Log } from 'viem'
 
 const CreateSplitForm = ({
   chainId,
@@ -46,8 +46,7 @@ const CreateSplitForm = ({
     }
   }, [error, onError])
 
-  const { isConnected, address: connectedAddress } = useAccount()
-  const { chain } = useNetwork()
+  const { isConnected, address: connectedAddress, chain } = useAccount()
 
   const form = useForm<ICreateSplitForm>({
     mode: 'onChange',

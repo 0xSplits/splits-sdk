@@ -1,7 +1,7 @@
 import { useState } from 'react'
+import { Recipient } from '@0xsplits/splits-sdk'
 import { Split } from '@0xsplits/splits-sdk-react'
 import { useAccount } from 'wagmi'
-import { Recipient } from '@0xsplits/splits-sdk'
 
 import { shortenENS, shortenAddress } from '../../utils/address'
 import { getSplitsAccountUrl } from '../../utils/splits'

@@ -1,14 +1,14 @@
 import { useEffect } from 'react'
-import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
+import { DistributeTokenConfig } from '@0xsplits/splits-sdk'
 import { useDistributeToken } from '@0xsplits/splits-sdk-react'
-import { useAccount, useNetwork } from 'wagmi'
+import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
+import { useAccount } from 'wagmi'
 
 import { displayBigNumber } from '../../utils/display'
 import Tooltip from '../util/Tooltip'
 import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
 import Button from '../util/Button'
 import { Balance } from '../../types'
-import { DistributeTokenConfig } from '@0xsplits/splits-sdk'
 
 function DistributeBalance({
   chainId,
@@ -26,8 +26,7 @@ function DistributeBalance({
   onError?: (error: RequestError) => void
 }) {
   const { distributeToken, status, error } = useDistributeToken()
-  const { isConnected, address: connectedAddress } = useAccount()
-  const { chain } = useNetwork()
+  const { isConnected, address: connectedAddress, chain } = useAccount()
 
   useEffect(() => {
     if (error) {
@@ -49,7 +48,7 @@ function DistributeBalance({
     }
   }
 
-  const inProgress = status == 'pendingApproval' || status == 'txInProgress'
+  const inProgress = status === 'pendingApproval' || status === 'txInProgress'
   const isWrongChain = chain && chainId !== chain.id
   const isDisabled = !isConnected || isWrongChain
   return (

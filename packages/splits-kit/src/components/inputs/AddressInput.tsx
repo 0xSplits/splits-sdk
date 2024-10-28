@@ -13,13 +13,13 @@ import {
 } from 'react-hook-form'
 import { XMarkIcon } from '@heroicons/react/20/solid'
 import { Dictionary } from 'lodash'
+import { isAddress } from 'viem'
+import { useEnsName, useEnsAddress } from 'wagmi'
 
 import { MiniButton } from '../util/Button'
 import { shortenAddress, shortenENS } from '../../utils/address'
-import { useEnsName, useEnsAddress } from 'wagmi'
 import { IAddress } from '../../types'
 import { SupportedChainId } from '../../constants/chains'
-import { isAddress } from 'viem'
 import SplitsAvatar from '../util/SplitsAvatar'
 
 const AddressInput = <FormType extends FieldValues>({
@@ -59,16 +59,14 @@ const AddressInput = <FormType extends FieldValues>({
   const error = getNestedObj(errors, inputName) as FieldError
 
   const { data, isError, isLoading } = useEnsName({
-    address: inputVal,
+    address: inputVal && isAddress(inputVal) ? inputVal : undefined,
     chainId,
-    enabled: inputVal && isAddress(inputVal),
   })
 
   const { data: ensResolverData, isLoading: ensResolverLoading } =
     useEnsAddress({
-      name: inputVal,
+      name: inputVal && inputVal.endsWith('.eth') ? inputVal : undefined,
       chainId,
-      enabled: inputVal && inputVal.endsWith('.eth'),
     })
 
   const onValidEns = useCallback(

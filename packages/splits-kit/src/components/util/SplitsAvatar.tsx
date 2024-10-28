@@ -1,5 +1,5 @@
 import Blockies from 'react-blockies'
-import { getAddress } from 'viem'
+import { getAddress, isAddress } from 'viem'
 import { normalize } from 'viem/ens'
 import { useEnsAvatar, useEnsName } from 'wagmi'
 
@@ -13,7 +13,7 @@ export default function SplitsAvatar({
   className?: string
 }) {
   const ensName = useEnsName({
-    address: getAddress(address),
+    address: address && isAddress(address) ? getAddress(address) : undefined,
   })
   const ensAvatar = useEnsAvatar({
     name: ensName.data ? normalize(ensName.data) : undefined,
