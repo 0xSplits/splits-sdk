@@ -46,8 +46,18 @@ const CreateSplitForm = ({
   onSuccess?: (events: Log[]) => void
   onError?: (error: RequestError) => void
 }) => {
-  const { createSplit, error } = useCreateSplit()
-  const { createSplit: createSplitV2, error: errorV2 } = useCreateSplitV2()
+  const { createSplit, error, status } = useCreateSplit()
+  const {
+    createSplit: createSplitV2,
+    error: errorV2,
+    status: statusV2,
+  } = useCreateSplitV2()
+
+  const isProcessing =
+    status === 'pendingApproval' ||
+    status === 'txInProgress' ||
+    statusV2 === 'pendingApproval' ||
+    statusV2 === 'txInProgress'
 
   useEffect(() => {
     if (error) {
@@ -208,7 +218,11 @@ const CreateSplitForm = ({
                   : ''
               }
             >
-              <Button type="submit" isDisabled={isButtonDisabled}>
+              <Button
+                type="submit"
+                isDisabled={isButtonDisabled}
+                isLoading={isProcessing}
+              >
                 Create Split
               </Button>
             </Tooltip>
