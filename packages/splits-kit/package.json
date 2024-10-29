@@ -4,6 +4,17 @@
   "description": "UI Components for working with 0xSplits contracts",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./inputs": "./dist/components/inputs/index.js"
+  },
+  "typesVersions": {
+    "*": {
+      "inputs": [
+        "./dist/components/inputs/index.d.ts"
+      ]
+    }
+  },
   "keywords": [
     "0xSplits",
     "splits",
