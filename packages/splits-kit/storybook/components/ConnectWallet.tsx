@@ -3,8 +3,7 @@ import {
   useAccount,
   useConnect,
   useDisconnect,
-  useNetwork,
-  useSwitchNetwork,
+  useSwitchChain,
   useWalletClient,
 } from 'wagmi'
 import {
@@ -62,7 +61,7 @@ function UseConfig({ config }: { config: SplitsClientConfig }) {
 
 function ConnectButton() {
   const { connector, isConnected } = useAccount()
-  const { connect, connectors, isLoading, pendingConnector } = useConnect()
+  const { connect, connectors, isLoading } = useConnect()
   const { disconnect } = useDisconnect()
 
   return (
@@ -81,7 +80,7 @@ function ConnectButton() {
             onClick={() => connect({ connector: conn })}
           >
             Connect with {conn.name}
-            {isLoading && conn.id === pendingConnector?.id && ' (connecting)'}
+            {isLoading && ' (connecting)'}
           </SecondaryButton>
         ))}
     </div>
@@ -89,9 +88,8 @@ function ConnectButton() {
 }
 
 function NetworkSwitcher({ chainId }: { chainId: number }) {
-  const { chains, switchNetwork } = useSwitchNetwork()
-  const { isConnected } = useAccount()
-  const { chain } = useNetwork()
+  const { chains, switchChain } = useSwitchChain()
+  const { isConnected, chain } = useAccount()
 
   return (
     <>
@@ -99,7 +97,7 @@ function NetworkSwitcher({ chainId }: { chainId: number }) {
         <div className="flex text-xs space-x-2 items-center">
           <select
             value={chain.id}
-            onChange={(e) => switchNetwork?.(Number(e.target.value))}
+            onChange={(e) => switchChain?.({ chainId: Number(e.target.value) })}
             className="border p-0.5 rounded border-gray-200 bg-gray-50"
           >
             {chains.map((chain, idx) => (

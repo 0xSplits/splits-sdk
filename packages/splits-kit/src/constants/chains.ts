@@ -33,7 +33,7 @@ export const SupportedChainsList = [
   optimismSepolia,
   baseSepolia,
   zoraSepolia,
-]
+] as const
 
 type SupportedChain = (typeof SupportedChainsList)[number]
 export type SupportedChainId = SupportedChain['id']
