@@ -6,7 +6,8 @@
   "typings": "dist/index.d.ts",
   "exports": {
     ".": "./dist/index.js",
-    "./inputs": "./dist/components/inputs/index.js"
+    "./inputs": "./dist/components/inputs/index.js",
+    "./styles.css": "./dist/styles.css"
   },
   "typesVersions": {
     "*": {
