@@ -7,7 +7,11 @@ import {
 } from '@0xsplits/splits-sdk-react'
 import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
 
-import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
+import {
+  CHAIN_INFO,
+  isSupportedChainId,
+  SupportedChainId,
+} from '../../constants/chains'
 import SplitRecipients from '../DisplaySplit/SplitRecipients'
 import SkeletonLoader from '../DisplaySplit/SkeletonLoader'
 import SplitBalances from '../DisplaySplit/SplitBalances'
@@ -18,7 +22,7 @@ import ComponentLayout from '../util/ComponentLayout'
 
 export interface IDisplaySplitProps {
   address: IAddress
-  chainId: SupportedChainId
+  chainId: number
   displayBalances?: boolean
   displayChain?: boolean
   width?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full'
@@ -79,13 +83,24 @@ const DisplaySplit = ({
       chainId={chainId}
       width={width}
       theme={theme}
-      title={<SplitHeader chainId={chainId} address={address} />}
-      corner={displayChain && <ChainLogo chainInfo={CHAIN_INFO[chainId]} />}
+      title={
+        isSupportedChainId(chainId) ? (
+          <SplitHeader chainId={chainId} address={address} />
+        ) : undefined
+      }
+      corner={
+        displayChain &&
+        isSupportedChainId(chainId) && (
+          <ChainLogo chainInfo={CHAIN_INFO[chainId]} />
+        )
+      }
       error={
         metadataError &&
         ((metadataError.name === 'AccountNotFoundError' && {
           title: 'Split not found',
-          body: `This account is not a Splits contract on the ${CHAIN_INFO[chainId].label} network.`,
+          body: `This account is not a Splits contract on the ${
+            isSupportedChainId(chainId) ? CHAIN_INFO[chainId].label : chainId
+          } network.`,
         }) ||
           (metadataError.name === 'InvalidArgumentError' && {
             title: 'Invalid Address',
@@ -101,7 +116,7 @@ const DisplaySplit = ({
               <SplitRecipients split={split} />
               {displayBalances && !isLoadingEarnings && (
                 <SplitBalances
-                  chainId={chainId}
+                  chainId={chainId as SupportedChainId}
                   address={address}
                   formattedSplitEarnings={splitEarnings}
                   onSuccess={onSuccess}
