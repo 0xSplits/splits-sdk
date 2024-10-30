@@ -1,12 +1,10 @@
 import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
 import { Hex, Log } from 'viem'
 
-import CreateSplitForm, {
-  CreateSplitType,
-} from '../CreateSplit/CreateSplitForm'
+import CreateSplitForm from '../CreateSplit/CreateSplitForm'
 import { ADDRESS_ZERO } from '../../constants/addresses'
 import ComponentLayout from '../util/ComponentLayout'
-import { IAddress, Recipient } from '../../types'
+import { IAddress, Recipient, SplitType } from '../../types'
 import ChainLogo from '../util/ChainLogo'
 import {
   CHAIN_INFO,
@@ -20,7 +18,7 @@ import {
 
 export interface ICreateSplitProps {
   chainId: number
-  type?: CreateSplitType
+  type?: SplitType
   salt?: Hex
   defaultDistributorFee?: number
   defaultOwner?: IAddress

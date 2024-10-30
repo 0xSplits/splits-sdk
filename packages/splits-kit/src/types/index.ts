@@ -19,3 +19,5 @@ export type ICreateSplitForm = {
   distributorFee: number
   owner: IAddress
 }
+
+export type SplitType = 'v1' | 'v2Pull' | 'v2Push'

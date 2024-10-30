@@ -8,7 +8,7 @@ import { sum, uniq } from 'lodash'
 
 import { ControllerSelector } from '../CreateSplit/ControllerSelector'
 import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
-import { IAddress, Recipient, ICreateSplitForm } from '../../types'
+import { IAddress, Recipient, ICreateSplitForm, SplitType } from '../../types'
 import RecipientSetter from '../CreateSplit/RecipientSetter'
 import NumberSelectInput from '../inputs/NumberSelectInput'
 import { getNativeTokenSymbol } from '../../utils/display'
@@ -18,8 +18,6 @@ import Tooltip from '../util/Tooltip'
 import Button from '../util/Button'
 import Link from '../util/Link'
 import { SplitV2Type } from '@0xsplits/splits-sdk/types'
-
-export type CreateSplitType = 'v1' | 'v2Pull' | 'v2Push'
 
 const CreateSplitForm = ({
   chainId,
@@ -35,7 +33,7 @@ const CreateSplitForm = ({
   onError,
 }: {
   chainId: SupportedChainId
-  type: CreateSplitType
+  type: SplitType
   salt?: Hex
   defaultDistributorFee: number
   defaultOwner: IAddress
