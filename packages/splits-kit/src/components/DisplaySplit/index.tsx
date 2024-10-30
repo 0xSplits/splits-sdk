@@ -50,7 +50,13 @@ const DisplaySplit = ({
     splitEarnings,
     isLoading: isLoadingEarnings,
     error: earningsError,
-  } = useSplitEarnings(chainId, address, includeActiveBalances, erc20TokenList)
+  } = useSplitEarnings(
+    chainId,
+    address,
+    includeActiveBalances,
+    erc20TokenList,
+    { requireDataClient: false },
+  )
 
   useEffect(() => {
     if (earningsError) {
