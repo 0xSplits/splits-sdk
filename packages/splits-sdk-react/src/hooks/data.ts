@@ -100,7 +100,14 @@ export const useSplitMetadata = (
     return () => {
       isActive = false
     }
-  }, [dataClient, splitsV1Client, splitsV2Client, chainId, splitAddress])
+  }, [
+    requireDataClient,
+    dataClient,
+    splitsV1Client,
+    splitsV2Client,
+    chainId,
+    splitAddress,
+  ])
 
   return {
     isLoading,
@@ -221,6 +228,7 @@ export const useSplitEarnings = (
       isActive = false
     }
   }, [
+    requireDataClient,
     dataClient,
     chainId,
     splitAddress,
