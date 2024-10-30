@@ -3,6 +3,7 @@ import {
   Chain,
   GetContractReturnType,
   Hash,
+  InvalidAddressError,
   Log,
   PublicClient,
   Transport,
@@ -10,6 +11,7 @@ import {
   encodeEventTopics,
   getAddress,
   getContract,
+  isAddress,
   zeroAddress,
 } from 'viem'
 
@@ -27,6 +29,8 @@ import {
   getSplitMainAddress,
   ETHEREUM_TEST_CHAIN_IDS,
   BLAST_CHAIN_IDS,
+  getSplitV1StartBlock,
+  ChainId,
 } from '../constants'
 import {
   splitMainEthereumAbi,
@@ -48,6 +52,7 @@ import type {
   GetSplitBalanceConfig,
   InitiateControlTransferConfig,
   MakeSplitImmutableConfig,
+  Split,
   SplitRecipient,
   SplitsClientConfig,
   TransactionConfig,
@@ -57,6 +62,7 @@ import type {
   WithdrawFundsConfig,
 } from '../types'
 import {
+  fromBigIntToPercent,
   getBigIntFromPercent,
   getRecipientSortedAddressesAndAllocations,
 } from '../utils'
@@ -493,6 +499,106 @@ class SplitV1Transactions extends BaseTransactions {
     )
 
     return result
+  }
+
+  protected async _getSplitMetadataViaProvider(
+    splitAddress: Address,
+    chainId: number,
+  ): Promise<{ split: Split }> {
+    if (chainId === ChainId.MAINNET)
+      throw new Error('Mainnet not supported for provider metadata')
+
+    const publicClient = this._getPublicClient(chainId)
+
+    const splitMainContract = this._getSplitMainContract(chainId)
+    const splitCreatedEvent = splitMainPolygonAbi[14]
+    const splitUpdatedEvent = splitMainPolygonAbi[18]
+
+    const [createLogs, controller] = await Promise.all([
+      publicClient.getLogs({
+        event: splitCreatedEvent!,
+        address: getSplitMainAddress(chainId),
+        args: {
+          split: splitAddress,
+        },
+        strict: true,
+        fromBlock: getSplitV1StartBlock(chainId),
+      }),
+      splitMainContract.read.getController([getAddress(splitAddress)]),
+    ])
+
+    if (!createLogs) throw new Error('Split not found')
+
+    const updateLogs = await publicClient.getLogs({
+      address: getSplitMainAddress(chainId),
+      event: splitUpdatedEvent!,
+      args: {
+        split: splitAddress,
+      },
+      strict: true,
+      fromBlock: createLogs[0].blockNumber,
+    })
+
+    const recipients = createLogs[0].args.accounts.map((recipient, i) => {
+      return {
+        recipient: {
+          address: recipient,
+        },
+        ownership: BigInt(createLogs[0].args.percentAllocations[i]),
+        percentAllocation: fromBigIntToPercent(
+          BigInt(createLogs[0].args.percentAllocations[i]),
+          BigInt(1_000_000),
+        ),
+      }
+    })
+
+    const split: Split = {
+      address: splitAddress,
+      recipients,
+      distributorFeePercent: fromBigIntToPercent(
+        BigInt(createLogs[0].args.distributorFee),
+      ),
+      distributeDirection: 'pull',
+      type: 'Split',
+      controller: {
+        address: controller,
+      },
+      distributionsPaused: false,
+      newPotentialController: {
+        address: zeroAddress,
+      },
+      createdBlock: Number(createLogs[0].blockNumber),
+    }
+
+    if (!updateLogs || updateLogs.length === 0) return { split }
+
+    updateLogs.sort((a, b) => {
+      if (a.blockNumber !== b.blockNumber)
+        return a.blockNumber > b.blockNumber ? -1 : 1
+      else return a.logIndex > b.logIndex ? -1 : 1
+    })
+
+    const updatedRecipients = updateLogs[0].args.accounts.map(
+      (recipient, i) => {
+        return {
+          recipient: {
+            address: recipient,
+          },
+          ownership: BigInt(updateLogs[0].args.percentAllocations[i]),
+          percentAllocation: fromBigIntToPercent(
+            BigInt(updateLogs[0].args.percentAllocations[i]),
+            BigInt(1_000_000),
+          ),
+        }
+      },
+    )
+
+    split.recipients = updatedRecipients
+    split.distributorFeePercent = fromBigIntToPercent(
+      BigInt(updateLogs[0].args.distributorFee),
+    )
+
+    return { split }
   }
 
   private async _requireController(splitAddress: string) {
@@ -1141,6 +1247,24 @@ export class SplitV1Client extends SplitV1Transactions {
     ])
 
     return { hash }
+  }
+
+  async getSplitMetadataViaProvider({
+    splitAddress,
+    chainId,
+  }: {
+    splitAddress: string
+    chainId?: number
+  }): Promise<Split> {
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+
+    if (!isAddress(splitAddress))
+      throw new InvalidAddressError({ address: splitAddress })
+    const { split } = await this._getSplitMetadataViaProvider(
+      splitAddress,
+      functionChainId,
+    )
+    return split
   }
 }
 

@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from 'react'
 import {
+  AccountNotFoundError,
   FormattedContractEarnings,
   FormattedSplitEarnings,
   FormattedUserEarnings,
@@ -18,6 +19,9 @@ import { SplitsContext } from '../context'
 export const useSplitMetadata = (
   chainId: number,
   splitAddress: string,
+  options?: {
+    requireDataClient?: boolean
+  },
 ): {
   isLoading: boolean
   splitMetadata: Split | undefined
@@ -25,7 +29,11 @@ export const useSplitMetadata = (
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context).dataClient
+  const dataClient = getSplitsClient(context).dataClient
+  const splitsV1Client = getSplitsClient(context).splitV1
+  const splitsV2Client = getSplitsClient(context).splitV2
+
+  const requireDataClient = options?.requireDataClient ?? true
 
   const [splitMetadata, setSplitMetadata] = useState<Split | undefined>()
   const [isLoading, setIsLoading] = useState(!!splitAddress)
@@ -38,13 +46,33 @@ export const useSplitMetadata = (
     let isActive = true
 
     const fetchMetadata = async () => {
-      if (!splitsClient) throw new Error('Missing api key for data client')
+      if (requireDataClient && !dataClient)
+        throw new Error('Missing api key for data client')
 
       try {
-        const split = await splitsClient.getSplitMetadata({
-          chainId,
-          splitAddress,
-        })
+        let split: Split
+        if (dataClient)
+          split = await dataClient.getSplitMetadata({
+            chainId,
+            splitAddress,
+          })
+        else {
+          const [splitV1Result, splitV2Result] = await Promise.allSettled([
+            splitsV1Client.getSplitMetadataViaProvider({
+              chainId,
+              splitAddress,
+            }),
+            splitsV2Client.getSplitMetadataViaProvider({
+              chainId,
+              splitAddress,
+            }),
+          ])
+
+          if (splitV1Result.status === 'fulfilled') split = splitV1Result.value
+          else if (splitV2Result.status === 'fulfilled')
+            split = splitV2Result.value
+          else throw new AccountNotFoundError('split', splitAddress, chainId)
+        }
         if (!isActive) return
         setSplitMetadata(split)
         setStatus('success')
@@ -72,7 +100,7 @@ export const useSplitMetadata = (
     return () => {
       isActive = false
     }
-  }, [splitsClient, chainId, splitAddress])
+  }, [dataClient, splitsV1Client, splitsV2Client, chainId, splitAddress])
 
   return {
     isLoading,

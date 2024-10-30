@@ -120,6 +120,11 @@ export const getSplitV2FactoryAddress = (
   else return PUSH_SPLIT_FACTORY_ADDRESS
 }
 
+export const getSplitV1StartBlock = (chainId: number): bigint => {
+  if (!CHAIN_INFO[chainId].startBlock) throw new Error('Chain not supported')
+  return BigInt(CHAIN_INFO[chainId].startBlock as number)
+}
+
 export const getSplitV2FactoriesStartBlock = (chainId: number): bigint => {
   if (!CHAIN_INFO[chainId].startBlockV2) throw new Error('Chain not supported')
   return BigInt(CHAIN_INFO[chainId].startBlockV2 as number)

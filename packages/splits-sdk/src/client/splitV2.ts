@@ -4,13 +4,16 @@ import {
   GetContractReturnType,
   Hash,
   Hex,
+  InvalidAddressError,
   Log,
   PublicClient,
   Transport,
   TypedDataDomain,
   decodeEventLog,
   encodeEventTopics,
+  getAddress,
   getContract,
+  isAddress,
   zeroAddress,
 } from 'viem'
 import {
@@ -933,6 +936,24 @@ export class SplitV2Client extends SplitV2Transactions {
     const functionChainId = this._getReadOnlyFunctionChainId(chainId)
     const ownerAddress = await this._owner(splitAddress, functionChainId)
     return { ownerAddress }
+  }
+
+  async getSplitMetadataViaProvider({
+    splitAddress,
+    chainId,
+  }: {
+    splitAddress: string
+    chainId?: number
+  }): Promise<Split> {
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+
+    if (!isAddress(splitAddress))
+      throw new InvalidAddressError({ address: splitAddress })
+    const { split } = await this._getSplitMetadataViaProvider(
+      splitAddress,
+      functionChainId,
+    )
+    return split
   }
 }
 

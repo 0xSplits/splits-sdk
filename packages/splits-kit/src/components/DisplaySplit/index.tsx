@@ -1,10 +1,5 @@
 import { useEffect } from 'react'
-import { isLogsPublicClient } from '@0xsplits/splits-sdk/utils'
-import {
-  useSplitEarnings,
-  useSplitMetadata,
-  useSplitsClient,
-} from '@0xsplits/splits-sdk-react'
+import { useSplitEarnings, useSplitMetadata } from '@0xsplits/splits-sdk-react'
 import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
 
 import {
@@ -43,22 +38,14 @@ const DisplaySplit = ({
   onSuccess,
   onError,
 }: IDisplaySplitProps) => {
-  const splitsClient = useSplitsClient()
-
   const {
     splitMetadata: split,
     error: metadataError,
     isLoading: isLoadingMetadata,
-  } = useSplitMetadata(chainId, address)
-
-  if (!splitsClient.splitV1) throw new Error('Split v1 not supported')
+  } = useSplitMetadata(chainId, address, { requireDataClient: false })
 
   const includeActiveBalances = true
-  const erc20TokenList = splitsClient.splitV1._publicClient
-    ? isLogsPublicClient(splitsClient.splitV1._publicClient)
-      ? undefined
-      : ERC20_TOKEN_LIST
-    : ERC20_TOKEN_LIST
+  const erc20TokenList = ERC20_TOKEN_LIST
   const {
     splitEarnings,
     isLoading: isLoadingEarnings,
