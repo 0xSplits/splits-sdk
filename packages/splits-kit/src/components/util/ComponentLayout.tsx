@@ -90,7 +90,7 @@ const ComponentLayout = ({
           {errorDisplay ? (
             <div className="text-center my-8 space-y-2">
               <div className="text-lg">{errorDisplay.title}</div>
-              <div className="text-xs max-w-md">{errorDisplay.body}</div>
+              <div className="text-xs">{errorDisplay.body}</div>
             </div>
           ) : (
             body

@@ -111,9 +111,16 @@ const DisplaySplit = ({
           ) : (
             <div className="space-y-4">
               <SplitRecipients split={split} />
-              {displayBalances && !isLoadingEarnings && (
+              {split && displayBalances && !isLoadingEarnings && (
                 <SplitBalances
                   chainId={chainId as SupportedChainId}
+                  type={
+                    split.type === 'Split'
+                      ? 'v1'
+                      : split.distributeDirection === 'pull'
+                      ? 'v2Pull'
+                      : 'v2Push'
+                  }
                   address={address}
                   formattedSplitEarnings={splitEarnings}
                   onSuccess={onSuccess}

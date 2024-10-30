@@ -1,17 +1,22 @@
 import { useEffect } from 'react'
 import { DistributeTokenConfig } from '@0xsplits/splits-sdk'
-import { useDistributeToken } from '@0xsplits/splits-sdk-react'
+import {
+  useDistributeToken,
+  useDistributeTokenV2,
+} from '@0xsplits/splits-sdk-react'
 import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
+import { Address } from 'viem'
 import { useAccount } from 'wagmi'
 
 import { displayBigNumber } from '../../utils/display'
 import Tooltip from '../util/Tooltip'
 import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
 import Button from '../util/Button'
-import { Balance } from '../../types'
+import { Balance, SplitType } from '../../types'
 
 function DistributeBalance({
   chainId,
+  type,
   token,
   balance,
   address,
@@ -19,6 +24,7 @@ function DistributeBalance({
   onError,
 }: {
   chainId: SupportedChainId
+  type: SplitType
   token: string
   balance: Balance
   address: string
@@ -26,6 +32,11 @@ function DistributeBalance({
   onError?: (error: RequestError) => void
 }) {
   const { distributeToken, status, error } = useDistributeToken()
+  const {
+    distributeToken: distributeTokenV2,
+    status: statusV2,
+    error: errorV2,
+  } = useDistributeTokenV2()
   const { isConnected, address: connectedAddress, chain } = useAccount()
 
   useEffect(() => {
@@ -33,6 +44,12 @@ function DistributeBalance({
       // eslint-disable-next-line no-console
       console.error(error)
       onError && onError(error)
+    }
+
+    if (errorV2) {
+      // eslint-disable-next-line no-console
+      console.error(errorV2)
+      onError && onError(errorV2)
     }
   }, [error, onError])
 
@@ -46,9 +63,38 @@ function DistributeBalance({
     if (events) {
       onSuccess && onSuccess(token)
     }
+
+    if (type === 'v1') {
+      const args = {
+        splitAddress: address,
+        token,
+        distributorAddress: connectedAddress,
+      }
+
+      const events = await distributeToken(args)
+      if (events) {
+        onSuccess && onSuccess(token)
+      }
+    } else {
+      const args = {
+        splitAddress: address as Address,
+        tokenAddress: token as Address,
+        distributorAddress: connectedAddress,
+        chainId,
+      }
+
+      const events = await distributeTokenV2(args)
+      if (events) {
+        onSuccess && onSuccess(token)
+      }
+    }
   }
 
-  const inProgress = status === 'pendingApproval' || status === 'txInProgress'
+  const inProgress =
+    status === 'pendingApproval' ||
+    status === 'txInProgress' ||
+    statusV2 === 'pendingApproval' ||
+    statusV2 === 'txInProgress'
   const isWrongChain = chain && chainId !== chain.id
   const isDisabled = !isConnected || isWrongChain
   return (
