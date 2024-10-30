@@ -117,7 +117,7 @@ export const useSplitEarnings = (
   erc20TokenList?: string[],
   options?: {
     requireDataClient?: boolean
-  }
+  },
 ): {
   isLoading: boolean
   splitEarnings: FormattedSplitEarnings | undefined
@@ -146,7 +146,8 @@ export const useSplitEarnings = (
     let isActive = true
 
     const fetchEarnings = async () => {
-      if (requireDataClient && !dataClient) throw new Error('Missing api key for data client')
+      if (requireDataClient && !dataClient)
+        throw new Error('Missing api key for data client')
 
       try {
         let earnings: FormattedSplitEarnings
@@ -185,11 +186,13 @@ export const useSplitEarnings = (
             activeBalances: {},
           }
 
-          if (splitV1Result.status === 'fulfilled') earnings.activeBalances = splitV1Result.value.activeBalances
-          else if (splitV2Result.status === 'fulfilled') earnings.activeBalances = splitV2Result.value.activeBalances
+          if (splitV1Result.status === 'fulfilled')
+            earnings.activeBalances = splitV1Result.value.activeBalances
+          else if (splitV2Result.status === 'fulfilled')
+            earnings.activeBalances = splitV2Result.value.activeBalances
           else throw new AccountNotFoundError('split', splitAddress, chainId)
         }
-          
+
         if (!isActive) return
         setSplitEarnings(earnings)
         setStatus('success')
