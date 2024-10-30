@@ -20,6 +20,9 @@ export interface IDisplaySplitProps {
   chainId: number
   displayBalances?: boolean
   displayChain?: boolean
+  options?: {
+    requireDataClient?: boolean
+  }
   width?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full'
   theme?: 'light' | 'dark' | 'system'
   onSuccess?: (token: string) => void
@@ -33,6 +36,7 @@ const DisplaySplit = ({
   chainId,
   displayBalances = true,
   displayChain = true,
+  options = { requireDataClient: true },
   width = 'md',
   theme = 'system',
   onSuccess,
@@ -42,7 +46,7 @@ const DisplaySplit = ({
     splitMetadata: split,
     error: metadataError,
     isLoading: isLoadingMetadata,
-  } = useSplitMetadata(chainId, address, { requireDataClient: false })
+  } = useSplitMetadata(chainId, address, options)
 
   const includeActiveBalances = true
   const erc20TokenList = ERC20_TOKEN_LIST
@@ -55,7 +59,7 @@ const DisplaySplit = ({
     address,
     includeActiveBalances,
     erc20TokenList,
-    { requireDataClient: false },
+    options,
   )
 
   useEffect(() => {
