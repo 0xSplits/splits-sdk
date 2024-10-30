@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Recipient } from '@0xsplits/splits-sdk'
 import { Split } from '@0xsplits/splits-sdk-react'
+import { zeroAddress } from 'viem'
 import { useAccount } from 'wagmi'
 
 import { shortenENS, shortenAddress } from '../../utils/address'
@@ -31,7 +32,7 @@ const SplitRecipients = ({ split }: ISplitRecipientsProps) => {
 
   return (
     <div className="space-y-2 text-xs">
-      {split?.controller && (
+      {split?.controller && split?.controller.address !== zeroAddress && (
         <div className="border-yellow-500/50 bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 w-full rounded-sm border p-2 ">
           {connectedAddress === split?.controller.address
             ? 'You control'
