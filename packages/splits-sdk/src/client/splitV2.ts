@@ -34,6 +34,7 @@ import {
   CallData,
   CreateSplitV2Config,
   DistributeSplitConfig,
+  FormattedSplitEarnings,
   SetPausedConfig,
   Split,
   SplitV2ExecCallsConfig,
@@ -45,6 +46,7 @@ import {
   UpdateSplitV2Config,
 } from '../types'
 import {
+  fetchSplitActiveBalances,
   fromBigIntToPercent,
   getNumberFromPercent,
   getSplitType,
@@ -954,6 +956,38 @@ export class SplitV2Client extends SplitV2Transactions {
       functionChainId,
     )
     return split
+  }
+
+  async getSplitActiveBalances({
+    splitAddress,
+    chainId,
+    erc20TokenList,
+  }: {
+    splitAddress: string
+    chainId?: number
+    erc20TokenList?: string[]
+  }): Promise<Pick<FormattedSplitEarnings, 'activeBalances'>> {
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const fullTokenList = [
+      zeroAddress,
+      ...(erc20TokenList ? erc20TokenList : []),
+    ]
+    const publicClient = this._getPublicClient(functionChainId)
+
+    if (!isAddress(splitAddress))
+      throw new InvalidAddressError({ address: splitAddress })
+
+    const activeBalances = await fetchSplitActiveBalances({
+      type: 'splitV2',
+      chainId: functionChainId,
+      splitAddress,
+      publicClient,
+      fullTokenList: fullTokenList.map(getAddress),
+    })
+
+    return {
+      activeBalances,
+    }
   }
 }
 

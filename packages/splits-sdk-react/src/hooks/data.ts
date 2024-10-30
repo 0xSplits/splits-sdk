@@ -115,6 +115,9 @@ export const useSplitEarnings = (
   splitAddress: string,
   includeActiveBalances?: boolean,
   erc20TokenList?: string[],
+  options?: {
+    requireDataClient?: boolean
+  }
 ): {
   isLoading: boolean
   splitEarnings: FormattedSplitEarnings | undefined
@@ -122,7 +125,11 @@ export const useSplitEarnings = (
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context).dataClient
+  const dataClient = getSplitsClient(context).dataClient
+  const splitsV1Client = getSplitsClient(context).splitV1
+  const splitsV2Client = getSplitsClient(context).splitV2
+
+  const requireDataClient = options?.requireDataClient ?? true
 
   const [splitEarnings, setSplitEarnings] = useState<
     FormattedSplitEarnings | undefined
@@ -139,18 +146,50 @@ export const useSplitEarnings = (
     let isActive = true
 
     const fetchEarnings = async () => {
-      if (!splitsClient) throw new Error('Missing api key for data client')
+      if (requireDataClient && !dataClient) throw new Error('Missing api key for data client')
 
       try {
-        const earnings = await splitsClient.getSplitEarnings({
-          chainId,
-          splitAddress,
-          includeActiveBalances,
-          erc20TokenList:
-            stringErc20List !== undefined
-              ? JSON.parse(stringErc20List)
-              : undefined,
-        })
+        let earnings: FormattedSplitEarnings
+        if (dataClient)
+          earnings = await dataClient.getSplitEarnings({
+            chainId,
+            splitAddress,
+            includeActiveBalances,
+            erc20TokenList:
+              stringErc20List !== undefined
+                ? JSON.parse(stringErc20List)
+                : undefined,
+          })
+        else {
+          const [splitV1Result, splitV2Result] = await Promise.allSettled([
+            splitsV1Client.getSplitActiveBalances({
+              chainId,
+              splitAddress,
+              erc20TokenList:
+                stringErc20List !== undefined
+                  ? JSON.parse(stringErc20List)
+                  : undefined,
+            }),
+            splitsV2Client.getSplitActiveBalances({
+              chainId,
+              splitAddress,
+              erc20TokenList:
+                stringErc20List !== undefined
+                  ? JSON.parse(stringErc20List)
+                  : undefined,
+            }),
+          ])
+
+          earnings = {
+            distributed: {},
+            activeBalances: {},
+          }
+
+          if (splitV1Result.status === 'fulfilled') earnings.activeBalances = splitV1Result.value.activeBalances
+          else if (splitV2Result.status === 'fulfilled') earnings.activeBalances = splitV2Result.value.activeBalances
+          else throw new AccountNotFoundError('split', splitAddress, chainId)
+        }
+          
         if (!isActive) return
         setSplitEarnings(earnings)
         setStatus('success')
@@ -179,7 +218,7 @@ export const useSplitEarnings = (
       isActive = false
     }
   }, [
-    splitsClient,
+    dataClient,
     chainId,
     splitAddress,
     includeActiveBalances,

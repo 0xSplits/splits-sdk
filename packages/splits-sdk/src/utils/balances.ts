@@ -6,13 +6,15 @@ import {
   getAddress,
 } from 'viem'
 
-import { CHAIN_INFO, ZERO } from '../constants'
+import { CHAIN_INFO, getSplitMainAddress, ZERO } from '../constants'
 import { erc20Abi } from '../constants/abi/erc20'
+import { splitV2ABI } from '../constants/abi/splitV2'
 import { FormattedTokenBalances, Token } from '../types'
 import { fromBigIntToTokenValue, isAlchemyPublicClient } from '.'
 import { retryExponentialBackoff } from './requests'
 import { IBalance } from '../subgraph/types'
 import { mergeWith } from 'lodash'
+import { splitMainPolygonAbi } from '../constants/abi'
 
 export const fetchERC20TransferredTokens = async (
   chainId: number,
@@ -77,6 +79,49 @@ export const fetchActiveBalances: (
     multicallResponse,
     balances,
   )
+
+  return balances
+}
+
+type SplitType = 'splitV1' | 'splitV2'
+
+export const fetchSplitActiveBalances = async ({
+  type,
+  chainId,
+  splitAddress,
+  publicClient,
+  fullTokenList,
+}: {
+  type: SplitType
+  chainId: number
+  splitAddress: Address
+  publicClient: PublicClient
+  fullTokenList: Address[]
+}) => {
+  const balances: FormattedTokenBalances = {}
+
+  const erc20Tokens = fullTokenList.filter((token) => token !== zeroAddress)
+  const contractCalls = getSplitTokenBalanceCalls({
+    type,
+    chainId,
+    splitAddress,
+    tokenList: fullTokenList,
+  })
+
+  const [tokenData, multicallResponse] = await Promise.all([
+    fetchTokenData(erc20Tokens, publicClient),
+    publicClient.multicall({
+      contracts: contractCalls,
+    }),
+  ])
+  processSplitBalanceMulticallResponse({
+    type,
+    chainId,
+    fullTokenList,
+    tokenData,
+    multicallResponse,
+    balances,
+  })
 
   return balances
 }
@@ -253,6 +298,59 @@ const processBalanceMulticallResponse: (
   })
 }
 
+const processSplitBalanceMulticallResponse = ({
+  type,
+  chainId,
+  fullTokenList,
+  tokenData,
+  multicallResponse,
+  balances,
+}: {
+  type: SplitType
+  chainId: number
+  fullTokenList: Address[]
+  tokenData: TokenData
+  multicallResponse: MulticallReturnType
+  balances: FormattedTokenBalances
+}) => {
+  fullTokenList.map((token, index) => {
+    const data = multicallResponse[index]
+
+    let balance: bigint
+    if (type === 'splitV1') {
+      balance = data.result as bigint
+    } else {
+      const [splitBalance, warehouseBalance] = data.result as [bigint, bigint]
+      if (splitBalance === undefined || warehouseBalance === undefined) return
+      balance = splitBalance + warehouseBalance
+    }
+
+    let symbol: string
+    let decimals: number
+    if (token === zeroAddress) {
+      decimals = 18
+      symbol = CHAIN_INFO[chainId]?.nativeCurrency.symbol ?? 'ETH'
+    } else {
+      if (!tokenData[token]) return // Unable to fetch token data
+      if (
+        tokenData[token].symbol === undefined ||
+        tokenData[token].decimals === undefined
+      )
+        return // ignore non erc20
+      symbol = tokenData[token].symbol as string
+      decimals = tokenData[token].decimals as number
+    }
+
+    const formattedAmount = fromBigIntToTokenValue(balance, decimals)
+    balances[token] = {
+      rawAmount: balance,
+      formattedAmount,
+      symbol,
+      decimals,
+    }
+  })
+}
+
 const ethBalanceAbi = [
   {
     inputs: [{ internalType: 'address', name: 'addr', type: 'address' }],
@@ -280,6 +378,43 @@ const getTokenBalanceCalls = (
       abi: erc20Abi,
       functionName: 'balanceOf',
       args: [accountAddress],
+    }
+  })
+}
+
+const getSplitTokenBalanceCalls = ({
+  type,
+  chainId,
+  splitAddress,
+  tokenList,
+}: {
+  type: SplitType
+  chainId: number
+  splitAddress: Address
+  tokenList: Address[]
+}) => {
+  return tokenList.map((token) => {
+    if (type === 'splitV1') {
+      if (token === zeroAddress)
+        return {
+          address: getSplitMainAddress(chainId),
+          abi: splitMainPolygonAbi,
+          functionName: 'getETHBalance',
+          args: [splitAddress],
+        }
+      return {
+        address: getSplitMainAddress(chainId),
+        abi: splitMainPolygonAbi,
+        functionName: 'getERC20Balance',
+        args: [splitAddress, token],
+      }
+    } else {
+      return {
+        address: splitAddress,
+        abi: splitV2ABI,
+        functionName: 'getSplitBalance',
+        args: [token],
+      }
     }
   })
 }

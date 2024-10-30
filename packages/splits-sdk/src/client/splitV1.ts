@@ -49,6 +49,7 @@ import type {
   CancelControlTransferConfig,
   CreateSplitConfig,
   DistributeTokenConfig,
+  FormattedSplitEarnings,
   GetSplitBalanceConfig,
   InitiateControlTransferConfig,
   MakeSplitImmutableConfig,
@@ -62,6 +63,7 @@ import type {
   WithdrawFundsConfig,
 } from '../types'
 import {
+  fetchSplitActiveBalances,
   fromBigIntToPercent,
   getBigIntFromPercent,
   getRecipientSortedAddressesAndAllocations,
@@ -1265,6 +1267,38 @@ export class SplitV1Client extends SplitV1Transactions {
       functionChainId,
     )
     return split
+  }
+
+  async getSplitActiveBalances({
+    splitAddress,
+    chainId,
+    erc20TokenList,
+  }: {
+    splitAddress: string
+    chainId?: number
+    erc20TokenList?: string[]
+  }): Promise<Pick<FormattedSplitEarnings, 'activeBalances'>> {
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const fullTokenList = [
+      zeroAddress,
+      ...(erc20TokenList ? erc20TokenList : []),
+    ]
+    const publicClient = this._getPublicClient(functionChainId)
+
+    if (!isAddress(splitAddress))
+      throw new InvalidAddressError({ address: splitAddress })
+
+    const activeBalances = await fetchSplitActiveBalances({
+      type: 'splitV1',
+      chainId: functionChainId,
+      splitAddress,
+      publicClient,
+      fullTokenList: fullTokenList.map(getAddress),
+    })
+
+    return {
+      activeBalances,
+    }
   }
 }
 
