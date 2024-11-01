@@ -62,3 +62,26 @@ export const isInfuraPublicClient: (arg0: PublicClient) => boolean = (
 
   return false
 }
+
+// Returns the block ranges in reverse order, so the end block is in the first
+// range and the start block is in the last range
+export const getReverseBlockRanges = (
+  startBlock: bigint,
+  endBlock: bigint,
+  stepSize: bigint,
+) => {
+  const blockRanges = []
+
+  let currentBlockNumber = endBlock
+  // eslint-disable-next-line no-loops/no-loops
+  while (currentBlockNumber > startBlock) {
+    const nextBlockNumber =
+      currentBlockNumber - stepSize > startBlock
+        ? currentBlockNumber - stepSize
+        : startBlock
+    blockRanges.push({ from: nextBlockNumber, to: currentBlockNumber })
+    currentBlockNumber = nextBlockNumber
+  }
+
+  return blockRanges
+}

@@ -2,6 +2,7 @@ import {
   Address,
   Chain,
   GetContractReturnType,
+  GetLogsReturnType,
   Hash,
   Hex,
   InvalidAddressError,
@@ -48,6 +49,7 @@ import {
 import {
   fetchSplitActiveBalances,
   fromBigIntToPercent,
+  getReverseBlockRanges,
   getNumberFromPercent,
   getSplitType,
   getValidatedSplitV2Config,
@@ -302,43 +304,103 @@ class SplitV2Transactions extends BaseTransactions {
     chainId: number,
   ): Promise<{ split: Split }> {
     const publicClient = this._getPublicClient(chainId)
+    let createLog: SplitCreatedLogType | undefined = undefined
+    let updateLog: SplitUpdatedLogType | undefined = undefined
 
-    const [createLogs, owner, paused] = await Promise.all([
-      publicClient.getLogs({
-        event: splitCreatedEvent,
-        address: [
-          getSplitV2FactoryAddress(chainId, SplitV2Type.Pull),
-          getSplitV2FactoryAddress(chainId, SplitV2Type.Push),
-        ],
-        args: {
-          split: splitAddress,
-        },
-        strict: true,
-        fromBlock: getSplitV2FactoriesStartBlock(chainId),
-      }),
+    const endBlockNumber = await publicClient.getBlockNumber()
+    const startBlockNumber = getSplitV2FactoriesStartBlock(chainId)
+    const blockRange = BigInt(10_000)
+    const batchSize = 100
+    const createBlockRanges = getReverseBlockRanges(
+      startBlockNumber,
+      endBlockNumber,
+      blockRange,
+    )
+
+    let batchRequests = []
+    // eslint-disable-next-line no-loops/no-loops
+    for (const { from, to } of createBlockRanges) {
+      batchRequests.push(
+        publicClient.getLogs({
+          events: [splitCreatedEvent, splitUpdatedEvent],
+          address: [
+            splitAddress,
+            getSplitV2FactoryAddress(chainId, SplitV2Type.Pull),
+            getSplitV2FactoryAddress(chainId, SplitV2Type.Push),
+          ],
+          strict: true,
+          fromBlock: from,
+          toBlock: to,
+        }),
+      )
+
+      if (batchRequests.length >= batchSize) {
+        const results = (await Promise.all(batchRequests)).flat()
+        // eslint-disable-next-line no-loops/no-loops
+        for (const log of results) {
+          if (log.eventName === 'SplitUpdated') {
+            const shouldSet =
+              log.address === splitAddress &&
+              (!updateLog ||
+                log.blockNumber > updateLog.blockNumber ||
+                (log.blockNumber === updateLog.blockNumber &&
+                  log.logIndex > updateLog.logIndex))
+            if (shouldSet) updateLog = log
+          } else {
+            if (log.args.split === splitAddress) createLog = log
+          }
+        }
+
+        if (createLog) break
+
+        batchRequests = []
+      }
+    }
+
+    const [owner, paused] = await Promise.all([
       this._owner(splitAddress, chainId),
       this._paused(splitAddress, chainId),
     ])
 
-    if (!createLogs) throw new Error('Split not found')
+    if (!createLog) throw new Error('Split not found')
 
-    const updateLogs = await publicClient.getLogs({
-      address: splitAddress,
-      event: splitUpdatedEvent,
-      strict: true,
-      fromBlock: createLogs[0].blockNumber,
+    const split = this._getSplitFromLogs({
+      splitAddress,
+      chainId,
+      owner,
+      paused,
+      createLog,
+      updateLog,
     })
 
-    const recipients = createLogs[0].args.splitParams.recipients.map(
+    return { split }
+  }
+
+  private _getSplitFromLogs({
+    splitAddress,
+    chainId,
+    owner,
+    paused,
+    createLog,
+    updateLog,
+  }: {
+    splitAddress: Address
+    chainId: number
+    owner: Address
+    paused: boolean
+    createLog: SplitCreatedLogType
+    updateLog?: SplitUpdatedLogType
+  }): Split {
+    const recipients = createLog.args.splitParams.recipients.map(
       (recipient, i) => {
         return {
           recipient: {
             address: recipient,
           },
-          ownership: createLogs[0].args.splitParams.allocations[i],
+          ownership: createLog!.args.splitParams.allocations[i],
           percentAllocation: fromBigIntToPercent(
-            createLogs[0].args.splitParams.allocations[i],
-            createLogs[0].args.splitParams.totalAllocation,
+            createLog!.args.splitParams.allocations[i],
+            createLog!.args.splitParams.totalAllocation,
           ),
         }
       },
@@ -348,9 +410,9 @@ class SplitV2Transactions extends BaseTransactions {
       address: splitAddress,
       recipients,
       distributorFeePercent: fromBigIntToPercent(
-        createLogs[0].args.splitParams.distributionIncentive,
+        createLog.args.splitParams.distributionIncentive,
       ),
-      distributeDirection: getSplitType(chainId, createLogs[0].address),
+      distributeDirection: getSplitType(chainId, createLog.address),
       type: 'SplitV2',
       controller: {
         address: owner,
@@ -359,27 +421,21 @@ class SplitV2Transactions extends BaseTransactions {
       newPotentialController: {
         address: zeroAddress,
       },
-      createdBlock: Number(createLogs[0].blockNumber),
+      createdBlock: Number(createLog.blockNumber),
     }
 
-    if (!updateLogs || updateLogs.length == 0) return { split }
+    if (!updateLog) return split
 
-    updateLogs.sort((a, b) => {
-      if (a.blockNumber !== b.blockNumber)
-        return a.blockNumber > b.blockNumber ? -1 : 1
-      else return a.logIndex > b.logIndex ? -1 : 1
-    })
-
-    const updatedRecipients = updateLogs[0].args._split.recipients.map(
+    const updatedRecipients = updateLog.args._split.recipients.map(
       (recipient, i) => {
         return {
           recipient: {
             address: recipient,
           },
-          ownership: updateLogs[0].args._split.allocations[i],
+          ownership: updateLog!.args._split.allocations[i],
           percentAllocation: fromBigIntToPercent(
-            updateLogs[0].args._split.allocations[i],
-            updateLogs[0].args._split.totalAllocation,
+            updateLog!.args._split.allocations[i],
+            updateLog!.args._split.totalAllocation,
           ),
         }
       },
@@ -387,10 +443,10 @@ class SplitV2Transactions extends BaseTransactions {
 
     split.recipients = updatedRecipients
     split.distributorFeePercent = fromBigIntToPercent(
-      updateLogs[0].args._split.distributionIncentive,
+      updateLog.args._split.distributionIncentive,
     )
 
-    return { split }
+    return split
   }
 
   protected _getSplitV2Contract(
@@ -1142,8 +1198,24 @@ class SplitV2Signature extends SplitV2Transactions {
 }
 
 const splitUpdatedEvent = splitV2ABI[28]
+type SplitUpdatedEventType = typeof splitUpdatedEvent
+type SplitUpdatedLogType = GetLogsReturnType<
+  SplitUpdatedEventType,
+  [SplitUpdatedEventType],
+  true,
+  bigint,
+  bigint
+>[0]
 
 const splitCreatedEvent = splitV2FactoryABI[8]
+type SplitCreatedEventType = typeof splitCreatedEvent
+type SplitCreatedLogType = GetLogsReturnType<
+  SplitCreatedEventType,
+  [SplitCreatedEventType],
+  true,
+  bigint,
+  bigint
+>[0]
 
 const SigTypes = {
   SplitWalletMessage: [
