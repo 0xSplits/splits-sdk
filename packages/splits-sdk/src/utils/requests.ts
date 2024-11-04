@@ -1,5 +1,12 @@
 import { Chain, PublicClient, Transport } from 'viem'
 
+import { SplitV2Type } from '../types'
+import {
+  getSplitV2FactoriesStartBlock,
+  getSplitV2FactoryAddress,
+} from '../constants'
+import { splitV2FactoryABI } from '../constants/abi/splitV2Factory'
+
 /**
  * Retries a function n number of times with exponential backoff before giving up
  */
@@ -84,4 +91,50 @@ export const getReverseBlockRanges = (
   }
 
   return blockRanges
+}
+
+export const getLargestValidBlockRange = async ({
+  fallbackBlockRange,
+  maxBlockRange,
+  publicClient,
+}: {
+  fallbackBlockRange: bigint
+  maxBlockRange?: bigint
+  publicClient: PublicClient<Transport, Chain>
+}) => {
+  const chainId = publicClient.chain.id
+  const startBlockNumber = getSplitV2FactoriesStartBlock(chainId)
+
+  const blockRangeOptions = [
+    BigInt(1_000_000),
+    BigInt(10_000),
+    BigInt(5_000),
+    BigInt(1_250),
+  ].filter((range) => (maxBlockRange ? range < maxBlockRange : true))
+
+  const blockRangeTests = await Promise.allSettled(
+    blockRangeOptions.map((testBlockRange) =>
+      publicClient.getLogs({
+        events: [splitV2FactoryABI[8]],
+        address: [
+          getSplitV2FactoryAddress(chainId, SplitV2Type.Pull),
+          getSplitV2FactoryAddress(chainId, SplitV2Type.Push),
+        ],
+        strict: true,
+        fromBlock: startBlockNumber,
+        toBlock: startBlockNumber + BigInt(testBlockRange),
+      }),
+    ),
+  )
+
+  let blockRange = fallbackBlockRange
+  blockRangeTests.forEach((result, index) => {
+    if (result.status === 'fulfilled') {
+      if (blockRangeOptions[index] > blockRange) {
+        blockRange = blockRangeOptions[index]
+      }
+    }
+  })
+
+  return blockRange
 }

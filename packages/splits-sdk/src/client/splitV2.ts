@@ -55,6 +55,7 @@ import {
   getValidatedSplitV2Config,
   validateAddress,
   sleep,
+  getLargestValidBlockRange,
 } from '../utils'
 import {
   BaseClientMixin,
@@ -336,34 +337,10 @@ class SplitV2Transactions extends BaseTransactions {
       // Try to determine the largest possible block range. Sometimes these rpc's do not always
       // throw a block range error though...so that means this request could succeed, but then down
       // below we will get a block range error. So we still need to catch/handle that down below.
-      const blockRangeOptions = [
-        BigInt(1_000_000),
-        BigInt(10_000),
-        BigInt(5_000),
-        BigInt(1_250),
-      ].filter((range) => (maxBlockRange ? range < maxBlockRange : true))
-
-      const blockRangeTests = await Promise.allSettled(
-        blockRangeOptions.map((testBlockRange) =>
-          publicClient.getLogs({
-            events: [splitCreatedEvent],
-            address: [
-              getSplitV2FactoryAddress(chainId, SplitV2Type.Pull),
-              getSplitV2FactoryAddress(chainId, SplitV2Type.Push),
-            ],
-            strict: true,
-            fromBlock: startBlockNumber,
-            toBlock: startBlockNumber + BigInt(testBlockRange),
-          }),
-        ),
-      )
-
-      blockRangeTests.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
-          if (blockRangeOptions[index] > blockRange) {
-            blockRange = blockRangeOptions[index]
-          }
-        }
+      blockRange = await getLargestValidBlockRange({
+        fallbackBlockRange: blockRange,
+        maxBlockRange,
+        publicClient,
       })
     }
 
