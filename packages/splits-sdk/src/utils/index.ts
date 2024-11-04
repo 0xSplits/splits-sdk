@@ -250,3 +250,7 @@ export const hashSplitV1: (
     ),
   )
 }
+
+export const sleep = (timeMs: number) => {
+  return new Promise((resolve) => setTimeout(resolve, timeMs))
+}

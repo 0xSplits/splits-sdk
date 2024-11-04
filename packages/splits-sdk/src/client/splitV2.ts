@@ -54,6 +54,7 @@ import {
   getSplitType,
   getValidatedSplitV2Config,
   validateAddress,
+  sleep,
 } from '../utils'
 import {
   BaseClientMixin,
@@ -251,7 +252,10 @@ class SplitV2Transactions extends BaseTransactions {
       })
     else
       split = (
-        await this._getSplitMetadataViaProvider(splitAddress, functionChainId)
+        await this._getSplitMetadataViaProvider({
+          splitAddress,
+          chainId: functionChainId,
+        })
       ).split
 
     const recipientAddresses = split.recipients.map(
@@ -299,18 +303,70 @@ class SplitV2Transactions extends BaseTransactions {
     return this._getSplitV2Contract(splitAddress, chainId).read.owner()
   }
 
-  protected async _getSplitMetadataViaProvider(
-    splitAddress: Address,
-    chainId: number,
-  ): Promise<{ split: Split }> {
+  protected async _getSplitMetadataViaProvider({
+    splitAddress,
+    chainId,
+    defaultBlockRange,
+    currentUpdateLog,
+    currentEndBlockNumber,
+    maxBlockRange,
+  }: {
+    splitAddress: Address
+    chainId: number
+    defaultBlockRange?: bigint // if this exists, don't need to calculate block range
+    currentUpdateLog?: SplitUpdatedLogType
+    currentEndBlockNumber?: bigint
+    maxBlockRange?: bigint // if this exists, restricts which ranges we will check at the beginning
+  }): Promise<{ split: Split }> {
+    const formattedSplitAddress = getAddress(splitAddress)
+    const batchSize = 20
+    const sleepTimeMs = 10_000
     const publicClient = this._getPublicClient(chainId)
     let createLog: SplitCreatedLogType | undefined = undefined
-    let updateLog: SplitUpdatedLogType | undefined = undefined
+    let updateLog: SplitUpdatedLogType | undefined = currentUpdateLog
 
-    const endBlockNumber = await publicClient.getBlockNumber()
+    const endBlockNumber =
+      currentEndBlockNumber ?? (await publicClient.getBlockNumber())
     const startBlockNumber = getSplitV2FactoriesStartBlock(chainId)
-    const blockRange = BigInt(10_000)
-    const batchSize = 100
+
+    let blockRange = BigInt(625)
+
+    if (defaultBlockRange) blockRange = defaultBlockRange
+    else {
+      // Try to determine the largest possible block range. Sometimes these rpc's do not always
+      // throw a block range error though...so that means this request could succeed, but then down
+      // below we will get a block range error. So we still need to catch/handle that down below.
+      const blockRangeOptions = [
+        BigInt(1_000_000),
+        BigInt(10_000),
+        BigInt(5_000),
+        BigInt(1_250),
+      ].filter((range) => (maxBlockRange ? range < maxBlockRange : true))
+
+      const blockRangeTests = await Promise.allSettled(
+        blockRangeOptions.map((testBlockRange) =>
+          publicClient.getLogs({
+            events: [splitCreatedEvent],
+            address: [
+              getSplitV2FactoryAddress(chainId, SplitV2Type.Pull),
+              getSplitV2FactoryAddress(chainId, SplitV2Type.Push),
+            ],
+            strict: true,
+            fromBlock: startBlockNumber,
+            toBlock: startBlockNumber + BigInt(testBlockRange),
+          }),
+        ),
+      )
+
+      blockRangeTests.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          if (blockRangeOptions[index] > blockRange) {
+            blockRange = blockRangeOptions[index]
+          }
+        }
+      })
+    }
+
     const createBlockRanges = getReverseBlockRanges(
       startBlockNumber,
       endBlockNumber,
@@ -324,7 +380,7 @@ class SplitV2Transactions extends BaseTransactions {
         publicClient.getLogs({
           events: [splitCreatedEvent, splitUpdatedEvent],
           address: [
-            splitAddress,
+            formattedSplitAddress,
             getSplitV2FactoryAddress(chainId, SplitV2Type.Pull),
             getSplitV2FactoryAddress(chainId, SplitV2Type.Push),
           ],
@@ -335,20 +391,70 @@ class SplitV2Transactions extends BaseTransactions {
       )
 
       if (batchRequests.length >= batchSize) {
-        const results = (await Promise.all(batchRequests)).flat()
-        // eslint-disable-next-line no-loops/no-loops
-        for (const log of results) {
-          if (log.eventName === 'SplitUpdated') {
-            const shouldSet =
-              log.address === splitAddress &&
-              (!updateLog ||
-                log.blockNumber > updateLog.blockNumber ||
-                (log.blockNumber === updateLog.blockNumber &&
-                  log.logIndex > updateLog.logIndex))
-            if (shouldSet) updateLog = log
-          } else {
-            if (log.args.split === splitAddress) createLog = log
+        try {
+          const results = (await Promise.all(batchRequests)).flat()
+          // eslint-disable-next-line no-loops/no-loops
+          for (const log of results) {
+            if (log.eventName === 'SplitUpdated') {
+              const shouldSet =
+                getAddress(log.address) === formattedSplitAddress &&
+                (!updateLog ||
+                  log.blockNumber > updateLog.blockNumber ||
+                  (log.blockNumber === updateLog.blockNumber &&
+                    log.logIndex > updateLog.logIndex))
+              if (shouldSet) updateLog = log
+            } else {
+              if (getAddress(log.args.split) === formattedSplitAddress)
+                createLog = log
+            }
           }
+        } catch (error) {
+          if (!(error instanceof Error)) throw error
+
+          // Handle rate limit error
+          if ('status' in error && error.status === 429) {
+            await sleep(sleepTimeMs)
+            return await this._getSplitMetadataViaProvider({
+              splitAddress,
+              chainId,
+              defaultBlockRange: blockRange,
+              currentUpdateLog: updateLog,
+              currentEndBlockNumber: to,
+            })
+          }
+
+          // Handle block range errors
+          if ('details' in error && typeof error.details === 'string') {
+            const lowerCaseDetails = error.details.toLowerCase()
+            if (
+              lowerCaseDetails.includes('block') &&
+              lowerCaseDetails.includes('range')
+            ) {
+              return await this._getSplitMetadataViaProvider({
+                splitAddress,
+                chainId,
+                currentUpdateLog: updateLog,
+                currentEndBlockNumber: to,
+                maxBlockRange: blockRange,
+              })
+            }
+          }
+
+          const lowerCaseMessage = error.message.toLowerCase()
+          if (
+            lowerCaseMessage.includes('block') &&
+            lowerCaseMessage.includes('range')
+          ) {
+            return await this._getSplitMetadataViaProvider({
+              splitAddress,
+              chainId,
+              currentUpdateLog: updateLog,
+              currentEndBlockNumber: to,
+              maxBlockRange: blockRange,
+            })
+          }
+
+          throw error
         }
 
         if (createLog) break
@@ -357,15 +463,15 @@ class SplitV2Transactions extends BaseTransactions {
       }
     }
 
-    const [owner, paused] = await Promise.all([
-      this._owner(splitAddress, chainId),
-      this._paused(splitAddress, chainId),
-    ])
-
     if (!createLog) throw new Error('Split not found')
 
+    const [owner, paused] = await Promise.all([
+      this._owner(formattedSplitAddress, chainId),
+      this._paused(formattedSplitAddress, chainId),
+    ])
+
     const split = this._getSplitFromLogs({
-      splitAddress,
+      splitAddress: formattedSplitAddress,
       chainId,
       owner,
       paused,
@@ -1007,10 +1113,10 @@ export class SplitV2Client extends SplitV2Transactions {
 
     if (!isAddress(splitAddress))
       throw new InvalidAddressError({ address: splitAddress })
-    const { split } = await this._getSplitMetadataViaProvider(
+    const { split } = await this._getSplitMetadataViaProvider({
       splitAddress,
-      functionChainId,
-    )
+      chainId: functionChainId,
+    })
     return split
   }
 
