@@ -126,6 +126,12 @@ class BaseClient {
         `Public client required on chain ${chainId} to perform this action, please update your call to the constructor`,
       )
 
+    if (this._publicClient.chain.id !== chainId) {
+      throw new MissingPublicClientError(
+        `Public client is for chain ${this._publicClient.chain.id}, but attempting to use it on chain ${chainId}`,
+      )
+    }
+
     return this._publicClient
   }
 }
