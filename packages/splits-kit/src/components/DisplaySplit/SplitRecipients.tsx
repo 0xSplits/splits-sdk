@@ -56,11 +56,13 @@ const SplitRecipients = ({ split, linkToApp }: ISplitRecipientsProps) => {
                 className="py-2 flex items-stretch justify-between space-x-0.5"
               >
                 <div className="flex items-center space-x-2">
-                  <SplitsAvatar address={recipient.address} size={20} />
                   {linkToApp ? (
-                    <Link href={getSplitsAccountUrl(recipient.address)}>
-                      <div>{displayAddress(recipient)}</div>
-                    </Link>
+                    <>
+                      <SplitsAvatar address={recipient.address} size={20} />
+                      <Link href={getSplitsAccountUrl(recipient.address)}>
+                        <div>{displayAddress(recipient)}</div>
+                      </Link>
+                    </>
                   ) : (
                     <AddressDisplay
                       address={recipient.address}
