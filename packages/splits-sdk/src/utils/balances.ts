@@ -6,7 +6,12 @@ import {
   getAddress,
 } from 'viem'
 
-import { CHAIN_INFO, getSplitMainAddress, ZERO } from '../constants'
+import {
+  CHAIN_INFO,
+  getSplitMainAddress,
+  NATIVE_TOKEN_ADDRESS,
+  ZERO,
+} from '../constants'
 import { erc20Abi } from '../constants/abi/erc20'
 import { splitV2ABI } from '../constants/abi/splitV2'
 import { FormattedTokenBalances, Token } from '../types'
@@ -417,7 +422,7 @@ const getSplitTokenBalanceCalls = ({
         address: splitAddress,
         abi: splitV2ABI,
         functionName: 'getSplitBalance',
-        args: [token],
+        args: [token === zeroAddress ? NATIVE_TOKEN_ADDRESS : token],
       }
     }
   })
