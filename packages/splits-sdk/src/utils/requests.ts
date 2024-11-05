@@ -1,4 +1,11 @@
-import { Chain, PublicClient, Transport } from 'viem'
+import {
+  Address,
+  Chain,
+  getAddress,
+  GetLogsReturnType,
+  PublicClient,
+  Transport,
+} from 'viem'
 
 import { SplitV2Type } from '../types'
 import {
@@ -6,6 +13,9 @@ import {
   getSplitV2FactoryAddress,
 } from '../constants'
 import { splitV2FactoryABI } from '../constants/abi/splitV2Factory'
+import { splitMainPolygonAbi, splitV2ABI } from '../constants/abi'
+import { sleep } from '.'
+import { AccountNotFoundError } from '../errors'
 
 /**
  * Retries a function n number of times with exponential backoff before giving up
@@ -72,7 +82,7 @@ export const isInfuraPublicClient: (arg0: PublicClient) => boolean = (
 
 // Returns the block ranges in reverse order, so the end block is in the first
 // range and the start block is in the last range
-export const getReverseBlockRanges = (
+const getReverseBlockRanges = (
   startBlock: bigint,
   endBlock: bigint,
   stepSize: bigint,
@@ -93,7 +103,7 @@ export const getReverseBlockRanges = (
   return blockRanges
 }
 
-export const getLargestValidBlockRange = async ({
+const getLargestValidBlockRange = async ({
   fallbackBlockRange,
   maxBlockRange,
   publicClient,
@@ -137,4 +147,221 @@ export const getLargestValidBlockRange = async ({
   })
 
   return blockRange
+}
+
+type SplitCreatedEventType =
+  | (typeof splitV2FactoryABI)[8]
+  | (typeof splitMainPolygonAbi)[14]
+
+type SplitUpdatedEventType =
+  | (typeof splitV2ABI)[28]
+  | (typeof splitMainPolygonAbi)[18]
+
+export const getSplitCreateAndUpdateLogs = async <
+  SplitCreatedEventName extends SplitCreatedEventType['name'],
+  SplitUpdatedEventName extends SplitUpdatedEventType['name'],
+  SplitCreatedLogType extends GetLogsReturnType<
+    SplitCreatedEventType,
+    [SplitCreatedEventType],
+    true,
+    bigint,
+    bigint,
+    SplitCreatedEventName
+  >[0] = GetLogsReturnType<
+    SplitCreatedEventType,
+    [SplitCreatedEventType],
+    true,
+    bigint,
+    bigint,
+    SplitCreatedEventName
+  >[0],
+  SplitUpdatedLogType extends GetLogsReturnType<
+    SplitUpdatedEventType,
+    [SplitUpdatedEventType],
+    true,
+    bigint,
+    bigint,
+    SplitUpdatedEventName
+  >[0] = GetLogsReturnType<
+    SplitUpdatedEventType,
+    [SplitUpdatedEventType],
+    true,
+    bigint,
+    bigint,
+    SplitUpdatedEventName
+  >[0],
+>({
+  splitAddress,
+  publicClient,
+  defaultBlockRange,
+  currentUpdateLog,
+  currentEndBlockNumber,
+  maxBlockRange,
+  splitCreatedEvent,
+  splitUpdatedEvent,
+  addresses,
+  startBlockNumber,
+}: {
+  splitAddress: Address
+  publicClient: PublicClient<Transport, Chain>
+  defaultBlockRange?: bigint // if this exists, don't need to calculate block range
+  currentUpdateLog?: SplitUpdatedLogType
+  currentEndBlockNumber?: bigint
+  maxBlockRange?: bigint // if this exists, restricts which ranges we will check at the beginning
+  splitCreatedEvent: SplitCreatedEventType
+  splitUpdatedEvent: SplitUpdatedEventType
+  addresses: Address[]
+  startBlockNumber: bigint
+}): Promise<{
+  createLog: SplitCreatedLogType
+  updateLog?: SplitUpdatedLogType
+}> => {
+  const formattedSplitAddress = getAddress(splitAddress)
+  const batchSize = 20
+  const sleepTimeMs = 10_000
+  let createLog: SplitCreatedLogType | undefined = undefined
+  let updateLog: SplitUpdatedLogType | undefined = currentUpdateLog
+
+  const endBlockNumber =
+    currentEndBlockNumber ?? (await publicClient.getBlockNumber())
+
+  let blockRange = BigInt(625)
+
+  if (defaultBlockRange) blockRange = defaultBlockRange
+  else {
+    // Try to determine the largest possible block range. Sometimes these rpc's do not always
+    // throw a block range error though...so that means this request could succeed, but then down
+    // below we will get a block range error. So we still need to catch/handle that down below.
+    blockRange = await getLargestValidBlockRange({
+      fallbackBlockRange: blockRange,
+      maxBlockRange,
+      publicClient,
+    })
+  }
+
+  const searchBlockRanges = getReverseBlockRanges(
+    startBlockNumber,
+    endBlockNumber,
+    blockRange,
+  )
+
+  let batchRequests = []
+  // eslint-disable-next-line no-loops/no-loops
+  for (const { from, to } of searchBlockRanges) {
+    batchRequests.push(
+      publicClient.getLogs({
+        events: [splitCreatedEvent, splitUpdatedEvent],
+        address: addresses,
+        strict: true,
+        fromBlock: from,
+        toBlock: to,
+      }),
+    )
+
+    if (batchRequests.length >= batchSize) {
+      try {
+        const results = (await Promise.all(batchRequests)).flat()
+        // eslint-disable-next-line no-loops/no-loops
+        for (const log of results) {
+          if (log.eventName === 'SplitUpdated') {
+            const shouldSet =
+              getAddress(log.address) === formattedSplitAddress &&
+              (!updateLog ||
+                log.blockNumber > updateLog.blockNumber ||
+                (log.blockNumber === updateLog.blockNumber &&
+                  log.logIndex > updateLog.logIndex))
+            if (shouldSet) updateLog = log as SplitUpdatedLogType
+          } else if (log.eventName === 'UpdateSplit') {
+            const shouldSet =
+              getAddress(log.args.split) === formattedSplitAddress &&
+              (!updateLog ||
+                log.blockNumber > updateLog.blockNumber ||
+                (log.blockNumber === updateLog.blockNumber &&
+                  log.logIndex > updateLog.logIndex))
+            if (shouldSet) updateLog = log as SplitUpdatedLogType
+          } else {
+            if (getAddress(log.args.split) === formattedSplitAddress) {
+              if (createLog) throw new Error('Found multiple create split logs')
+              createLog = log as SplitCreatedLogType
+            }
+          }
+        }
+      } catch (error) {
+        if (!(error instanceof Error)) throw error
+
+        // Handle rate limit error
+        if ('status' in error && error.status === 429) {
+          await sleep(sleepTimeMs)
+          return await getSplitCreateAndUpdateLogs({
+            splitAddress,
+            publicClient,
+            defaultBlockRange: blockRange,
+            currentUpdateLog: updateLog,
+            currentEndBlockNumber: to,
+            splitCreatedEvent,
+            splitUpdatedEvent,
+            addresses,
+            startBlockNumber,
+          })
+        }
+
+        // Handle block range errors
+        if ('details' in error && typeof error.details === 'string') {
+          const lowerCaseDetails = error.details.toLowerCase()
+          if (
+            lowerCaseDetails.includes('block') &&
+            lowerCaseDetails.includes('range')
+          ) {
+            return await getSplitCreateAndUpdateLogs({
+              splitAddress,
+              publicClient,
+              currentUpdateLog: updateLog,
+              currentEndBlockNumber: to,
+              maxBlockRange: blockRange,
+              splitCreatedEvent,
+              splitUpdatedEvent,
+              addresses,
+              startBlockNumber,
+            })
+          }
+        }
+
+        const lowerCaseMessage = error.message.toLowerCase()
+        if (
+          lowerCaseMessage.includes('block') &&
+          lowerCaseMessage.includes('range')
+        ) {
+          return await getSplitCreateAndUpdateLogs({
+            splitAddress,
+            publicClient,
+            currentUpdateLog: updateLog,
+            currentEndBlockNumber: to,
+            maxBlockRange: blockRange,
+            splitCreatedEvent,
+            splitUpdatedEvent,
+            addresses,
+            startBlockNumber,
+          })
+        }
+
+        throw error
+      }
+
+      if (createLog) break
+
+      batchRequests = []
+    }
+  }
+
+  if (!createLog)
+    throw new AccountNotFoundError(
+      'Split',
+      formattedSplitAddress,
+      publicClient.chain.id,
+    )
+
+  return {
+    createLog,
+    updateLog,
+  }
 }
