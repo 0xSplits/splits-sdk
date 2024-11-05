@@ -119,7 +119,9 @@ const getLargestValidBlockRange = async ({
     BigInt(1_000_000),
     BigInt(10_000),
     BigInt(5_000),
-    BigInt(1_250),
+    BigInt(3_000),
+    BigInt(1_800),
+    BigInt(1_200),
   ].filter((range) => (maxBlockRange ? range < maxBlockRange : true))
 
   const blockRangeTests = await Promise.allSettled(
