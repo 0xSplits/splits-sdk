@@ -11,12 +11,14 @@ import Button from '../util/Button'
 import Label from '../util/Label'
 import Link from '../util/Link'
 import SplitsAvatar from '../util/SplitsAvatar'
+import AddressDisplay from './AddressDisplay'
 
 interface ISplitRecipientsProps {
   split: Split | undefined
+  linkToApp: boolean
 }
 
-const SplitRecipients = ({ split }: ISplitRecipientsProps) => {
+const SplitRecipients = ({ split, linkToApp }: ISplitRecipientsProps) => {
   const [viewAll, setViewAll] = useState(false)
   const { address: connectedAddress } = useAccount()
 
@@ -55,9 +57,16 @@ const SplitRecipients = ({ split }: ISplitRecipientsProps) => {
               >
                 <div className="flex items-center space-x-2">
                   <SplitsAvatar address={recipient.address} size={20} />
-                  <Link href={getSplitsAccountUrl(recipient.address)}>
-                    <div>{displayAddress(recipient)}</div>
-                  </Link>
+                  {linkToApp ? (
+                    <Link href={getSplitsAccountUrl(recipient.address)}>
+                      <div>{displayAddress(recipient)}</div>
+                    </Link>
+                  ) : (
+                    <AddressDisplay
+                      address={recipient.address}
+                      ens={recipient.ens}
+                    />
+                  )}
                   {recipient.address === connectedAddress && (
                     <Label text="You" />
                   )}

@@ -20,6 +20,7 @@ export interface IDisplaySplitProps {
   chainId: number
   displayBalances?: boolean
   displayChain?: boolean
+  linkToApp?: boolean
   options?: {
     requireDataClient?: boolean
   }
@@ -36,6 +37,7 @@ const DisplaySplit = ({
   chainId,
   displayBalances = true,
   displayChain = true,
+  linkToApp = true,
   options = { requireDataClient: true },
   width = 'md',
   theme = 'system',
@@ -82,7 +84,11 @@ const DisplaySplit = ({
       theme={theme}
       title={
         isSupportedChainId(chainId) ? (
-          <SplitHeader chainId={chainId} address={address} />
+          <SplitHeader
+            chainId={chainId}
+            address={address}
+            linkToApp={linkToApp}
+          />
         ) : undefined
       }
       corner={
@@ -110,7 +116,7 @@ const DisplaySplit = ({
             <SkeletonLoader />
           ) : (
             <div className="space-y-4">
-              <SplitRecipients split={split} />
+              <SplitRecipients split={split} linkToApp={linkToApp} />
               {split && displayBalances && !isLoadingEarnings && (
                 <SplitBalances
                   chainId={chainId as SupportedChainId}
