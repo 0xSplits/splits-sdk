@@ -2,6 +2,7 @@ import {
   Address,
   Chain,
   GetContractReturnType,
+  GetLogsReturnType,
   Hash,
   InvalidAddressError,
   Log,
@@ -67,6 +68,7 @@ import {
   fromBigIntToPercent,
   getBigIntFromPercent,
   getRecipientSortedAddressesAndAllocations,
+  getSplitCreateAndUpdateLogs,
 } from '../utils'
 import { validateAddress, validateSplitInputs } from '../utils/validation'
 import {
@@ -510,45 +512,55 @@ class SplitV1Transactions extends BaseTransactions {
     if (chainId === ChainId.MAINNET)
       throw new Error('Mainnet not supported for provider metadata')
 
+    const formattedSplitAddress = getAddress(splitAddress)
     const publicClient = this._getPublicClient(chainId)
 
-    const splitMainContract = this._getSplitMainContract(chainId)
-    const splitCreatedEvent = splitMainPolygonAbi[14]
-    const splitUpdatedEvent = splitMainPolygonAbi[18]
-
-    const [createLogs, controller] = await Promise.all([
-      publicClient.getLogs({
-        event: splitCreatedEvent!,
-        address: getSplitMainAddress(chainId),
-        args: {
-          split: splitAddress,
-        },
-        strict: true,
-        fromBlock: getSplitV1StartBlock(chainId),
-      }),
-      splitMainContract.read.getController([getAddress(splitAddress)]),
-    ])
-
-    if (!createLogs) throw new Error('Split not found')
-
-    const updateLogs = await publicClient.getLogs({
-      address: getSplitMainAddress(chainId),
-      event: splitUpdatedEvent!,
-      args: {
-        split: splitAddress,
-      },
-      strict: true,
-      fromBlock: createLogs[0].blockNumber,
+    const { createLog, updateLog } = await getSplitCreateAndUpdateLogs<
+      'CreateSplit',
+      'UpdateSplit'
+    >({
+      splitAddress,
+      publicClient,
+      splitCreatedEvent,
+      splitUpdatedEvent,
+      addresses: [getSplitMainAddress(chainId)],
+      startBlockNumber: getSplitV1StartBlock(chainId),
     })
 
-    const recipients = createLogs[0].args.accounts.map((recipient, i) => {
+    const splitMainContract = this._getSplitMainContract(chainId)
+    const controller = await splitMainContract.read.getController([
+      getAddress(splitAddress),
+    ])
+
+    const split = this._getSplitFromLogs({
+      splitAddress: formattedSplitAddress,
+      controller,
+      createLog,
+      updateLog: updateLog ? (updateLog as SplitUpdatedLogType) : undefined,
+    })
+
+    return { split }
+  }
+
+  private _getSplitFromLogs({
+    splitAddress,
+    controller,
+    createLog,
+    updateLog,
+  }: {
+    splitAddress: Address
+    controller: Address
+    createLog: SplitCreatedLogType
+    updateLog?: SplitUpdatedLogType
+  }): Split {
+    const recipients = createLog.args.accounts.map((recipient, i) => {
       return {
         recipient: {
           address: recipient,
         },
-        ownership: BigInt(createLogs[0].args.percentAllocations[i]),
+        ownership: BigInt(createLog.args.percentAllocations[i]),
         percentAllocation: fromBigIntToPercent(
-          BigInt(createLogs[0].args.percentAllocations[i]),
+          BigInt(createLog.args.percentAllocations[i]),
           BigInt(1_000_000),
         ),
       }
@@ -558,7 +570,7 @@ class SplitV1Transactions extends BaseTransactions {
       address: splitAddress,
       recipients,
       distributorFeePercent: fromBigIntToPercent(
-        BigInt(createLogs[0].args.distributorFee),
+        BigInt(createLog.args.distributorFee),
       ),
       distributeDirection: 'pull',
       type: 'Split',
@@ -569,38 +581,30 @@ class SplitV1Transactions extends BaseTransactions {
       newPotentialController: {
         address: zeroAddress,
       },
-      createdBlock: Number(createLogs[0].blockNumber),
+      createdBlock: Number(createLog.blockNumber),
     }
 
-    if (!updateLogs || updateLogs.length === 0) return { split }
+    if (!updateLog) return split
 
-    updateLogs.sort((a, b) => {
-      if (a.blockNumber !== b.blockNumber)
-        return a.blockNumber > b.blockNumber ? -1 : 1
-      else return a.logIndex > b.logIndex ? -1 : 1
+    const updatedRecipients = updateLog.args.accounts.map((recipient, i) => {
+      return {
+        recipient: {
+          address: recipient,
+        },
+        ownership: BigInt(updateLog.args.percentAllocations[i]),
+        percentAllocation: fromBigIntToPercent(
+          BigInt(updateLog.args.percentAllocations[i]),
+          BigInt(1_000_000),
+        ),
+      }
     })
-
-    const updatedRecipients = updateLogs[0].args.accounts.map(
-      (recipient, i) => {
-        return {
-          recipient: {
-            address: recipient,
-          },
-          ownership: BigInt(updateLogs[0].args.percentAllocations[i]),
-          percentAllocation: fromBigIntToPercent(
-            BigInt(updateLogs[0].args.percentAllocations[i]),
-            BigInt(1_000_000),
-          ),
-        }
-      },
-    )
 
     split.recipients = updatedRecipients
     split.distributorFeePercent = fromBigIntToPercent(
-      BigInt(updateLogs[0].args.distributorFee),
+      BigInt(updateLog.args.distributorFee),
     )
 
-    return { split }
+    return split
   }
 
   private async _requireController(splitAddress: string) {
@@ -1517,3 +1521,23 @@ class SplitV1CallData extends SplitV1Transactions {
     return callData
   }
 }
+
+const splitUpdatedEvent = splitMainPolygonAbi[18]
+type SplitUpdatedEventType = typeof splitUpdatedEvent
+type SplitUpdatedLogType = GetLogsReturnType<
+  SplitUpdatedEventType,
+  [SplitUpdatedEventType],
+  true,
+  bigint,
+  bigint
+>[0]
+
+const splitCreatedEvent = splitMainPolygonAbi[14]
+type SplitCreatedEventType = typeof splitCreatedEvent
+type SplitCreatedLogType = GetLogsReturnType<
+  SplitCreatedEventType,
+  [SplitCreatedEventType],
+  true,
+  bigint,
+  bigint
+>[0]
