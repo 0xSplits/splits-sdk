@@ -193,25 +193,25 @@ export const getSplitCreateAndUpdateLogs = async <
 >({
   splitAddress,
   publicClient,
-  defaultBlockRange,
-  currentUpdateLog,
-  currentEndBlockNumber,
-  maxBlockRange,
   splitCreatedEvent,
   splitUpdatedEvent,
   addresses,
   startBlockNumber,
+  defaultBlockRange,
+  currentUpdateLog,
+  currentEndBlockNumber,
+  maxBlockRange,
 }: {
   splitAddress: Address
   publicClient: PublicClient<Transport, Chain>
-  defaultBlockRange?: bigint // if this exists, don't need to calculate block range
-  currentUpdateLog?: SplitUpdatedLogType
-  currentEndBlockNumber?: bigint
-  maxBlockRange?: bigint // if this exists, restricts which ranges we will check at the beginning
   splitCreatedEvent: SplitCreatedEventType
   splitUpdatedEvent: SplitUpdatedEventType
   addresses: Address[]
   startBlockNumber: bigint
+  defaultBlockRange?: bigint // if this exists, don't need to calculate block range
+  currentUpdateLog?: SplitUpdatedLogType
+  currentEndBlockNumber?: bigint
+  maxBlockRange?: bigint // if this exists, restricts which ranges we will check at the beginning
 }): Promise<{
   createLog: SplitCreatedLogType
   updateLog?: SplitUpdatedLogType
@@ -246,8 +246,11 @@ export const getSplitCreateAndUpdateLogs = async <
   )
 
   let batchRequests = []
+  let lastBlockInBatch: bigint | undefined = undefined
   // eslint-disable-next-line no-loops/no-loops
   for (const { from, to } of searchBlockRanges) {
+    if (!lastBlockInBatch) lastBlockInBatch = to
+
     batchRequests.push(
       publicClient.getLogs({
         events: [splitCreatedEvent, splitUpdatedEvent],
@@ -297,7 +300,7 @@ export const getSplitCreateAndUpdateLogs = async <
             publicClient,
             defaultBlockRange: blockRange,
             currentUpdateLog: updateLog,
-            currentEndBlockNumber: to,
+            currentEndBlockNumber: lastBlockInBatch,
             splitCreatedEvent,
             splitUpdatedEvent,
             addresses,
@@ -316,7 +319,7 @@ export const getSplitCreateAndUpdateLogs = async <
               splitAddress,
               publicClient,
               currentUpdateLog: updateLog,
-              currentEndBlockNumber: to,
+              currentEndBlockNumber: lastBlockInBatch,
               maxBlockRange: blockRange,
               splitCreatedEvent,
               splitUpdatedEvent,
@@ -335,7 +338,7 @@ export const getSplitCreateAndUpdateLogs = async <
             splitAddress,
             publicClient,
             currentUpdateLog: updateLog,
-            currentEndBlockNumber: to,
+            currentEndBlockNumber: lastBlockInBatch,
             maxBlockRange: blockRange,
             splitCreatedEvent,
             splitUpdatedEvent,
@@ -350,6 +353,7 @@ export const getSplitCreateAndUpdateLogs = async <
       if (createLog) break
 
       batchRequests = []
+      lastBlockInBatch = undefined
     }
   }
 
