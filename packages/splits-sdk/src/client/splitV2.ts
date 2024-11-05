@@ -303,6 +303,21 @@ class SplitV2Transactions extends BaseTransactions {
     return this._getSplitV2Contract(splitAddress, chainId).read.owner()
   }
 
+  protected async _checkForSplitExistence({
+    splitAddress,
+    chainId,
+  }: {
+    splitAddress: Address
+    chainId: number
+  }): Promise<void> {
+    try {
+      await this._getSplitV2Contract(splitAddress, chainId).read.splitHash()
+    } catch {
+      // Split does not exist
+      throw new AccountNotFoundError('Split', splitAddress, chainId)
+    }
+  }
+
   protected async _getSplitMetadataViaProvider({
     splitAddress,
     chainId,
@@ -313,12 +328,7 @@ class SplitV2Transactions extends BaseTransactions {
     const formattedSplitAddress = getAddress(splitAddress)
     const publicClient = this._getPublicClient(chainId)
 
-    try {
-      await this._getSplitV2Contract(splitAddress, chainId).read.splitHash()
-    } catch {
-      // Split does not exist
-      throw new AccountNotFoundError('Split', formattedSplitAddress, chainId)
-    }
+    await this._checkForSplitExistence({ splitAddress, chainId })
 
     const { createLog, updateLog } = await getSplitCreateAndUpdateLogs<
       'SplitCreated',
@@ -1009,6 +1019,11 @@ export class SplitV2Client extends SplitV2Transactions {
 
     if (!isAddress(splitAddress))
       throw new InvalidAddressError({ address: splitAddress })
+
+    await this._checkForSplitExistence({
+      splitAddress,
+      chainId: functionChainId,
+    })
 
     const activeBalances = await fetchSplitActiveBalances({
       type: 'splitV2',

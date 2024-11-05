@@ -506,15 +506,14 @@ class SplitV1Transactions extends BaseTransactions {
     return result
   }
 
-  protected async _getSplitMetadataViaProvider(
-    splitAddress: Address,
-    chainId: number,
-  ): Promise<{ split: Split }> {
-    if (chainId === ChainId.MAINNET)
-      throw new Error('Mainnet not supported for provider metadata')
-
+  protected async _checkForSplitExistence({
+    splitAddress,
+    chainId,
+  }: {
+    splitAddress: Address
+    chainId: number
+  }): Promise<void> {
     const formattedSplitAddress = getAddress(splitAddress)
-    const publicClient = this._getPublicClient(chainId)
     const splitMainContract = this._getSplitMainContract(chainId)
 
     const splitHash = await splitMainContract.read.getHash([
@@ -527,6 +526,19 @@ class SplitV1Transactions extends BaseTransactions {
       // Split does not exist
       throw new AccountNotFoundError('Split', formattedSplitAddress, chainId)
     }
+  }
+
+  protected async _getSplitMetadataViaProvider(
+    splitAddress: Address,
+    chainId: number,
+  ): Promise<{ split: Split }> {
+    if (chainId === ChainId.MAINNET)
+      throw new Error('Mainnet not supported for provider metadata')
+
+    const formattedSplitAddress = getAddress(splitAddress)
+    const publicClient = this._getPublicClient(chainId)
+
+    await this._checkForSplitExistence({ splitAddress, chainId })
 
     const { createLog, updateLog } = await getSplitCreateAndUpdateLogs<
       'CreateSplit',
@@ -540,6 +552,7 @@ class SplitV1Transactions extends BaseTransactions {
       startBlockNumber: getSplitV1StartBlock(chainId),
     })
 
+    const splitMainContract = this._getSplitMainContract(chainId)
     const controller = await splitMainContract.read.getController([
       getAddress(splitAddress),
     ])
@@ -1303,6 +1316,11 @@ export class SplitV1Client extends SplitV1Transactions {
 
     if (!isAddress(splitAddress))
       throw new InvalidAddressError({ address: splitAddress })
+
+    await this._checkForSplitExistence({
+      splitAddress,
+      chainId: functionChainId,
+    })
 
     const activeBalances = await fetchSplitActiveBalances({
       type: 'splitV1',
