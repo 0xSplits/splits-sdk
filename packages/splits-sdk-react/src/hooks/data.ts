@@ -230,6 +230,8 @@ export const useSplitEarnings = (
   }, [
     requireDataClient,
     dataClient,
+    splitsV1Client,
+    splitsV2Client,
     chainId,
     splitAddress,
     includeActiveBalances,

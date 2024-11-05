@@ -38,6 +38,7 @@ import {
   splitMainPolygonAbi,
 } from '../constants/abi/splitMain'
 import {
+  AccountNotFoundError,
   InvalidAuthError,
   TransactionFailedError,
   UnsupportedChainIdError,
@@ -514,6 +515,18 @@ class SplitV1Transactions extends BaseTransactions {
 
     const formattedSplitAddress = getAddress(splitAddress)
     const publicClient = this._getPublicClient(chainId)
+    const splitMainContract = this._getSplitMainContract(chainId)
+
+    const splitHash = await splitMainContract.read.getHash([
+      formattedSplitAddress,
+    ])
+    if (
+      splitHash ===
+      '0x0000000000000000000000000000000000000000000000000000000000000000'
+    ) {
+      // Split does not exist
+      throw new AccountNotFoundError('Split', formattedSplitAddress, chainId)
+    }
 
     const { createLog, updateLog } = await getSplitCreateAndUpdateLogs<
       'CreateSplit',
@@ -527,7 +540,6 @@ class SplitV1Transactions extends BaseTransactions {
       startBlockNumber: getSplitV1StartBlock(chainId),
     })
 
-    const splitMainContract = this._getSplitMainContract(chainId)
     const controller = await splitMainContract.read.getController([
       getAddress(splitAddress),
     ])

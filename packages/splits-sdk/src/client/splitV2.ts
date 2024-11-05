@@ -27,6 +27,7 @@ import {
 import { splitV2ABI } from '../constants/abi/splitV2'
 import { splitV2FactoryABI } from '../constants/abi/splitV2Factory'
 import {
+  AccountNotFoundError,
   InvalidAuthError,
   SaltRequired,
   TransactionFailedError,
@@ -311,6 +312,13 @@ class SplitV2Transactions extends BaseTransactions {
   }): Promise<{ split: Split }> {
     const formattedSplitAddress = getAddress(splitAddress)
     const publicClient = this._getPublicClient(chainId)
+
+    try {
+      await this._getSplitV2Contract(splitAddress, chainId).read.splitHash()
+    } catch {
+      // Split does not exist
+      throw new AccountNotFoundError('Split', formattedSplitAddress, chainId)
+    }
 
     const { createLog, updateLog } = await getSplitCreateAndUpdateLogs<
       'SplitCreated',
