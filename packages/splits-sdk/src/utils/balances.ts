@@ -341,12 +341,16 @@ const processSplitBalanceMulticallResponse = ({
       decimals = tokenData[token].decimals as number
     }
 
-    const formattedAmount = fromBigIntToTokenValue(balance, decimals)
-    balances[token] = {
-      rawAmount: balance,
-      formattedAmount,
-      symbol,
-      decimals,
+    if (balance > BigInt(2)) {
+      // Splits can leave one in the contract and one in the warehouse for gas
+      // efficiency. Filter those out.
+      const formattedAmount = fromBigIntToTokenValue(balance, decimals)
+      balances[token] = {
+        rawAmount: balance,
+        formattedAmount,
+        symbol,
+        decimals,
+      }
     }
   })
 }
