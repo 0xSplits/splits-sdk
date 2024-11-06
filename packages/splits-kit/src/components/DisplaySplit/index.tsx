@@ -120,13 +120,6 @@ const DisplaySplit = ({
               {split && displayBalances && !isLoadingEarnings && (
                 <SplitBalances
                   chainId={chainId as SupportedChainId}
-                  type={
-                    split.type === 'Split'
-                      ? 'v1'
-                      : split.distributeDirection === 'pull'
-                      ? 'v2Pull'
-                      : 'v2Push'
-                  }
                   split={split}
                   formattedSplitEarnings={splitEarnings}
                   onSuccess={onSuccess}

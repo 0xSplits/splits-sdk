@@ -3,18 +3,15 @@ import { FormattedSplitEarnings, Split } from '@0xsplits/splits-sdk'
 
 import DistributeBalance from './DistributeBalance'
 import { SupportedChainId } from '../../constants/chains'
-import { SplitType } from '../../types'
 
 const SplitBalances = ({
   chainId,
-  type,
   split,
   formattedSplitEarnings,
   onSuccess,
   onError,
 }: {
   chainId: SupportedChainId
-  type: SplitType
   split: Split
   formattedSplitEarnings: FormattedSplitEarnings | undefined
   onSuccess?: (token: string) => void
@@ -30,7 +27,6 @@ const SplitBalances = ({
           {Object.entries(balances).map(([token, balance], idx: number) => (
             <DistributeBalance
               chainId={chainId}
-              type={type}
               key={idx}
               token={token}
               balance={balance}

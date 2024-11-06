@@ -12,11 +12,10 @@ import { displayBigNumber } from '../../utils/display'
 import Tooltip from '../util/Tooltip'
 import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
 import Button from '../util/Button'
-import { Balance, SplitType } from '../../types'
+import { Balance } from '../../types'
 
 function DistributeBalance({
   chainId,
-  type,
   token,
   balance,
   split,
@@ -24,7 +23,6 @@ function DistributeBalance({
   onError,
 }: {
   chainId: SupportedChainId
-  type: SplitType
   token: string
   balance: Balance
   split: Split
@@ -64,7 +62,7 @@ function DistributeBalance({
       onSuccess && onSuccess(token)
     }
 
-    if (type === 'v1') {
+    if (split.type === 'Split') {
       const args = {
         splitAddress: split.address,
         token,
