@@ -18,6 +18,7 @@ import {
   zeroAddress,
 } from 'viem'
 import {
+  NATIVE_TOKEN_ADDRESS,
   SPLITS_V2_SUPPORTED_CHAIN_IDS,
   TransactionType,
   ZERO,
@@ -284,7 +285,7 @@ class SplitV2Transactions extends BaseTransactions {
             split.distributorFeePercent,
           ),
         },
-        token,
+        token === zeroAddress ? NATIVE_TOKEN_ADDRESS : token,
         distributorAddress,
       ],
       transactionOverrides,
