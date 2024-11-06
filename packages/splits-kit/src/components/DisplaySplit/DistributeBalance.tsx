@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { DistributeTokenConfig, Split } from '@0xsplits/splits-sdk'
+import { Split } from '@0xsplits/splits-sdk'
 import {
   useDistributeToken,
   useDistributeTokenV2,
@@ -52,16 +52,6 @@ function DistributeBalance({
   }, [error, onError])
 
   const onClick = async () => {
-    const args: DistributeTokenConfig = {
-      splitAddress: split.address,
-      token,
-      distributorAddress: connectedAddress,
-    }
-    const events = await distributeToken(args)
-    if (events) {
-      onSuccess && onSuccess(token)
-    }
-
     if (split.type === 'Split') {
       const args = {
         splitAddress: split.address,
