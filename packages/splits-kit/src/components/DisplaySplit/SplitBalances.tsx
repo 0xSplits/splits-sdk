@@ -16,7 +16,7 @@ const SplitBalances = ({
   split: Split
   formattedSplitEarnings: FormattedSplitEarnings | undefined
   shouldWithdrawOnDistribute: boolean
-  onSuccess?: (token: string) => void
+  onSuccess: (token: string) => void
   onError?: (error: RequestError) => void
 }) => {
   const balances = formattedSplitEarnings?.activeBalances

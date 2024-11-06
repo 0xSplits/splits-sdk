@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useSplitEarnings, useSplitMetadata } from '@0xsplits/splits-sdk-react'
 import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
 
@@ -67,6 +67,14 @@ const DisplaySplit = ({
     options,
   )
 
+  const onSuccessWrapper = useCallback(
+    (token: string) => {
+      refetchEarnings()
+      if (onSuccess) onSuccess(token)
+    },
+    [refetchEarnings, onSuccess],
+  )
+
   useEffect(() => {
     if (earningsError) {
       // eslint-disable-next-line no-console
@@ -126,10 +134,7 @@ const DisplaySplit = ({
                   split={split}
                   formattedSplitEarnings={splitEarnings}
                   shouldWithdrawOnDistribute={shouldWithdrawOnDistribute}
-                  onSuccess={(token) => {
-                    refetchEarnings()
-                    if (onSuccess) onSuccess(token)
-                  }}
+                  onSuccess={onSuccessWrapper}
                   onError={onError}
                 />
               )}

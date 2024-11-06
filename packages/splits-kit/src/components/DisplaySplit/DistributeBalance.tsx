@@ -30,7 +30,7 @@ function DistributeBalance({
   balance: Balance
   split: Split
   shouldWithdrawOnDistribute: boolean
-  onSuccess?: (token: string) => void
+  onSuccess: (token: string) => void
   onError?: (error: RequestError) => void
 }) {
   const {
@@ -130,7 +130,7 @@ function DistributeBalance({
     }
 
     if (events) {
-      onSuccess && onSuccess(token)
+      onSuccess(token)
     }
   }
 
