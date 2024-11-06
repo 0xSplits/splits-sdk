@@ -128,6 +128,7 @@ export const useSplitEarnings = (
 ): {
   isLoading: boolean
   splitEarnings: FormattedSplitEarnings | undefined
+  refetch: () => void
   status?: DataLoadStatus
   error?: RequestError
 } => {
@@ -146,6 +147,9 @@ export const useSplitEarnings = (
     splitAddress ? 'loading' : undefined,
   )
   const [error, setError] = useState<RequestError>()
+  const [manualTrigger, setManualTrigger] = useState(false)
+
+  const refetch = () => setManualTrigger((prev) => !prev)
 
   const stringErc20List =
     erc20TokenList !== undefined ? JSON.stringify(erc20TokenList) : undefined
@@ -155,6 +159,9 @@ export const useSplitEarnings = (
     const fetchEarnings = async () => {
       if (requireDataClient && !dataClient)
         throw new Error('Missing api key for data client')
+
+      setIsLoading(true)
+      setStatus('loading')
 
       try {
         let earnings: FormattedSplitEarnings
@@ -215,8 +222,6 @@ export const useSplitEarnings = (
 
     setError(undefined)
     if (splitAddress) {
-      setIsLoading(true)
-      setStatus('loading')
       fetchEarnings()
     } else {
       setStatus(undefined)
@@ -236,11 +241,13 @@ export const useSplitEarnings = (
     splitAddress,
     includeActiveBalances,
     stringErc20List,
+    manualTrigger,
   ])
 
   return {
     isLoading,
     splitEarnings,
+    refetch,
     status,
     error,
   }

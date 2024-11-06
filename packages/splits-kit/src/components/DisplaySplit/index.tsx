@@ -56,6 +56,7 @@ const DisplaySplit = ({
     splitEarnings,
     isLoading: isLoadingEarnings,
     error: earningsError,
+    refetch: refetchEarnings,
   } = useSplitEarnings(
     chainId,
     address,
@@ -122,7 +123,10 @@ const DisplaySplit = ({
                   chainId={chainId as SupportedChainId}
                   split={split}
                   formattedSplitEarnings={splitEarnings}
-                  onSuccess={onSuccess}
+                  onSuccess={(token) => {
+                    refetchEarnings()
+                    if (onSuccess) onSuccess(token)
+                  }}
                   onError={onError}
                 />
               )}
