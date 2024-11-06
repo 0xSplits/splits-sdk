@@ -46,6 +46,7 @@ import {
   TransactionType,
   SPLITS_V2_SUPPORTED_CHAIN_IDS,
   getWarehouseAddress,
+  NATIVE_TOKEN_ADDRESS,
 } from '../constants'
 import { TransactionFailedError } from '../errors'
 import { applyMixins } from './mixin'
@@ -355,7 +356,10 @@ class WarehouseTransactions extends BaseTransactions {
       contractAddress: getWarehouseAddress(),
       contractAbi: warehouseAbi,
       functionName: 'withdraw',
-      functionArgs: [owner, token],
+      functionArgs: [
+        owner,
+        token === zeroAddress ? NATIVE_TOKEN_ADDRESS : token,
+      ],
       transactionOverrides,
     })
 
