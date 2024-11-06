@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { DistributeTokenConfig } from '@0xsplits/splits-sdk'
+import { DistributeTokenConfig, Split } from '@0xsplits/splits-sdk'
 import {
   useDistributeToken,
   useDistributeTokenV2,
@@ -19,7 +19,7 @@ function DistributeBalance({
   type,
   token,
   balance,
-  address,
+  split,
   onSuccess,
   onError,
 }: {
@@ -27,7 +27,7 @@ function DistributeBalance({
   type: SplitType
   token: string
   balance: Balance
-  address: string
+  split: Split
   onSuccess?: (token: string) => void
   onError?: (error: RequestError) => void
 }) {
@@ -55,7 +55,7 @@ function DistributeBalance({
 
   const onClick = async () => {
     const args: DistributeTokenConfig = {
-      splitAddress: address,
+      splitAddress: split.address,
       token,
       distributorAddress: connectedAddress,
     }
@@ -66,7 +66,7 @@ function DistributeBalance({
 
     if (type === 'v1') {
       const args = {
-        splitAddress: address,
+        splitAddress: split.address,
         token,
         distributorAddress: connectedAddress,
       }
@@ -77,10 +77,14 @@ function DistributeBalance({
       }
     } else {
       const args = {
-        splitAddress: address as Address,
+        splitAddress: split.address,
         tokenAddress: token as Address,
         distributorAddress: connectedAddress,
         chainId,
+        splitFields: {
+          recipients: split.recipients,
+          distributorFeePercent: split.distributorFeePercent,
+        },
       }
 
       const events = await distributeTokenV2(args)

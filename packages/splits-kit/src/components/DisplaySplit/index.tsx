@@ -127,7 +127,7 @@ const DisplaySplit = ({
                       ? 'v2Pull'
                       : 'v2Push'
                   }
-                  address={address}
+                  split={split}
                   formattedSplitEarnings={splitEarnings}
                   onSuccess={onSuccess}
                   onError={onError}

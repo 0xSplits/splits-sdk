@@ -317,6 +317,10 @@ export type DistributeSplitConfig = {
   tokenAddress: Address
   distributorAddress?: Address
   chainId?: number
+  splitFields?: {
+    recipients: Split['recipients']
+    distributorFeePercent: number
+  }
 } & TransactionOverridesDict
 
 export type TransferOwnershipConfig = {

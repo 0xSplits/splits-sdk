@@ -233,6 +233,7 @@ class SplitV2Transactions extends BaseTransactions {
     tokenAddress: token,
     distributorAddress = this._walletClient?.account.address as Address,
     chainId,
+    splitFields,
     transactionOverrides = {},
   }: DistributeSplitConfig): Promise<TransactionFormat> {
     validateAddress(splitAddress)
@@ -243,9 +244,11 @@ class SplitV2Transactions extends BaseTransactions {
 
     const functionChainId = this._getFunctionChainId(chainId)
 
-    let split: Split
+    let split: Pick<Split, 'recipients' | 'distributorFeePercent'>
 
-    if (this._dataClient)
+    if (splitFields) {
+      split = splitFields
+    } else if (this._dataClient)
       split = await this._dataClient.getSplitMetadata({
         chainId: functionChainId,
         splitAddress,
