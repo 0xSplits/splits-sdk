@@ -8,12 +8,14 @@ const SplitBalances = ({
   chainId,
   split,
   formattedSplitEarnings,
+  shouldWithdrawOnDistribute,
   onSuccess,
   onError,
 }: {
   chainId: SupportedChainId
   split: Split
   formattedSplitEarnings: FormattedSplitEarnings | undefined
+  shouldWithdrawOnDistribute: boolean
   onSuccess?: (token: string) => void
   onError?: (error: RequestError) => void
 }) => {
@@ -31,6 +33,7 @@ const SplitBalances = ({
               token={token}
               balance={balance}
               split={split}
+              shouldWithdrawOnDistribute={shouldWithdrawOnDistribute}
               onSuccess={onSuccess}
               onError={onError}
             />

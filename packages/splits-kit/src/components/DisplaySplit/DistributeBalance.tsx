@@ -3,6 +3,8 @@ import { Split } from '@0xsplits/splits-sdk'
 import {
   useDistributeToken,
   useDistributeTokenV2,
+  useMulticall,
+  useSplitsClient,
 } from '@0xsplits/splits-sdk-react'
 import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
 import { Address } from 'viem'
@@ -19,6 +21,7 @@ function DistributeBalance({
   token,
   balance,
   split,
+  shouldWithdrawOnDistribute,
   onSuccess,
   onError,
 }: {
@@ -26,9 +29,15 @@ function DistributeBalance({
   token: string
   balance: Balance
   split: Split
+  shouldWithdrawOnDistribute: boolean
   onSuccess?: (token: string) => void
   onError?: (error: RequestError) => void
 }) {
+  const {
+    multicall,
+    status: multicallStatus,
+    error: multicallError,
+  } = useMulticall()
   const { distributeToken, status, error } = useDistributeToken()
   const {
     distributeToken: distributeTokenV2,
@@ -36,6 +45,8 @@ function DistributeBalance({
     error: errorV2,
   } = useDistributeTokenV2()
   const { isConnected, address: connectedAddress, chain } = useAccount()
+
+  const splitsClient = useSplitsClient()
 
   useEffect(() => {
     if (error) {
@@ -49,22 +60,44 @@ function DistributeBalance({
       console.error(errorV2)
       onError && onError(errorV2)
     }
-  }, [error, onError])
+
+    if (multicallError) {
+      // eslint-disable-next-line no-console
+      console.error(multicallError)
+      onError && onError(multicallError)
+    }
+  }, [error, errorV2, multicallError, onError])
 
   const onClick = async () => {
+    let events
+
     if (split.type === 'Split') {
-      const args = {
+      const distributeArgs = {
         splitAddress: split.address,
         token,
         distributorAddress: connectedAddress,
       }
 
-      const events = await distributeToken(args)
-      if (events) {
-        onSuccess && onSuccess(token)
+      if (shouldWithdrawOnDistribute) {
+        const distributeCalldata =
+          await splitsClient.splitV1.callData.distributeToken(distributeArgs)
+        const withdrawCalldataList = await Promise.all(
+          split.recipients.map(({ recipient }) => {
+            return splitsClient.splitV1.callData.withdrawFunds({
+              address: recipient.address,
+              tokens: [token],
+            })
+          }),
+        )
+
+        events = await multicall({
+          calls: [distributeCalldata, ...withdrawCalldataList],
+        })
+      } else {
+        events = await distributeToken(distributeArgs)
       }
     } else {
-      const args = {
+      const distributeArgs = {
         splitAddress: split.address,
         tokenAddress: token as Address,
         distributorAddress: connectedAddress,
@@ -75,10 +108,29 @@ function DistributeBalance({
         },
       }
 
-      const events = await distributeTokenV2(args)
-      if (events) {
-        onSuccess && onSuccess(token)
+      // Dont need to withdraw for push splits
+      if (shouldWithdrawOnDistribute && split.distributeDirection === 'pull') {
+        const distributeCalldata =
+          await splitsClient.splitV2.callData.distribute(distributeArgs)
+        const withdrawCalldataList = await Promise.all(
+          split.recipients.map(({ recipient }) => {
+            return splitsClient.warehouse.callData.withdraw({
+              ownerAddress: recipient.address,
+              tokenAddress: token as Address,
+            })
+          }),
+        )
+
+        events = await multicall({
+          calls: [distributeCalldata, ...withdrawCalldataList],
+        })
+      } else {
+        events = await distributeTokenV2(distributeArgs)
       }
+    }
+
+    if (events) {
+      onSuccess && onSuccess(token)
     }
   }
 
@@ -86,7 +138,9 @@ function DistributeBalance({
     status === 'pendingApproval' ||
     status === 'txInProgress' ||
     statusV2 === 'pendingApproval' ||
-    statusV2 === 'txInProgress'
+    statusV2 === 'txInProgress' ||
+    multicallStatus === 'pendingApproval' ||
+    multicallStatus === 'txInProgress'
   const isWrongChain = chain && chainId !== chain.id
   const isDisabled = !isConnected || isWrongChain
   return (

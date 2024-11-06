@@ -21,6 +21,7 @@ export interface IDisplaySplitProps {
   displayBalances?: boolean
   displayChain?: boolean
   linkToApp?: boolean
+  shouldWithdrawOnDistribute?: boolean
   options?: {
     requireDataClient?: boolean
   }
@@ -38,6 +39,7 @@ const DisplaySplit = ({
   displayBalances = true,
   displayChain = true,
   linkToApp = true,
+  shouldWithdrawOnDistribute = false,
   options = { requireDataClient: true },
   width = 'md',
   theme = 'system',
@@ -123,6 +125,7 @@ const DisplaySplit = ({
                   chainId={chainId as SupportedChainId}
                   split={split}
                   formattedSplitEarnings={splitEarnings}
+                  shouldWithdrawOnDistribute={shouldWithdrawOnDistribute}
                   onSuccess={(token) => {
                     refetchEarnings()
                     if (onSuccess) onSuccess(token)
