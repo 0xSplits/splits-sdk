@@ -190,7 +190,10 @@ export const getSplitType = (
   chainId: number,
   factoryAddress: Address,
 ): SplitV2Type => {
-  if (factoryAddress === getSplitV2FactoryAddress(chainId, SplitV2Type.Pull))
+  if (
+    getAddress(factoryAddress) ===
+    getSplitV2FactoryAddress(chainId, SplitV2Type.Pull)
+  )
     return SplitV2Type.Pull
   return SplitV2Type.Push
 }
