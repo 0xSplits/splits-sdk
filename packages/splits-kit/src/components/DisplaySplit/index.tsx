@@ -18,6 +18,7 @@ import ComponentLayout from '../util/ComponentLayout'
 export interface IDisplaySplitProps {
   address: IAddress
   chainId: number
+  erc20TokenList?: string[]
   displayBalances?: boolean
   displayChain?: boolean
   linkToApp?: boolean
@@ -31,11 +32,10 @@ export interface IDisplaySplitProps {
   onError?: (error: RequestError) => void
 }
 
-const ERC20_TOKEN_LIST: string[] = []
-
 const DisplaySplit = ({
   address,
   chainId,
+  erc20TokenList,
   displayBalances = true,
   displayChain = true,
   linkToApp = true,
@@ -53,7 +53,6 @@ const DisplaySplit = ({
   } = useSplitMetadata(chainId, address, options)
 
   const includeActiveBalances = true
-  const erc20TokenList = ERC20_TOKEN_LIST
   const {
     splitEarnings,
     isLoading: isLoadingEarnings,
