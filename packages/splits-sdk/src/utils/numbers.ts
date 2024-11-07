@@ -20,15 +20,23 @@ export const getNumberFromPercent = (value: number, scale?: bigint): number => {
   return Math.round(Number(scale) * value) / 100
 }
 
+const PERCENTAGE_SCALE_FACTOR = 10 ** 4 // 4 decimal places
 export const fromBigIntToPercent = (
   value: bigint | number,
   scale?: bigint,
 ): number => {
   const numberVal = BigInt(value)
   if (!scale) {
-    return parseFloat(formatUnits(numberVal, 6)) * 100
+    const rawPercentage = parseFloat(formatUnits(numberVal, 6)) * 100
+    return (
+      Math.round(rawPercentage * PERCENTAGE_SCALE_FACTOR) /
+      PERCENTAGE_SCALE_FACTOR
+    )
   }
-  return Number((numberVal * BigInt(100)) / scale)
+
+  const percentage =
+    (numberVal * BigInt(100) * BigInt(PERCENTAGE_SCALE_FACTOR)) / scale
+  return Number(percentage) / PERCENTAGE_SCALE_FACTOR
 }
 
 export const getBigIntTokenValue = (
