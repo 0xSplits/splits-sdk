@@ -7,6 +7,7 @@ import {
   TransferOwnershipConfig,
   SetPausedConfig,
   SplitV2ExecCallsConfig,
+  CallData,
 } from '@0xsplits/splits-sdk'
 import { splitV2FactoryABI } from '@0xsplits/splits-sdk/constants/abi'
 
@@ -127,6 +128,7 @@ export const useUpdateSplitV2 = (): {
 
 export const useDistributeTokenV2 = (): {
   distributeToken: (arg0: DistributeSplitConfig) => Promise<Log[] | undefined>
+  distributeTokenCalldata: (arg0: DistributeSplitConfig) => Promise<CallData>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -137,6 +139,16 @@ export const useDistributeTokenV2 = (): {
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
   const [error, setError] = useState<RequestError>()
+
+  const distributeTokenCalldata = useCallback(
+    async (argsDict: DistributeSplitConfig) => {
+      if (!splitsClient) throw new Error('Invalid chain id for split v2')
+
+      const callData = await splitsClient.callData.distribute(argsDict)
+      return callData
+    },
+    [splitsClient],
+  )
 
   const distributeToken = useCallback(
     async (argsDict: DistributeSplitConfig) => {
@@ -169,7 +181,7 @@ export const useDistributeTokenV2 = (): {
     [splitsClient],
   )
 
-  return { distributeToken, status, txHash, error }
+  return { distributeToken, distributeTokenCalldata, status, txHash, error }
 }
 
 export const useTransferOwnership = (): {

@@ -4,7 +4,8 @@ import {
   useDistributeToken,
   useDistributeTokenV2,
   useMulticall,
-  useSplitsClient,
+  useWithdrawFunds,
+  useWithdrawWarehouse,
 } from '@0xsplits/splits-sdk-react'
 import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
 import { Address } from 'viem'
@@ -38,15 +39,17 @@ function DistributeBalance({
     status: multicallStatus,
     error: multicallError,
   } = useMulticall()
-  const { distributeToken, status, error } = useDistributeToken()
+  const { distributeToken, distributeTokenCalldata, status, error } =
+    useDistributeToken()
   const {
     distributeToken: distributeTokenV2,
+    distributeTokenCalldata: distributeTokenV2Calldata,
     status: statusV2,
     error: errorV2,
   } = useDistributeTokenV2()
+  const { withdrawFundsCalldata } = useWithdrawFunds()
+  const { withdrawWarehouseCalldata } = useWithdrawWarehouse()
   const { isConnected, address: connectedAddress, chain } = useAccount()
-
-  const splitsClient = useSplitsClient()
 
   useEffect(() => {
     if (error) {
@@ -79,11 +82,10 @@ function DistributeBalance({
       }
 
       if (shouldWithdrawOnDistribute) {
-        const distributeCalldata =
-          await splitsClient.splitV1.callData.distributeToken(distributeArgs)
+        const distributeCalldata = await distributeTokenCalldata(distributeArgs)
         const withdrawCalldataList = await Promise.all(
           split.recipients.map(({ recipient }) => {
-            return splitsClient.splitV1.callData.withdrawFunds({
+            return withdrawFundsCalldata({
               address: recipient.address,
               tokens: [token],
             })
@@ -111,10 +113,10 @@ function DistributeBalance({
       // Dont need to withdraw for push splits
       if (shouldWithdrawOnDistribute && split.distributeDirection === 'pull') {
         const distributeCalldata =
-          await splitsClient.splitV2.callData.distribute(distributeArgs)
+          await distributeTokenV2Calldata(distributeArgs)
         const withdrawCalldataList = await Promise.all(
           split.recipients.map(({ recipient }) => {
-            return splitsClient.warehouse.callData.withdraw({
+            return withdrawWarehouseCalldata({
               ownerAddress: recipient.address,
               tokenAddress: token as Address,
             })

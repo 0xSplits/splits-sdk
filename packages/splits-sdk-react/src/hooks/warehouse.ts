@@ -3,6 +3,7 @@ import { useCallback, useContext, useState } from 'react'
 import {
   WarehouseWithdrawConfig,
   WarehouseBatchWithdrawConfig,
+  CallData,
 } from '@0xsplits/splits-sdk'
 
 import { SplitsContext } from '../context'
@@ -13,6 +14,9 @@ export const useWithdrawWarehouse = (): {
   withdrawWarehouse: (
     arg0: WarehouseWithdrawConfig,
   ) => Promise<Log[] | undefined>
+  withdrawWarehouseCalldata: (
+    arg0: WarehouseWithdrawConfig,
+  ) => Promise<CallData>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -23,6 +27,17 @@ export const useWithdrawWarehouse = (): {
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
   const [error, setError] = useState<RequestError>()
+
+  const withdrawWarehouseCalldata = useCallback(
+    async (argsDict: WarehouseWithdrawConfig) => {
+      if (!splitsClient)
+        throw new Error('Invalid chain id for splits warehouse')
+
+      const callData = await splitsClient.callData.withdraw(argsDict)
+      return callData
+    },
+    [splitsClient],
+  )
 
   const withdrawWarehouse = useCallback(
     async (argsDict: WarehouseWithdrawConfig) => {
@@ -56,7 +71,7 @@ export const useWithdrawWarehouse = (): {
     [splitsClient],
   )
 
-  return { withdrawWarehouse, status, txHash, error }
+  return { withdrawWarehouse, withdrawWarehouseCalldata, status, txHash, error }
 }
 export const useBatchWithdrawWarehouse = (): {
   batchWithdrawWarehouse: (

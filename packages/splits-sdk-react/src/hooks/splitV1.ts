@@ -13,6 +13,7 @@ import {
   CancelControlTransferConfig,
   AcceptControlTransferConfig,
   MakeSplitImmutableConfig,
+  CallData,
 } from '@0xsplits/splits-sdk'
 import {
   splitMainEthereumAbi,
@@ -229,6 +230,7 @@ export const useUpdateSplit = (): {
 
 export const useDistributeToken = (): {
   distributeToken: (arg0: DistributeTokenConfig) => Promise<Log[] | undefined>
+  distributeTokenCalldata: (arg0: DistributeTokenConfig) => Promise<CallData>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -239,6 +241,16 @@ export const useDistributeToken = (): {
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
   const [error, setError] = useState<RequestError>()
+
+  const distributeTokenCalldata = useCallback(
+    async (argsDict: DistributeTokenConfig) => {
+      if (!splitsClient) throw new Error('Invalid chain id for split v1')
+
+      const callData = await splitsClient.callData.distributeToken(argsDict)
+      return callData
+    },
+    [splitsClient],
+  )
 
   const distributeToken = useCallback(
     async (argsDict: DistributeTokenConfig) => {
@@ -277,7 +289,7 @@ export const useDistributeToken = (): {
     [splitsClient],
   )
 
-  return { distributeToken, status, txHash, error }
+  return { distributeToken, distributeTokenCalldata, status, txHash, error }
 }
 
 export const useUpdateSplitAndDistributeToken = (): {
@@ -339,6 +351,7 @@ export const useUpdateSplitAndDistributeToken = (): {
 
 export const useWithdrawFunds = (): {
   withdrawFunds: (arg0: WithdrawFundsConfig) => Promise<Log[] | undefined>
+  withdrawFundsCalldata: (arg0: WithdrawFundsConfig) => Promise<CallData>
   status?: ContractExecutionStatus
   txHash?: string
   error?: RequestError
@@ -349,6 +362,16 @@ export const useWithdrawFunds = (): {
   const [status, setStatus] = useState<ContractExecutionStatus>()
   const [txHash, setTxHash] = useState<string>()
   const [error, setError] = useState<RequestError>()
+
+  const withdrawFundsCalldata = useCallback(
+    async (argsDict: WithdrawFundsConfig) => {
+      if (!splitsClient) throw new Error('Invalid chain id for split v1')
+
+      const callData = await splitsClient.callData.withdrawFunds(argsDict)
+      return callData
+    },
+    [splitsClient],
+  )
 
   const withdrawFunds = useCallback(
     async (argsDict: WithdrawFundsConfig) => {
@@ -387,7 +410,7 @@ export const useWithdrawFunds = (): {
     [splitsClient],
   )
 
-  return { withdrawFunds, status, txHash, error }
+  return { withdrawFunds, withdrawFundsCalldata, status, txHash, error }
 }
 
 export const useInitiateControlTransfer = (): {
