@@ -105,12 +105,15 @@ export const fetchSplitActiveBalances = async ({
 }) => {
   const balances: FormattedTokenBalances = {}
 
-  const erc20Tokens = fullTokenList.filter((token) => token !== zeroAddress)
+  const formattedTokenList = fullTokenList.map((token) => getAddress(token))
+  const erc20Tokens = formattedTokenList.filter(
+    (token) => token !== zeroAddress,
+  )
   const contractCalls = getSplitTokenBalanceCalls({
     type,
     chainId,
     splitAddress,
-    tokenList: fullTokenList,
+    tokenList: formattedTokenList,
   })
 
   const [tokenData, multicallResponse] = await Promise.all([
@@ -122,7 +125,7 @@ export const fetchSplitActiveBalances = async ({
   processSplitBalanceMulticallResponse({
     type,
     chainId,
-    fullTokenList,
+    fullTokenList: formattedTokenList,
     tokenData,
     multicallResponse,
     balances,
