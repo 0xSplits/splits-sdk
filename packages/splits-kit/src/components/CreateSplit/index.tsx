@@ -1,5 +1,5 @@
 import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
-import { Hex, Log } from 'viem'
+import { Address, Hex, Log } from 'viem'
 
 import CreateSplitForm from '../CreateSplit/CreateSplitForm'
 import { ADDRESS_ZERO } from '../../constants/addresses'
@@ -29,7 +29,7 @@ export interface ICreateSplitProps {
   width?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full'
   theme?: 'light' | 'dark' | 'system'
   displayChain?: boolean
-  onSuccess?: (events: Log[]) => void
+  onSuccess?: (args: { address: Address; events: Log[] }) => void
   onError?: (error: RequestError) => void
 }
 

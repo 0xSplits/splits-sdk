@@ -2,7 +2,7 @@ import { useCallback, useEffect } from 'react'
 import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
 import { useCreateSplit, useCreateSplitV2 } from '@0xsplits/splits-sdk-react'
 import { useForm, FormProvider } from 'react-hook-form'
-import { Hex, Log } from 'viem'
+import { Address, decodeEventLog, Hex, Log } from 'viem'
 import { useAccount } from 'wagmi'
 import { sum, uniq } from 'lodash'
 
@@ -18,6 +18,12 @@ import Tooltip from '../util/Tooltip'
 import Button from '../util/Button'
 import Link from '../util/Link'
 import { SplitV2Type } from '@0xsplits/splits-sdk/types'
+import {
+  splitMainEthereumAbi,
+  splitMainPolygonAbi,
+  splitV2FactoryABI,
+} from '@0xsplits/splits-sdk/constants/abi'
+import { mainnet } from 'viem/chains'
 
 const CreateSplitForm = ({
   chainId,
@@ -41,7 +47,7 @@ const CreateSplitForm = ({
   defaultDistributorFeeOptions: number[]
   linkToApp: boolean
   supportsEns: boolean
-  onSuccess?: (events: Log[]) => void
+  onSuccess?: (args: { address: Address; events: Log[] }) => void
   onError?: (error: RequestError) => void
 }) => {
   const { createSplit, error, status } = useCreateSplit()
@@ -93,6 +99,7 @@ const CreateSplitForm = ({
 
   const onSubmit = useCallback(
     async (data: ICreateSplitForm) => {
+      const executionChainId = chainId
       if (type === 'v1') {
         const args = {
           recipients: data.recipients,
@@ -100,9 +107,33 @@ const CreateSplitForm = ({
           controller: data.owner,
         }
 
-        const result = await createSplit(args)
-        if (result) {
-          onSuccess && onSuccess(result)
+        const events = await createSplit(args)
+        if (events) {
+          if (executionChainId === mainnet.id) {
+            const log = decodeEventLog({
+              abi: splitMainEthereumAbi,
+              data: events[0].data,
+              topics: events[0].topics,
+            })
+            if (log.eventName !== 'CreateSplit') throw new Error()
+            onSuccess &&
+              onSuccess({
+                address: log.args.split,
+                events,
+              })
+          } else {
+            const log = decodeEventLog({
+              abi: splitMainPolygonAbi,
+              data: events[0].data,
+              topics: events[0].topics,
+            })
+            if (log.eventName !== 'CreateSplit') throw new Error()
+            onSuccess &&
+              onSuccess({
+                address: log.args.split,
+                events,
+              })
+          }
         }
       } else {
         const args = {
@@ -115,9 +146,18 @@ const CreateSplitForm = ({
           chainId,
         }
 
-        const result = await createSplitV2(args)
-        if (result) {
-          onSuccess && onSuccess(result)
+        const events = await createSplitV2(args)
+        if (events) {
+          const log = decodeEventLog({
+            abi: splitV2FactoryABI,
+            data: events[0].data,
+            topics: events[0].topics,
+          })
+          onSuccess &&
+            onSuccess({
+              address: log.args.split,
+              events,
+            })
         }
       }
     },
