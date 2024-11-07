@@ -99,6 +99,10 @@ export type DistributeTokenConfig = {
   token: string
   distributorAddress?: string
   chainId?: number
+  splitFields?: {
+    recipients: Split['recipients']
+    distributorFeePercent: number
+  }
 } & TransactionOverridesDict
 
 export type UpdateSplitAndDistributeTokenConfig = {

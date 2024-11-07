@@ -170,6 +170,7 @@ class SplitV1Transactions extends BaseTransactions {
     token,
     distributorAddress,
     chainId,
+    splitFields,
     transactionOverrides = {},
   }: DistributeTokenConfig): Promise<TransactionFormat> {
     validateAddress(splitAddress)
@@ -183,26 +184,31 @@ class SplitV1Transactions extends BaseTransactions {
       : zeroAddress
     validateAddress(distributorPayoutAddress)
 
-    this._requireDataClient()
-    if (!this._dataClient) throw new Error()
-
     const functionChainId = this._getFunctionChainId(chainId)
 
-    const { recipients, distributorFeePercent } =
-      await this._dataClient.getSplitMetadata({
+    let split: Pick<Split, 'recipients' | 'distributorFeePercent'>
+
+    if (splitFields) {
+      split = splitFields
+    } else {
+      this._requireDataClient()
+
+      split = await this._dataClient!.getSplitMetadata({
         chainId: functionChainId,
         splitAddress,
       })
+    }
+
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(
-        recipients.map((recipient) => {
+        split.recipients.map((recipient) => {
           return {
             percentAllocation: recipient.percentAllocation,
             address: recipient.recipient.address,
           }
         }),
       )
-    const distributorFee = getBigIntFromPercent(distributorFeePercent)
+    const distributorFee = getBigIntFromPercent(split.distributorFeePercent)
 
     const result = await this._executeContractFunction({
       contractAddress: getSplitMainAddress(functionChainId),
