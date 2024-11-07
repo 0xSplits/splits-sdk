@@ -79,6 +79,10 @@ function DistributeBalance({
         splitAddress: split.address,
         token,
         distributorAddress: connectedAddress,
+        splitFields: {
+          recipients: split.recipients,
+          distributorFeePercent: split.distributorFeePercent,
+        },
       }
 
       if (shouldWithdrawOnDistribute) {
