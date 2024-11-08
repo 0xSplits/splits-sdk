@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from 'react'
-import { getAddress } from 'viem'
+import { Address, getAddress, zeroAddress } from 'viem'
 import {
   AccountNotFoundError,
   FormattedContractEarnings,
@@ -48,6 +48,7 @@ export const useSplitMetadataViaProvider = (
   options?: {
     cacheData?: {
       blockRange?: bigint
+      controller?: Address
       blocks?: {
         createBlock: bigint
         updateBlock?: bigint
@@ -88,6 +89,7 @@ export const useSplitMetadataViaProvider = (
   const cachedUpdateBlock = options?.cacheData?.blocks?.updateBlock
   const cachedLatestScannedBlock =
     options?.cacheData?.blocks?.latestScannedBlock
+  const cachedController = options?.cacheData?.controller
 
   useEffect(() => {
     let isActive = true
@@ -95,25 +97,9 @@ export const useSplitMetadataViaProvider = (
     const fetchMetadata = async () => {
       try {
         let split: Split
-
+        let createLog, updateLog
         const formattedSplitAddress = getAddress(splitAddress)
         const publicClient = splitsV2Client._getPublicClient(chainId)
-        let blockRange =
-          cachedBlockRange ??
-          (await getLargestValidBlockRange({ publicClient }))
-        const lastBlockNumber = await publicClient.getBlockNumber()
-        let currentBlockNumber = lastBlockNumber
-        const splitV2StartBlock =
-          cachedLatestScannedBlock ?? getSplitV2FactoriesStartBlock(chainId)
-        const splitV1StartBlock =
-          cachedLatestScannedBlock ?? getSplitV1StartBlock(chainId)
-
-        const splitV1Addresses = [getSplitMainAddress(chainId)]
-        const splitV2Addresses = [
-          formattedSplitAddress,
-          getSplitV2FactoryAddress(chainId, SplitV2Type.Pull),
-          getSplitV2FactoryAddress(chainId, SplitV2Type.Push),
-        ]
 
         const [splitV1Exists, splitV2Exists] = await Promise.all([
           splitsV1Client._doesSplitExist({
@@ -134,7 +120,13 @@ export const useSplitMetadataViaProvider = (
             chainId,
           )
 
-        const addresses = splitV1Exists ? splitV1Addresses : splitV2Addresses
+        const addresses = splitV1Exists
+          ? [getSplitMainAddress(chainId)]
+          : [
+              formattedSplitAddress,
+              getSplitV2FactoryAddress(chainId, SplitV2Type.Pull),
+              getSplitV2FactoryAddress(chainId, SplitV2Type.Push),
+            ]
         const splitCreatedEvent = splitV1Exists
           ? splitV1CreatedEvent
           : splitV2CreatedEvent
@@ -142,40 +134,54 @@ export const useSplitMetadataViaProvider = (
           ? splitV1UpdatedEvent
           : splitV2UpdatedEvent
 
-        let createLog, updateLog
+        let blockRange =
+          cachedBlockRange ??
+          (await getLargestValidBlockRange({ publicClient }))
+        const lastBlockNumber = await publicClient.getBlockNumber()
 
-        // eslint-disable-next-line no-loops/no-loops
-        while (
-          currentBlockNumber > splitV1StartBlock &&
-          currentBlockNumber > splitV2StartBlock
-        ) {
-          const startBlock =
-            currentBlockNumber - blockRange * BigInt(LOGS_SEARCH_BATCH_SIZE)
-          setCurrentBlockRange({ from: startBlock, to: currentBlockNumber })
+        const shouldSearch =
+          !cachedCreateBlock ||
+          (cachedController && cachedController !== zeroAddress)
+        if (shouldSearch) {
+          let currentBlockNumber = lastBlockNumber
+          const splitV2StartBlock =
+            cachedLatestScannedBlock ?? getSplitV2FactoriesStartBlock(chainId)
+          const splitV1StartBlock =
+            cachedLatestScannedBlock ?? getSplitV1StartBlock(chainId)
 
-          const {
-            blockRange: searchBlockRange,
-            createLog: searchCreateLog,
-            updateLog: searchUpdateLog,
-          } = await searchLogs({
-            formattedSplitAddress,
-            publicClient,
-            addresses,
-            splitCreatedEvent,
-            splitUpdatedEvent,
-            endBlock: currentBlockNumber,
-            startBlock,
-            defaultBlockRange: blockRange,
-          })
+          // eslint-disable-next-line no-loops/no-loops
+          while (
+            currentBlockNumber > splitV1StartBlock &&
+            currentBlockNumber > splitV2StartBlock
+          ) {
+            const startBlock =
+              currentBlockNumber - blockRange * BigInt(LOGS_SEARCH_BATCH_SIZE)
+            setCurrentBlockRange({ from: startBlock, to: currentBlockNumber })
 
-          blockRange = searchBlockRange
-          createLog = searchCreateLog
-          updateLog = searchUpdateLog
+            const {
+              blockRange: searchBlockRange,
+              createLog: searchCreateLog,
+              updateLog: searchUpdateLog,
+            } = await searchLogs({
+              formattedSplitAddress,
+              publicClient,
+              addresses,
+              splitCreatedEvent,
+              splitUpdatedEvent,
+              endBlock: currentBlockNumber,
+              startBlock,
+              defaultBlockRange: blockRange,
+            })
 
-          if (createLog) break
-          if (updateLog && cachedCreateBlock) break
+            blockRange = searchBlockRange
+            createLog = searchCreateLog
+            updateLog = searchUpdateLog
 
-          currentBlockNumber = startBlock - BigInt(1)
+            if (createLog) break
+            if (updateLog && cachedCreateBlock) break
+
+            currentBlockNumber = startBlock - BigInt(1)
+          }
         }
 
         if (!createLog) {
@@ -230,6 +236,7 @@ export const useSplitMetadataViaProvider = (
         setSplitMetadata(split)
         setCacheData({
           blockRange,
+          controller: split.controller?.address ?? zeroAddress,
           blocks: {
             createBlock: createLog.blockNumber,
             updateBlock: updateLog?.blockNumber,

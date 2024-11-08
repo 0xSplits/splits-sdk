@@ -1,3 +1,5 @@
+import { Address } from 'viem'
+
 export type ContractExecutionStatus =
   | 'pendingApproval'
   | 'txInProgress'
@@ -11,6 +13,7 @@ export type RequestError = any
 
 export type SplitProviderSearchCacheData = {
   blockRange: bigint
+  controller: Address
   blocks: {
     createBlock: bigint
     updateBlock?: bigint
