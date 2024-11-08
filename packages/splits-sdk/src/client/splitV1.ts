@@ -1301,6 +1301,21 @@ export class SplitV1Client extends SplitV1Transactions {
     return { hash }
   }
 
+  async _doesSplitExist({
+    splitAddress,
+    chainId,
+  }: {
+    splitAddress: Address
+    chainId: number
+  }) {
+    try {
+      await this._checkForSplitExistence({ splitAddress, chainId })
+      return true
+    } catch {
+      return false
+    }
+  }
+
   async _getSplitFromLogs({
     splitAddress,
     chainId,

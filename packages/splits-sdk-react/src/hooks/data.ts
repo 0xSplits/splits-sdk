@@ -1,4 +1,5 @@
 import { useContext, useEffect, useState } from 'react'
+import { getAddress } from 'viem'
 import {
   AccountNotFoundError,
   FormattedContractEarnings,
@@ -11,20 +12,6 @@ import {
   VestingModule,
   WaterfallModule,
 } from '@0xsplits/splits-sdk'
-
-import {
-  DataLoadStatus,
-  RequestError,
-  SplitProviderSearchCacheData,
-} from '../types'
-import { getSplitsClient } from '../utils'
-import { SplitsContext } from '../context'
-import {
-  getLargestValidBlockRange,
-  getSplitCreateAndUpdateLogs,
-  LOGS_SEARCH_BATCH_SIZE,
-  searchLogs,
-} from '@0xsplits/splits-sdk/utils'
 import {
   getSplitMainAddress,
   getSplitV1StartBlock,
@@ -39,8 +26,21 @@ import {
   splitV2UpdatedEvent,
   SplitV2UpdatedLogType,
 } from '@0xsplits/splits-sdk/constants'
-import { getAddress } from 'viem'
+import {
+  getLargestValidBlockRange,
+  getSplitCreateAndUpdateLogs,
+  LOGS_SEARCH_BATCH_SIZE,
+  searchLogs,
+} from '@0xsplits/splits-sdk/utils'
 import { SplitV2Type } from '@0xsplits/splits-sdk/types'
+
+import {
+  DataLoadStatus,
+  RequestError,
+  SplitProviderSearchCacheData,
+} from '../types'
+import { getSplitsClient } from '../utils'
+import { SplitsContext } from '../context'
 
 export const useSplitMetadataViaProvider = (
   chainId: number,
@@ -115,9 +115,34 @@ export const useSplitMetadataViaProvider = (
           getSplitV2FactoryAddress(chainId, SplitV2Type.Push),
         ]
 
-        let createLog, updateLog
+        const [splitV1Exists, splitV2Exists] = await Promise.all([
+          splitsV1Client._doesSplitExist({
+            splitAddress: formattedSplitAddress,
+            chainId,
+          }),
+          splitsV2Client._doesSplitExist({
+            splitAddress: formattedSplitAddress,
+            chainId,
+          }),
+        ])
+        if (splitV1Exists && splitV2Exists)
+          throw new Error('Found v1 and v2 split')
+        if (!splitV1Exists && !splitV2Exists)
+          throw new AccountNotFoundError(
+            'split',
+            formattedSplitAddress,
+            chainId,
+          )
 
-        let splitV1Error, splitV2Error
+        const addresses = splitV1Exists ? splitV1Addresses : splitV2Addresses
+        const splitCreatedEvent = splitV1Exists
+          ? splitV1CreatedEvent
+          : splitV2CreatedEvent
+        const splitUpdatedEvent = splitV1Exists
+          ? splitV1UpdatedEvent
+          : splitV2UpdatedEvent
+
+        let createLog, updateLog
 
         // eslint-disable-next-line no-loops/no-loops
         while (
@@ -128,56 +153,24 @@ export const useSplitMetadataViaProvider = (
             currentBlockNumber - blockRange * BigInt(LOGS_SEARCH_BATCH_SIZE)
           setCurrentBlockRange({ from: startBlock, to: currentBlockNumber })
 
-          const [splitV1Result, splitV2Result] = await Promise.allSettled([
-            splitV1Error
-              ? undefined
-              : searchLogs({
-                  formattedSplitAddress,
-                  publicClient,
-                  addresses: splitV1Addresses,
-                  splitCreatedEvent: splitV1CreatedEvent,
-                  splitUpdatedEvent: splitV1UpdatedEvent,
-                  endBlock: currentBlockNumber,
-                  startBlock,
-                  defaultBlockRange: blockRange,
-                }),
-            splitV2Error
-              ? undefined
-              : searchLogs({
-                  formattedSplitAddress,
-                  publicClient,
-                  addresses: splitV2Addresses,
-                  splitCreatedEvent: splitV2CreatedEvent,
-                  splitUpdatedEvent: splitV2UpdatedEvent,
-                  endBlock: currentBlockNumber,
-                  startBlock,
-                  defaultBlockRange: blockRange,
-                }),
-          ])
+          const {
+            blockRange: searchBlockRange,
+            createLog: searchCreateLog,
+            updateLog: searchUpdateLog,
+          } = await searchLogs({
+            formattedSplitAddress,
+            publicClient,
+            addresses,
+            splitCreatedEvent,
+            splitUpdatedEvent,
+            endBlock: currentBlockNumber,
+            startBlock,
+            defaultBlockRange: blockRange,
+          })
 
-          if (splitV1Result?.status === 'rejected') splitV1Error = true
-          if (splitV2Result?.status === 'rejected') splitV2Error = true
-
-          if (splitV1Error && splitV2Error)
-            throw new AccountNotFoundError(
-              'split',
-              formattedSplitAddress,
-              chainId,
-            )
-
-          if (splitV1Result?.status === 'fulfilled') {
-            blockRange = splitV1Result.value?.blockRange
-              ? splitV1Result.value.blockRange
-              : blockRange
-            createLog = splitV1Result.value?.createLog
-            updateLog = splitV1Result.value?.updateLog
-          } else if (splitV2Result?.status === 'fulfilled') {
-            blockRange = splitV2Result.value?.blockRange
-              ? splitV2Result.value.blockRange
-              : blockRange
-            createLog = splitV2Result.value?.createLog
-            updateLog = splitV2Result.value?.updateLog
-          }
+          blockRange = searchBlockRange
+          createLog = searchCreateLog
+          updateLog = searchUpdateLog
 
           if (createLog) break
           if (updateLog && cachedCreateBlock) break
@@ -199,13 +192,9 @@ export const useSplitMetadataViaProvider = (
                   updateBlock: cachedUpdateBlock,
                   latestScannedBlock: cachedLatestScannedBlock!,
                 },
-                splitCreatedEvent: splitV1Error
-                  ? splitV2CreatedEvent
-                  : splitV1CreatedEvent,
-                splitUpdatedEvent: splitV1Error
-                  ? splitV2UpdatedEvent
-                  : splitV1UpdatedEvent,
-                addresses: splitV1Error ? splitV2Addresses : splitV1Addresses,
+                splitCreatedEvent,
+                splitUpdatedEvent,
+                addresses,
               })
 
             createLog = cachedCreateLog
@@ -221,19 +210,19 @@ export const useSplitMetadataViaProvider = (
             )
         }
 
-        if (splitV1Error) {
-          split = await splitsV2Client._getSplitFromLogs({
-            splitAddress: formattedSplitAddress,
-            chainId,
-            createLog: createLog as SplitV2CreatedLogType,
-            updateLog: updateLog as SplitV2UpdatedLogType,
-          })
-        } else {
+        if (splitV1Exists) {
           split = await splitsV1Client._getSplitFromLogs({
             splitAddress: formattedSplitAddress,
             chainId,
             createLog: createLog as SplitV1CreatedLogType,
             updateLog: updateLog as SplitV1UpdatedLogType,
+          })
+        } else {
+          split = await splitsV2Client._getSplitFromLogs({
+            splitAddress: formattedSplitAddress,
+            chainId,
+            createLog: createLog as SplitV2CreatedLogType,
+            updateLog: updateLog as SplitV2UpdatedLogType,
           })
         }
 

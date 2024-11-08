@@ -993,6 +993,21 @@ export class SplitV2Client extends SplitV2Transactions {
     return { ownerAddress }
   }
 
+  async _doesSplitExist({
+    splitAddress,
+    chainId,
+  }: {
+    splitAddress: Address
+    chainId: number
+  }) {
+    try {
+      await this._checkForSplitExistence({ splitAddress, chainId })
+      return true
+    } catch {
+      return false
+    }
+  }
+
   async _getSplitFromLogs({
     splitAddress,
     chainId,
