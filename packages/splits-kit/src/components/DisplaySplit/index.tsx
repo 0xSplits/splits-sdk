@@ -109,17 +109,17 @@ const DisplaySplit = ({
         )
       }
       error={
-        (metadataError &&
-          metadataError.name === 'AccountNotFoundError' && {
-            title: 'Split not found',
-            body: `This account is not a Splits contract on the ${
-              isSupportedChainId(chainId) ? CHAIN_INFO[chainId].label : chainId
-            } network.`,
-          }) ||
-        (metadataError.name === 'InvalidArgumentError' && {
-          title: 'Invalid Address',
-          body: `Address ${address} is not a valid Ethereum address.`,
-        })
+        metadataError &&
+        ((metadataError.name === 'AccountNotFoundError' && {
+          title: 'Split not found',
+          body: `This account is not a Splits contract on the ${
+            isSupportedChainId(chainId) ? CHAIN_INFO[chainId].label : chainId
+          } network.`,
+        }) ||
+          (metadataError.name === 'InvalidArgumentError' && {
+            title: 'Invalid Address',
+            body: `Address ${address} is not a valid Ethereum address.`,
+          }))
       }
       body={
         <div className="flex flex-col text-xs">
@@ -261,17 +261,17 @@ export const DisplaySplitViaProvider = ({
         )
       }
       error={
-        (metadataError &&
-          metadataError.name === 'AccountNotFoundError' && {
-            title: 'Split not found',
-            body: `This account is not a Splits contract on the ${
-              isSupportedChainId(chainId) ? CHAIN_INFO[chainId].label : chainId
-            } network.`,
-          }) ||
-        (metadataError.name === 'InvalidArgumentError' && {
-          title: 'Invalid Address',
-          body: `Address ${address} is not a valid Ethereum address.`,
-        })
+        metadataError &&
+        ((metadataError.name === 'AccountNotFoundError' && {
+          title: 'Split not found',
+          body: `This account is not a Splits contract on the ${
+            isSupportedChainId(chainId) ? CHAIN_INFO[chainId].label : chainId
+          } network.`,
+        }) ||
+          (metadataError.name === 'InvalidArgumentError' && {
+            title: 'Invalid Address',
+            body: `Address ${address} is not a valid Ethereum address.`,
+          }))
       }
       body={
         <div className="flex flex-col text-xs">
