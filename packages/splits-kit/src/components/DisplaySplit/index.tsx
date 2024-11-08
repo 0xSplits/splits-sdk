@@ -167,6 +167,8 @@ export const DisplaySplitViaProvider = ({
     readFromLocalStorage<SplitProviderSearchCacheData>(localStorageKey)
 
   const fetchMetadataOptions = useMemo(() => {
+    if (!useCache) return
+
     return {
       cacheData: {
         blockRange: localStorageData?.blockRange
@@ -188,6 +190,7 @@ export const DisplaySplitViaProvider = ({
       },
     }
   }, [
+    useCache,
     localStorageData?.blockRange,
     localStorageData?.blocks?.createBlock,
     localStorageData?.blocks?.updateBlock,
