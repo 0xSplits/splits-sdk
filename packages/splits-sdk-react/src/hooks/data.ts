@@ -12,7 +12,11 @@ import {
   WaterfallModule,
 } from '@0xsplits/splits-sdk'
 
-import { DataLoadStatus, RequestError } from '../types'
+import {
+  DataLoadStatus,
+  RequestError,
+  SplitProviderSearchCacheData,
+} from '../types'
 import { getSplitsClient } from '../utils'
 import { SplitsContext } from '../context'
 import {
@@ -58,14 +62,7 @@ export const useSplitMetadataViaProvider = (
     from: bigint
     to: bigint
   }
-  cacheData?: {
-    blockRange: bigint
-    blocks: {
-      createBlock: bigint
-      updateBlock?: bigint
-      latestScannedBlock: bigint
-    }
-  }
+  cacheData?: SplitProviderSearchCacheData
   status?: DataLoadStatus
   error?: RequestError
 } => {
@@ -83,15 +80,7 @@ export const useSplitMetadataViaProvider = (
     { from: bigint; to: bigint } | undefined
   >()
   const [cacheData, setCacheData] = useState<
-    | {
-        blockRange: bigint
-        blocks: {
-          createBlock: bigint
-          updateBlock?: bigint
-          latestScannedBlock: bigint
-        }
-      }
-    | undefined
+    SplitProviderSearchCacheData | undefined
   >()
 
   const cachedBlockRange = options?.cacheData?.blockRange

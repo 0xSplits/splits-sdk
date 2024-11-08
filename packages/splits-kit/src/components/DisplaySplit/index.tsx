@@ -1,10 +1,13 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import {
   useSplitEarnings,
   useSplitMetadata,
   useSplitMetadataViaProvider,
 } from '@0xsplits/splits-sdk-react'
-import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
+import {
+  RequestError,
+  SplitProviderSearchCacheData,
+} from '@0xsplits/splits-sdk-react/types'
 
 import {
   CHAIN_INFO,
@@ -18,6 +21,10 @@ import SplitHeader from '../DisplaySplit/SplitHeader'
 import ChainLogo from '../util/ChainLogo'
 import { IAddress } from '../../types'
 import ComponentLayout from '../util/ComponentLayout'
+import {
+  readFromLocalStorage,
+  saveToLocalStorage,
+} from '../../utils/localStorage'
 
 export interface IDisplaySplitProps {
   address: IAddress
@@ -151,13 +158,44 @@ export const DisplaySplitViaProvider = ({
   theme = 'system',
   onSuccess,
   onError,
-}: IDisplaySplitProps) => {
+  useCache = false,
+}: IDisplaySplitProps & {
+  useCache: boolean
+}) => {
+  const localStorageKey = `splits-kit.${chainId}.${address}`
+  const localStorageData =
+    readFromLocalStorage<SplitProviderSearchCacheData>(localStorageKey)
+
+  const fetchMetadataOptions = useMemo(() => {
+    return {
+      cacheData: {
+        blockRange: localStorageData?.blockRange,
+        ...(localStorageData?.blocks?.createBlock
+          ? {
+              blocks: {
+                createBlock: localStorageData?.blocks?.createBlock,
+                updateBlock: localStorageData?.blocks?.updateBlock,
+                latestScannedBlock:
+                  localStorageData?.blocks?.latestScannedBlock,
+              },
+            }
+          : {}),
+      },
+    }
+  }, [
+    localStorageData?.blockRange,
+    localStorageData?.blocks?.createBlock,
+    localStorageData?.blocks?.updateBlock,
+    localStorageData?.blocks?.latestScannedBlock,
+  ])
+
   const {
     splitMetadata: split,
     currentBlockRange,
+    cacheData,
     error: metadataError,
     isLoading: isLoadingMetadata,
-  } = useSplitMetadataViaProvider(chainId, address)
+  } = useSplitMetadataViaProvider(chainId, address, fetchMetadataOptions)
 
   const includeActiveBalances = true
   const {
@@ -195,6 +233,12 @@ export const DisplaySplitViaProvider = ({
       onError && onError(metadataError)
     }
   }, [earningsError, metadataError, onError])
+
+  useEffect(() => {
+    if (useCache && cacheData) {
+      saveToLocalStorage(localStorageKey, cacheData)
+    }
+  }, [useCache, cacheData])
 
   return (
     <ComponentLayout

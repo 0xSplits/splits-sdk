@@ -1,4 +1,4 @@
-import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
+import { RequestError } from '@0xsplits/splits-sdk-react/types'
 import { Address, Hex, Log } from 'viem'
 
 import CreateSplitForm from '../CreateSplit/CreateSplitForm'
