@@ -283,8 +283,8 @@ export const DisplaySplitViaProvider = ({
           {isLoadingMetadata ? (
             currentBlockRange ? (
               <div>
-                Scanning blocks {Number(currentBlockRange.from)} -{' '}
-                {Number(currentBlockRange.to)}
+                Scanning blocks {Number(currentBlockRange.to)} -{' '}
+                {Number(currentBlockRange.from)}
               </div>
             ) : (
               <div>Loading split...</div>
