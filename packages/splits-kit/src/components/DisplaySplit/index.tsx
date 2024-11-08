@@ -162,14 +162,16 @@ export const DisplaySplitViaProvider = ({
 }: IDisplaySplitProps & {
   useCache: boolean
 }) => {
-  const localStorageKey = `splits-kit.${chainId}.${address}`
+  const localStorageKey = `splits-kit.display.${chainId}.${address}`
   const localStorageData =
     readFromLocalStorage<SplitProviderSearchCacheData>(localStorageKey)
 
   const fetchMetadataOptions = useMemo(() => {
     return {
       cacheData: {
-        blockRange: localStorageData?.blockRange,
+        blockRange: localStorageData?.blockRange
+          ? BigInt(localStorageData?.blockRange)
+          : undefined,
         ...(localStorageData?.blocks?.createBlock
           ? {
               blocks: {
