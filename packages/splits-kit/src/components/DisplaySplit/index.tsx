@@ -173,10 +173,13 @@ export const DisplaySplitViaProvider = ({
         ...(localStorageData?.blocks?.createBlock
           ? {
               blocks: {
-                createBlock: localStorageData?.blocks?.createBlock,
-                updateBlock: localStorageData?.blocks?.updateBlock,
-                latestScannedBlock:
+                createBlock: BigInt(localStorageData?.blocks?.createBlock),
+                updateBlock: localStorageData?.blocks?.updateBlock
+                  ? BigInt(localStorageData?.blocks?.updateBlock)
+                  : undefined,
+                latestScannedBlock: BigInt(
                   localStorageData?.blocks?.latestScannedBlock,
+                ),
               },
             }
           : {}),
