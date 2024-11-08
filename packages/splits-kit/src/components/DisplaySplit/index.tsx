@@ -158,7 +158,7 @@ export const DisplaySplitViaProvider = ({
   theme = 'system',
   onSuccess,
   onError,
-  useCache = false,
+  useCache,
 }: IDisplaySplitProps & {
   useCache: boolean
 }) => {
