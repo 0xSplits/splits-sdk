@@ -1,5 +1,9 @@
 import { useCallback, useEffect } from 'react'
-import { useSplitEarnings, useSplitMetadata } from '@0xsplits/splits-sdk-react'
+import {
+  useSplitEarnings,
+  useSplitMetadata,
+  useSplitMetadataViaProvider,
+} from '@0xsplits/splits-sdk-react'
 import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
 
 import {
@@ -23,9 +27,6 @@ export interface IDisplaySplitProps {
   displayChain?: boolean
   linkToApp?: boolean
   shouldWithdrawOnDistribute?: boolean
-  options?: {
-    requireDataClient?: boolean
-  }
   width?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full'
   theme?: 'light' | 'dark' | 'system'
   onSuccess?: (token: string) => void
@@ -40,7 +41,6 @@ const DisplaySplit = ({
   displayChain = true,
   linkToApp = true,
   shouldWithdrawOnDistribute = false,
-  options = { requireDataClient: true },
   width = 'md',
   theme = 'system',
   onSuccess,
@@ -50,7 +50,114 @@ const DisplaySplit = ({
     splitMetadata: split,
     error: metadataError,
     isLoading: isLoadingMetadata,
-  } = useSplitMetadata(chainId, address, options)
+  } = useSplitMetadata(chainId, address)
+
+  const includeActiveBalances = true
+  const {
+    splitEarnings,
+    isLoading: isLoadingEarnings,
+    error: earningsError,
+    refetch: refetchEarnings,
+  } = useSplitEarnings(chainId, address, includeActiveBalances, erc20TokenList)
+
+  const onSuccessWrapper = useCallback(
+    (token: string) => {
+      refetchEarnings()
+      if (onSuccess) onSuccess(token)
+    },
+    [refetchEarnings, onSuccess],
+  )
+
+  useEffect(() => {
+    if (earningsError) {
+      // eslint-disable-next-line no-console
+      console.error(earningsError)
+      onError && onError(earningsError)
+    }
+    if (metadataError) {
+      // eslint-disable-next-line no-console
+      console.error(metadataError)
+      onError && onError(metadataError)
+    }
+  }, [earningsError, metadataError, onError])
+
+  return (
+    <ComponentLayout
+      chainId={chainId}
+      width={width}
+      theme={theme}
+      title={
+        isSupportedChainId(chainId) ? (
+          <SplitHeader
+            chainId={chainId}
+            address={address}
+            linkToApp={linkToApp}
+          />
+        ) : undefined
+      }
+      corner={
+        displayChain &&
+        isSupportedChainId(chainId) && (
+          <ChainLogo chainInfo={CHAIN_INFO[chainId]} />
+        )
+      }
+      error={
+        (metadataError &&
+          metadataError.name === 'AccountNotFoundError' && {
+            title: 'Split not found',
+            body: `This account is not a Splits contract on the ${
+              isSupportedChainId(chainId) ? CHAIN_INFO[chainId].label : chainId
+            } network.`,
+          }) ||
+        (metadataError.name === 'InvalidArgumentError' && {
+          title: 'Invalid Address',
+          body: `Address ${address} is not a valid Ethereum address.`,
+        })
+      }
+      body={
+        <div className="flex flex-col text-xs">
+          {isLoadingMetadata || isLoadingEarnings ? (
+            <SkeletonLoader />
+          ) : (
+            <div className="space-y-4">
+              <SplitRecipients split={split} linkToApp={linkToApp} />
+              {split && displayBalances && !isLoadingEarnings && (
+                <SplitBalances
+                  chainId={chainId as SupportedChainId}
+                  split={split}
+                  formattedSplitEarnings={splitEarnings}
+                  shouldWithdrawOnDistribute={shouldWithdrawOnDistribute}
+                  onSuccess={onSuccessWrapper}
+                  onError={onError}
+                />
+              )}
+            </div>
+          )}
+        </div>
+      }
+    />
+  )
+}
+
+export const DisplaySplitViaProvider = ({
+  address,
+  chainId,
+  erc20TokenList,
+  displayBalances = true,
+  displayChain = true,
+  linkToApp = true,
+  shouldWithdrawOnDistribute = false,
+  width = 'md',
+  theme = 'system',
+  onSuccess,
+  onError,
+}: IDisplaySplitProps) => {
+  const {
+    splitMetadata: split,
+    currentBlockRange,
+    error: metadataError,
+    isLoading: isLoadingMetadata,
+  } = useSplitMetadataViaProvider(chainId, address)
 
   const includeActiveBalances = true
   const {
@@ -63,7 +170,9 @@ const DisplaySplit = ({
     address,
     includeActiveBalances,
     erc20TokenList,
-    options,
+    {
+      requireDataClient: false,
+    },
   )
 
   const onSuccessWrapper = useCallback(
@@ -108,22 +217,31 @@ const DisplaySplit = ({
         )
       }
       error={
-        metadataError &&
-        ((metadataError.name === 'AccountNotFoundError' && {
-          title: 'Split not found',
-          body: `This account is not a Splits contract on the ${
-            isSupportedChainId(chainId) ? CHAIN_INFO[chainId].label : chainId
-          } network.`,
-        }) ||
-          (metadataError.name === 'InvalidArgumentError' && {
-            title: 'Invalid Address',
-            body: `Address ${address} is not a valid Ethereum address.`,
-          }))
+        (metadataError &&
+          metadataError.name === 'AccountNotFoundError' && {
+            title: 'Split not found',
+            body: `This account is not a Splits contract on the ${
+              isSupportedChainId(chainId) ? CHAIN_INFO[chainId].label : chainId
+            } network.`,
+          }) ||
+        (metadataError.name === 'InvalidArgumentError' && {
+          title: 'Invalid Address',
+          body: `Address ${address} is not a valid Ethereum address.`,
+        })
       }
       body={
         <div className="flex flex-col text-xs">
-          {isLoadingMetadata || isLoadingEarnings ? (
-            <SkeletonLoader />
+          {isLoadingMetadata ? (
+            currentBlockRange ? (
+              <div>
+                Scanning blocks {Number(currentBlockRange.from)} -{' '}
+                {Number(currentBlockRange.to)}
+              </div>
+            ) : (
+              <div>Loading split...</div>
+            )
+          ) : isLoadingEarnings ? (
+            <div>Loading balances...</div>
           ) : (
             <div className="space-y-4">
               <SplitRecipients split={split} linkToApp={linkToApp} />

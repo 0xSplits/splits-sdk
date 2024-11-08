@@ -1,5 +1,8 @@
-import { Address } from 'viem'
+import { Address, GetLogsReturnType } from 'viem'
 import { SplitV2Type } from '../types'
+import { splitMainPolygonAbi } from './abi/splitMain'
+import { splitV2ABI } from './abi/splitV2'
+import { splitV2FactoryABI } from './abi/splitV2Factory'
 
 export const PERCENTAGE_SCALE = BigInt(1e6)
 
@@ -347,3 +350,41 @@ export const TWO = BigInt(2)
 
 export const NATIVE_TOKEN_ADDRESS: Address =
   '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
+
+export const splitV1UpdatedEvent = splitMainPolygonAbi[18]
+export const splitV1CreatedEvent = splitMainPolygonAbi[14]
+type SplitV1UpdatedEventType = typeof splitV1UpdatedEvent
+export type SplitV1UpdatedLogType = GetLogsReturnType<
+  SplitV1UpdatedEventType,
+  [SplitV1UpdatedEventType],
+  true,
+  bigint,
+  bigint
+>[0]
+type SplitV1CreatedEventType = typeof splitV1CreatedEvent
+export type SplitV1CreatedLogType = GetLogsReturnType<
+  SplitV1CreatedEventType,
+  [SplitV1CreatedEventType],
+  true,
+  bigint,
+  bigint
+>[0]
+
+export const splitV2UpdatedEvent = splitV2ABI[28]
+export const splitV2CreatedEvent = splitV2FactoryABI[8]
+type SplitV2UpdatedEventType = typeof splitV2UpdatedEvent
+export type SplitV2UpdatedLogType = GetLogsReturnType<
+  SplitV2UpdatedEventType,
+  [SplitV2UpdatedEventType],
+  true,
+  bigint,
+  bigint
+>[0]
+type SplitV2CreatedEventType = typeof splitV2CreatedEvent
+export type SplitV2CreatedLogType = GetLogsReturnType<
+  SplitV2CreatedEventType,
+  [SplitV2CreatedEventType],
+  true,
+  bigint,
+  bigint
+>[0]

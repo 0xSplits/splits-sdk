@@ -113,7 +113,7 @@ class BaseClient {
     this._requirePublicClient(chainId)
   }
 
-  protected _getPublicClient(chainId: number): PublicClient<Transport, Chain> {
+  _getPublicClient(chainId: number): PublicClient<Transport, Chain> {
     if (!this._supportedChainIds.includes(chainId))
       throw new UnsupportedChainIdError(chainId, this._supportedChainIds)
 

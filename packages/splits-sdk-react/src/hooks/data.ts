@@ -15,6 +15,285 @@ import {
 import { DataLoadStatus, RequestError } from '../types'
 import { getSplitsClient } from '../utils'
 import { SplitsContext } from '../context'
+import {
+  getLargestValidBlockRange,
+  getSplitCreateAndUpdateLogs,
+  LOGS_SEARCH_BATCH_SIZE,
+  searchLogs,
+} from '@0xsplits/splits-sdk/utils'
+import {
+  getSplitMainAddress,
+  getSplitV1StartBlock,
+  getSplitV2FactoriesStartBlock,
+  getSplitV2FactoryAddress,
+  splitV1CreatedEvent,
+  SplitV1CreatedLogType,
+  splitV1UpdatedEvent,
+  SplitV1UpdatedLogType,
+  splitV2CreatedEvent,
+  SplitV2CreatedLogType,
+  splitV2UpdatedEvent,
+  SplitV2UpdatedLogType,
+} from '@0xsplits/splits-sdk/constants'
+import { getAddress } from 'viem'
+import { SplitV2Type } from '@0xsplits/splits-sdk/types'
+
+export const useSplitMetadataViaProvider = (
+  chainId: number,
+  splitAddress: string,
+  options?: {
+    cacheData?: {
+      blockRange?: bigint
+      blocks?: {
+        createBlock: bigint
+        updateBlock?: bigint
+        latestScannedBlock: bigint
+      }
+    }
+  },
+): {
+  isLoading: boolean
+  splitMetadata?: Split
+  currentBlockRange?: {
+    from: bigint
+    to: bigint
+  }
+  cacheData?: {
+    blockRange: bigint
+    blocks: {
+      createBlock: bigint
+      updateBlock?: bigint
+      latestScannedBlock: bigint
+    }
+  }
+  status?: DataLoadStatus
+  error?: RequestError
+} => {
+  const context = useContext(SplitsContext)
+  const splitsV1Client = getSplitsClient(context).splitV1
+  const splitsV2Client = getSplitsClient(context).splitV2
+
+  const [splitMetadata, setSplitMetadata] = useState<Split | undefined>()
+  const [isLoading, setIsLoading] = useState(!!splitAddress)
+  const [status, setStatus] = useState<DataLoadStatus | undefined>(
+    splitAddress ? 'loading' : undefined,
+  )
+  const [error, setError] = useState<RequestError>()
+  const [currentBlockRange, setCurrentBlockRange] = useState<
+    { from: bigint; to: bigint } | undefined
+  >()
+  const [cacheData, setCacheData] = useState<
+    | {
+        blockRange: bigint
+        blocks: {
+          createBlock: bigint
+          updateBlock?: bigint
+          latestScannedBlock: bigint
+        }
+      }
+    | undefined
+  >()
+
+  const cachedBlockRange = options?.cacheData?.blockRange
+  const cachedCreateBlock = options?.cacheData?.blocks?.createBlock
+  const cachedUpdateBlock = options?.cacheData?.blocks?.updateBlock
+  const cachedLatestScannedBlock =
+    options?.cacheData?.blocks?.latestScannedBlock
+
+  useEffect(() => {
+    let isActive = true
+
+    const fetchMetadata = async () => {
+      try {
+        let split: Split
+
+        const formattedSplitAddress = getAddress(splitAddress)
+        const publicClient = splitsV2Client._getPublicClient(chainId)
+        let blockRange =
+          cachedBlockRange ??
+          (await getLargestValidBlockRange({ publicClient }))
+        const lastBlockNumber = await publicClient.getBlockNumber()
+        let currentBlockNumber = lastBlockNumber
+        const splitV2StartBlock =
+          cachedLatestScannedBlock ?? getSplitV2FactoriesStartBlock(chainId)
+        const splitV1StartBlock =
+          cachedLatestScannedBlock ?? getSplitV1StartBlock(chainId)
+
+        const splitV1Addresses = [getSplitMainAddress(chainId)]
+        const splitV2Addresses = [
+          formattedSplitAddress,
+          getSplitV2FactoryAddress(chainId, SplitV2Type.Pull),
+          getSplitV2FactoryAddress(chainId, SplitV2Type.Push),
+        ]
+
+        let createLog, updateLog
+
+        let splitV1Error, splitV2Error
+
+        // eslint-disable-next-line no-loops/no-loops
+        while (
+          currentBlockNumber > splitV1StartBlock &&
+          currentBlockNumber > splitV2StartBlock
+        ) {
+          const startBlock =
+            currentBlockNumber - blockRange * BigInt(LOGS_SEARCH_BATCH_SIZE)
+          setCurrentBlockRange({ from: startBlock, to: currentBlockNumber })
+
+          const [splitV1Result, splitV2Result] = await Promise.allSettled([
+            splitV1Error
+              ? undefined
+              : searchLogs({
+                  formattedSplitAddress,
+                  publicClient,
+                  addresses: splitV1Addresses,
+                  splitCreatedEvent: splitV1CreatedEvent,
+                  splitUpdatedEvent: splitV1UpdatedEvent,
+                  endBlock: currentBlockNumber,
+                  startBlock,
+                  defaultBlockRange: blockRange,
+                }),
+            splitV2Error
+              ? undefined
+              : searchLogs({
+                  formattedSplitAddress,
+                  publicClient,
+                  addresses: splitV2Addresses,
+                  splitCreatedEvent: splitV2CreatedEvent,
+                  splitUpdatedEvent: splitV2UpdatedEvent,
+                  endBlock: currentBlockNumber,
+                  startBlock,
+                  defaultBlockRange: blockRange,
+                }),
+          ])
+
+          if (splitV1Result?.status === 'rejected') splitV1Error = true
+          if (splitV2Result?.status === 'rejected') splitV2Error = true
+
+          if (splitV1Error && splitV2Error)
+            throw new AccountNotFoundError(
+              'split',
+              formattedSplitAddress,
+              chainId,
+            )
+
+          if (splitV1Result?.status === 'fulfilled') {
+            blockRange = splitV1Result.value?.blockRange
+              ? splitV1Result.value.blockRange
+              : blockRange
+            createLog = splitV1Result.value?.createLog
+            updateLog = splitV1Result.value?.updateLog
+          } else if (splitV2Result?.status === 'fulfilled') {
+            blockRange = splitV2Result.value?.blockRange
+              ? splitV2Result.value.blockRange
+              : blockRange
+            createLog = splitV2Result.value?.createLog
+            updateLog = splitV2Result.value?.updateLog
+          }
+
+          if (createLog) break
+          if (updateLog && cachedCreateBlock) break
+
+          currentBlockNumber = startBlock - BigInt(1)
+        }
+
+        if (!createLog) {
+          if (cachedCreateBlock) {
+            const { createLog: cachedCreateLog, updateLog: cachedUpdateLog } =
+              await getSplitCreateAndUpdateLogs({
+                splitAddress: formattedSplitAddress,
+                publicClient,
+                currentEndBlockNumber: cachedLatestScannedBlock,
+                startBlockNumber: cachedLatestScannedBlock!,
+                defaultBlockRange: blockRange,
+                cachedBlocks: {
+                  createBlock: cachedCreateBlock,
+                  updateBlock: cachedUpdateBlock,
+                  latestScannedBlock: cachedLatestScannedBlock!,
+                },
+                splitCreatedEvent: splitV1Error
+                  ? splitV2CreatedEvent
+                  : splitV1CreatedEvent,
+                splitUpdatedEvent: splitV1Error
+                  ? splitV2UpdatedEvent
+                  : splitV1UpdatedEvent,
+                addresses: splitV1Error ? splitV2Addresses : splitV1Addresses,
+              })
+
+            createLog = cachedCreateLog
+            // Only use cached update log if we did not find a more recent one
+            updateLog = updateLog ? updateLog : cachedUpdateLog
+          }
+
+          if (!createLog)
+            throw new AccountNotFoundError(
+              'split',
+              formattedSplitAddress,
+              chainId,
+            )
+        }
+
+        if (splitV1Error) {
+          split = await splitsV2Client._getSplitFromLogs({
+            splitAddress: formattedSplitAddress,
+            chainId,
+            createLog: createLog as SplitV2CreatedLogType,
+            updateLog: updateLog as SplitV2UpdatedLogType,
+          })
+        } else {
+          split = await splitsV1Client._getSplitFromLogs({
+            splitAddress: formattedSplitAddress,
+            chainId,
+            createLog: createLog as SplitV1CreatedLogType,
+            updateLog: updateLog as SplitV1UpdatedLogType,
+          })
+        }
+
+        if (!isActive) return
+        setSplitMetadata(split)
+        setCacheData({
+          blockRange,
+          blocks: {
+            createBlock: createLog.blockNumber,
+            updateBlock: updateLog?.blockNumber,
+            latestScannedBlock: lastBlockNumber,
+          },
+        })
+        setStatus('success')
+      } catch (e) {
+        if (isActive) {
+          setStatus('error')
+          setError(e)
+        }
+      } finally {
+        if (isActive) setIsLoading(false)
+      }
+    }
+
+    setError(undefined)
+    if (splitAddress) {
+      setIsLoading(true)
+      setStatus('loading')
+      fetchMetadata()
+    } else {
+      setStatus(undefined)
+      setIsLoading(false)
+      setSplitMetadata(undefined)
+    }
+
+    return () => {
+      isActive = false
+    }
+  }, [splitsV1Client, splitsV2Client, chainId, splitAddress])
+
+  return {
+    isLoading,
+    splitMetadata,
+    currentBlockRange,
+    cacheData,
+    error,
+    status,
+  }
+}
 
 export const useSplitMetadata = (
   chainId: number,
@@ -33,14 +312,14 @@ export const useSplitMetadata = (
   const splitsV1Client = getSplitsClient(context).splitV1
   const splitsV2Client = getSplitsClient(context).splitV2
 
-  const requireDataClient = options?.requireDataClient ?? true
-
   const [splitMetadata, setSplitMetadata] = useState<Split | undefined>()
   const [isLoading, setIsLoading] = useState(!!splitAddress)
   const [status, setStatus] = useState<DataLoadStatus | undefined>(
     splitAddress ? 'loading' : undefined,
   )
   const [error, setError] = useState<RequestError>()
+
+  const requireDataClient = options?.requireDataClient ?? true
 
   useEffect(() => {
     let isActive = true
@@ -68,9 +347,10 @@ export const useSplitMetadata = (
             }),
           ])
 
-          if (splitV1Result.status === 'fulfilled') split = splitV1Result.value
+          if (splitV1Result.status === 'fulfilled')
+            split = splitV1Result.value.split
           else if (splitV2Result.status === 'fulfilled')
-            split = splitV2Result.value
+            split = splitV2Result.value.split
           else throw new AccountNotFoundError('split', splitAddress, chainId)
         }
         if (!isActive) return

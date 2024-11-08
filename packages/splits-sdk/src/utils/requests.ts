@@ -103,15 +103,14 @@ const getReverseBlockRanges = (
   return blockRanges
 }
 
-const getLargestValidBlockRange = async ({
-  fallbackBlockRange,
+export const getLargestValidBlockRange = async ({
   maxBlockRange,
   publicClient,
 }: {
-  fallbackBlockRange: bigint
   maxBlockRange?: bigint
   publicClient: PublicClient<Transport, Chain>
 }) => {
+  const fallbackBlockRange = BigInt(625)
   const chainId = publicClient.chain.id
   const startBlockNumber = getSplitV2FactoriesStartBlock(chainId)
 
@@ -119,9 +118,7 @@ const getLargestValidBlockRange = async ({
     BigInt(1_000_000),
     BigInt(10_000),
     BigInt(5_000),
-    BigInt(3_000),
     BigInt(1_800),
-    BigInt(1_200),
   ].filter((range) => (maxBlockRange ? range < maxBlockRange : true))
 
   const blockRangeTests = await Promise.allSettled(
@@ -203,6 +200,7 @@ export const getSplitCreateAndUpdateLogs = async <
   currentUpdateLog,
   currentEndBlockNumber,
   maxBlockRange,
+  cachedBlocks,
 }: {
   splitAddress: Address
   publicClient: PublicClient<Transport, Chain>
@@ -214,36 +212,248 @@ export const getSplitCreateAndUpdateLogs = async <
   currentUpdateLog?: SplitUpdatedLogType
   currentEndBlockNumber?: bigint
   maxBlockRange?: bigint // if this exists, restricts which ranges we will check at the beginning
+  cachedBlocks?: {
+    createBlock: bigint
+    updateBlock?: bigint
+    latestScannedBlock: bigint
+  }
 }): Promise<{
+  blockRange: bigint
   createLog: SplitCreatedLogType
   updateLog?: SplitUpdatedLogType
 }> => {
   const formattedSplitAddress = getAddress(splitAddress)
-  const batchSize = 20
-  const sleepTimeMs = 10_000
+
   let createLog: SplitCreatedLogType | undefined = undefined
   let updateLog: SplitUpdatedLogType | undefined = currentUpdateLog
 
-  const endBlockNumber =
+  const endBlock =
     currentEndBlockNumber ?? (await publicClient.getBlockNumber())
 
-  let blockRange = BigInt(625)
+  const startBlock =
+    cachedBlocks?.latestScannedBlock ??
+    cachedBlocks?.createBlock ??
+    startBlockNumber
 
+  const {
+    blockRange,
+    createLog: searchCreateLog,
+    updateLog: searchUpdateLog,
+  } = await searchLogs<
+    SplitCreatedEventName,
+    SplitUpdatedEventName,
+    SplitCreatedLogType,
+    SplitUpdatedLogType
+  >({
+    formattedSplitAddress,
+    publicClient,
+    addresses,
+    splitCreatedEvent,
+    splitUpdatedEvent,
+    startBlock,
+    endBlock,
+    defaultBlockRange,
+    maxBlockRange,
+  })
+
+  createLog = searchCreateLog
+  updateLog = searchUpdateLog
+
+  if (!createLog) {
+    if (cachedBlocks?.createBlock) {
+      try {
+        const logs = await publicClient.getLogs({
+          events: [splitCreatedEvent],
+          address: addresses,
+          strict: true,
+          fromBlock: cachedBlocks.createBlock,
+          toBlock: cachedBlocks.createBlock,
+        })
+        // eslint-disable-next-line no-loops/no-loops
+        for (const log of logs) {
+          if (getAddress(log.args.split) === formattedSplitAddress) {
+            if (createLog) throw new Error('Found multiple create split logs')
+            createLog = log as SplitCreatedLogType
+          }
+        }
+      } catch (error) {
+        if (!(error instanceof Error)) throw error
+
+        return await handleLogsError({
+          error,
+          callback: async ({ defaultBlockRange, maxBlockRange }) => {
+            return await getSplitCreateAndUpdateLogs<
+              SplitCreatedEventName,
+              SplitUpdatedEventName,
+              SplitCreatedLogType,
+              SplitUpdatedLogType
+            >({
+              splitAddress,
+              publicClient,
+              defaultBlockRange,
+              maxBlockRange,
+              currentUpdateLog: updateLog,
+              currentEndBlockNumber: startBlock,
+              splitCreatedEvent,
+              splitUpdatedEvent,
+              addresses,
+              startBlockNumber,
+              cachedBlocks,
+            })
+          },
+          blockRange,
+        })
+      }
+    }
+
+    if (!createLog)
+      throw new AccountNotFoundError(
+        'Split',
+        formattedSplitAddress,
+        publicClient.chain.id,
+      )
+  }
+
+  if (!updateLog) {
+    if (cachedBlocks?.updateBlock) {
+      try {
+        const logs = await publicClient.getLogs({
+          events: [splitUpdatedEvent],
+          address: addresses,
+          strict: true,
+          fromBlock: cachedBlocks.createBlock,
+          toBlock: cachedBlocks.createBlock,
+        })
+        // eslint-disable-next-line no-loops/no-loops
+        for (const log of logs) {
+          if (log.eventName === 'SplitUpdated') {
+            const shouldSet =
+              getAddress(log.address) === formattedSplitAddress &&
+              (!updateLog ||
+                log.blockNumber > updateLog.blockNumber ||
+                (log.blockNumber === updateLog.blockNumber &&
+                  log.logIndex > updateLog.logIndex))
+            if (shouldSet) updateLog = log as SplitUpdatedLogType
+          } else if (log.eventName === 'UpdateSplit') {
+            const shouldSet =
+              getAddress(log.args.split) === formattedSplitAddress &&
+              (!updateLog ||
+                log.blockNumber > updateLog.blockNumber ||
+                (log.blockNumber === updateLog.blockNumber &&
+                  log.logIndex > updateLog.logIndex))
+            if (shouldSet) updateLog = log as SplitUpdatedLogType
+          }
+        }
+      } catch (error) {
+        if (!(error instanceof Error)) throw error
+
+        return await handleLogsError({
+          error,
+          callback: async ({ defaultBlockRange, maxBlockRange }) => {
+            return await getSplitCreateAndUpdateLogs<
+              SplitCreatedEventName,
+              SplitUpdatedEventName,
+              SplitCreatedLogType,
+              SplitUpdatedLogType
+            >({
+              splitAddress,
+              publicClient,
+              defaultBlockRange,
+              maxBlockRange,
+              currentUpdateLog: updateLog,
+              currentEndBlockNumber: startBlock,
+              splitCreatedEvent,
+              splitUpdatedEvent,
+              addresses,
+              startBlockNumber,
+              cachedBlocks,
+            })
+          },
+          blockRange,
+        })
+      }
+    }
+  }
+
+  return {
+    blockRange,
+    createLog,
+    updateLog,
+  }
+}
+
+export const LOGS_SEARCH_BATCH_SIZE = 10
+export const searchLogs = async <
+  SplitCreatedEventName extends SplitCreatedEventType['name'],
+  SplitUpdatedEventName extends SplitUpdatedEventType['name'],
+  SplitCreatedLogType extends GetLogsReturnType<
+    SplitCreatedEventType,
+    [SplitCreatedEventType],
+    true,
+    bigint,
+    bigint,
+    SplitCreatedEventName
+  >[0],
+  SplitUpdatedLogType extends GetLogsReturnType<
+    SplitUpdatedEventType,
+    [SplitUpdatedEventType],
+    true,
+    bigint,
+    bigint,
+    SplitUpdatedEventName
+  >[0],
+>({
+  formattedSplitAddress,
+  publicClient,
+  addresses,
+  splitCreatedEvent,
+  splitUpdatedEvent,
+  startBlock,
+  endBlock,
+  defaultBlockRange,
+  maxBlockRange,
+  currentUpdateLog,
+  cachedBlocks,
+}: {
+  formattedSplitAddress: Address
+  publicClient: PublicClient<Transport, Chain>
+  splitCreatedEvent: SplitCreatedEventType
+  splitUpdatedEvent: SplitUpdatedEventType
+  addresses: Address[]
+  startBlock: bigint
+  endBlock: bigint
+  defaultBlockRange?: bigint // if this exists, don't need to calculate block range
+  currentUpdateLog?: SplitUpdatedLogType
+  // currentEndBlockNumber?: bigint
+  maxBlockRange?: bigint // if this exists, restricts which ranges we will check at the beginning
+  cachedBlocks?: {
+    createBlock: bigint
+    updateBlock?: bigint
+    latestScannedBlock: bigint
+  }
+}): Promise<{
+  blockRange: bigint
+  createLog?: SplitCreatedLogType
+  updateLog?: SplitUpdatedLogType
+}> => {
+  let createLog: SplitCreatedLogType | undefined = undefined
+  let updateLog: SplitUpdatedLogType | undefined = currentUpdateLog
+
+  let blockRange
   if (defaultBlockRange) blockRange = defaultBlockRange
   else {
     // Try to determine the largest possible block range. Sometimes these rpc's do not always
     // throw a block range error though...so that means this request could succeed, but then down
     // below we will get a block range error. So we still need to catch/handle that down below.
     blockRange = await getLargestValidBlockRange({
-      fallbackBlockRange: blockRange,
       maxBlockRange,
       publicClient,
     })
   }
 
   const searchBlockRanges = getReverseBlockRanges(
-    startBlockNumber,
-    endBlockNumber,
+    startBlock,
+    endBlock,
     blockRange,
   )
 
@@ -263,7 +473,7 @@ export const getSplitCreateAndUpdateLogs = async <
       }),
     )
 
-    if (batchRequests.length >= batchSize) {
+    if (batchRequests.length >= LOGS_SEARCH_BATCH_SIZE) {
       try {
         const results = (await Promise.all(batchRequests)).flat()
         // eslint-disable-next-line no-loops/no-loops
@@ -294,80 +504,87 @@ export const getSplitCreateAndUpdateLogs = async <
       } catch (error) {
         if (!(error instanceof Error)) throw error
 
-        // Handle rate limit error
-        if ('status' in error && error.status === 429) {
-          await sleep(sleepTimeMs)
-          return await getSplitCreateAndUpdateLogs({
-            splitAddress,
-            publicClient,
-            defaultBlockRange: blockRange,
-            currentUpdateLog: updateLog,
-            currentEndBlockNumber: lastBlockInBatch,
-            splitCreatedEvent,
-            splitUpdatedEvent,
-            addresses,
-            startBlockNumber,
-          })
-        }
-
-        // Handle block range errors
-        if ('details' in error && typeof error.details === 'string') {
-          const lowerCaseDetails = error.details.toLowerCase()
-          if (
-            lowerCaseDetails.includes('block') &&
-            lowerCaseDetails.includes('range')
-          ) {
-            return await getSplitCreateAndUpdateLogs({
-              splitAddress,
+        return await handleLogsError({
+          error,
+          callback: async ({ defaultBlockRange, maxBlockRange }) => {
+            return await searchLogs<
+              SplitCreatedEventName,
+              SplitUpdatedEventName,
+              SplitCreatedLogType,
+              SplitUpdatedLogType
+            >({
+              formattedSplitAddress,
               publicClient,
-              currentUpdateLog: updateLog,
-              currentEndBlockNumber: lastBlockInBatch,
-              maxBlockRange: blockRange,
+              addresses,
               splitCreatedEvent,
               splitUpdatedEvent,
-              addresses,
-              startBlockNumber,
+              startBlock,
+              endBlock: lastBlockInBatch!,
+              defaultBlockRange,
+              maxBlockRange,
+              currentUpdateLog: updateLog,
+              cachedBlocks,
             })
-          }
-        }
-
-        const lowerCaseMessage = error.message.toLowerCase()
-        if (
-          lowerCaseMessage.includes('block') &&
-          lowerCaseMessage.includes('range')
-        ) {
-          return await getSplitCreateAndUpdateLogs({
-            splitAddress,
-            publicClient,
-            currentUpdateLog: updateLog,
-            currentEndBlockNumber: lastBlockInBatch,
-            maxBlockRange: blockRange,
-            splitCreatedEvent,
-            splitUpdatedEvent,
-            addresses,
-            startBlockNumber,
-          })
-        }
-
-        throw error
+          },
+          blockRange,
+        })
       }
 
       if (createLog) break
+      if (cachedBlocks?.createBlock && updateLog) break
 
       batchRequests = []
       lastBlockInBatch = undefined
     }
   }
 
-  if (!createLog)
-    throw new AccountNotFoundError(
-      'Split',
-      formattedSplitAddress,
-      publicClient.chain.id,
-    )
+  return { blockRange, createLog, updateLog }
+}
 
-  return {
-    createLog,
-    updateLog,
+const handleLogsError = async <CallbackReturn>({
+  error,
+  callback,
+  blockRange,
+}: {
+  error: Error
+  callback: (args: {
+    defaultBlockRange?: bigint
+    maxBlockRange?: bigint
+  }) => Promise<CallbackReturn>
+  blockRange: bigint
+}) => {
+  const sleepTimeMs = 10_000
+
+  // Handle rate limit error
+  if ('status' in error && error.status === 429) {
+    await sleep(sleepTimeMs)
+    return await callback({
+      defaultBlockRange: blockRange,
+    })
   }
+
+  // Handle block range errors
+  if ('details' in error && typeof error.details === 'string') {
+    const lowerCaseDetails = error.details.toLowerCase()
+    if (
+      lowerCaseDetails.includes('block') &&
+      lowerCaseDetails.includes('range')
+    ) {
+      return await callback({
+        maxBlockRange: blockRange,
+      })
+    }
+  }
+
+  const lowerCaseMessage = error.message.toLowerCase()
+  if (
+    lowerCaseMessage.includes('block') &&
+    lowerCaseMessage.includes('range')
+  ) {
+    return await callback({
+      maxBlockRange: blockRange,
+    })
+  }
+
+  throw error
 }

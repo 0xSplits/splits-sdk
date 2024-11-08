@@ -2,7 +2,6 @@ import {
   Address,
   Chain,
   GetContractReturnType,
-  GetLogsReturnType,
   Hash,
   Hex,
   InvalidAddressError,
@@ -20,10 +19,14 @@ import {
 import {
   NATIVE_TOKEN_ADDRESS,
   SPLITS_V2_SUPPORTED_CHAIN_IDS,
+  SplitV2CreatedLogType,
+  SplitV2UpdatedLogType,
   TransactionType,
   ZERO,
   getSplitV2FactoriesStartBlock,
   getSplitV2FactoryAddress,
+  splitV2CreatedEvent,
+  splitV2UpdatedEvent,
 } from '../constants'
 import { splitV2ABI } from '../constants/abi/splitV2'
 import { splitV2FactoryABI } from '../constants/abi/splitV2Factory'
@@ -325,63 +328,66 @@ class SplitV2Transactions extends BaseTransactions {
   protected async _getSplitMetadataViaProvider({
     splitAddress,
     chainId,
+    cachedData,
   }: {
     splitAddress: Address
     chainId: number
-  }): Promise<{ split: Split }> {
+    cachedData?: {
+      blocks?: {
+        createBlock: bigint
+        updateBlock?: bigint
+        latestScannedBlock: bigint
+      }
+      blockRange?: bigint
+    }
+  }): Promise<{ split: Split; blockRange: bigint }> {
     const formattedSplitAddress = getAddress(splitAddress)
     const publicClient = this._getPublicClient(chainId)
 
     await this._checkForSplitExistence({ splitAddress, chainId })
 
-    const { createLog, updateLog } = await getSplitCreateAndUpdateLogs<
-      'SplitCreated',
-      'SplitUpdated'
-    >({
-      splitAddress,
-      publicClient,
-      splitCreatedEvent,
-      splitUpdatedEvent,
-      addresses: [
-        formattedSplitAddress,
-        getSplitV2FactoryAddress(chainId, SplitV2Type.Pull),
-        getSplitV2FactoryAddress(chainId, SplitV2Type.Push),
-      ],
-      startBlockNumber: getSplitV2FactoriesStartBlock(chainId),
-    })
+    const { blockRange, createLog, updateLog } =
+      await getSplitCreateAndUpdateLogs<'SplitCreated', 'SplitUpdated'>({
+        splitAddress,
+        publicClient,
+        splitCreatedEvent: splitV2CreatedEvent,
+        splitUpdatedEvent: splitV2UpdatedEvent,
+        addresses: [
+          formattedSplitAddress,
+          getSplitV2FactoryAddress(chainId, SplitV2Type.Pull),
+          getSplitV2FactoryAddress(chainId, SplitV2Type.Push),
+        ],
+        startBlockNumber: getSplitV2FactoriesStartBlock(chainId),
+        cachedBlocks: cachedData?.blocks,
+        defaultBlockRange: cachedData?.blockRange,
+      })
 
-    const [owner, paused] = await Promise.all([
-      this._owner(formattedSplitAddress, chainId),
-      this._paused(formattedSplitAddress, chainId),
-    ])
-
-    const split = this._getSplitFromLogs({
+    const split = await this._buildSplitFromLogs({
       splitAddress: formattedSplitAddress,
       chainId,
-      owner,
-      paused,
       createLog,
       updateLog,
     })
 
-    return { split }
+    return { split, blockRange }
   }
 
-  private _getSplitFromLogs({
+  protected async _buildSplitFromLogs({
     splitAddress,
     chainId,
-    owner,
-    paused,
     createLog,
     updateLog,
   }: {
     splitAddress: Address
     chainId: number
-    owner: Address
-    paused: boolean
-    createLog: SplitCreatedLogType
-    updateLog?: SplitUpdatedLogType
-  }): Split {
+    createLog: SplitV2CreatedLogType
+    updateLog?: SplitV2UpdatedLogType
+  }): Promise<Split> {
+    const [owner, paused] = await Promise.all([
+      this._owner(splitAddress, chainId),
+      this._paused(splitAddress, chainId),
+    ])
+
     const recipients = createLog.args.splitParams.recipients.map(
       (recipient, i) => {
         return {
@@ -987,22 +993,51 @@ export class SplitV2Client extends SplitV2Transactions {
     return { ownerAddress }
   }
 
+  async _getSplitFromLogs({
+    splitAddress,
+    chainId,
+    createLog,
+    updateLog,
+  }: {
+    splitAddress: Address
+    chainId: number
+    createLog: SplitV2CreatedLogType
+    updateLog?: SplitV2UpdatedLogType
+  }) {
+    return await this._buildSplitFromLogs({
+      splitAddress,
+      chainId,
+      createLog,
+      updateLog,
+    })
+  }
+
   async getSplitMetadataViaProvider({
     splitAddress,
     chainId,
+    cachedData,
   }: {
     splitAddress: string
     chainId?: number
-  }): Promise<Split> {
+    cachedData?: {
+      blocks?: {
+        createBlock: bigint
+        updateBlock?: bigint
+        latestScannedBlock: bigint
+      }
+      blockRange?: bigint
+    }
+  }): Promise<{ split: Split; blockRange: bigint }> {
     const functionChainId = this._getReadOnlyFunctionChainId(chainId)
 
     if (!isAddress(splitAddress))
       throw new InvalidAddressError({ address: splitAddress })
-    const { split } = await this._getSplitMetadataViaProvider({
+    const { split, blockRange } = await this._getSplitMetadataViaProvider({
       splitAddress,
       chainId: functionChainId,
+      cachedData,
     })
-    return split
+    return { split, blockRange }
   }
 
   async getSplitActiveBalances({
@@ -1192,26 +1227,6 @@ class SplitV2Signature extends SplitV2Transactions {
     }
   }
 }
-
-const splitUpdatedEvent = splitV2ABI[28]
-type SplitUpdatedEventType = typeof splitUpdatedEvent
-type SplitUpdatedLogType = GetLogsReturnType<
-  SplitUpdatedEventType,
-  [SplitUpdatedEventType],
-  true,
-  bigint,
-  bigint
->[0]
-
-const splitCreatedEvent = splitV2FactoryABI[8]
-type SplitCreatedEventType = typeof splitCreatedEvent
-type SplitCreatedLogType = GetLogsReturnType<
-  SplitCreatedEventType,
-  [SplitCreatedEventType],
-  true,
-  bigint,
-  bigint
->[0]
 
 const SigTypes = {
   SplitWalletMessage: [

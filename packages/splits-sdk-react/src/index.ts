@@ -38,6 +38,7 @@ export {
   useMulticall,
   useSplitsClient,
   useSplitMetadata,
+  useSplitMetadataViaProvider,
   useSplitEarnings,
   useContractEarnings,
   useWaterfallMetadata,
