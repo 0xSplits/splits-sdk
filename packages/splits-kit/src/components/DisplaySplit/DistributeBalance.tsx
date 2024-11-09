@@ -152,7 +152,8 @@ function DistributeBalance({
   return (
     <div className="py-1 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800 hover:cursor-pointer">
       <div>
-        {displayBigNumber(balance.rawAmount, 4)} {balance.symbol}
+        {displayBigNumber(balance.rawAmount, 4, balance.decimals)}{' '}
+        {balance.symbol}
       </div>
       <div className="group relative">
         <Tooltip

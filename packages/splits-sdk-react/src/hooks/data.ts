@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from 'react'
 import { Address, getAddress, zeroAddress } from 'viem'
+import { mainnet } from 'viem/chains'
 import {
   AccountNotFoundError,
   FormattedContractEarnings,
@@ -41,6 +42,7 @@ import {
 } from '../types'
 import { getSplitsClient } from '../utils'
 import { SplitsContext } from '../context'
+import { V1MainnetNotSupported } from './errors'
 
 export const useSplitMetadataViaProvider = (
   chainId: number,
@@ -119,6 +121,10 @@ export const useSplitMetadataViaProvider = (
             formattedSplitAddress,
             chainId,
           )
+
+        if (splitV1Exists && chainId === mainnet.id) {
+          throw new V1MainnetNotSupported()
+        }
 
         const addresses = splitV1Exists
           ? [getSplitMainAddress(chainId)]

@@ -279,6 +279,10 @@ export const DisplaySplitViaProvider = ({
           (metadataError.name === 'InvalidArgumentError' && {
             title: 'Invalid Address',
             body: `Address ${address} is not a valid Ethereum address.`,
+          }) ||
+          (metadataError.name === 'V1MainnetNotSupportedError' && {
+            title: 'V1 Mainnet not supported',
+            body: 'This is a v1 split, which is not supported on Mainnet. Please use app.splits.org instead',
           }))
       }
       body={
