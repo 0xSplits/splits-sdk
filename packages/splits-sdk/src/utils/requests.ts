@@ -460,7 +460,7 @@ export const searchLogs = async <
   let batchRequests = []
   let lastBlockInBatch: bigint | undefined = undefined
   // eslint-disable-next-line no-loops/no-loops
-  for (const { from, to } of searchBlockRanges) {
+  for (const [index, { from, to }] of searchBlockRanges.entries()) {
     if (!lastBlockInBatch) lastBlockInBatch = to
 
     batchRequests.push(
@@ -473,7 +473,10 @@ export const searchLogs = async <
       }),
     )
 
-    if (batchRequests.length >= LOGS_SEARCH_BATCH_SIZE) {
+    const shouldAwait =
+      batchRequests.length >= LOGS_SEARCH_BATCH_SIZE ||
+      index === searchBlockRanges.length - 1
+    if (shouldAwait) {
       try {
         const results = (await Promise.all(batchRequests)).flat()
         // eslint-disable-next-line no-loops/no-loops

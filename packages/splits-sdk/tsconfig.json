@@ -2,6 +2,7 @@
   "extends": "../../tsconfig.json",
   "baseUrl": "./src",
   "compilerOptions": {
+    "downlevelIteration": true,
     "outDir": "./dist"
   },
   "include": ["./src", "vitest.config.ts"],
