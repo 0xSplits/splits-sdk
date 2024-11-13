@@ -42,7 +42,7 @@ import {
 } from '../types'
 import { getSplitsClient } from '../utils'
 import { SplitsContext } from '../context'
-import { V1MainnetNotSupported } from './errors'
+import { V1MainnetNotSupportedError } from './errors'
 
 export const useSplitMetadataViaProvider = (
   chainId: number,
@@ -123,7 +123,7 @@ export const useSplitMetadataViaProvider = (
           )
 
         if (splitV1Exists && chainId === mainnet.id) {
-          throw new V1MainnetNotSupported()
+          throw new V1MainnetNotSupportedError()
         }
 
         const addresses = splitV1Exists
