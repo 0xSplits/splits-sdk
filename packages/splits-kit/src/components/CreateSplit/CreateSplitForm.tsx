@@ -179,6 +179,10 @@ const CreateSplitForm = ({
     connectedAddress,
   )}`
 
+  const docsLink = `https://docs.splits.org/core/split${
+    type === 'v1' ? '' : '-v2'
+  }`
+
   return (
     <div className="space-y-8 flex flex-col">
       <FormProvider {...form}>
@@ -187,7 +191,7 @@ const CreateSplitForm = ({
           {getNativeTokenSymbol(chainId)} & ERC20 tokens among the recipients
           according to predefined ownership shares.{' '}
           <Link
-            href="https://docs.splits.org/core/split"
+            href={docsLink}
             className="underline transition hover:opacity-80"
           >
             Learn more
@@ -206,7 +210,7 @@ const CreateSplitForm = ({
                 supportsEns={supportsEns}
               />
             }
-            link="https://docs.splits.org/create#split"
+            link={`${docsLink}#how-it-works`}
           />
           {defaultDistributorFeeOptions.length > 0 && (
             <InputRow
@@ -242,7 +246,7 @@ const CreateSplitForm = ({
                   hideSelectedValue={false}
                 />
               }
-              link="https://docs.splits.org/distribute#distribution-bounty"
+              link={`${docsLink}#how-it-works`}
             />
           )}
           <div className="my-5 flex flex-col space-y-1 text-center">
