@@ -38,9 +38,9 @@ const getRandomTimeMs: (maxMs: number) => number = (maxMs) => {
 }
 
 // Return true if the public client supports a large enough logs request to fetch erc20 tranfer history
-export const isLogsPublicClient = <TChain extends Chain>(
+export const isLogsPublicClient: <TChain extends Chain>(
   publicClient: PublicClient<Transport, TChain>,
-): boolean => {
+) => boolean = (publicClient) => {
   return (
     isAlchemyPublicClient(publicClient) || isInfuraPublicClient(publicClient)
   )

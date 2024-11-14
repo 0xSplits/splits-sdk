@@ -16,11 +16,11 @@ import { retryExponentialBackoff } from './requests'
 import { IBalance } from '../subgraph/types'
 import { mergeWith } from 'lodash'
 
-export const fetchERC20TransferredTokens = async <TChain extends Chain>(
+export const fetchERC20TransferredTokens: <TChain extends Chain>(
   chainId: number,
   publicClient: PublicClient<Transport, TChain>,
   splitAddress: Address,
-): Promise<string[]> => {
+) => Promise<string[]> = async (chainId, publicClient, splitAddress) => {
   const tokens = new Set<string>([])
 
   const transferLogs = await publicClient.getLogs({

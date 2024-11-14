@@ -71,7 +71,9 @@ class WarehouseTransactions<
     this._warehouseAbi = warehouseAbi
   }
 
-  protected _getWarehouseContract(chainId: number) {
+  protected _getWarehouseContract(
+    chainId: number,
+  ): GetContractReturnType<WarehouseAbiType, PublicClient<Transport, Chain>> {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getWarehouseAddress(),

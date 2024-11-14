@@ -1,33 +1,35 @@
-import React, { createContext, useState, useMemo } from 'react'
+import React, { createContext, useState, useMemo, useContext } from 'react'
+import { Chain } from 'viem'
 import { SplitsClient, SplitsClientConfig } from '@0xsplits/splits-sdk'
 
-export type SplitsReactSdkContext = {
-  splitsClient: SplitsClient
-  initClient: (config: SplitsClientConfig) => void
+export type SplitsReactSdkContext<TChain extends Chain> = {
+  splitsClient: SplitsClient<TChain>
+  initClient: (config: SplitsClientConfig<TChain>) => void
 }
 
-export const SplitsContext = createContext<SplitsReactSdkContext | undefined>(
-  undefined,
-)
+export const SplitsContext = createContext<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  SplitsReactSdkContext<any> | undefined
+>(undefined)
 
-interface Props {
-  config?: SplitsClientConfig
+interface Props<TChain extends Chain> {
+  config?: SplitsClientConfig<TChain>
   children: React.ReactNode
 }
 
-export const SplitsProvider: React.FC<Props> = ({
+export const SplitsProvider = <TChain extends Chain>({
   config = { chainId: 1 },
   children,
-}) => {
-  const [splitsClient, setSplitsClient] = useState<SplitsClient>(
+}: Props<TChain>) => {
+  const [splitsClient, setSplitsClient] = useState<SplitsClient<TChain>>(
     () => new SplitsClient(config),
   )
-  const initClient = (config: SplitsClientConfig) => {
+  const initClient = (config: SplitsClientConfig<TChain>) => {
     setSplitsClient(new SplitsClient(config))
   }
 
   const contextValue = useMemo(
-    () => ({ splitsClient, initClient }),
+    () => ({ splitsClient, initClient }) as SplitsReactSdkContext<TChain>,
     [splitsClient],
   )
 
@@ -36,4 +38,15 @@ export const SplitsProvider: React.FC<Props> = ({
       {children}
     </SplitsContext.Provider>
   )
+}
+
+// Custom hook to access SplitsContext with the correct type
+export const useSplitsContext = <TChain extends Chain>() => {
+  const context = useContext(SplitsContext) as
+    | SplitsReactSdkContext<TChain>
+    | undefined
+  if (!context) {
+    throw new Error('useSplitsContext must be used within a SplitsProvider')
+  }
+  return context
 }

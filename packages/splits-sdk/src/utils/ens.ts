@@ -30,14 +30,14 @@ const fetchEnsNames = async <TChain extends Chain>(
   return allNames.slice()
 }
 
-export const addEnsNames = async <TChain extends Chain>(
+export const addEnsNames: <TChain extends Chain>(
   publicClient: PublicClient<Transport, TChain>,
   recipients: { address: Address; ensName?: string }[],
-): Promise<void> => {
-  const addresses = recipients.map((recipient) => recipient.address)
-  const allNames = await fetchEnsNames(publicClient, addresses)
+) => Promise<void> = async (publicClient, recipients) => {
+  const addresses: Address[] = recipients.map((recipient) => recipient.address)
+  const allNames: string[] = await fetchEnsNames(publicClient, addresses)
 
-  allNames.map((ens, index) => {
+  allNames.forEach((ens, index) => {
     if (ens) {
       try {
         if (normalize(ens)) {

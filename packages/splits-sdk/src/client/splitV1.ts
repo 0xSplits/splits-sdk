@@ -530,7 +530,12 @@ class SplitV1Transactions<
       )
   }
 
-  protected _getSplitMainContract(chainId: number) {
+  protected _getSplitMainContract(
+    chainId: number,
+  ): GetContractReturnType<
+    SplitMainEthereumAbiType,
+    PublicClient<Transport, Chain>
+  > {
     const publicClient = this._getPublicClient(chainId)
 
     return getContract({

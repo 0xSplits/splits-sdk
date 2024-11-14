@@ -31,7 +31,10 @@ class OracleTransactions<
     })
   }
 
-  protected _getOracleContract(oracle: string, chainId: number) {
+  protected _getOracleContract(
+    oracle: string,
+    chainId: number,
+  ): GetContractReturnType<UniV3OracleAbi, PublicClient<Transport, Chain>> {
     const publicClient = this._getPublicClient(chainId)
 
     return getContract({

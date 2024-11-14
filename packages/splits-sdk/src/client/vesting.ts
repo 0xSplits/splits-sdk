@@ -117,7 +117,10 @@ class VestingTransactions<
     return result
   }
 
-  protected _getVestingContract(vestingModule: string, chainId: number) {
+  protected _getVestingContract(
+    vestingModule: string,
+    chainId: number,
+  ): GetContractReturnType<VestingAbi, PublicClient<Transport, Chain>> {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getAddress(vestingModule),
@@ -131,7 +134,9 @@ class VestingTransactions<
     >
   }
 
-  protected _getVestingFactoryContract(chainId: number) {
+  protected _getVestingFactoryContract(
+    chainId: number,
+  ): GetContractReturnType<VestingFactoryAbi, PublicClient<Transport, Chain>> {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getVestingFactoryAddress(chainId),

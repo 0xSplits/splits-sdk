@@ -189,7 +189,10 @@ class PassThroughWalletTransactions<
   protected _getPassThroughWalletContract(
     passThroughWallet: string,
     chainId: number,
-  ) {
+  ): GetContractReturnType<
+    PassThroughWalletAbi,
+    PublicClient<Transport, Chain>
+  > {
     const publicClient = this._getPublicClient(chainId)
 
     return getContract({

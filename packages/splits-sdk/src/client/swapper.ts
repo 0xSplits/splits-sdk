@@ -378,7 +378,9 @@ class SwapperTransactions<
       )
   }
 
-  protected _getUniV3SwapContract(chainId: number) {
+  protected _getUniV3SwapContract(
+    chainId: number,
+  ): GetContractReturnType<UniV3SwapAbi, PublicClient<Transport, Chain>> {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getUniV3SwapAddress(),
@@ -392,7 +394,10 @@ class SwapperTransactions<
     >
   }
 
-  protected _getSwapperContract(swapper: string, chainId: number) {
+  protected _getSwapperContract(
+    swapper: string,
+    chainId: number,
+  ): GetContractReturnType<SwapperAbi, PublicClient<Transport, Chain>> {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getAddress(swapper),

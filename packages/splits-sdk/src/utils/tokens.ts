@@ -18,14 +18,14 @@ interface ERC20Contract {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const getTokenData = async <TChain extends Chain>(
+export const getTokenData: <TChain extends Chain>(
   chainId: number,
   token: Address,
   publicClient: PublicClient<Transport, TChain>,
-): Promise<{
+) => Promise<{
   symbol: string
   decimals: number
-}> => {
+}> = async (chainId, token, publicClient) => {
   if (token === zeroAddress) {
     return {
       symbol: CHAIN_INFO[chainId].nativeCurrency.symbol,

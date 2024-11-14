@@ -1,4 +1,4 @@
-import { Address, Log, decodeEventLog } from 'viem'
+import { Address, Chain, Log, decodeEventLog } from 'viem'
 import { mainnet } from 'viem/chains'
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import {
@@ -19,12 +19,14 @@ import {
   splitMainPolygonAbi,
 } from '@0xsplits/splits-sdk/constants/abi'
 
-import { SplitsContext } from '../context'
+import { SplitsContext, useSplitsContext } from '../context'
 import { ContractExecutionStatus, RequestError } from '../types'
 import { getSplitsClient } from '../utils'
 
-export const useSplitsClient = (config?: SplitsClientConfig): SplitsClient => {
-  const context = useContext(SplitsContext)
+export const useSplitsClient = <TChain extends Chain>(
+  config?: SplitsClientConfig<TChain>,
+): SplitsClient<TChain> => {
+  const context = useSplitsContext<TChain>()
   if (context === undefined) {
     throw new Error('Make sure to include <SplitsProvider>')
   }
@@ -97,7 +99,7 @@ export const useSplitsClient = (config?: SplitsClientConfig): SplitsClient => {
     ensPublicClient,
   ])
 
-  return context.splitsClient as SplitsClient
+  return context.splitsClient as SplitsClient<TChain>
 }
 
 export const useCreateSplit = (): {

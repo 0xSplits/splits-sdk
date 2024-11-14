@@ -68,12 +68,17 @@ export const getNftCountsFromPercents = (
   )
 }
 
-export const getTrancheRecipientsAndSizes = async <TChain extends Chain>(
+export const getTrancheRecipientsAndSizes: <TChain extends Chain>(
   chainId: number,
   token: Address,
   tranches: WaterfallTrancheInput[],
   publicClient: PublicClient<Transport, TChain>,
-): Promise<[Address[], bigint[]]> => {
+) => Promise<[Address[], bigint[]]> = async (
+  chainId,
+  token,
+  tranches,
+  publicClient,
+) => {
   const recipients: Address[] = []
   const sizes: bigint[] = []
 
@@ -92,12 +97,17 @@ export const getTrancheRecipientsAndSizes = async <TChain extends Chain>(
   return [recipients, sizes]
 }
 
-export const getRecoupTranchesAndSizes = async <TChain extends Chain>(
+export const getRecoupTranchesAndSizes: <TChain extends Chain>(
   chainId: number,
   token: Address,
   tranches: RecoupTrancheInput[],
   publicClient: PublicClient<Transport, TChain>,
-): Promise<[ContractRecoupTranche[], bigint[]]> => {
+) => Promise<[ContractRecoupTranche[], bigint[]]> = async (
+  chainId,
+  token,
+  tranches,
+  publicClient,
+) => {
   const recoupTranches: ContractRecoupTranche[] = []
   const sizes: bigint[] = []
 

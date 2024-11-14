@@ -392,7 +392,10 @@ class SplitV2Transactions<
     return { split }
   }
 
-  protected _getSplitV2Contract(splitAddress: Address, chainId: number) {
+  protected _getSplitV2Contract(
+    splitAddress: Address,
+    chainId: number,
+  ): GetContractReturnType<SplitV2ABI, PublicClient<Transport, Chain>> {
     validateAddress(splitAddress)
     const publicClient = this._getPublicClient(chainId)
 
@@ -412,7 +415,7 @@ class SplitV2Transactions<
   protected _getSplitV2FactoryContract(
     splitType: SplitV2Type,
     chainId: number,
-  ) {
+  ): GetContractReturnType<SplitFactoryABI, PublicClient<Transport, Chain>> {
     const publicClient = this._getPublicClient(chainId)
 
     return getContract({

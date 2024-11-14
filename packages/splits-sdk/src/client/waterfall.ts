@@ -218,7 +218,10 @@ class WaterfallTransactions<
     }
   }
 
-  protected _getWaterfallContract(waterfallModule: string, chainId: number) {
+  protected _getWaterfallContract(
+    waterfallModule: string,
+    chainId: number,
+  ): GetContractReturnType<WaterfallAbi, PublicClient<Transport, Chain>> {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getAddress(waterfallModule),

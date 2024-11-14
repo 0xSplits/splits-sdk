@@ -187,7 +187,10 @@ class LiquidSplitTransactions<
       )
   }
 
-  protected _getLiquidSplitContract(liquidSplit: string, chainId: number) {
+  protected _getLiquidSplitContract(
+    liquidSplit: string,
+    chainId: number,
+  ): GetContractReturnType<LS1155Abi, PublicClient<Transport, Chain>> {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getAddress(liquidSplit),
