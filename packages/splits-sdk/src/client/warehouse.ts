@@ -55,10 +55,14 @@ type WarehouseAbiType = typeof warehouseAbi
 
 const nativeTokenAddress: Address = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
 
-class WarehouseTransactions extends BaseTransactions {
+class WarehouseTransactions<
+  TChain extends Chain,
+> extends BaseTransactions<TChain> {
   protected readonly _warehouseAbi
 
-  constructor(transactionClientArgs: SplitsClientConfig & TransactionConfig) {
+  constructor(
+    transactionClientArgs: SplitsClientConfig<TChain> & TransactionConfig,
+  ) {
     super({
       supportedChainIds: SPLITS_V2_SUPPORTED_CHAIN_IDS,
       ...transactionClientArgs,
@@ -67,15 +71,16 @@ class WarehouseTransactions extends BaseTransactions {
     this._warehouseAbi = warehouseAbi
   }
 
-  protected _getWarehouseContract(
-    chainId: number,
-  ): GetContractReturnType<WarehouseAbiType, PublicClient<Transport, Chain>> {
+  protected _getWarehouseContract(chainId: number) {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getWarehouseAddress(),
       abi: warehouseAbi,
       publicClient: publicClient,
-    })
+    }) as unknown as GetContractReturnType<
+      WarehouseAbiType,
+      PublicClient<Transport, Chain>
+    >
   }
 
   protected async _transfer({
@@ -445,13 +450,15 @@ class WarehouseTransactions extends BaseTransactions {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export class WarehouseClient extends WarehouseTransactions {
+export class WarehouseClient<
+  TChain extends Chain,
+> extends WarehouseTransactions<TChain> {
   readonly eventTopics: { [key: string]: Hex[] }
-  readonly callData: WarehouseCallData
-  readonly estimateGas: WarehouseGasEstimates
-  readonly sign: WarehouseSignature
+  readonly callData: WarehouseCallData<TChain>
+  readonly estimateGas: WarehouseGasEstimates<TChain>
+  readonly sign: WarehouseSignature<TChain>
 
-  constructor(clientArgs: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.Transaction,
       ...clientArgs,
@@ -1018,12 +1025,15 @@ export class WarehouseClient extends WarehouseTransactions {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export interface WarehouseClient extends BaseClientMixin {}
+export interface WarehouseClient<TChain extends Chain>
+  extends BaseClientMixin<TChain> {}
 applyMixins(WarehouseClient, [BaseClientMixin])
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-class WarehouseGasEstimates extends WarehouseTransactions {
-  constructor(clientArgs: SplitsClientConfig) {
+class WarehouseGasEstimates<
+  TChain extends Chain,
+> extends WarehouseTransactions<TChain> {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.GasEstimate,
       ...clientArgs,
@@ -1168,11 +1178,14 @@ class WarehouseGasEstimates extends WarehouseTransactions {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-interface WarehouseGasEstimates extends BaseGasEstimatesMixin {}
+interface WarehouseGasEstimates<TChain extends Chain>
+  extends BaseGasEstimatesMixin<TChain> {}
 applyMixins(WarehouseGasEstimates, [BaseGasEstimatesMixin])
 
-class WarehouseCallData extends WarehouseTransactions {
-  constructor(clientArgs: SplitsClientConfig) {
+class WarehouseCallData<
+  TChain extends Chain,
+> extends WarehouseTransactions<TChain> {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.CallData,
       ...clientArgs,
@@ -1316,8 +1329,10 @@ class WarehouseCallData extends WarehouseTransactions {
   }
 }
 
-class WarehouseSignature extends WarehouseTransactions {
-  constructor(clientArgs: SplitsClientConfig) {
+class WarehouseSignature<
+  TChain extends Chain,
+> extends WarehouseTransactions<TChain> {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.Signature,
       ...clientArgs,

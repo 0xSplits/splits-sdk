@@ -64,8 +64,12 @@ import {
 type SwapperAbi = typeof swapperAbi
 type UniV3SwapAbi = typeof uniV3SwapAbi
 
-class SwapperTransactions extends BaseTransactions {
-  constructor(transactionClientArgs: SplitsClientConfig & TransactionConfig) {
+class SwapperTransactions<
+  TChain extends Chain,
+> extends BaseTransactions<TChain> {
+  constructor(
+    transactionClientArgs: SplitsClientConfig<TChain> & TransactionConfig,
+  ) {
     super({
       supportedChainIds: SWAPPER_CHAIN_IDS,
       ...transactionClientArgs,
@@ -374,9 +378,7 @@ class SwapperTransactions extends BaseTransactions {
       )
   }
 
-  protected _getUniV3SwapContract(
-    chainId: number,
-  ): GetContractReturnType<UniV3SwapAbi, PublicClient<Transport, Chain>> {
+  protected _getUniV3SwapContract(chainId: number) {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getUniV3SwapAddress(),
@@ -384,13 +386,13 @@ class SwapperTransactions extends BaseTransactions {
       // @ts-expect-error v1/v2 viem support
       client: publicClient,
       publicClient: publicClient,
-    })
+    }) as unknown as GetContractReturnType<
+      UniV3SwapAbi,
+      PublicClient<Transport, Chain>
+    >
   }
 
-  protected _getSwapperContract(
-    swapper: string,
-    chainId: number,
-  ): GetContractReturnType<SwapperAbi, PublicClient<Transport, Chain>> {
+  protected _getSwapperContract(swapper: string, chainId: number) {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getAddress(swapper),
@@ -398,17 +400,22 @@ class SwapperTransactions extends BaseTransactions {
       // @ts-expect-error v1/v2 viem support
       client: publicClient,
       publicClient: publicClient,
-    })
+    }) as unknown as GetContractReturnType<
+      SwapperAbi,
+      PublicClient<Transport, Chain>
+    >
   }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export class SwapperClient extends SwapperTransactions {
+export class SwapperClient<
+  TChain extends Chain,
+> extends SwapperTransactions<TChain> {
   readonly eventTopics: { [key: string]: Hex[] }
-  readonly callData: SwapperCallData
-  readonly estimateGas: SwapperGasEstimates
+  readonly callData: SwapperCallData<TChain>
+  readonly estimateGas: SwapperGasEstimates<TChain>
 
-  constructor(clientArgs: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.Transaction,
       ...clientArgs,
@@ -878,12 +885,15 @@ export class SwapperClient extends SwapperTransactions {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export interface SwapperClient extends BaseClientMixin {}
+export interface SwapperClient<TChain extends Chain>
+  extends BaseClientMixin<TChain> {}
 applyMixins(SwapperClient, [BaseClientMixin])
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-class SwapperGasEstimates extends SwapperTransactions {
-  constructor(clientArgs: SplitsClientConfig) {
+class SwapperGasEstimates<
+  TChain extends Chain,
+> extends SwapperTransactions<TChain> {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.GasEstimate,
       ...clientArgs,
@@ -962,11 +972,14 @@ class SwapperGasEstimates extends SwapperTransactions {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-interface SwapperGasEstimates extends BaseGasEstimatesMixin {}
+interface SwapperGasEstimates<TChain extends Chain>
+  extends BaseGasEstimatesMixin<TChain> {}
 applyMixins(SwapperGasEstimates, [BaseGasEstimatesMixin])
 
-class SwapperCallData extends SwapperTransactions {
-  constructor(clientArgs: SplitsClientConfig) {
+class SwapperCallData<
+  TChain extends Chain,
+> extends SwapperTransactions<TChain> {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.CallData,
       ...clientArgs,

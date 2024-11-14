@@ -42,8 +42,12 @@ import { validateAddress, validateVestingPeriod } from '../utils/validation'
 type VestingAbi = typeof vestingAbi
 type VestingFactoryAbi = typeof vestingFactoryAbi
 
-class VestingTransactions extends BaseTransactions {
-  constructor(transactionClientArgs: SplitsClientConfig & TransactionConfig) {
+class VestingTransactions<
+  TChain extends Chain,
+> extends BaseTransactions<TChain> {
+  constructor(
+    transactionClientArgs: SplitsClientConfig<TChain> & TransactionConfig,
+  ) {
     super({
       supportedChainIds: VESTING_CHAIN_IDS,
       ...transactionClientArgs,
@@ -113,10 +117,7 @@ class VestingTransactions extends BaseTransactions {
     return result
   }
 
-  protected _getVestingContract(
-    vestingModule: string,
-    chainId: number,
-  ): GetContractReturnType<VestingAbi, PublicClient<Transport, Chain>> {
+  protected _getVestingContract(vestingModule: string, chainId: number) {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getAddress(vestingModule),
@@ -124,12 +125,13 @@ class VestingTransactions extends BaseTransactions {
       // @ts-expect-error v1/v2 viem support
       client: publicClient,
       publicClient: publicClient,
-    })
+    }) as unknown as GetContractReturnType<
+      VestingAbi,
+      PublicClient<Transport, Chain>
+    >
   }
 
-  protected _getVestingFactoryContract(
-    chainId: number,
-  ): GetContractReturnType<VestingFactoryAbi, PublicClient<Transport, Chain>> {
+  protected _getVestingFactoryContract(chainId: number) {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getVestingFactoryAddress(chainId),
@@ -137,17 +139,22 @@ class VestingTransactions extends BaseTransactions {
       // @ts-expect-error v1/v2 viem support
       client: publicClient,
       publicClient: publicClient,
-    })
+    }) as unknown as GetContractReturnType<
+      VestingFactoryAbi,
+      PublicClient<Transport, Chain>
+    >
   }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export class VestingClient extends VestingTransactions {
+export class VestingClient<
+  TChain extends Chain,
+> extends VestingTransactions<TChain> {
   readonly eventTopics: { [key: string]: Hex[] }
-  readonly callData: VestingCallData
-  readonly estimateGas: VestingGasEstimates
+  readonly callData: VestingCallData<TChain>
+  readonly estimateGas: VestingGasEstimates<TChain>
 
-  constructor(clientArgs: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.Transaction,
       ...clientArgs,
@@ -380,12 +387,15 @@ export class VestingClient extends VestingTransactions {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export interface VestingClient extends BaseClientMixin {}
+export interface VestingClient<TChain extends Chain>
+  extends BaseClientMixin<TChain> {}
 applyMixins(VestingClient, [BaseClientMixin])
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-class VestingGasEstimates extends VestingTransactions {
-  constructor(clientArgs: SplitsClientConfig) {
+class VestingGasEstimates<
+  TChain extends Chain,
+> extends VestingTransactions<TChain> {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.GasEstimate,
       ...clientArgs,
@@ -421,11 +431,14 @@ class VestingGasEstimates extends VestingTransactions {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-interface VestingGasEstimates extends BaseGasEstimatesMixin {}
+interface VestingGasEstimates<TChain extends Chain>
+  extends BaseGasEstimatesMixin<TChain> {}
 applyMixins(VestingGasEstimates, [BaseGasEstimatesMixin])
 
-class VestingCallData extends VestingTransactions {
-  constructor(clientArgs: SplitsClientConfig) {
+class VestingCallData<
+  TChain extends Chain,
+> extends VestingTransactions<TChain> {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.CallData,
       ...clientArgs,

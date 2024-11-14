@@ -83,12 +83,12 @@ import {
   validateAddress,
 } from '../utils'
 
-export class DataClient {
-  readonly _ensPublicClient: PublicClient<Transport, Chain> | undefined // DEPRECATED
-  readonly _publicClient: PublicClient<Transport, Chain> | undefined // DEPRECATED
+export class DataClient<TChain extends Chain> {
+  readonly _ensPublicClient: PublicClient<Transport, TChain> | undefined // DEPRECATED
+  readonly _publicClient: PublicClient<Transport, TChain> | undefined // DEPRECATED
   readonly _publicClients:
     | {
-        [chainId: number]: PublicClient<Transport, Chain>
+        [chainId: number]: PublicClient<Transport, TChain>
       }
     | undefined
   private readonly _graphqlClient: Client | undefined
@@ -100,7 +100,7 @@ export class DataClient {
     ensPublicClient,
     apiConfig,
     includeEnsNames = false,
-  }: DataClientConfig) {
+  }: DataClientConfig<TChain>) {
     if (
       includeEnsNames &&
       !publicClient &&
@@ -124,7 +124,7 @@ export class DataClient {
     this._getPublicClient(chainId)
   }
 
-  protected _getPublicClient(chainId: number): PublicClient<Transport, Chain> {
+  protected _getPublicClient(chainId: number): PublicClient<Transport, TChain> {
     if (this._publicClients && this._publicClients[chainId]) {
       return this._publicClients[chainId]
     }

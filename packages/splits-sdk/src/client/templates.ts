@@ -1,5 +1,6 @@
 import {
   Address,
+  Chain,
   Hash,
   Hex,
   Log,
@@ -46,8 +47,12 @@ import {
   validateRecoupTranches,
 } from '../utils/validation'
 
-class TemplatesTransactions extends BaseTransactions {
-  constructor(transactionClientArgs: SplitsClientConfig & TransactionConfig) {
+class TemplatesTransactions<
+  TChain extends Chain,
+> extends BaseTransactions<TChain> {
+  constructor(
+    transactionClientArgs: SplitsClientConfig<TChain> & TransactionConfig,
+  ) {
     super({
       supportedChainIds: TEMPLATES_CHAIN_IDS,
       ...transactionClientArgs,
@@ -141,12 +146,14 @@ class TemplatesTransactions extends BaseTransactions {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export class TemplatesClient extends TemplatesTransactions {
+export class TemplatesClient<
+  TChain extends Chain,
+> extends TemplatesTransactions<TChain> {
   readonly eventTopics: { [key: string]: Hex[] }
-  readonly callData: TemplatesCallData
-  readonly estimateGas: TemplatesGasEstimates
+  readonly callData: TemplatesCallData<TChain>
+  readonly estimateGas: TemplatesGasEstimates<TChain>
 
-  constructor(clientArgs: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.Transaction,
       ...clientArgs,
@@ -256,12 +263,15 @@ export class TemplatesClient extends TemplatesTransactions {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export interface TemplatesClient extends BaseClientMixin {}
+export interface TemplatesClient<TChain extends Chain>
+  extends BaseClientMixin<TChain> {}
 applyMixins(TemplatesClient, [BaseClientMixin])
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-class TemplatesGasEstimates extends TemplatesTransactions {
-  constructor(clientArgs: SplitsClientConfig) {
+class TemplatesGasEstimates<
+  TChain extends Chain,
+> extends TemplatesTransactions<TChain> {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.GasEstimate,
       ...clientArgs,
@@ -288,11 +298,14 @@ class TemplatesGasEstimates extends TemplatesTransactions {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-interface TemplatesGasEstimates extends BaseGasEstimatesMixin {}
+interface TemplatesGasEstimates<TChain extends Chain>
+  extends BaseGasEstimatesMixin<TChain> {}
 applyMixins(TemplatesGasEstimates, [BaseGasEstimatesMixin])
 
-class TemplatesCallData extends TemplatesTransactions {
-  constructor(clientArgs: SplitsClientConfig) {
+class TemplatesCallData<
+  TChain extends Chain,
+> extends TemplatesTransactions<TChain> {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.CallData,
       ...clientArgs,

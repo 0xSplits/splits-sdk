@@ -44,8 +44,12 @@ import { validateAddress, validateWaterfallTranches } from '../utils/validation'
 
 type WaterfallAbi = typeof waterfallAbi
 
-class WaterfallTransactions extends BaseTransactions {
-  constructor(transactionClientArgs: SplitsClientConfig & TransactionConfig) {
+class WaterfallTransactions<
+  TChain extends Chain,
+> extends BaseTransactions<TChain> {
+  constructor(
+    transactionClientArgs: SplitsClientConfig<TChain> & TransactionConfig,
+  ) {
     super({
       supportedChainIds: WATERFALL_CHAIN_IDS,
       ...transactionClientArgs,
@@ -214,10 +218,7 @@ class WaterfallTransactions extends BaseTransactions {
     }
   }
 
-  protected _getWaterfallContract(
-    waterfallModule: string,
-    chainId: number,
-  ): GetContractReturnType<WaterfallAbi, PublicClient<Transport, Chain>> {
+  protected _getWaterfallContract(waterfallModule: string, chainId: number) {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getAddress(waterfallModule),
@@ -225,17 +226,22 @@ class WaterfallTransactions extends BaseTransactions {
       // @ts-expect-error v1/v2 viem support
       client: publicClient,
       publicClient: publicClient,
-    })
+    }) as unknown as GetContractReturnType<
+      WaterfallAbi,
+      PublicClient<Transport, Chain>
+    >
   }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export class WaterfallClient extends WaterfallTransactions {
+export class WaterfallClient<
+  TChain extends Chain,
+> extends WaterfallTransactions<TChain> {
   readonly eventTopics: { [key: string]: Hex[] }
-  readonly callData: WaterfallCallData
-  readonly estimateGas: WaterfallGasEstimates
+  readonly callData: WaterfallCallData<TChain>
+  readonly estimateGas: WaterfallGasEstimates<TChain>
 
-  constructor(clientArgs: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.Transaction,
       ...clientArgs,
@@ -551,12 +557,15 @@ export class WaterfallClient extends WaterfallTransactions {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export interface WaterfallClient extends BaseClientMixin {}
+export interface WaterfallClient<TChain extends Chain>
+  extends BaseClientMixin<TChain> {}
 applyMixins(WaterfallClient, [BaseClientMixin])
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-class WaterfallGasEstimates extends WaterfallTransactions {
-  constructor(clientArgs: SplitsClientConfig) {
+class WaterfallGasEstimates<
+  TChain extends Chain,
+> extends WaterfallTransactions<TChain> {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.GasEstimate,
       ...clientArgs,
@@ -604,11 +613,14 @@ class WaterfallGasEstimates extends WaterfallTransactions {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-interface WaterfallGasEstimates extends BaseGasEstimatesMixin {}
+interface WaterfallGasEstimates<TChain extends Chain>
+  extends BaseGasEstimatesMixin<TChain> {}
 applyMixins(WaterfallGasEstimates, [BaseGasEstimatesMixin])
 
-class WaterfallCallData extends WaterfallTransactions {
-  constructor(clientArgs: SplitsClientConfig) {
+class WaterfallCallData<
+  TChain extends Chain,
+> extends WaterfallTransactions<TChain> {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.CallData,
       ...clientArgs,

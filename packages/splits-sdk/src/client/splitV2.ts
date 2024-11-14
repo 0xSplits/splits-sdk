@@ -61,8 +61,12 @@ type SplitV2ABI = typeof splitV2ABI
 const VALID_ERC1271_SIG = '0x1626ba7e'
 
 // TODO:add validation to execute contract function
-class SplitV2Transactions extends BaseTransactions {
-  constructor(transactionClientArgs: SplitsClientConfig & TransactionConfig) {
+class SplitV2Transactions<
+  TChain extends Chain,
+> extends BaseTransactions<TChain> {
+  constructor(
+    transactionClientArgs: SplitsClientConfig<TChain> & TransactionConfig,
+  ) {
     super({
       supportedChainIds: SPLITS_V2_SUPPORTED_CHAIN_IDS,
       ...transactionClientArgs,
@@ -388,10 +392,7 @@ class SplitV2Transactions extends BaseTransactions {
     return { split }
   }
 
-  protected _getSplitV2Contract(
-    splitAddress: Address,
-    chainId: number,
-  ): GetContractReturnType<SplitV2ABI, PublicClient<Transport, Chain>> {
+  protected _getSplitV2Contract(splitAddress: Address, chainId: number) {
     validateAddress(splitAddress)
     const publicClient = this._getPublicClient(chainId)
 
@@ -402,13 +403,16 @@ class SplitV2Transactions extends BaseTransactions {
       client: publicClient,
       publicClient: publicClient,
       walletClient: this._walletClient,
-    })
+    }) as unknown as GetContractReturnType<
+      SplitV2ABI,
+      PublicClient<Transport, Chain>
+    >
   }
 
   protected _getSplitV2FactoryContract(
     splitType: SplitV2Type,
     chainId: number,
-  ): GetContractReturnType<SplitFactoryABI, PublicClient<Transport, Chain>> {
+  ) {
     const publicClient = this._getPublicClient(chainId)
 
     return getContract({
@@ -418,7 +422,10 @@ class SplitV2Transactions extends BaseTransactions {
       client: publicClient,
       publicClient: publicClient,
       walletClient: this._walletClient,
-    })
+    }) as unknown as GetContractReturnType<
+      SplitFactoryABI,
+      PublicClient<Transport, Chain>
+    >
   }
 
   protected async _eip712Domain(
@@ -457,13 +464,15 @@ class SplitV2Transactions extends BaseTransactions {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export class SplitV2Client extends SplitV2Transactions {
+export class SplitV2Client<
+  TChain extends Chain,
+> extends SplitV2Transactions<TChain> {
   readonly eventTopics: { [key: string]: Hex[] }
-  readonly callData: SplitV2CallData
-  readonly estimateGas: SplitV2GasEstimates
-  readonly sign: SplitV2Signature
+  readonly callData: SplitV2CallData<TChain>
+  readonly estimateGas: SplitV2GasEstimates<TChain>
+  readonly sign: SplitV2Signature<TChain>
 
-  constructor(clientArgs: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.Transaction,
       ...clientArgs,
@@ -937,12 +946,15 @@ export class SplitV2Client extends SplitV2Transactions {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export interface SplitV2Client extends BaseClientMixin {}
+export interface SplitV2Client<TChain extends Chain>
+  extends BaseClientMixin<TChain> {}
 applyMixins(SplitV2Client, [BaseClientMixin])
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-class SplitV2GasEstimates extends SplitV2Transactions {
-  constructor(clientArgs: SplitsClientConfig) {
+class SplitV2GasEstimates<
+  TChain extends Chain,
+> extends SplitV2Transactions<TChain> {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.GasEstimate,
       ...clientArgs,
@@ -995,11 +1007,14 @@ class SplitV2GasEstimates extends SplitV2Transactions {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-interface SplitV2GasEstimates extends BaseGasEstimatesMixin {}
+interface SplitV2GasEstimates<TChain extends Chain>
+  extends BaseGasEstimatesMixin<TChain> {}
 applyMixins(SplitV2GasEstimates, [BaseGasEstimatesMixin])
 
-class SplitV2CallData extends SplitV2Transactions {
-  constructor(clientArgs: SplitsClientConfig) {
+class SplitV2CallData<
+  TChain extends Chain,
+> extends SplitV2Transactions<TChain> {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.CallData,
       ...clientArgs,
@@ -1051,8 +1066,10 @@ class SplitV2CallData extends SplitV2Transactions {
   }
 }
 
-class SplitV2Signature extends SplitV2Transactions {
-  constructor(clientArgs: SplitsClientConfig) {
+class SplitV2Signature<
+  TChain extends Chain,
+> extends SplitV2Transactions<TChain> {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.Signature,
       ...clientArgs,

@@ -19,18 +19,19 @@ import { validateAddress } from '../utils/validation'
 
 type UniV3OracleAbi = typeof uniV3OracleAbi
 
-class OracleTransactions extends BaseTransactions {
-  constructor(transactionClientArgs: SplitsClientConfig & TransactionConfig) {
+class OracleTransactions<
+  TChain extends Chain,
+> extends BaseTransactions<TChain> {
+  constructor(
+    transactionClientArgs: SplitsClientConfig<TChain> & TransactionConfig,
+  ) {
     super({
       supportedChainIds: ORACLE_CHAIN_IDS,
       ...transactionClientArgs,
     })
   }
 
-  protected _getOracleContract(
-    oracle: string,
-    chainId: number,
-  ): GetContractReturnType<UniV3OracleAbi, PublicClient<Transport, Chain>> {
+  protected _getOracleContract(oracle: string, chainId: number) {
     const publicClient = this._getPublicClient(chainId)
 
     return getContract({
@@ -39,12 +40,17 @@ class OracleTransactions extends BaseTransactions {
       // @ts-expect-error v1/v2 viem support
       client: publicClient,
       publicClient: publicClient,
-    })
+    }) as unknown as GetContractReturnType<
+      UniV3OracleAbi,
+      PublicClient<Transport, Chain>
+    >
   }
 }
 
-export class OracleClient extends OracleTransactions {
-  constructor(clientArgs: SplitsClientConfig) {
+export class OracleClient<
+  TChain extends Chain,
+> extends OracleTransactions<TChain> {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.Transaction,
       ...clientArgs,

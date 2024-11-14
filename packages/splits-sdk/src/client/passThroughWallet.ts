@@ -42,8 +42,12 @@ import { validateAddress } from '../utils/validation'
 
 type PassThroughWalletAbi = typeof passThroughWalletAbi
 
-class PassThroughWalletTransactions extends BaseTransactions {
-  constructor(transactionClientArgs: SplitsClientConfig & TransactionConfig) {
+class PassThroughWalletTransactions<
+  TChain extends Chain,
+> extends BaseTransactions<TChain> {
+  constructor(
+    transactionClientArgs: SplitsClientConfig<TChain> & TransactionConfig,
+  ) {
     super({
       supportedChainIds: PASS_THROUGH_WALLET_CHAIN_IDS,
       ...transactionClientArgs,
@@ -185,10 +189,7 @@ class PassThroughWalletTransactions extends BaseTransactions {
   protected _getPassThroughWalletContract(
     passThroughWallet: string,
     chainId: number,
-  ): GetContractReturnType<
-    PassThroughWalletAbi,
-    PublicClient<Transport, Chain>
-  > {
+  ) {
     const publicClient = this._getPublicClient(chainId)
 
     return getContract({
@@ -197,17 +198,22 @@ class PassThroughWalletTransactions extends BaseTransactions {
       // @ts-expect-error v1/v2 viem support
       client: publicClient,
       publicClient: publicClient,
-    })
+    }) as unknown as GetContractReturnType<
+      PassThroughWalletAbi,
+      PublicClient<Transport, Chain>
+    >
   }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export class PassThroughWalletClient extends PassThroughWalletTransactions {
+export class PassThroughWalletClient<
+  TChain extends Chain,
+> extends PassThroughWalletTransactions<TChain> {
   readonly eventTopics: { [key: string]: Hex[] }
-  readonly callData: PassThroughWalletCallData
-  readonly estimateGas: PassThroughWalletGasEstimates
+  readonly callData: PassThroughWalletCallData<TChain>
+  readonly estimateGas: PassThroughWalletGasEstimates<TChain>
 
-  constructor(clientArgs: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.Transaction,
       ...clientArgs,
@@ -432,12 +438,15 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export interface PassThroughWalletClient extends BaseClientMixin {}
+export interface PassThroughWalletClient<TChain extends Chain>
+  extends BaseClientMixin<TChain> {}
 applyMixins(PassThroughWalletClient, [BaseClientMixin])
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-class PassThroughWalletGasEstimates extends PassThroughWalletTransactions {
-  constructor(clientArgs: SplitsClientConfig) {
+class PassThroughWalletGasEstimates<
+  TChain extends Chain,
+> extends PassThroughWalletTransactions<TChain> {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.GasEstimate,
       ...clientArgs,
@@ -483,11 +492,14 @@ class PassThroughWalletGasEstimates extends PassThroughWalletTransactions {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-interface PassThroughWalletGasEstimates extends BaseGasEstimatesMixin {}
+interface PassThroughWalletGasEstimates<TChain extends Chain>
+  extends BaseGasEstimatesMixin<TChain> {}
 applyMixins(PassThroughWalletGasEstimates, [BaseGasEstimatesMixin])
 
-class PassThroughWalletCallData extends PassThroughWalletTransactions {
-  constructor(clientArgs: SplitsClientConfig) {
+class PassThroughWalletCallData<
+  TChain extends Chain,
+> extends PassThroughWalletTransactions<TChain> {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.CallData,
       ...clientArgs,

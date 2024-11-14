@@ -36,36 +36,37 @@ export type ApiConfig = {
   serverURL?: string
 }
 
-export type DataClientConfig = {
-  publicClient?: PublicClient<Transport, Chain>
+export type DataClientConfig<TChain extends Chain> = {
+  publicClient?: PublicClient<Transport, TChain>
   publicClients?: {
-    [chainId: number]: PublicClient<Transport, Chain>
+    [chainId: number]: PublicClient<Transport, TChain>
   }
   apiConfig: ApiConfig
   includeEnsNames?: boolean
   // ensPublicClient can be used to fetch ens names when publicClient is not on mainnet (reverseRecords
   // only works on mainnet).
-  ensPublicClient?: PublicClient<Transport, Chain>
+  ensPublicClient?: PublicClient<Transport, TChain>
 }
 
 // Splits
-export type SplitsClientConfig = {
+export type SplitsClientConfig<TChain extends Chain> = {
   chainId?: number
-  publicClient?: PublicClient<Transport, Chain>
+  publicClient?: PublicClient<Transport, TChain>
   publicClients?: {
-    [chainId: number]: PublicClient<Transport, Chain>
+    [chainId: number]: PublicClient<Transport, TChain>
   }
-  walletClient?: WalletClient<Transport, Chain, Account>
+  walletClient?: WalletClient<Transport, TChain, Account>
   apiConfig?: ApiConfig
   includeEnsNames?: boolean
   // ensPublicClient can be used to fetch ens names when publicClient is not on mainnet (reverseRecords
   // only works on mainnet).
-  ensPublicClient?: PublicClient<Transport, Chain>
+  ensPublicClient?: PublicClient<Transport, TChain>
 }
 
-export type BaseClientConfig = SplitsClientConfig & {
-  supportedChainIds: number[]
-}
+export type BaseClientConfig<TChain extends Chain> =
+  SplitsClientConfig<TChain> & {
+    supportedChainIds: number[]
+  }
 
 export type TransactionConfig = {
   transactionType: TransactionType

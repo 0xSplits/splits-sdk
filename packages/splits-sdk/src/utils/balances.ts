@@ -4,6 +4,8 @@ import {
   MulticallReturnType,
   PublicClient,
   getAddress,
+  Transport,
+  Chain,
 } from 'viem'
 
 import { CHAIN_INFO, ZERO } from '../constants'
@@ -14,9 +16,9 @@ import { retryExponentialBackoff } from './requests'
 import { IBalance } from '../subgraph/types'
 import { mergeWith } from 'lodash'
 
-export const fetchERC20TransferredTokens = async (
+export const fetchERC20TransferredTokens = async <TChain extends Chain>(
   chainId: number,
-  publicClient: PublicClient,
+  publicClient: PublicClient<Transport, TChain>,
   splitAddress: Address,
 ): Promise<string[]> => {
   const tokens = new Set<string>([])
@@ -48,10 +50,10 @@ export const fetchERC20TransferredTokens = async (
 
 // NOTE: this should never be called for a user, we only care about a user's
 // balance in split main which is stored in subgraph
-export const fetchActiveBalances: (
+export const fetchActiveBalances: <TChain extends Chain>(
   arg0: number,
   arg1: Address,
-  arg2: PublicClient,
+  arg2: PublicClient<Transport, TChain>,
   arg3: Address[],
 ) => Promise<FormattedTokenBalances> = async (
   chainId,
@@ -83,10 +85,10 @@ export const fetchActiveBalances: (
 
 // NOTE: this should never be called for a user, we only care about a user's
 // balance in split main which is stored in subgraph
-export const fetchContractBalancesWithAlchemy: (
+export const fetchContractBalancesWithAlchemy: <TChain extends Chain>(
   arg0: number,
   arg1: Address,
-  arg2: PublicClient,
+  arg2: PublicClient<Transport, TChain>,
 ) => Promise<FormattedTokenBalances> = async (
   chainId,
   address,
@@ -182,9 +184,9 @@ export const fetchContractBalancesWithAlchemy: (
 }
 
 type TokenData = { [address: string]: Token }
-const fetchTokenData: (
+const fetchTokenData: <TChain extends Chain>(
   arg0: Address[],
-  arg1: PublicClient,
+  arg1: PublicClient<Transport, TChain>,
 ) => Promise<TokenData> = async (tokens, publicClient) => {
   const filteredTokens = tokens.filter((token) => token !== zeroAddress)
   const contractCalls = getTokenDataCalls(filteredTokens)

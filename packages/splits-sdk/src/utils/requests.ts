@@ -38,26 +38,26 @@ const getRandomTimeMs: (maxMs: number) => number = (maxMs) => {
 }
 
 // Return true if the public client supports a large enough logs request to fetch erc20 tranfer history
-export const isLogsPublicClient = (
-  publicClient: PublicClient<Transport, Chain | undefined>,
+export const isLogsPublicClient = <TChain extends Chain>(
+  publicClient: PublicClient<Transport, TChain>,
 ): boolean => {
   return (
     isAlchemyPublicClient(publicClient) || isInfuraPublicClient(publicClient)
   )
 }
 
-export const isAlchemyPublicClient: (arg0: PublicClient) => boolean = (
-  rpcPublicClient,
-) => {
+export const isAlchemyPublicClient: <TChain extends Chain>(
+  arg0: PublicClient<Transport, TChain>,
+) => boolean = (rpcPublicClient) => {
   if (rpcPublicClient.transport?.url?.includes('.alchemy.')) return true
   if (rpcPublicClient.transport?.url?.includes('.alchemyapi.')) return true
 
   return false
 }
 
-export const isInfuraPublicClient: (arg0: PublicClient) => boolean = (
-  rpcPublicClient,
-) => {
+export const isInfuraPublicClient: <TChain extends Chain>(
+  arg0: PublicClient<Transport, TChain>,
+) => boolean = (rpcPublicClient) => {
   if (rpcPublicClient.transport?.url?.includes('.infura.')) return true
 
   return false

@@ -1,3 +1,4 @@
+import { Chain } from 'viem'
 import { ALL_CHAIN_IDS, TransactionType } from '../constants'
 import { SplitsClientConfig } from '../types'
 import {
@@ -19,21 +20,23 @@ import { WarehouseClient } from './warehouse'
 import { WaterfallClient } from './waterfall'
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export class SplitsClient extends BaseTransactions {
-  readonly waterfall: WaterfallClient
-  readonly liquidSplits: LiquidSplitClient
-  readonly passThroughWallet: PassThroughWalletClient
-  readonly vesting: VestingClient
-  readonly oracle: OracleClient
-  readonly swapper: SwapperClient
-  readonly templates: TemplatesClient
-  readonly splitV1: SplitV1Client
-  readonly splitV2: SplitV2Client
-  readonly warehouse: WarehouseClient
-  readonly dataClient: DataClient | undefined
-  readonly estimateGas: SplitsClientGasEstimates
+export class SplitsClient<
+  TChain extends Chain,
+> extends BaseTransactions<TChain> {
+  readonly waterfall: WaterfallClient<TChain>
+  readonly liquidSplits: LiquidSplitClient<TChain>
+  readonly passThroughWallet: PassThroughWalletClient<TChain>
+  readonly vesting: VestingClient<TChain>
+  readonly oracle: OracleClient<TChain>
+  readonly swapper: SwapperClient<TChain>
+  readonly templates: TemplatesClient<TChain>
+  readonly splitV1: SplitV1Client<TChain>
+  readonly splitV2: SplitV2Client<TChain>
+  readonly warehouse: WarehouseClient<TChain>
+  readonly dataClient: DataClient<TChain> | undefined
+  readonly estimateGas: SplitsClientGasEstimates<TChain>
 
-  constructor(clientArgs: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.Transaction,
       supportedChainIds: ALL_CHAIN_IDS,
@@ -65,12 +68,15 @@ export class SplitsClient extends BaseTransactions {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export interface SplitsClient extends BaseClientMixin {}
+export interface SplitsClient<TChain extends Chain>
+  extends BaseClientMixin<TChain> {}
 applyMixins(SplitsClient, [BaseClientMixin])
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-class SplitsClientGasEstimates extends BaseTransactions {
-  constructor(clientArgs: SplitsClientConfig) {
+class SplitsClientGasEstimates<
+  TChain extends Chain,
+> extends BaseTransactions<TChain> {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.GasEstimate,
       supportedChainIds: ALL_CHAIN_IDS,
@@ -80,5 +86,6 @@ class SplitsClientGasEstimates extends BaseTransactions {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-interface SplitsClientGasEstimates extends BaseGasEstimatesMixin {}
+interface SplitsClientGasEstimates<TChain extends Chain>
+  extends BaseGasEstimatesMixin<TChain> {}
 applyMixins(SplitsClientGasEstimates, [BaseGasEstimatesMixin])

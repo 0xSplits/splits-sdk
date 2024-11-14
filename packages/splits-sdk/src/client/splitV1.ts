@@ -82,8 +82,12 @@ const polygonAbiChainIds = [
 
 type SplitMainEthereumAbiType = typeof splitMainEthereumAbi
 
-class SplitV1Transactions extends BaseTransactions {
-  constructor(transactionClientArgs: SplitsClientConfig & TransactionConfig) {
+class SplitV1Transactions<
+  TChain extends Chain,
+> extends BaseTransactions<TChain> {
+  constructor(
+    transactionClientArgs: SplitsClientConfig<TChain> & TransactionConfig,
+  ) {
     super({
       supportedChainIds: SPLITS_SUPPORTED_CHAIN_IDS,
       ...transactionClientArgs,
@@ -526,12 +530,7 @@ class SplitV1Transactions extends BaseTransactions {
       )
   }
 
-  protected _getSplitMainContract(
-    chainId: number,
-  ): GetContractReturnType<
-    SplitMainEthereumAbiType,
-    PublicClient<Transport, Chain>
-  > {
+  protected _getSplitMainContract(chainId: number) {
     const publicClient = this._getPublicClient(chainId)
 
     return getContract({
@@ -540,7 +539,10 @@ class SplitV1Transactions extends BaseTransactions {
       // @ts-expect-error v1/v2 viem support
       client: publicClient,
       publicClient: publicClient,
-    })
+    }) as unknown as GetContractReturnType<
+      SplitMainEthereumAbiType,
+      PublicClient<Transport, Chain>
+    >
   }
 
   protected _getSplitMainAbi(chainId: number) {
@@ -554,11 +556,13 @@ class SplitV1Transactions extends BaseTransactions {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export class SplitV1Client extends SplitV1Transactions {
-  readonly callData: SplitV1CallData
-  readonly estimateGas: SplitV1GasEstimates
+export class SplitV1Client<
+  TChain extends Chain,
+> extends SplitV1Transactions<TChain> {
+  readonly callData: SplitV1CallData<TChain>
+  readonly estimateGas: SplitV1GasEstimates<TChain>
 
-  constructor(clientArgs: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.Transaction,
       ...clientArgs,
@@ -1145,12 +1149,15 @@ export class SplitV1Client extends SplitV1Transactions {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export interface SplitV1Client extends BaseClientMixin {}
+export interface SplitV1Client<TChain extends Chain>
+  extends BaseClientMixin<TChain> {}
 applyMixins(SplitV1Client, [BaseClientMixin])
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-class SplitV1GasEstimates extends SplitV1Transactions {
-  constructor(clientArgs: SplitsClientConfig) {
+class SplitV1GasEstimates<
+  TChain extends Chain,
+> extends SplitV1Transactions<TChain> {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.GasEstimate,
       ...clientArgs,
@@ -1241,11 +1248,14 @@ class SplitV1GasEstimates extends SplitV1Transactions {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-interface SplitV1GasEstimates extends BaseGasEstimatesMixin {}
+interface SplitV1GasEstimates<TChain extends Chain>
+  extends BaseGasEstimatesMixin<TChain> {}
 applyMixins(SplitV1GasEstimates, [BaseGasEstimatesMixin])
 
-class SplitV1CallData extends SplitV1Transactions {
-  constructor(clientArgs: SplitsClientConfig) {
+class SplitV1CallData<
+  TChain extends Chain,
+> extends SplitV1Transactions<TChain> {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.CallData,
       ...clientArgs,

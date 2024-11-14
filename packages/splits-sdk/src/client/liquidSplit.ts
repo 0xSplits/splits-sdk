@@ -55,8 +55,12 @@ import {
 
 type LS1155Abi = typeof ls1155CloneAbi
 
-class LiquidSplitTransactions extends BaseTransactions {
-  constructor(transactionClientArgs: SplitsClientConfig & TransactionConfig) {
+class LiquidSplitTransactions<
+  TChain extends Chain,
+> extends BaseTransactions<TChain> {
+  constructor(
+    transactionClientArgs: SplitsClientConfig<TChain> & TransactionConfig,
+  ) {
     super({
       supportedChainIds: LIQUID_SPLIT_CHAIN_IDS,
       ...transactionClientArgs,
@@ -183,10 +187,7 @@ class LiquidSplitTransactions extends BaseTransactions {
       )
   }
 
-  protected _getLiquidSplitContract(
-    liquidSplit: string,
-    chainId: number,
-  ): GetContractReturnType<LS1155Abi, PublicClient<Transport, Chain>> {
+  protected _getLiquidSplitContract(liquidSplit: string, chainId: number) {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getAddress(liquidSplit),
@@ -194,17 +195,22 @@ class LiquidSplitTransactions extends BaseTransactions {
       // @ts-expect-error v1/v2 viem support
       client: publicClient,
       publicClient: publicClient,
-    })
+    }) as unknown as GetContractReturnType<
+      LS1155Abi,
+      PublicClient<Transport, Chain>
+    >
   }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export class LiquidSplitClient extends LiquidSplitTransactions {
+export class LiquidSplitClient<
+  TChain extends Chain,
+> extends LiquidSplitTransactions<TChain> {
   readonly eventTopics: { [key: string]: Hex[] }
-  readonly callData: LiquidSplitCallData
-  readonly estimateGas: LiquidSplitGasEstimates
+  readonly callData: LiquidSplitCallData<TChain>
+  readonly estimateGas: LiquidSplitGasEstimates<TChain>
 
-  constructor(clientArgs: SplitsClientConfig) {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.Transaction,
       ...clientArgs,
@@ -495,12 +501,15 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export interface LiquidSplitClient extends BaseClientMixin {}
+export interface LiquidSplitClient<TChain extends Chain>
+  extends BaseClientMixin<TChain> {}
 applyMixins(LiquidSplitClient, [BaseClientMixin])
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-class LiquidSplitGasEstimates extends LiquidSplitTransactions {
-  constructor(clientArgs: SplitsClientConfig) {
+class LiquidSplitGasEstimates<
+  TChain extends Chain,
+> extends LiquidSplitTransactions<TChain> {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.GasEstimate,
       ...clientArgs,
@@ -541,11 +550,14 @@ class LiquidSplitGasEstimates extends LiquidSplitTransactions {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-interface LiquidSplitGasEstimates extends BaseGasEstimatesMixin {}
+interface LiquidSplitGasEstimates<TChain extends Chain>
+  extends BaseGasEstimatesMixin<TChain> {}
 applyMixins(LiquidSplitGasEstimates, [BaseGasEstimatesMixin])
 
-class LiquidSplitCallData extends LiquidSplitTransactions {
-  constructor(clientArgs: SplitsClientConfig) {
+class LiquidSplitCallData<
+  TChain extends Chain,
+> extends LiquidSplitTransactions<TChain> {
+  constructor(clientArgs: SplitsClientConfig<TChain>) {
     super({
       transactionType: TransactionType.CallData,
       ...clientArgs,

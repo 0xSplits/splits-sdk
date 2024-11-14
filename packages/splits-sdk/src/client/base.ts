@@ -33,20 +33,21 @@ import type {
 } from '../types'
 
 import { DataClient } from './data'
+import { simulateContract } from 'viem/_types/actions/public/simulateContract'
 
-class BaseClient {
+class BaseClient<TChain extends Chain> {
   readonly _chainId: number | undefined // DEPRECATED
-  readonly _ensPublicClient: PublicClient<Transport, Chain> | undefined // DEPRECATED
-  readonly _walletClient: WalletClient<Transport, Chain, Account> | undefined
-  readonly _publicClient: PublicClient<Transport, Chain> | undefined // DEPRECATED
+  readonly _ensPublicClient: PublicClient<Transport, TChain> | undefined // DEPRECATED
+  readonly _walletClient: WalletClient<Transport, TChain, Account> | undefined
+  readonly _publicClient: PublicClient<Transport, TChain> | undefined // DEPRECATED
   readonly _publicClients:
     | {
-        [chainId: number]: PublicClient<Transport, Chain>
+        [chainId: number]: PublicClient<Transport, TChain>
       }
     | undefined
   readonly _apiConfig: ApiConfig | undefined
   readonly _includeEnsNames: boolean
-  readonly _dataClient: DataClient | undefined
+  readonly _dataClient: DataClient<TChain> | undefined
   readonly _supportedChainIds: number[]
 
   constructor({
@@ -58,7 +59,7 @@ class BaseClient {
     apiConfig,
     supportedChainIds,
     includeEnsNames = false,
-  }: BaseClientConfig) {
+  }: BaseClientConfig<TChain>) {
     if (includeEnsNames && !publicClient && !ensPublicClient)
       throw new InvalidConfigError(
         'Must include a mainnet public client if includeEnsNames is set to true',
@@ -113,7 +114,7 @@ class BaseClient {
     this._requirePublicClient(chainId)
   }
 
-  protected _getPublicClient(chainId: number): PublicClient<Transport, Chain> {
+  protected _getPublicClient(chainId: number): PublicClient<Transport, TChain> {
     if (!this._supportedChainIds.includes(chainId))
       throw new UnsupportedChainIdError(chainId, this._supportedChainIds)
 
@@ -130,14 +131,14 @@ class BaseClient {
   }
 }
 
-export class BaseTransactions extends BaseClient {
+export class BaseTransactions<TChain extends Chain> extends BaseClient<TChain> {
   protected readonly _transactionType: TransactionType
   protected readonly _shouldRequireWalletClient: boolean
 
   constructor({
     transactionType,
     ...baseClientArgs
-  }: BaseClientConfig & TransactionConfig) {
+  }: BaseClientConfig<TChain> & TransactionConfig) {
     super(baseClientArgs)
 
     this._transactionType = transactionType
@@ -195,7 +196,7 @@ export class BaseTransactions extends BaseClient {
     } else if (this._transactionType === TransactionType.Transaction) {
       if (!this._walletClient?.account) throw new Error()
       const publicClient = this._getPublicClient(this._walletClient.chain.id)
-      const { request } = await publicClient.simulateContract({
+      const { request } = (await publicClient.simulateContract({
         address: contractAddress,
         abi: contractAbi,
         functionName,
@@ -203,7 +204,7 @@ export class BaseTransactions extends BaseClient {
         args: functionArgs ?? [],
         value,
         ...transactionOverrides,
-      })
+      })) as Awaited<ReturnType<typeof simulateContract>>
       const txHash = await this._walletClient.writeContract(request)
       return txHash
     } else throw new Error(`Unknown transaction type: ${this._transactionType}`)
@@ -276,7 +277,9 @@ export class BaseTransactions extends BaseClient {
   }
 }
 
-export class BaseClientMixin extends BaseTransactions {
+export class BaseClientMixin<
+  TChain extends Chain,
+> extends BaseTransactions<TChain> {
   async getTransactionEvents({
     txHash,
     eventTopics,
@@ -328,7 +331,9 @@ export class BaseClientMixin extends BaseTransactions {
   }
 }
 
-export class BaseGasEstimatesMixin extends BaseTransactions {
+export class BaseGasEstimatesMixin<
+  TChain extends Chain,
+> extends BaseTransactions<TChain> {
   async multicall(multicallArgs: MulticallConfig): Promise<bigint> {
     const gasEstimate = await this._multicallTransaction(multicallArgs)
     if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')

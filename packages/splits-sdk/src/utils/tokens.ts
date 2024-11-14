@@ -1,12 +1,27 @@
-import { Address, getContract, PublicClient, zeroAddress } from 'viem'
+import {
+  Address,
+  Chain,
+  getContract,
+  PublicClient,
+  Transport,
+  zeroAddress,
+} from 'viem'
 
 import { CHAIN_INFO } from '../constants'
 import { erc20Abi } from '../constants/abi/erc20'
 
-export const getTokenData = async (
+interface ERC20Contract {
+  read: {
+    decimals: () => Promise<number>
+    symbol: () => Promise<string>
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const getTokenData = async <TChain extends Chain>(
   chainId: number,
   token: Address,
-  publicClient: PublicClient,
+  publicClient: PublicClient<Transport, TChain>,
 ): Promise<{
   symbol: string
   decimals: number
@@ -24,7 +39,7 @@ export const getTokenData = async (
     // @ts-expect-error v1/v2 viem support
     client: publicClient,
     publicClient,
-  })
+  }) as unknown as ERC20Contract
   // TODO: error handling? For bad erc20...
 
   const [decimals, symbol] = await Promise.all([
