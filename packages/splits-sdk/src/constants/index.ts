@@ -175,7 +175,6 @@ export const ALL_CHAIN_IDS = [
   ...ZORA_CHAIN_IDS,
   ...BASE_CHAIN_IDS,
   ...BLAST_CHAIN_IDS,
-  ...SHAPE_CHAIN_IDS,
 ]
 
 export const SPLITS_SUPPORTED_CHAIN_IDS = [3, 4, 42, ...ALL_CHAIN_IDS]
