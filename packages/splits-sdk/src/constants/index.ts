@@ -149,6 +149,7 @@ export enum ChainId {
   BASE_SEPOLIA = 84532,
   FOUNDRY = 31337,
   BLAST = 81457,
+  SHAPE = 360,
 }
 
 export const ETHEREUM_CHAIN_IDS = [ChainId.MAINNET]
@@ -161,6 +162,7 @@ export const BSC_CHAIN_IDS = [ChainId.BSC]
 export const ZORA_CHAIN_IDS = [ChainId.ZORA, ChainId.ZORA_SEPOLIA]
 export const BASE_CHAIN_IDS = [ChainId.BASE, ChainId.BASE_SEPOLIA]
 export const BLAST_CHAIN_IDS = [ChainId.BLAST]
+export const SHAPE_CHAIN_IDS = [ChainId.SHAPE]
 
 export const ALL_CHAIN_IDS = [
   ...ETHEREUM_CHAIN_IDS,
@@ -173,6 +175,7 @@ export const ALL_CHAIN_IDS = [
   ...ZORA_CHAIN_IDS,
   ...BASE_CHAIN_IDS,
   ...BLAST_CHAIN_IDS,
+  ...SHAPE_CHAIN_IDS,
 ]
 
 export const SPLITS_SUPPORTED_CHAIN_IDS = [3, 4, 42, ...ALL_CHAIN_IDS]
@@ -192,6 +195,7 @@ export const SPLITS_V2_SUPPORTED_CHAIN_IDS = [
   ChainId.FOUNDRY,
   ChainId.GNOSIS,
   ChainId.BSC,
+  ChainId.SHAPE,
 ]
 
 export const SPLITS_SUBGRAPH_CHAIN_IDS = ALL_CHAIN_IDS.slice()
@@ -334,6 +338,13 @@ export const CHAIN_INFO: {
     nativeCurrency: {
       symbol: 'ETH',
     },
+  },
+  [ChainId.SHAPE]: {
+    startBlock: 5448039,
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
+    startBlockV2: 5448039,
   },
 }
 
