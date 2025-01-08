@@ -1,6 +1,6 @@
 {
   "name": "@0xsplits/splits-sdk-react",
-  "version": "2.2.0-alpha.32.5",
+  "version": "2.2.0-alpha.32.6",
   "description": "React wrapper for the 0xSplits SDK",
   "main": "./dist/index.js",
   "typings": "./dist/index.d.ts",
