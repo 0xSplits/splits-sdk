@@ -12,7 +12,10 @@ import {
   parseEther,
   zeroAddress,
 } from 'viem'
-import { getSplitV2FactoryAddress } from '../constants'
+import {
+  getSplitV2FactoryAddress,
+  getSplitV2o1FactoryAddress,
+} from '../constants'
 import {
   InvalidConfigError,
   InvalidDistributorFeePercentErrorV2,
@@ -127,7 +130,7 @@ describe('Split v2 writes', () => {
 
       expect(getAddress(event.address)).toEqual(
         getAddress(
-          getSplitV2FactoryAddress(client._chainId!, SplitV2Type.Pull),
+          getSplitV2o1FactoryAddress(client._chainId!, SplitV2Type.Pull),
         ),
       )
       expect(decodedLog.eventName).toEqual('SplitCreated')
