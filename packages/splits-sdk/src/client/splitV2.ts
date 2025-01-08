@@ -578,10 +578,10 @@ export class SplitV2Client extends SplitV2Transactions {
     })
     this.eventTopics = {
       splitCreated: [
-        encodeEventTopics({
+        ...encodeEventTopics({
           abi: splitV2o1FactoryAbi,
           eventName: 'SplitCreated',
-        })[0],
+        }),
       ],
       splitUpdated: [
         encodeEventTopics({
