@@ -222,7 +222,7 @@ export const getSplitCreateAndUpdateLogs = async <
   version?: SplitV2Versions
 }): Promise<{
   blockRange: bigint
-  createLog: SplitCreatedLogType
+  createLog?: SplitCreatedLogType
   updateLog?: SplitUpdatedLogType
 }> => {
   const formattedSplitAddress = getAddress(splitAddress)
@@ -310,7 +310,7 @@ export const getSplitCreateAndUpdateLogs = async <
       }
     }
 
-    if (!createLog)
+    if (!createLog && version === 'splitV2')
       throw new AccountNotFoundError(
         'Split',
         formattedSplitAddress,

@@ -12,10 +12,7 @@ import {
   parseEther,
   zeroAddress,
 } from 'viem'
-import {
-  getSplitV2FactoryAddress,
-  getSplitV2o1FactoryAddress,
-} from '../constants'
+import { getSplitV2o1FactoryAddress } from '../constants'
 import {
   InvalidConfigError,
   InvalidDistributorFeePercentErrorV2,
@@ -32,6 +29,7 @@ import { publicClient, testClient, walletClient } from '../testing/utils'
 import { SplitRecipient, SplitV2Type } from '../types'
 import { splitV2ABI } from '../constants/abi/splitV2'
 import { splitV2FactoryABI } from '../constants/abi/splitV2Factory'
+import { splitV2o1FactoryAbi } from '../constants/abi'
 
 describe('Client config validation', () => {
   test('Including ens names with no provider fails', () => {
@@ -164,7 +162,7 @@ describe('Split v2 writes', () => {
 
       expect(getAddress(event.address)).toEqual(
         getAddress(
-          getSplitV2FactoryAddress(client._chainId!, SplitV2Type.Pull),
+          getSplitV2o1FactoryAddress(client._chainId!, SplitV2Type.Pull),
         ),
       )
       expect(decodedLog.eventName).toEqual('SplitCreated')
@@ -199,7 +197,7 @@ describe('Split v2 writes', () => {
 
       expect(getAddress(event.address)).toEqual(
         getAddress(
-          getSplitV2FactoryAddress(client._chainId!, SplitV2Type.Push),
+          getSplitV2o1FactoryAddress(client._chainId!, SplitV2Type.Push),
         ),
       )
       expect(decodedLog.eventName).toEqual('SplitCreated')
@@ -228,14 +226,14 @@ describe('Split v2 writes', () => {
       })
 
       const decodedLog = decodeEventLog({
-        abi: splitV2FactoryABI,
+        abi: splitV2o1FactoryAbi,
         topics: event.topics,
         data: event.data,
       })
 
       expect(getAddress(event.address)).toEqual(
         getAddress(
-          getSplitV2FactoryAddress(client._chainId!, SplitV2Type.Push),
+          getSplitV2o1FactoryAddress(client._chainId!, SplitV2Type.Push),
         ),
       )
       expect(decodedLog.eventName).toEqual('SplitCreated')

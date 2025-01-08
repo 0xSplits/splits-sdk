@@ -445,10 +445,10 @@ class SplitV2Transactions extends BaseTransactions {
           recipient: {
             address: recipient,
           },
-          ownership: createLog!.args.splitParams.allocations[i],
+          ownership: updateLog.args._split.allocations[i],
           percentAllocation: fromBigIntToPercent(
-            createLog!.args.splitParams.allocations[i],
-            createLog!.args.splitParams.totalAllocation,
+            updateLog.args._split.allocations[i],
+            updateLog.args._split.totalAllocation,
           ),
         }
       })

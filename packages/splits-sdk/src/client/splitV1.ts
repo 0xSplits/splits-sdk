@@ -573,6 +573,13 @@ class SplitV1Transactions extends BaseTransactions {
         defaultBlockRange: cachedData?.blockRange,
       })
 
+    if (!createLog)
+      throw new AccountNotFoundError(
+        'Split',
+        formattedSplitAddress,
+        publicClient.chain.id,
+      )
+
     const split = await this._buildSplitFromLogs({
       splitAddress: formattedSplitAddress,
       chainId,
