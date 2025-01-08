@@ -1,4 +1,4 @@
-export const splitFactoryV2o1Abi = [
+export const splitV2o1FactoryAbi = [
   {
     type: 'function',
     name: 'SPLIT_WALLET_IMPLEMENTATION',

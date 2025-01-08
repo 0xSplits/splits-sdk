@@ -69,8 +69,8 @@ import {
   BaseTransactions,
 } from './base'
 import { applyMixins } from './mixin'
-import { splitFactoryV2o1Abi } from '../constants/abi/splitFactoryV2o1'
 import { SplitV2Versions } from '../subgraph/types'
+import { splitV2o1FactoryAbi } from '../constants/abi'
 
 type SplitFactoryABI = typeof splitV2FactoryABI
 type SplitV2ABI = typeof splitV2ABI
@@ -131,7 +131,7 @@ class SplitV2Transactions extends BaseTransactions {
 
     return this._executeContractFunction({
       contractAddress: getSplitV2o1FactoryAddress(functionChainId, splitType),
-      contractAbi: splitFactoryV2o1Abi,
+      contractAbi: splitV2o1FactoryAbi,
       functionName,
       functionArgs,
       transactionOverrides,
@@ -579,7 +579,7 @@ export class SplitV2Client extends SplitV2Transactions {
     this.eventTopics = {
       splitCreated: [
         encodeEventTopics({
-          abi: splitV2FactoryABI,
+          abi: splitV2o1FactoryAbi,
           eventName: 'SplitCreated',
         })[0],
       ],
@@ -644,7 +644,7 @@ export class SplitV2Client extends SplitV2Transactions {
     const event = events.length > 0 ? events[0] : undefined
     if (event) {
       const log = decodeEventLog({
-        abi: splitV2FactoryABI,
+        abi: splitV2o1FactoryAbi,
         data: event.data,
         topics: event.topics,
       })
