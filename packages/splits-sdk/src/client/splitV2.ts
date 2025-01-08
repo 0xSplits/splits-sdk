@@ -27,6 +27,7 @@ import {
   ZERO,
   getSplitV2FactoriesStartBlock,
   getSplitV2FactoryAddress,
+  getSplitV2o1FactoryAddress,
   splitV2CreatedEvent,
   splitV2UpdatedEvent,
 } from '../constants'
@@ -129,7 +130,7 @@ class SplitV2Transactions extends BaseTransactions {
     if (salt) functionArgs.push(salt)
 
     return this._executeContractFunction({
-      contractAddress: getSplitV2FactoryAddress(functionChainId, splitType),
+      contractAddress: getSplitV2o1FactoryAddress(functionChainId, splitType),
       contractAbi: splitFactoryV2o1Abi,
       functionName,
       functionArgs,
