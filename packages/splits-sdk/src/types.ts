@@ -623,7 +623,7 @@ export type Split = {
     ownership: bigint
     recipient: Recipient
   }[]
-  createdBlock: number
+  updateBlock: number
 }
 
 export type WaterfallTranche = {

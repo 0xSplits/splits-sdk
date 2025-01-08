@@ -58,6 +58,16 @@ export const PULL_SPLIT_FACTORY_ADDRESS =
 export const PUSH_SPLIT_FACTORY_ADDRESS =
   '0xaDC87646f736d6A82e9a6539cddC488b2aA07f38'
 
+export const PULL_SPLIT_V2o1_FACTORY_ADDRESS =
+  '0x80f1B766817D04870f115fEBbcCADF8DBF75E017'
+export const PUSH_SPLIT_V2o1_FACTORY_ADDRESS =
+  '0xaDC87646f736d6A82e9a6539cddC488b2aA07f38'
+
+export const PULL_SPLIT_V2o1_ADDRESS =
+  '0xF9C25250523Df26343222fC46de932355B850c97'
+export const PUSH_SPLIT_V2o1_ADDRESS =
+  '0x3f81D81e0884abD8Cc4583a704a9397972623214'
+
 export const getSplitMainAddress = (chainId: number): Address => {
   if (chainId === ChainId.BSC) return SPLIT_MAIN_ADDRESS_BSC
   if (chainId === ChainId.HOLESKY) return SPLIT_MAIN_ADDRESS_HOLESKY
@@ -121,6 +131,14 @@ export const getSplitV2FactoryAddress = (
 ): Address => {
   if (type === SplitV2Type.Pull) return PULL_SPLIT_FACTORY_ADDRESS
   else return PUSH_SPLIT_FACTORY_ADDRESS
+}
+
+export const getSplitV2o1FactoryAddress = (
+  _chainId: number,
+  type: SplitV2Type,
+): Address => {
+  if (type === SplitV2Type.Pull) return PULL_SPLIT_V2o1_FACTORY_ADDRESS
+  else return PUSH_SPLIT_V2o1_FACTORY_ADDRESS
 }
 
 export const getSplitV1StartBlock = (chainId: number): bigint => {

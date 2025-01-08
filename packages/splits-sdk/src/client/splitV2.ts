@@ -18,6 +18,8 @@ import {
 } from 'viem'
 import {
   NATIVE_TOKEN_ADDRESS,
+  PULL_SPLIT_V2o1_ADDRESS,
+  PUSH_SPLIT_V2o1_ADDRESS,
   SPLITS_V2_SUPPORTED_CHAIN_IDS,
   SplitV2CreatedLogType,
   SplitV2UpdatedLogType,
@@ -66,6 +68,8 @@ import {
   BaseTransactions,
 } from './base'
 import { applyMixins } from './mixin'
+import { splitFactoryV2o1Abi } from '../constants/abi/splitFactoryV2o1'
+import { SplitV2Versions } from '../subgraph/types'
 
 type SplitFactoryABI = typeof splitV2FactoryABI
 type SplitV2ABI = typeof splitV2ABI
@@ -126,7 +130,7 @@ class SplitV2Transactions extends BaseTransactions {
 
     return this._executeContractFunction({
       contractAddress: getSplitV2FactoryAddress(functionChainId, splitType),
-      contractAbi: splitV2FactoryABI,
+      contractAbi: splitFactoryV2o1Abi,
       functionName,
       functionArgs,
       transactionOverrides,
@@ -325,6 +329,28 @@ class SplitV2Transactions extends BaseTransactions {
     }
   }
 
+  protected async _getSplitVersion({
+    splitAddress,
+    chainId,
+  }: {
+    splitAddress: Address
+    chainId: number
+  }): Promise<SplitV2Versions> {
+    try {
+      const [, name, version] = await this._getSplitV2Contract(
+        splitAddress,
+        chainId,
+      ).read.eip712Domain()
+
+      if (name !== 'splitWallet') throw new Error()
+
+      return version === '2' ? 'splitV2' : 'splitV2o1'
+    } catch {
+      // Split does not exist
+      throw new AccountNotFoundError('Split', splitAddress, chainId)
+    }
+  }
+
   protected async _getSplitMetadataViaProvider({
     splitAddress,
     chainId,
@@ -344,7 +370,7 @@ class SplitV2Transactions extends BaseTransactions {
     const formattedSplitAddress = getAddress(splitAddress)
     const publicClient = this._getPublicClient(chainId)
 
-    await this._checkForSplitExistence({ splitAddress, chainId })
+    const version = await this._getSplitVersion({ splitAddress, chainId })
 
     const { blockRange, createLog, updateLog } =
       await getSplitCreateAndUpdateLogs<'SplitCreated', 'SplitUpdated'>({
@@ -360,6 +386,7 @@ class SplitV2Transactions extends BaseTransactions {
         startBlockNumber: getSplitV2FactoriesStartBlock(chainId),
         cachedBlocks: cachedData?.blocks,
         defaultBlockRange: cachedData?.blockRange,
+        version,
       })
 
     const split = await this._buildSplitFromLogs({
@@ -380,7 +407,7 @@ class SplitV2Transactions extends BaseTransactions {
   }: {
     splitAddress: Address
     chainId: number
-    createLog: SplitV2CreatedLogType
+    createLog?: SplitV2CreatedLogType
     updateLog?: SplitV2UpdatedLogType
   }): Promise<Split> {
     const [owner, paused] = await Promise.all([
@@ -388,8 +415,15 @@ class SplitV2Transactions extends BaseTransactions {
       this._paused(splitAddress, chainId),
     ])
 
-    const recipients = createLog.args.splitParams.recipients.map(
-      (recipient, i) => {
+    if (!createLog && !updateLog)
+      throw new Error('Split create and update logs missing')
+
+    let recipients
+    let distributorFeePercent
+    let type: 'push' | 'pull'
+
+    if (createLog) {
+      recipients = createLog.args.splitParams.recipients.map((recipient, i) => {
         return {
           recipient: {
             address: recipient,
@@ -400,16 +434,52 @@ class SplitV2Transactions extends BaseTransactions {
             createLog!.args.splitParams.totalAllocation,
           ),
         }
-      },
-    )
+      })
+      distributorFeePercent = fromBigIntToPercent(
+        createLog.args.splitParams.distributionIncentive,
+      )
+    } else if (updateLog) {
+      recipients = updateLog.args._split.recipients.map((recipient, i) => {
+        return {
+          recipient: {
+            address: recipient,
+          },
+          ownership: createLog!.args.splitParams.allocations[i],
+          percentAllocation: fromBigIntToPercent(
+            createLog!.args.splitParams.allocations[i],
+            createLog!.args.splitParams.totalAllocation,
+          ),
+        }
+      })
+      distributorFeePercent = fromBigIntToPercent(
+        updateLog.args._split.distributionIncentive,
+      )
+    }
+
+    if (createLog) type = getSplitType(chainId, createLog.address)
+    else {
+      this._requirePublicClient(chainId)
+
+      const code = await this._publicClient?.getBytecode({
+        address: splitAddress,
+      })
+
+      if (code?.includes(PULL_SPLIT_V2o1_ADDRESS.toLowerCase().slice(2))) {
+        type = 'pull'
+      } else if (
+        code?.includes(PUSH_SPLIT_V2o1_ADDRESS.toLowerCase().slice(2))
+      ) {
+        type = 'push'
+      } else {
+        throw new Error(`failed to identify type of split ${splitAddress}`)
+      }
+    }
 
     const split: Split = {
       address: splitAddress,
-      recipients,
-      distributorFeePercent: fromBigIntToPercent(
-        createLog.args.splitParams.distributionIncentive,
-      ),
-      distributeDirection: getSplitType(chainId, createLog.address),
+      recipients: recipients!,
+      distributorFeePercent: distributorFeePercent!,
+      distributeDirection: type,
       type: 'SplitV2',
       controller: {
         address: owner,
@@ -418,31 +488,10 @@ class SplitV2Transactions extends BaseTransactions {
       newPotentialController: {
         address: zeroAddress,
       },
-      createdBlock: Number(createLog.blockNumber),
+      updateBlock: updateLog
+        ? Number(updateLog.blockNumber)
+        : Number(createLog?.blockNumber),
     }
-
-    if (!updateLog) return split
-
-    const updatedRecipients = updateLog.args._split.recipients.map(
-      (recipient, i) => {
-        return {
-          recipient: {
-            address: recipient,
-          },
-          ownership: updateLog!.args._split.allocations[i],
-          percentAllocation: fromBigIntToPercent(
-            updateLog!.args._split.allocations[i],
-            updateLog!.args._split.totalAllocation,
-          ),
-        }
-      },
-    )
-
-    split.recipients = updatedRecipients
-    split.distributorFeePercent = fromBigIntToPercent(
-      updateLog.args._split.distributionIncentive,
-    )
-
     return split
   }
 

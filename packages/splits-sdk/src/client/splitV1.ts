@@ -627,7 +627,7 @@ class SplitV1Transactions extends BaseTransactions {
       newPotentialController: {
         address: zeroAddress,
       },
-      createdBlock: Number(createLog.blockNumber),
+      updateBlock: Number(createLog.blockNumber),
     }
 
     if (!updateLog) return split

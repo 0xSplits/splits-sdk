@@ -16,6 +16,7 @@ import { splitV2FactoryABI } from '../constants/abi/splitV2Factory'
 import { splitMainPolygonAbi, splitV2ABI } from '../constants/abi'
 import { sleep } from '.'
 import { AccountNotFoundError } from '../errors'
+import { SplitV2Versions } from '../subgraph/types'
 
 /**
  * Retries a function n number of times with exponential backoff before giving up
@@ -201,6 +202,7 @@ export const getSplitCreateAndUpdateLogs = async <
   currentEndBlockNumber,
   maxBlockRange,
   cachedBlocks,
+  version,
 }: {
   splitAddress: Address
   publicClient: PublicClient<Transport, Chain>
@@ -217,6 +219,7 @@ export const getSplitCreateAndUpdateLogs = async <
     updateBlock?: bigint
     latestScannedBlock: bigint
   }
+  version?: SplitV2Versions
 }): Promise<{
   blockRange: bigint
   createLog: SplitCreatedLogType
@@ -299,6 +302,7 @@ export const getSplitCreateAndUpdateLogs = async <
               addresses,
               startBlockNumber,
               cachedBlocks,
+              version,
             })
           },
           blockRange,
@@ -367,6 +371,7 @@ export const getSplitCreateAndUpdateLogs = async <
               addresses,
               startBlockNumber,
               cachedBlocks,
+              version,
             })
           },
           blockRange,
@@ -542,6 +547,58 @@ export const searchLogs = async <
   }
 
   return { blockRange, createLog, updateLog }
+}
+
+export const searchLog = async <
+  SplitUpdatedEventName extends SplitUpdatedEventType['name'],
+  SplitUpdatedLogType extends GetLogsReturnType<
+    SplitUpdatedEventType,
+    [SplitUpdatedEventType],
+    true,
+    bigint,
+    bigint,
+    SplitUpdatedEventName
+  >[0],
+>({
+  formattedSplitAddress,
+  publicClient,
+  splitUpdatedEvent,
+  blockNumber,
+}: {
+  formattedSplitAddress: Address
+  publicClient: PublicClient<Transport, Chain>
+  splitCreatedEvent: SplitCreatedEventType
+  splitUpdatedEvent: SplitUpdatedEventType
+  address: Address
+  blockNumber: bigint
+}): Promise<{
+  updateLog?: SplitUpdatedLogType
+}> => {
+  let updateLog: SplitUpdatedLogType | undefined
+
+  try {
+    const block = await publicClient.getBlock({
+      blockNumber,
+      includeTransactions: true,
+    })
+
+    const logs = await publicClient.getLogs({
+      blockHash: block.hash,
+      event: splitUpdatedEvent,
+    })
+
+    logs.map((log) => {
+      const shouldSet =
+        getAddress(log.address) === formattedSplitAddress &&
+        (!updateLog ||
+          (log.blockNumber === updateLog.blockNumber &&
+            log.logIndex > updateLog.logIndex))
+      if (shouldSet) updateLog = log as SplitUpdatedLogType
+    })
+  } catch (error) {
+    if (!(error instanceof Error)) throw error
+  }
+  return { updateLog }
 }
 
 const handleLogsError = async <CallbackReturn>({

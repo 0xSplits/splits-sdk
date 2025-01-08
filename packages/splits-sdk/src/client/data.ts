@@ -521,7 +521,12 @@ export class DataClient {
 
     const response = await this._loadAccount(splitAddress, chainId)
 
-    if (!response || (response.type !== 'split' && response.type !== 'splitV2'))
+    if (
+      !response ||
+      (response.type !== 'split' &&
+        response.type !== 'splitV2' &&
+        response.type !== 'splitV2o1')
+    )
       throw new AccountNotFoundError('split', splitAddress, chainId)
 
     return await this.formatSplit(response)
