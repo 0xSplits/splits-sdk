@@ -2,6 +2,7 @@ import {
   Address,
   Chain,
   getAddress,
+  getContract,
   GetLogsReturnType,
   PublicClient,
   Transport,
@@ -17,6 +18,7 @@ import { splitMainPolygonAbi, splitV2ABI } from '../constants/abi'
 import { sleep } from '.'
 import { AccountNotFoundError } from '../errors'
 import { SplitV2Versions } from '../subgraph/types'
+import { splitV2o1Abi } from '../constants/abi/splitV2o1'
 
 /**
  * Retries a function n number of times with exponential backoff before giving up
@@ -257,6 +259,7 @@ export const getSplitCreateAndUpdateLogs = async <
     endBlock,
     defaultBlockRange,
     maxBlockRange,
+    version,
   })
 
   createLog = searchCreateLog
@@ -419,6 +422,7 @@ export const searchLogs = async <
   maxBlockRange,
   currentUpdateLog,
   cachedBlocks,
+  version,
 }: {
   formattedSplitAddress: Address
   publicClient: PublicClient<Transport, Chain>
@@ -436,6 +440,7 @@ export const searchLogs = async <
     updateBlock?: bigint
     latestScannedBlock: bigint
   }
+  version?: SplitV2Versions
 }): Promise<{
   blockRange: bigint
   createLog?: SplitCreatedLogType
@@ -443,6 +448,48 @@ export const searchLogs = async <
 }> => {
   let createLog: SplitCreatedLogType | undefined = undefined
   let updateLog: SplitUpdatedLogType | undefined = currentUpdateLog
+
+  if (version === 'splitV2o1') {
+    const splitContract = getContract({
+      address: formattedSplitAddress,
+      abi: splitV2o1Abi,
+      publicClient,
+    })
+
+    const blockNumber = await splitContract.read.updateBlockNumber()
+    if (currentUpdateLog && blockNumber === currentUpdateLog.blockNumber) {
+      return {
+        blockRange: BigInt(1),
+        updateLog,
+        createLog,
+      }
+    } else {
+      const logs = await publicClient.getLogs({
+        events: [splitUpdatedEvent],
+        address: [formattedSplitAddress],
+        strict: true,
+        fromBlock: blockNumber,
+        toBlock: blockNumber,
+      })
+      logs.forEach((log) => {
+        if (log.eventName === 'SplitUpdated') {
+          const shouldSet =
+            getAddress(log.address) === formattedSplitAddress &&
+            (!updateLog ||
+              log.blockNumber > updateLog.blockNumber ||
+              (log.blockNumber === updateLog.blockNumber &&
+                log.logIndex > updateLog.logIndex))
+          if (shouldSet) updateLog = log as SplitUpdatedLogType
+        }
+      })
+
+      return {
+        blockRange: BigInt(1),
+        updateLog,
+        createLog,
+      }
+    }
+  }
 
   let blockRange
   if (defaultBlockRange) blockRange = defaultBlockRange
