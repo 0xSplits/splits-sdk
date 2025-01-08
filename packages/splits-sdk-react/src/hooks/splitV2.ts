@@ -9,7 +9,7 @@ import {
   SplitV2ExecCallsConfig,
   CallData,
 } from '@0xsplits/splits-sdk'
-import { splitV2FactoryABI } from '@0xsplits/splits-sdk/constants/abi'
+import { splitV2o1FactoryAbi } from '@0xsplits/splits-sdk/constants/abi'
 
 import { SplitsContext } from '../context'
 import { ContractExecutionStatus, RequestError } from '../types'
@@ -54,7 +54,7 @@ export const useCreateSplitV2 = (): {
         const event = events?.[0]
         const decodedLog = event
           ? decodeEventLog({
-              abi: splitV2FactoryABI,
+              abi: splitV2o1FactoryAbi,
               data: event.data,
               topics: event.topics,
             })
