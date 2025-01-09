@@ -217,7 +217,7 @@ export const getSplitCreateAndUpdateLogs = async <
   currentEndBlockNumber?: bigint
   maxBlockRange?: bigint // if this exists, restricts which ranges we will check at the beginning
   cachedBlocks?: {
-    createBlock: bigint
+    createBlock?: bigint
     updateBlock?: bigint
     latestScannedBlock: bigint
   }

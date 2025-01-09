@@ -361,7 +361,7 @@ class SplitV2Transactions extends BaseTransactions {
     chainId: number
     cachedData?: {
       blocks?: {
-        createBlock: bigint
+        createBlock?: bigint
         updateBlock?: bigint
         latestScannedBlock: bigint
       }
@@ -1081,6 +1081,19 @@ export class SplitV2Client extends SplitV2Transactions {
     })
   }
 
+  async getSplitVersion({
+    splitAddress,
+    chainId,
+  }: {
+    splitAddress: Address
+    chainId: number
+  }): Promise<SplitV2Versions> {
+    return this._getSplitVersion({
+      splitAddress,
+      chainId,
+    })
+  }
+
   async getSplitMetadataViaProvider({
     splitAddress,
     chainId,
@@ -1090,7 +1103,7 @@ export class SplitV2Client extends SplitV2Transactions {
     chainId?: number
     cachedData?: {
       blocks?: {
-        createBlock: bigint
+        createBlock?: bigint
         updateBlock?: bigint
         latestScannedBlock: bigint
       }

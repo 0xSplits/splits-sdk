@@ -52,7 +52,7 @@ export const useSplitMetadataViaProvider = (
       blockRange?: bigint
       controller?: Address
       blocks?: {
-        createBlock: bigint
+        createBlock?: bigint
         updateBlock?: bigint
         latestScannedBlock: bigint
       }
@@ -140,6 +140,13 @@ export const useSplitMetadataViaProvider = (
           ? splitV1UpdatedEvent
           : splitV2UpdatedEvent
 
+        const version = splitV2Exists
+          ? await splitsV2Client.getSplitVersion({
+              splitAddress: formattedSplitAddress,
+              chainId,
+            })
+          : undefined
+
         let blockRange =
           cachedBlockRange ??
           (await getLargestValidBlockRange({ publicClient }))
@@ -177,6 +184,7 @@ export const useSplitMetadataViaProvider = (
               endBlock: currentBlockNumber,
               startBlock,
               defaultBlockRange: blockRange,
+              version,
             })
 
             blockRange = searchBlockRange
@@ -214,7 +222,7 @@ export const useSplitMetadataViaProvider = (
             updateLog = updateLog ? updateLog : cachedUpdateLog
           }
 
-          if (!createLog)
+          if (!createLog && (splitV1Exists || version === 'splitV2'))
             throw new AccountNotFoundError(
               'split',
               formattedSplitAddress,
@@ -244,7 +252,7 @@ export const useSplitMetadataViaProvider = (
           blockRange,
           controller: split.controller?.address ?? zeroAddress,
           blocks: {
-            createBlock: createLog.blockNumber,
+            createBlock: createLog?.blockNumber,
             updateBlock: updateLog?.blockNumber,
             latestScannedBlock: lastBlockNumber,
           },
