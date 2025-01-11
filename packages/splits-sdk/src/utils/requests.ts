@@ -204,7 +204,7 @@ export const getSplitCreateAndUpdateLogs = async <
   currentEndBlockNumber,
   maxBlockRange,
   cachedBlocks,
-  version,
+  splitV2Version,
 }: {
   splitAddress: Address
   publicClient: PublicClient<Transport, Chain>
@@ -221,7 +221,7 @@ export const getSplitCreateAndUpdateLogs = async <
     updateBlock?: bigint
     latestScannedBlock: bigint
   }
-  version?: SplitV2Versions
+  splitV2Version?: SplitV2Versions
 }): Promise<{
   blockRange: bigint
   createLog?: SplitCreatedLogType
@@ -259,7 +259,7 @@ export const getSplitCreateAndUpdateLogs = async <
     endBlock,
     defaultBlockRange,
     maxBlockRange,
-    version,
+    splitV2Version,
   })
 
   createLog = searchCreateLog
@@ -305,7 +305,7 @@ export const getSplitCreateAndUpdateLogs = async <
               addresses,
               startBlockNumber,
               cachedBlocks,
-              version,
+              splitV2Version,
             })
           },
           blockRange,
@@ -313,7 +313,7 @@ export const getSplitCreateAndUpdateLogs = async <
       }
     }
 
-    if (!createLog && version === 'splitV2')
+    if (!createLog && splitV2Version === 'splitV2')
       throw new AccountNotFoundError(
         'Split',
         formattedSplitAddress,
@@ -374,7 +374,7 @@ export const getSplitCreateAndUpdateLogs = async <
               addresses,
               startBlockNumber,
               cachedBlocks,
-              version,
+              splitV2Version,
             })
           },
           blockRange,
@@ -422,7 +422,7 @@ export const searchLogs = async <
   maxBlockRange,
   currentUpdateLog,
   cachedBlocks,
-  version,
+  splitV2Version,
 }: {
   formattedSplitAddress: Address
   publicClient: PublicClient<Transport, Chain>
@@ -440,7 +440,7 @@ export const searchLogs = async <
     updateBlock?: bigint
     latestScannedBlock: bigint
   }
-  version?: SplitV2Versions
+  splitV2Version?: SplitV2Versions
 }): Promise<{
   blockRange: bigint
   createLog?: SplitCreatedLogType
@@ -449,7 +449,7 @@ export const searchLogs = async <
   let createLog: SplitCreatedLogType | undefined = undefined
   let updateLog: SplitUpdatedLogType | undefined = currentUpdateLog
 
-  if (version === 'splitV2o1') {
+  if (splitV2Version === 'splitV2o1') {
     const splitContract = getContract({
       address: formattedSplitAddress,
       abi: splitV2o1Abi,

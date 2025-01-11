@@ -113,6 +113,7 @@ export const useSplitMetadataViaProvider = (
             chainId,
           }),
         ])
+
         if (splitV1Exists && splitV2Exists)
           throw new Error('Found v1 and v2 split')
         if (!splitV1Exists && !splitV2Exists)
@@ -184,7 +185,7 @@ export const useSplitMetadataViaProvider = (
               endBlock: currentBlockNumber,
               startBlock,
               defaultBlockRange: blockRange,
-              version,
+              splitV2Version: version,
             })
 
             blockRange = searchBlockRange

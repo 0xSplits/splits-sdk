@@ -177,7 +177,9 @@ export const DisplaySplitViaProvider = ({
         ...(localStorageData?.blocks?.createBlock
           ? {
               blocks: {
-                createBlock: BigInt(localStorageData?.blocks?.createBlock),
+                createBlock: localStorageData?.blocks?.createBlock
+                  ? BigInt(localStorageData?.blocks?.createBlock)
+                  : undefined,
                 updateBlock: localStorageData?.blocks?.updateBlock
                   ? BigInt(localStorageData?.blocks?.updateBlock)
                   : undefined,

@@ -387,7 +387,7 @@ class SplitV2Transactions extends BaseTransactions {
         startBlockNumber: getSplitV2FactoriesStartBlock(chainId),
         cachedBlocks: cachedData?.blocks,
         defaultBlockRange: cachedData?.blockRange,
-        version,
+        splitV2Version: version,
       })
 
     const split = await this._buildSplitFromLogs({
