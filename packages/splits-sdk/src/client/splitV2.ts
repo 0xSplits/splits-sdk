@@ -423,23 +423,7 @@ class SplitV2Transactions extends BaseTransactions {
     let distributorFeePercent
     let type: 'push' | 'pull'
 
-    if (createLog) {
-      recipients = createLog.args.splitParams.recipients.map((recipient, i) => {
-        return {
-          recipient: {
-            address: recipient,
-          },
-          ownership: createLog!.args.splitParams.allocations[i],
-          percentAllocation: fromBigIntToPercent(
-            createLog!.args.splitParams.allocations[i],
-            createLog!.args.splitParams.totalAllocation,
-          ),
-        }
-      })
-      distributorFeePercent = fromBigIntToPercent(
-        createLog.args.splitParams.distributionIncentive,
-      )
-    } else if (updateLog) {
+    if (updateLog) {
       recipients = updateLog.args._split.recipients.map((recipient, i) => {
         return {
           recipient: {
@@ -454,6 +438,22 @@ class SplitV2Transactions extends BaseTransactions {
       })
       distributorFeePercent = fromBigIntToPercent(
         updateLog.args._split.distributionIncentive,
+      )
+    } else if (createLog) {
+      recipients = createLog.args.splitParams.recipients.map((recipient, i) => {
+        return {
+          recipient: {
+            address: recipient,
+          },
+          ownership: createLog!.args.splitParams.allocations[i],
+          percentAllocation: fromBigIntToPercent(
+            createLog!.args.splitParams.allocations[i],
+            createLog!.args.splitParams.totalAllocation,
+          ),
+        }
+      })
+      distributorFeePercent = fromBigIntToPercent(
+        createLog.args.splitParams.distributionIncentive,
       )
     }
 
