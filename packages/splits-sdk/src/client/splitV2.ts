@@ -489,9 +489,10 @@ class SplitV2Transactions extends BaseTransactions {
       newPotentialController: {
         address: zeroAddress,
       },
+      createdBlock: createLog ? Number(createLog?.blockNumber) : undefined,
       updateBlock: updateLog
         ? Number(updateLog.blockNumber)
-        : Number(createLog?.blockNumber),
+        : Number(createLog!.blockNumber),
     }
     return split
   }

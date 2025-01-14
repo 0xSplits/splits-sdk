@@ -634,6 +634,7 @@ class SplitV1Transactions extends BaseTransactions {
       newPotentialController: {
         address: zeroAddress,
       },
+      createdBlock: Number(createLog.blockNumber),
       updateBlock: Number(createLog.blockNumber),
     }
 
@@ -656,6 +657,7 @@ class SplitV1Transactions extends BaseTransactions {
     split.distributorFeePercent = fromBigIntToPercent(
       BigInt(updateLog.args.distributorFee),
     )
+    split.updateBlock = Number(updateLog.blockNumber)
 
     return split
   }
