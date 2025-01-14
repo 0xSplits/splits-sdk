@@ -449,6 +449,11 @@ export const searchLogs = async <
   let createLog: SplitCreatedLogType | undefined = undefined
   let updateLog: SplitUpdatedLogType | undefined = currentUpdateLog
 
+  console.log('IN HERE')
+  console.log(splitV2Version)
+  console.log(formattedSplitAddress)
+  console.log(publicClient.chain.id)
+
   if (splitV2Version === 'splitV2o1') {
     const splitContract = getContract({
       address: formattedSplitAddress,
