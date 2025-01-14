@@ -576,6 +576,11 @@ export class SplitV2Client extends SplitV2Transactions {
       transactionType: TransactionType.Transaction,
       ...clientArgs,
     })
+
+    const splitV2o1CreatedEvents = splitV2o1FactoryAbi.filter((abi) => {
+      return abi.type === 'event' && abi.name === 'SplitCreated'
+    })
+
     this.eventTopics = {
       splitCreated: [
         encodeEventTopics({
@@ -583,8 +588,10 @@ export class SplitV2Client extends SplitV2Transactions {
           eventName: 'SplitCreated',
         })[0],
         encodeEventTopics({
-          abi: splitV2o1FactoryAbi,
-          eventName: 'SplitCreated',
+          abi: [splitV2o1CreatedEvents[0]],
+        })[0],
+        encodeEventTopics({
+          abi: [splitV2o1CreatedEvents[1]],
         })[0],
       ],
       splitUpdated: [
