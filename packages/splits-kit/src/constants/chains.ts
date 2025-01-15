@@ -14,6 +14,7 @@ import {
   optimismSepolia,
   baseSepolia,
   zoraSepolia,
+  shape,
 } from 'viem/chains'
 
 export const SupportedChainsList = [
@@ -28,11 +29,11 @@ export const SupportedChainsList = [
   aurora,
   zora,
   base,
-
   sepolia,
   optimismSepolia,
   baseSepolia,
   zoraSepolia,
+  shape,
 ] as const
 
 type SupportedChain = (typeof SupportedChainsList)[number]
@@ -161,6 +162,13 @@ export const CHAIN_INFO: ChainInfo = {
   [zoraSepolia.id]: {
     label: 'Zora Sepolia',
     logoUrl: '/networks/zora_logo.svg',
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
+  },
+  [shape.id]: {
+    label: 'Shape',
+    logoUrl: '/networks/shape_logo.svg',
     nativeCurrency: {
       symbol: 'ETH',
     },

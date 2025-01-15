@@ -168,8 +168,9 @@ export const useSplitMetadataViaProvider = (
             currentBlockNumber > splitV1StartBlock &&
             currentBlockNumber > splitV2StartBlock
           ) {
-            const startBlock =
+            const rangeStart =
               currentBlockNumber - blockRange * BigInt(LOGS_SEARCH_BATCH_SIZE)
+            const startBlock = rangeStart >= BigInt(0) ? rangeStart : BigInt(0)
             setCurrentBlockRange({ from: startBlock, to: currentBlockNumber })
 
             const {
