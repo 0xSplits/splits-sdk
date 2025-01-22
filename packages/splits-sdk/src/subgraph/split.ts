@@ -178,6 +178,10 @@ export const formatGqlSplit: (arg0: GqlSplit) => ISplit = (gqlSplit) => {
 
 // Should only be called by formatSplit on SplitsClient
 export const protectedFormatSplit = (gqlSplit: ISplit): Split => {
+  const totalOwnership = gqlSplit.recipients.reduce((acc, recipient) => {
+    return acc + recipient.ownership
+  }, BigInt(0))
+
   return {
     type: gqlSplit.type === 'split' ? 'Split' : 'SplitV2',
     address: gqlSplit.address,
@@ -201,16 +205,22 @@ export const protectedFormatSplit = (gqlSplit: ISplit): Split => {
       .sort((a, b) => {
         return a.idx - b.idx
       })
-      .map((gqlRecipient) => formatRecipient(gqlRecipient)),
+      .map((gqlRecipient) => formatRecipient(gqlRecipient, totalOwnership)),
   }
 }
 
-export const formatRecipient = (gqlRecipient: IHolder) => {
+export const formatRecipient = (
+  gqlRecipient: IHolder,
+  totalOwnership: bigint,
+) => {
   return {
     recipient: {
       address: gqlRecipient.address,
     },
     ownership: gqlRecipient.ownership,
-    percentAllocation: fromBigIntToPercent(gqlRecipient.ownership),
+    percentAllocation: fromBigIntToPercent(
+      gqlRecipient.ownership,
+      totalOwnership,
+    ),
   }
 }
