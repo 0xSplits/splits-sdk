@@ -21,7 +21,7 @@ import { SplitV2Type } from '@0xsplits/splits-sdk/types'
 import {
   splitMainEthereumAbi,
   splitMainPolygonAbi,
-  splitV2FactoryABI,
+  splitV2o1FactoryAbi,
 } from '@0xsplits/splits-sdk/constants/abi'
 import { mainnet } from 'viem/chains'
 
@@ -149,7 +149,7 @@ const CreateSplitForm = ({
         const events = await createSplitV2(args)
         if (events) {
           const log = decodeEventLog({
-            abi: splitV2FactoryABI,
+            abi: splitV2o1FactoryAbi,
             data: events[0].data,
             topics: events[0].topics,
           })

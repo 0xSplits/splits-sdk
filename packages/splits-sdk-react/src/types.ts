@@ -15,7 +15,7 @@ export type SplitProviderSearchCacheData = {
   blockRange: bigint
   controller: Address
   blocks: {
-    createBlock: bigint
+    createBlock?: bigint
     updateBlock?: bigint
     latestScannedBlock: bigint
   }

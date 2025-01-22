@@ -573,6 +573,13 @@ class SplitV1Transactions extends BaseTransactions {
         defaultBlockRange: cachedData?.blockRange,
       })
 
+    if (!createLog)
+      throw new AccountNotFoundError(
+        'Split',
+        formattedSplitAddress,
+        publicClient.chain.id,
+      )
+
     const split = await this._buildSplitFromLogs({
       splitAddress: formattedSplitAddress,
       chainId,
@@ -628,6 +635,7 @@ class SplitV1Transactions extends BaseTransactions {
         address: zeroAddress,
       },
       createdBlock: Number(createLog.blockNumber),
+      updateBlock: Number(createLog.blockNumber),
     }
 
     if (!updateLog) return split
@@ -649,6 +657,7 @@ class SplitV1Transactions extends BaseTransactions {
     split.distributorFeePercent = fromBigIntToPercent(
       BigInt(updateLog.args.distributorFee),
     )
+    split.updateBlock = Number(updateLog.blockNumber)
 
     return split
   }

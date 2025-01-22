@@ -52,7 +52,7 @@ export const useSplitMetadataViaProvider = (
       blockRange?: bigint
       controller?: Address
       blocks?: {
-        createBlock: bigint
+        createBlock?: bigint
         updateBlock?: bigint
         latestScannedBlock: bigint
       }
@@ -113,6 +113,7 @@ export const useSplitMetadataViaProvider = (
             chainId,
           }),
         ])
+
         if (splitV1Exists && splitV2Exists)
           throw new Error('Found v1 and v2 split')
         if (!splitV1Exists && !splitV2Exists)
@@ -139,6 +140,13 @@ export const useSplitMetadataViaProvider = (
         const splitUpdatedEvent = splitV1Exists
           ? splitV1UpdatedEvent
           : splitV2UpdatedEvent
+
+        const version = splitV2Exists
+          ? await splitsV2Client.getSplitVersion({
+              splitAddress: formattedSplitAddress,
+              chainId,
+            })
+          : undefined
 
         let blockRange =
           cachedBlockRange ??
@@ -178,6 +186,7 @@ export const useSplitMetadataViaProvider = (
               endBlock: currentBlockNumber,
               startBlock,
               defaultBlockRange: blockRange,
+              splitV2Version: version,
             })
 
             blockRange = searchBlockRange
@@ -186,6 +195,7 @@ export const useSplitMetadataViaProvider = (
 
             if (createLog) break
             if (updateLog && cachedCreateBlock) break
+            if (updateLog && version === 'splitV2o1') break
 
             currentBlockNumber = startBlock - BigInt(1)
           }
@@ -215,7 +225,7 @@ export const useSplitMetadataViaProvider = (
             updateLog = updateLog ? updateLog : cachedUpdateLog
           }
 
-          if (!createLog)
+          if (!createLog && (splitV1Exists || version === 'splitV2'))
             throw new AccountNotFoundError(
               'split',
               formattedSplitAddress,
@@ -245,7 +255,7 @@ export const useSplitMetadataViaProvider = (
           blockRange,
           controller: split.controller?.address ?? zeroAddress,
           blocks: {
-            createBlock: createLog.blockNumber,
+            createBlock: createLog?.blockNumber,
             updateBlock: updateLog?.blockNumber,
             latestScannedBlock: lastBlockNumber,
           },
