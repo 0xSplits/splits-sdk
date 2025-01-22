@@ -365,7 +365,7 @@ export const CHAIN_INFO: {
     startBlockV2: 5448039,
   },
   [ChainId.WORLDCHAIN]: {
-    startBlock: 5448039,
+    startBlock: 9116639,
     nativeCurrency: {
       symbol: 'ETH',
     },
