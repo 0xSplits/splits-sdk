@@ -16,6 +16,7 @@ import {
   zoraSepolia,
   Chain,
   shape,
+  worldchain,
 } from 'viem/chains'
 
 import { CHAIN_INFO, SupportedChainId } from '../../src/constants/chains'
@@ -148,6 +149,13 @@ export const STORYBOOK_CHAIN_INFO: ChainInfo = {
     rpcUrls: [
       // TODO: rpc url
       `https://shape-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
+    ],
+  },
+  [worldchain.id]: {
+    ...CHAIN_INFO[worldchain.id],
+    viemChain: worldchain,
+    rpcUrls: [
+      `https://worldchain-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
     ],
   },
 }
