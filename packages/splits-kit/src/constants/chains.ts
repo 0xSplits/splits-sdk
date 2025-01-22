@@ -15,6 +15,7 @@ import {
   baseSepolia,
   zoraSepolia,
   shape,
+  worldchain,
 } from 'viem/chains'
 
 export const SupportedChainsList = [
@@ -34,6 +35,7 @@ export const SupportedChainsList = [
   baseSepolia,
   zoraSepolia,
   shape,
+  worldchain,
 ] as const
 
 type SupportedChain = (typeof SupportedChainsList)[number]
@@ -169,6 +171,13 @@ export const CHAIN_INFO: ChainInfo = {
   [shape.id]: {
     label: 'Shape',
     logoUrl: '/networks/shape_logo.svg',
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
+  },
+  [worldchain.id]: {
+    label: 'World Chain',
+    logoUrl: '/networks/worldchain_logo.svg',
     nativeCurrency: {
       symbol: 'ETH',
     },
