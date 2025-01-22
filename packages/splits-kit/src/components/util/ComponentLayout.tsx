@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import Link from './Link'
-import { CHAIN_INFO } from '../../constants/chains'
+import { CHAIN_INFO, isSupportedChainId } from '../../constants/chains'
 import SplitsLogo from './SplitsLogo'
 
 interface IComponentLayout {
@@ -59,8 +59,7 @@ const ComponentLayout = ({
     system: userPrefersDark ? 'dark' : '',
   }
 
-  const unsupportedChainId =
-    chainId && !Object.keys(CHAIN_INFO).includes(chainId.toString())
+  const unsupportedChainId = !isSupportedChainId(chainId)
   const errorDisplay = unsupportedChainId
     ? {
         title: 'Unsupported Chain ID',
@@ -91,7 +90,7 @@ const ComponentLayout = ({
           {errorDisplay ? (
             <div className="text-center my-8 space-y-2">
               <div className="text-lg">{errorDisplay.title}</div>
-              <div className="text-xs max-w-md">{errorDisplay.body}</div>
+              <div className="text-xs">{errorDisplay.body}</div>
             </div>
           ) : (
             body

@@ -13,13 +13,13 @@ import {
 } from 'react-hook-form'
 import { XMarkIcon } from '@heroicons/react/20/solid'
 import { Dictionary } from 'lodash'
+import { isAddress } from 'viem'
+import { normalize } from 'viem/ens'
+import { useEnsName, useEnsAddress } from 'wagmi'
 
 import { MiniButton } from '../util/Button'
 import { shortenAddress, shortenENS } from '../../utils/address'
-import { useEnsName, useEnsAddress } from 'wagmi'
 import { IAddress } from '../../types'
-import { SupportedChainId } from '../../constants/chains'
-import { isAddress } from 'viem'
 import SplitsAvatar from '../util/SplitsAvatar'
 
 const AddressInput = <FormType extends FieldValues>({
@@ -32,7 +32,7 @@ const AddressInput = <FormType extends FieldValues>({
   onClearInput,
   autoFocus,
   validAddressDisplay,
-  chainId = 1,
+  supportsEns,
 }: {
   control: Control<FormType>
   inputName: Path<FormType>
@@ -45,7 +45,7 @@ const AddressInput = <FormType extends FieldValues>({
   onClearInput?: () => void
   autoFocus?: boolean
   validAddressDisplay?: (address: string) => JSX.Element
-  chainId?: SupportedChainId
+  supportsEns: boolean
 }): JSX.Element => {
   const [addressEns, setAddressEns] = useState('')
   const inputVal = useWatch({
@@ -58,18 +58,21 @@ const AddressInput = <FormType extends FieldValues>({
   })
   const error = getNestedObj(errors, inputName) as FieldError
 
-  const { data, isError, isLoading } = useEnsName({
-    address: inputVal,
-    chainId,
-    enabled: inputVal && isAddress(inputVal),
+  const { data: ensName, isLoading: isLoadingEnsName } = useEnsName({
+    address:
+      supportsEns && inputVal && isAddress(inputVal) ? inputVal : undefined,
   })
 
-  const { data: ensResolverData, isLoading: ensResolverLoading } =
-    useEnsAddress({
-      name: inputVal,
-      chainId,
-      enabled: inputVal && inputVal.endsWith('.eth'),
-    })
+  const {
+    data: ensResolverData,
+    isError: ensResolverError,
+    isLoading: ensResolverLoading,
+  } = useEnsAddress({
+    name:
+      supportsEns && inputVal && inputVal.endsWith('.eth')
+        ? normalize(inputVal)
+        : undefined,
+  })
 
   const onValidEns = useCallback(
     (address: string) => {
@@ -90,16 +93,32 @@ const AddressInput = <FormType extends FieldValues>({
     [],
   )
 
+  // Handle ens input
   useEffect(() => {
-    if ((inputVal && !inputVal.endsWith('.eth')) || ensResolverLoading) return
+    if (!inputVal) return
+    if (!inputVal.endsWith('.eth') || ensResolverLoading) return
+
+    if (ensResolverError) {
+      onInvalidEns()
+      return
+    }
     if (ensResolverData) onValidEns(ensResolverData)
   }, [ensResolverData, ensResolverLoading, inputVal, onValidEns])
 
+  // Handle address input
   useEffect(() => {
-    if ((inputVal && inputVal.endsWith('.eth')) || isLoading) return
-    if (isError) onInvalidEns()
-    if (data) onValidAddressWithEns(data)
-  }, [data, inputVal, isError, isLoading, onInvalidEns, onValidAddressWithEns])
+    if (!inputVal) return
+    if (!isAddress(inputVal) || isLoadingEnsName) return
+
+    if (ensName) onValidAddressWithEns(ensName)
+  }, [
+    ensName,
+    inputVal,
+    ensResolverError,
+    isLoadingEnsName,
+    onInvalidEns,
+    onValidAddressWithEns,
+  ])
 
   const clearInput = useCallback(() => {
     const typedAddress = '' as PathValue<FormType, Path<FormType>>

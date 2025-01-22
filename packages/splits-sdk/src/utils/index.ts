@@ -190,7 +190,10 @@ export const getSplitType = (
   chainId: number,
   factoryAddress: Address,
 ): SplitV2Type => {
-  if (factoryAddress === getSplitV2FactoryAddress(chainId, SplitV2Type.Pull))
+  if (
+    getAddress(factoryAddress) ===
+    getSplitV2FactoryAddress(chainId, SplitV2Type.Pull)
+  )
     return SplitV2Type.Pull
   return SplitV2Type.Push
 }
@@ -249,4 +252,8 @@ export const hashSplitV1: (
       [accounts, percentAllocations, distributorFee],
     ),
   )
+}
+
+export const sleep = (timeMs: number) => {
+  return new Promise((resolve) => setTimeout(resolve, timeMs))
 }

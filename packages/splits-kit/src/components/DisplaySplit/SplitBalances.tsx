@@ -1,20 +1,22 @@
 import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
-import { FormattedSplitEarnings } from '@0xsplits/splits-sdk'
+import { FormattedSplitEarnings, Split } from '@0xsplits/splits-sdk'
 
 import DistributeBalance from './DistributeBalance'
 import { SupportedChainId } from '../../constants/chains'
 
 const SplitBalances = ({
   chainId,
-  address,
+  split,
   formattedSplitEarnings,
+  shouldWithdrawOnDistribute,
   onSuccess,
   onError,
 }: {
   chainId: SupportedChainId
-  address: string
+  split: Split
   formattedSplitEarnings: FormattedSplitEarnings | undefined
-  onSuccess?: (token: string) => void
+  shouldWithdrawOnDistribute: boolean
+  onSuccess: (token: string) => void
   onError?: (error: RequestError) => void
 }) => {
   const balances = formattedSplitEarnings?.activeBalances
@@ -30,7 +32,8 @@ const SplitBalances = ({
               key={idx}
               token={token}
               balance={balance}
-              address={address}
+              split={split}
+              shouldWithdrawOnDistribute={shouldWithdrawOnDistribute}
               onSuccess={onSuccess}
               onError={onError}
             />

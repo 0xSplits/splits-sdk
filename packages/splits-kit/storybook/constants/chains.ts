@@ -1,11 +1,7 @@
 import {
   mainnet,
-  goerli,
   polygon,
-  polygonMumbai,
-  optimismGoerli,
   optimism,
-  arbitrumGoerli,
   arbitrum,
   gnosis,
   fantom,
@@ -14,8 +10,13 @@ import {
   aurora,
   base,
   zora,
-  zoraTestnet,
+  sepolia,
+  optimismSepolia,
+  baseSepolia,
+  zoraSepolia,
   Chain,
+  shape,
+  worldchain,
 } from 'viem/chains'
 
 import { CHAIN_INFO, SupportedChainId } from '../../src/constants/chains'
@@ -42,25 +43,11 @@ export const STORYBOOK_CHAIN_INFO: ChainInfo = {
       `https://eth-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
     ],
   },
-  [goerli.id]: {
-    ...CHAIN_INFO[goerli.id],
-    viemChain: goerli,
-    rpcUrls: [
-      `https://eth-goerli.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
-    ],
-  },
   [polygon.id]: {
     ...CHAIN_INFO[polygon.id],
     viemChain: polygon,
     rpcUrls: [
       `https://polygon-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
-    ],
-  },
-  [polygonMumbai.id]: {
-    ...CHAIN_INFO[polygonMumbai.id],
-    viemChain: polygonMumbai,
-    rpcUrls: [
-      `https://polygon-mumbai.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
     ],
   },
   [optimism.id]: {
@@ -70,25 +57,11 @@ export const STORYBOOK_CHAIN_INFO: ChainInfo = {
       `https://opt-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
     ],
   },
-  [optimismGoerli.id]: {
-    ...CHAIN_INFO[optimismGoerli.id],
-    viemChain: optimismGoerli,
-    rpcUrls: [
-      `https://opt-goerli.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
-    ],
-  },
   [arbitrum.id]: {
     ...CHAIN_INFO[arbitrum.id],
     viemChain: arbitrum,
     rpcUrls: [
       `https://arb-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
-    ],
-  },
-  [arbitrumGoerli.id]: {
-    ...CHAIN_INFO[arbitrumGoerli.id],
-    viemChain: arbitrumGoerli,
-    rpcUrls: [
-      `https://blissful-restless-butterfly.arbitrum-goerli.quiknode.pro/${process.env.STORYBOOK_ARBITRUM_GOERLI_QUICKNODE_API_KEY}/`,
     ],
   },
   [gnosis.id]: {
@@ -131,16 +104,58 @@ export const STORYBOOK_CHAIN_INFO: ChainInfo = {
     viemChain: zora,
     rpcUrls: ['https://rpc.zora.energy/'],
   },
-  [zoraTestnet.id]: {
-    ...CHAIN_INFO[zoraTestnet.id],
-    viemChain: zoraTestnet,
-    rpcUrls: ['https://testnet.rpc.zora.energy/'],
-  },
   [base.id]: {
     ...CHAIN_INFO[base.id],
     viemChain: base,
     rpcUrls: [
       `https://base-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
+    ],
+  },
+  [sepolia.id]: {
+    ...CHAIN_INFO[sepolia.id],
+    viemChain: sepolia,
+    rpcUrls: [
+      // TODO: rpc url
+      `https://sepolia.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
+    ],
+  },
+  [optimismSepolia.id]: {
+    ...CHAIN_INFO[optimismSepolia.id],
+    viemChain: optimismSepolia,
+    rpcUrls: [
+      // TODO: rpc url
+      `https://base-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
+    ],
+  },
+  [baseSepolia.id]: {
+    ...CHAIN_INFO[baseSepolia.id],
+    viemChain: baseSepolia,
+    rpcUrls: [
+      // TODO: rpc url
+      `https://base-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
+    ],
+  },
+  [zoraSepolia.id]: {
+    ...CHAIN_INFO[zoraSepolia.id],
+    viemChain: zoraSepolia,
+    rpcUrls: [
+      // TODO: rpc url
+      `https://base-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
+    ],
+  },
+  [shape.id]: {
+    ...CHAIN_INFO[shape.id],
+    viemChain: shape,
+    rpcUrls: [
+      // TODO: rpc url
+      `https://shape-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
+    ],
+  },
+  [worldchain.id]: {
+    ...CHAIN_INFO[worldchain.id],
+    viemChain: worldchain,
+    rpcUrls: [
+      `https://worldchain-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
     ],
   },
 }

@@ -17,5 +17,7 @@ export type Balance = {
 export type ICreateSplitForm = {
   recipients: Recipient[]
   distributorFee: number
-  controller: IAddress
+  owner: IAddress
 }
+
+export type SplitType = 'v1' | 'v2Pull' | 'v2Push'

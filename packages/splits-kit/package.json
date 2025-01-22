@@ -1,9 +1,21 @@
 {
   "name": "@0xsplits/splits-kit",
-  "version": "0.4.4",
+  "version": "1.0.0-alpha.32.15",
   "description": "UI Components for working with 0xSplits contracts",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./inputs": "./dist/components/inputs/index.js",
+    "./styles.css": "./dist/styles.css"
+  },
+  "typesVersions": {
+    "*": {
+      "inputs": [
+        "./dist/components/inputs/index.d.ts"
+      ]
+    }
+  },
   "keywords": [
     "0xSplits",
     "splits",
@@ -31,8 +43,8 @@
   },
   "homepage": "https://docs.splits.org/sdk-info/overview",
   "dependencies": {
-    "@0xsplits/splits-sdk": "^4.1.1",
-    "@0xsplits/splits-sdk-react": "^2.1.1",
+    "@0xsplits/splits-sdk": "workspace:*",
+    "@0xsplits/splits-sdk-react": "workspace:*",
     "@headlessui/react": "^1.7.17",
     "@heroicons/react": "^2.0.18",
     "@hookform/error-message": "^2.0.1",
@@ -42,13 +54,13 @@
     "react-blockies": "^1.4.1",
     "react-hook-form": "^7.47.0",
     "react-number-format": "^5.3.1",
-    "styled-components": "^6.1.0",
-    "viem": "^1.16.6",
-    "wagmi": "^1.4.5"
+    "styled-components": "^6.1.0"
   },
   "peerDependencies": {
     "react": "17.x.x || 18.x.x",
-    "react-dom": "17.x.x || 18.x.x"
+    "react-dom": "17.x.x || 18.x.x",
+    "viem": "2.x.x",
+    "wagmi": "2.x.x"
   },
   "devDependencies": {
     "@babel/core": "^7.23.2",

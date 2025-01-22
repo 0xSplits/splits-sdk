@@ -1,5 +1,8 @@
-import { Address } from 'viem'
+import { Address, GetLogsReturnType } from 'viem'
 import { SplitV2Type } from '../types'
+import { splitMainPolygonAbi } from './abi/splitMain'
+import { splitV2ABI } from './abi/splitV2'
+import { splitV2FactoryABI } from './abi/splitV2Factory'
 
 export const PERCENTAGE_SCALE = BigInt(1e6)
 
@@ -54,6 +57,16 @@ export const PULL_SPLIT_FACTORY_ADDRESS =
   '0x80f1B766817D04870f115fEBbcCADF8DBF75E017'
 export const PUSH_SPLIT_FACTORY_ADDRESS =
   '0xaDC87646f736d6A82e9a6539cddC488b2aA07f38'
+
+export const PULL_SPLIT_V2o1_FACTORY_ADDRESS =
+  '0x5cbA88D55Cec83caD5A105Ad40C8c9aF20bE21d1'
+export const PUSH_SPLIT_V2o1_FACTORY_ADDRESS =
+  '0xDc6259E13ec0621e6F19026b2e49D846525548Ed'
+
+export const PULL_SPLIT_V2o1_ADDRESS =
+  '0xF9C25250523Df26343222fC46de932355B850c97'
+export const PUSH_SPLIT_V2o1_ADDRESS =
+  '0x3f81D81e0884abD8Cc4583a704a9397972623214'
 
 export const getSplitMainAddress = (chainId: number): Address => {
   if (chainId === ChainId.BSC) return SPLIT_MAIN_ADDRESS_BSC
@@ -120,6 +133,19 @@ export const getSplitV2FactoryAddress = (
   else return PUSH_SPLIT_FACTORY_ADDRESS
 }
 
+export const getSplitV2o1FactoryAddress = (
+  _chainId: number,
+  type: SplitV2Type,
+): Address => {
+  if (type === SplitV2Type.Pull) return PULL_SPLIT_V2o1_FACTORY_ADDRESS
+  else return PUSH_SPLIT_V2o1_FACTORY_ADDRESS
+}
+
+export const getSplitV1StartBlock = (chainId: number): bigint => {
+  if (!CHAIN_INFO[chainId].startBlock) throw new Error('Chain not supported')
+  return BigInt(CHAIN_INFO[chainId].startBlock as number)
+}
+
 export const getSplitV2FactoriesStartBlock = (chainId: number): bigint => {
   if (!CHAIN_INFO[chainId].startBlockV2) throw new Error('Chain not supported')
   return BigInt(CHAIN_INFO[chainId].startBlockV2 as number)
@@ -141,6 +167,8 @@ export enum ChainId {
   BASE_SEPOLIA = 84532,
   FOUNDRY = 31337,
   BLAST = 81457,
+  SHAPE = 360,
+  WORLDCHAIN = 480,
 }
 
 export const ETHEREUM_CHAIN_IDS = [ChainId.MAINNET]
@@ -153,6 +181,8 @@ export const BSC_CHAIN_IDS = [ChainId.BSC]
 export const ZORA_CHAIN_IDS = [ChainId.ZORA, ChainId.ZORA_SEPOLIA]
 export const BASE_CHAIN_IDS = [ChainId.BASE, ChainId.BASE_SEPOLIA]
 export const BLAST_CHAIN_IDS = [ChainId.BLAST]
+export const SHAPE_CHAIN_IDS = [ChainId.SHAPE]
+export const WORLD_CHAIN_IDS = [ChainId.WORLDCHAIN]
 
 export const ALL_CHAIN_IDS = [
   ...ETHEREUM_CHAIN_IDS,
@@ -165,9 +195,25 @@ export const ALL_CHAIN_IDS = [
   ...ZORA_CHAIN_IDS,
   ...BASE_CHAIN_IDS,
   ...BLAST_CHAIN_IDS,
+  ...SHAPE_CHAIN_IDS,
+  ...WORLD_CHAIN_IDS,
 ]
 
-export const SPLITS_SUPPORTED_CHAIN_IDS = [3, 4, 42, ...ALL_CHAIN_IDS]
+export const SPLITS_SUPPORTED_CHAIN_IDS = [
+  3,
+  4,
+  42,
+  ...ETHEREUM_CHAIN_IDS,
+  ...ETHEREUM_TEST_CHAIN_IDS,
+  ...POLYGON_CHAIN_IDS,
+  ...OPTIMISM_CHAIN_IDS,
+  ...ARBITRUM_CHAIN_IDS,
+  ...GNOSIS_CHAIN_IDS,
+  ...BSC_CHAIN_IDS,
+  ...ZORA_CHAIN_IDS,
+  ...BASE_CHAIN_IDS,
+  ...BLAST_CHAIN_IDS,
+]
 
 export const SPLITS_V2_SUPPORTED_CHAIN_IDS = [
   ChainId.MAINNET,
@@ -184,6 +230,8 @@ export const SPLITS_V2_SUPPORTED_CHAIN_IDS = [
   ChainId.FOUNDRY,
   ChainId.GNOSIS,
   ChainId.BSC,
+  ChainId.SHAPE,
+  ChainId.WORLDCHAIN,
 ]
 
 export const SPLITS_SUBGRAPH_CHAIN_IDS = ALL_CHAIN_IDS.slice()
@@ -327,6 +375,20 @@ export const CHAIN_INFO: {
       symbol: 'ETH',
     },
   },
+  [ChainId.SHAPE]: {
+    startBlock: 5448039,
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
+    startBlockV2: 5448039,
+  },
+  [ChainId.WORLDCHAIN]: {
+    startBlock: 9116639,
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
+    startBlockV2: 9116639,
+  },
 }
 
 export enum TransactionType {
@@ -339,3 +401,44 @@ export enum TransactionType {
 export const ZERO = BigInt(0)
 export const ONE = BigInt(1)
 export const TWO = BigInt(2)
+
+export const NATIVE_TOKEN_ADDRESS: Address =
+  '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
+
+export const splitV1UpdatedEvent = splitMainPolygonAbi[18]
+export const splitV1CreatedEvent = splitMainPolygonAbi[14]
+type SplitV1UpdatedEventType = typeof splitV1UpdatedEvent
+export type SplitV1UpdatedLogType = GetLogsReturnType<
+  SplitV1UpdatedEventType,
+  [SplitV1UpdatedEventType],
+  true,
+  bigint,
+  bigint
+>[0]
+type SplitV1CreatedEventType = typeof splitV1CreatedEvent
+export type SplitV1CreatedLogType = GetLogsReturnType<
+  SplitV1CreatedEventType,
+  [SplitV1CreatedEventType],
+  true,
+  bigint,
+  bigint
+>[0]
+
+export const splitV2UpdatedEvent = splitV2ABI[28]
+export const splitV2CreatedEvent = splitV2FactoryABI[8]
+type SplitV2UpdatedEventType = typeof splitV2UpdatedEvent
+export type SplitV2UpdatedLogType = GetLogsReturnType<
+  SplitV2UpdatedEventType,
+  [SplitV2UpdatedEventType],
+  true,
+  bigint,
+  bigint
+>[0]
+type SplitV2CreatedEventType = typeof splitV2CreatedEvent
+export type SplitV2CreatedLogType = GetLogsReturnType<
+  SplitV2CreatedEventType,
+  [SplitV2CreatedEventType],
+  true,
+  bigint,
+  bigint
+>[0]

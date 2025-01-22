@@ -1,38 +1,31 @@
 import React from 'react'
-import { WagmiConfig, configureChains, createConfig } from 'wagmi'
-import { InjectedConnector } from 'wagmi/connectors/injected'
-import { publicProvider } from 'wagmi/providers/public'
-import { jsonRpcProvider } from 'wagmi/providers/jsonRpc'
+import { WagmiProvider, createConfig, http } from 'wagmi'
 
-import { SupportedChainsList } from '../../src/constants/chains'
+import {
+  SupportedChainId,
+  SupportedChainsList,
+} from '../../src/constants/chains'
 import { STORYBOOK_CHAIN_INFO } from '../constants/chains'
+import { HttpTransport } from 'viem'
 
 if (process.env.STORYBOOK_ALCHEMY_API_KEY === undefined)
   throw new Error('STORYBOOK_ALCHEMY_API_KEY env variable is not set')
 
-const { chains, publicClient, webSocketPublicClient } = configureChains(
-  SupportedChainsList,
-  [
-    publicProvider(),
-    jsonRpcProvider({
-      rpc: (chain) => {
-        const chainId = chain.id
-
-        return {
-          http: STORYBOOK_CHAIN_INFO[chainId].rpcUrls[0],
-        }
-      },
-    }),
-  ],
-)
-
 const config = createConfig({
-  autoConnect: true,
-  publicClient,
-  connectors: [new InjectedConnector({ chains })],
-  webSocketPublicClient,
+  chains: SupportedChainsList,
+  transports: Object.keys(SupportedChainsList).reduce(
+    (acc, chainId) => {
+      acc[chainId] = http(STORYBOOK_CHAIN_INFO[chainId].rpcUrls[0])
+      return acc
+    },
+    {} as Record<SupportedChainId, HttpTransport>,
+  ),
 })
 
-export default function WagmiProvider({ children }: { children: JSX.Element }) {
-  return <WagmiConfig config={config}>{children}</WagmiConfig>
+export default function WagmiProviderWrapper({
+  children,
+}: {
+  children: JSX.Element
+}) {
+  return <WagmiProvider config={config}>{children}</WagmiProvider>
 }

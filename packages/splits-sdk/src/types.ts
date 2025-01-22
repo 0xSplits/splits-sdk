@@ -99,6 +99,10 @@ export type DistributeTokenConfig = {
   token: string
   distributorAddress?: string
   chainId?: number
+  splitFields?: {
+    recipients: Split['recipients']
+    distributorFeePercent: number
+  }
 } & TransactionOverridesDict
 
 export type UpdateSplitAndDistributeTokenConfig = {
@@ -317,6 +321,10 @@ export type DistributeSplitConfig = {
   tokenAddress: Address
   distributorAddress?: Address
   chainId?: number
+  splitFields?: {
+    recipients: Split['recipients']
+    distributorFeePercent: number
+  }
 } & TransactionOverridesDict
 
 export type TransferOwnershipConfig = {
@@ -615,7 +623,8 @@ export type Split = {
     ownership: bigint
     recipient: Recipient
   }[]
-  createdBlock: number
+  createdBlock?: number
+  updateBlock?: number
 }
 
 export type WaterfallTranche = {

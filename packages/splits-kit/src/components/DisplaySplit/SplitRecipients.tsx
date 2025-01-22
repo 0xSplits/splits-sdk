@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Split } from '@0xsplits/splits-sdk-react'
-import { useAccount } from 'wagmi'
 import { Recipient } from '@0xsplits/splits-sdk'
+import { Split } from '@0xsplits/splits-sdk-react'
+import { zeroAddress } from 'viem'
+import { useAccount } from 'wagmi'
 
 import { shortenENS, shortenAddress } from '../../utils/address'
 import { getSplitsAccountUrl } from '../../utils/splits'
@@ -10,12 +11,14 @@ import Button from '../util/Button'
 import Label from '../util/Label'
 import Link from '../util/Link'
 import SplitsAvatar from '../util/SplitsAvatar'
+import AddressDisplay from './AddressDisplay'
 
 interface ISplitRecipientsProps {
   split: Split | undefined
+  linkToApp: boolean
 }
 
-const SplitRecipients = ({ split }: ISplitRecipientsProps) => {
+const SplitRecipients = ({ split, linkToApp }: ISplitRecipientsProps) => {
   const [viewAll, setViewAll] = useState(false)
   const { address: connectedAddress } = useAccount()
 
@@ -31,7 +34,7 @@ const SplitRecipients = ({ split }: ISplitRecipientsProps) => {
 
   return (
     <div className="space-y-2 text-xs">
-      {split?.controller && (
+      {split?.controller && split?.controller.address !== zeroAddress && (
         <div className="border-yellow-500/50 bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 w-full rounded-sm border p-2 ">
           {connectedAddress === split?.controller.address
             ? 'You control'
@@ -53,10 +56,19 @@ const SplitRecipients = ({ split }: ISplitRecipientsProps) => {
                 className="py-2 flex items-stretch justify-between space-x-0.5"
               >
                 <div className="flex items-center space-x-2">
-                  <SplitsAvatar address={recipient.address} size={20} />
-                  <Link href={getSplitsAccountUrl(recipient.address)}>
-                    <div>{displayAddress(recipient)}</div>
-                  </Link>
+                  {linkToApp ? (
+                    <>
+                      <SplitsAvatar address={recipient.address} size={20} />
+                      <Link href={getSplitsAccountUrl(recipient.address)}>
+                        <div>{displayAddress(recipient)}</div>
+                      </Link>
+                    </>
+                  ) : (
+                    <AddressDisplay
+                      address={recipient.address}
+                      ens={recipient.ens}
+                    />
+                  )}
                   {recipient.address === connectedAddress && (
                     <Label text="You" />
                   )}

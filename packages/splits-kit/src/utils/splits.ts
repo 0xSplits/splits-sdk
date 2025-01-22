@@ -21,7 +21,7 @@ export const getSplitRouterParams = (
   account: IAccount,
 ) => {
   const distributorFee = split.distributorFee * 10000
-  const controller = split.controller
+  const owner = split.owner
 
   const [addresses, allocations] = sortRecipients(
     split.recipients,
@@ -35,7 +35,7 @@ export const getSplitRouterParams = (
     [[] as string[], [] as number[]],
   )
 
-  return `type=split&distributorFee=${distributorFee}&controller=${controller}&addresses=${addresses.join(
+  return `type=split&distributorFee=${distributorFee}&controller=${owner}&addresses=${addresses.join(
     ',',
   )}&allocations=${allocations.join(',')}&sponsor=${false}`
 }

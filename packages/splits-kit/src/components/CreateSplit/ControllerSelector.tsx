@@ -11,20 +11,19 @@ import { useAccount } from 'wagmi'
 import AddressSelectInput from '../inputs/AddressSelectInput'
 import { ADDRESS_ZERO } from '../../constants/addresses'
 import { shortenAddress } from '../../utils/address'
-import { SupportedChainId } from '../../constants/chains'
 
 export const ControllerSelector = <FormType extends FieldValues>({
   control,
   inputName,
   setValue,
   setError,
-  chainId,
+  supportsEns,
 }: {
   control: Control<FormType>
   inputName: Path<FormType>
   setValue: UseFormSetValue<FormType>
   setError: UseFormSetError<FormType>
-  chainId: SupportedChainId
+  supportsEns: boolean
 }): JSX.Element => {
   const { address: connectedAddress } = useAccount()
   const accountDisplayName =
@@ -33,8 +32,8 @@ export const ControllerSelector = <FormType extends FieldValues>({
   return (
     <AddressSelectInput
       control={control}
+      supportsEns={supportsEns}
       inputName={inputName}
-      chainId={chainId}
       options={[
         {
           value: ADDRESS_ZERO,

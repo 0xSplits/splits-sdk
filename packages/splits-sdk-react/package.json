@@ -1,9 +1,20 @@
 {
   "name": "@0xsplits/splits-sdk-react",
-  "version": "2.1.1",
+  "version": "2.2.0-alpha.32.15",
   "description": "React wrapper for the 0xSplits SDK",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "main": "./dist/index.js",
+  "typings": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./types": "./dist/types.js"
+  },
+  "typesVersions": {
+    "*": {
+      "types": [
+        "./dist/types.d.ts"
+      ]
+    }
+  },
   "keywords": [
     "0xSplits",
     "splits",
@@ -29,7 +40,7 @@
   },
   "homepage": "https://docs.splits.org/sdk",
   "dependencies": {
-    "@0xsplits/splits-sdk": "^4.1.1"
+    "@0xsplits/splits-sdk": "workspace:*"
   },
   "peerDependencies": {
     "react": "17.x.x || 18.x.x",

@@ -1,5 +1,8 @@
 import { useContext, useEffect, useState } from 'react'
+import { Address, getAddress, zeroAddress } from 'viem'
+import { mainnet } from 'viem/chains'
 import {
+  AccountNotFoundError,
   FormattedContractEarnings,
   FormattedSplitEarnings,
   FormattedUserEarnings,
@@ -10,14 +13,296 @@ import {
   VestingModule,
   WaterfallModule,
 } from '@0xsplits/splits-sdk'
+import {
+  getSplitMainAddress,
+  getSplitV1StartBlock,
+  getSplitV2FactoriesStartBlock,
+  getSplitV2FactoryAddress,
+  splitV1CreatedEvent,
+  SplitV1CreatedLogType,
+  splitV1UpdatedEvent,
+  SplitV1UpdatedLogType,
+  splitV2CreatedEvent,
+  SplitV2CreatedLogType,
+  splitV2UpdatedEvent,
+  SplitV2UpdatedLogType,
+} from '@0xsplits/splits-sdk/constants'
+import {
+  getLargestValidBlockRange,
+  getSplitCreateAndUpdateLogs,
+  LOGS_SEARCH_BATCH_SIZE,
+  searchLogs,
+} from '@0xsplits/splits-sdk/utils'
+import { SplitV2Type } from '@0xsplits/splits-sdk/types'
 
-import { DataLoadStatus, RequestError } from '../types'
+import {
+  DataLoadStatus,
+  RequestError,
+  SplitProviderSearchCacheData,
+} from '../types'
 import { getSplitsClient } from '../utils'
 import { SplitsContext } from '../context'
+import { V1MainnetNotSupportedError } from './errors'
+
+export const useSplitMetadataViaProvider = (
+  chainId: number,
+  splitAddress: string,
+  options?: {
+    cacheData?: {
+      blockRange?: bigint
+      controller?: Address
+      blocks?: {
+        createBlock?: bigint
+        updateBlock?: bigint
+        latestScannedBlock: bigint
+      }
+    }
+  },
+): {
+  isLoading: boolean
+  splitMetadata?: Split
+  currentBlockRange?: {
+    from: bigint
+    to: bigint
+  }
+  cacheData?: SplitProviderSearchCacheData
+  status?: DataLoadStatus
+  error?: RequestError
+} => {
+  const context = useContext(SplitsContext)
+  const splitsV1Client = getSplitsClient(context).splitV1
+  const splitsV2Client = getSplitsClient(context).splitV2
+
+  const [splitMetadata, setSplitMetadata] = useState<Split | undefined>()
+  const [isLoading, setIsLoading] = useState(!!splitAddress)
+  const [status, setStatus] = useState<DataLoadStatus | undefined>(
+    splitAddress ? 'loading' : undefined,
+  )
+  const [error, setError] = useState<RequestError>()
+  const [currentBlockRange, setCurrentBlockRange] = useState<
+    { from: bigint; to: bigint } | undefined
+  >()
+  const [cacheData, setCacheData] = useState<
+    SplitProviderSearchCacheData | undefined
+  >()
+
+  const cachedBlockRange = options?.cacheData?.blockRange
+  const cachedCreateBlock = options?.cacheData?.blocks?.createBlock
+  const cachedUpdateBlock = options?.cacheData?.blocks?.updateBlock
+  const cachedLatestScannedBlock =
+    options?.cacheData?.blocks?.latestScannedBlock
+  const cachedController = options?.cacheData?.controller
+
+  useEffect(() => {
+    let isActive = true
+
+    const fetchMetadata = async () => {
+      try {
+        let split: Split
+        let createLog, updateLog
+        const formattedSplitAddress = getAddress(splitAddress)
+        const publicClient = splitsV2Client._getPublicClient(chainId)
+
+        const [splitV1Exists, splitV2Exists] = await Promise.all([
+          splitsV1Client._doesSplitExist({
+            splitAddress: formattedSplitAddress,
+            chainId,
+          }),
+          splitsV2Client._doesSplitExist({
+            splitAddress: formattedSplitAddress,
+            chainId,
+          }),
+        ])
+
+        if (splitV1Exists && splitV2Exists)
+          throw new Error('Found v1 and v2 split')
+        if (!splitV1Exists && !splitV2Exists)
+          throw new AccountNotFoundError(
+            'split',
+            formattedSplitAddress,
+            chainId,
+          )
+
+        if (splitV1Exists && chainId === mainnet.id) {
+          throw new V1MainnetNotSupportedError()
+        }
+
+        const addresses = splitV1Exists
+          ? [getSplitMainAddress(chainId)]
+          : [
+              formattedSplitAddress,
+              getSplitV2FactoryAddress(chainId, SplitV2Type.Pull),
+              getSplitV2FactoryAddress(chainId, SplitV2Type.Push),
+            ]
+        const splitCreatedEvent = splitV1Exists
+          ? splitV1CreatedEvent
+          : splitV2CreatedEvent
+        const splitUpdatedEvent = splitV1Exists
+          ? splitV1UpdatedEvent
+          : splitV2UpdatedEvent
+
+        const version = splitV2Exists
+          ? await splitsV2Client.getSplitVersion({
+              splitAddress: formattedSplitAddress,
+              chainId,
+            })
+          : undefined
+
+        let blockRange =
+          cachedBlockRange ??
+          (await getLargestValidBlockRange({ publicClient }))
+        const lastBlockNumber = await publicClient.getBlockNumber()
+
+        const shouldSearch =
+          !cachedCreateBlock ||
+          (cachedController && cachedController !== zeroAddress)
+        if (shouldSearch) {
+          let currentBlockNumber = lastBlockNumber
+          const splitV2StartBlock =
+            cachedLatestScannedBlock ?? getSplitV2FactoriesStartBlock(chainId)
+          const splitV1StartBlock =
+            cachedLatestScannedBlock ?? getSplitV1StartBlock(chainId)
+
+          // eslint-disable-next-line no-loops/no-loops
+          while (
+            currentBlockNumber > splitV1StartBlock &&
+            currentBlockNumber > splitV2StartBlock
+          ) {
+            const rangeStart =
+              currentBlockNumber - blockRange * BigInt(LOGS_SEARCH_BATCH_SIZE)
+            const startBlock = rangeStart >= BigInt(0) ? rangeStart : BigInt(0)
+            setCurrentBlockRange({ from: startBlock, to: currentBlockNumber })
+
+            const {
+              blockRange: searchBlockRange,
+              createLog: searchCreateLog,
+              updateLog: searchUpdateLog,
+            } = await searchLogs({
+              formattedSplitAddress,
+              publicClient,
+              addresses,
+              splitCreatedEvent,
+              splitUpdatedEvent,
+              endBlock: currentBlockNumber,
+              startBlock,
+              defaultBlockRange: blockRange,
+              splitV2Version: version,
+            })
+
+            blockRange = searchBlockRange
+            createLog = searchCreateLog
+            updateLog = searchUpdateLog
+
+            if (createLog) break
+            if (updateLog && cachedCreateBlock) break
+            if (updateLog && version === 'splitV2o1') break
+
+            currentBlockNumber = startBlock - BigInt(1)
+          }
+        }
+
+        if (!createLog) {
+          if (cachedCreateBlock) {
+            const { createLog: cachedCreateLog, updateLog: cachedUpdateLog } =
+              await getSplitCreateAndUpdateLogs({
+                splitAddress: formattedSplitAddress,
+                publicClient,
+                currentEndBlockNumber: cachedLatestScannedBlock,
+                startBlockNumber: cachedLatestScannedBlock!,
+                defaultBlockRange: blockRange,
+                cachedBlocks: {
+                  createBlock: cachedCreateBlock,
+                  updateBlock: cachedUpdateBlock,
+                  latestScannedBlock: cachedLatestScannedBlock!,
+                },
+                splitCreatedEvent,
+                splitUpdatedEvent,
+                addresses,
+              })
+
+            createLog = cachedCreateLog
+            // Only use cached update log if we did not find a more recent one
+            updateLog = updateLog ? updateLog : cachedUpdateLog
+          }
+
+          if (!createLog && (splitV1Exists || version === 'splitV2'))
+            throw new AccountNotFoundError(
+              'split',
+              formattedSplitAddress,
+              chainId,
+            )
+        }
+
+        if (splitV1Exists) {
+          split = await splitsV1Client._getSplitFromLogs({
+            splitAddress: formattedSplitAddress,
+            chainId,
+            createLog: createLog as SplitV1CreatedLogType,
+            updateLog: updateLog as SplitV1UpdatedLogType,
+          })
+        } else {
+          split = await splitsV2Client._getSplitFromLogs({
+            splitAddress: formattedSplitAddress,
+            chainId,
+            createLog: createLog as SplitV2CreatedLogType,
+            updateLog: updateLog as SplitV2UpdatedLogType,
+          })
+        }
+
+        if (!isActive) return
+        setSplitMetadata(split)
+        setCacheData({
+          blockRange,
+          controller: split.controller?.address ?? zeroAddress,
+          blocks: {
+            createBlock: createLog?.blockNumber,
+            updateBlock: updateLog?.blockNumber,
+            latestScannedBlock: lastBlockNumber,
+          },
+        })
+        setStatus('success')
+      } catch (e) {
+        if (isActive) {
+          setStatus('error')
+          setError(e)
+        }
+      } finally {
+        if (isActive) setIsLoading(false)
+      }
+    }
+
+    setError(undefined)
+    if (splitAddress) {
+      setIsLoading(true)
+      setStatus('loading')
+      fetchMetadata()
+    } else {
+      setStatus(undefined)
+      setIsLoading(false)
+      setSplitMetadata(undefined)
+    }
+
+    return () => {
+      isActive = false
+    }
+  }, [splitsV1Client, splitsV2Client, chainId, splitAddress])
+
+  return {
+    isLoading,
+    splitMetadata,
+    currentBlockRange,
+    cacheData,
+    error,
+    status,
+  }
+}
 
 export const useSplitMetadata = (
   chainId: number,
   splitAddress: string,
+  options?: {
+    requireDataClient?: boolean
+  },
 ): {
   isLoading: boolean
   splitMetadata: Split | undefined
@@ -25,7 +310,9 @@ export const useSplitMetadata = (
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context).dataClient
+  const dataClient = getSplitsClient(context).dataClient
+  const splitsV1Client = getSplitsClient(context).splitV1
+  const splitsV2Client = getSplitsClient(context).splitV2
 
   const [splitMetadata, setSplitMetadata] = useState<Split | undefined>()
   const [isLoading, setIsLoading] = useState(!!splitAddress)
@@ -34,17 +321,40 @@ export const useSplitMetadata = (
   )
   const [error, setError] = useState<RequestError>()
 
+  const requireDataClient = options?.requireDataClient ?? true
+
   useEffect(() => {
     let isActive = true
 
     const fetchMetadata = async () => {
-      if (!splitsClient) throw new Error('Missing api key for data client')
+      if (requireDataClient && !dataClient)
+        throw new Error('Missing api key for data client')
 
       try {
-        const split = await splitsClient.getSplitMetadata({
-          chainId,
-          splitAddress,
-        })
+        let split: Split
+        if (dataClient)
+          split = await dataClient.getSplitMetadata({
+            chainId,
+            splitAddress,
+          })
+        else {
+          const [splitV1Result, splitV2Result] = await Promise.allSettled([
+            splitsV1Client.getSplitMetadataViaProvider({
+              chainId,
+              splitAddress,
+            }),
+            splitsV2Client.getSplitMetadataViaProvider({
+              chainId,
+              splitAddress,
+            }),
+          ])
+
+          if (splitV1Result.status === 'fulfilled')
+            split = splitV1Result.value.split
+          else if (splitV2Result.status === 'fulfilled')
+            split = splitV2Result.value.split
+          else throw new AccountNotFoundError('split', splitAddress, chainId)
+        }
         if (!isActive) return
         setSplitMetadata(split)
         setStatus('success')
@@ -72,7 +382,14 @@ export const useSplitMetadata = (
     return () => {
       isActive = false
     }
-  }, [splitsClient, chainId, splitAddress])
+  }, [
+    requireDataClient,
+    dataClient,
+    splitsV1Client,
+    splitsV2Client,
+    chainId,
+    splitAddress,
+  ])
 
   return {
     isLoading,
@@ -87,14 +404,22 @@ export const useSplitEarnings = (
   splitAddress: string,
   includeActiveBalances?: boolean,
   erc20TokenList?: string[],
+  options?: {
+    requireDataClient?: boolean
+  },
 ): {
   isLoading: boolean
   splitEarnings: FormattedSplitEarnings | undefined
+  refetch: () => void
   status?: DataLoadStatus
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context).dataClient
+  const dataClient = getSplitsClient(context).dataClient
+  const splitsV1Client = getSplitsClient(context).splitV1
+  const splitsV2Client = getSplitsClient(context).splitV2
+
+  const requireDataClient = options?.requireDataClient ?? true
 
   const [splitEarnings, setSplitEarnings] = useState<
     FormattedSplitEarnings | undefined
@@ -104,6 +429,9 @@ export const useSplitEarnings = (
     splitAddress ? 'loading' : undefined,
   )
   const [error, setError] = useState<RequestError>()
+  const [manualTrigger, setManualTrigger] = useState(false)
+
+  const refetch = () => setManualTrigger((prev) => !prev)
 
   const stringErc20List =
     erc20TokenList !== undefined ? JSON.stringify(erc20TokenList) : undefined
@@ -111,18 +439,56 @@ export const useSplitEarnings = (
     let isActive = true
 
     const fetchEarnings = async () => {
-      if (!splitsClient) throw new Error('Missing api key for data client')
+      if (requireDataClient && !dataClient)
+        throw new Error('Missing api key for data client')
+
+      setIsLoading(true)
+      setStatus('loading')
 
       try {
-        const earnings = await splitsClient.getSplitEarnings({
-          chainId,
-          splitAddress,
-          includeActiveBalances,
-          erc20TokenList:
-            stringErc20List !== undefined
-              ? JSON.parse(stringErc20List)
-              : undefined,
-        })
+        let earnings: FormattedSplitEarnings
+        if (dataClient)
+          earnings = await dataClient.getSplitEarnings({
+            chainId,
+            splitAddress,
+            includeActiveBalances,
+            erc20TokenList:
+              stringErc20List !== undefined
+                ? JSON.parse(stringErc20List)
+                : undefined,
+          })
+        else {
+          const [splitV1Result, splitV2Result] = await Promise.allSettled([
+            splitsV1Client.getSplitActiveBalances({
+              chainId,
+              splitAddress,
+              erc20TokenList:
+                stringErc20List !== undefined
+                  ? JSON.parse(stringErc20List)
+                  : undefined,
+            }),
+            splitsV2Client.getSplitActiveBalances({
+              chainId,
+              splitAddress,
+              erc20TokenList:
+                stringErc20List !== undefined
+                  ? JSON.parse(stringErc20List)
+                  : undefined,
+            }),
+          ])
+
+          earnings = {
+            distributed: {},
+            activeBalances: {},
+          }
+
+          if (splitV1Result.status === 'fulfilled')
+            earnings.activeBalances = splitV1Result.value.activeBalances
+          else if (splitV2Result.status === 'fulfilled')
+            earnings.activeBalances = splitV2Result.value.activeBalances
+          else throw new AccountNotFoundError('split', splitAddress, chainId)
+        }
+
         if (!isActive) return
         setSplitEarnings(earnings)
         setStatus('success')
@@ -138,8 +504,6 @@ export const useSplitEarnings = (
 
     setError(undefined)
     if (splitAddress) {
-      setIsLoading(true)
-      setStatus('loading')
       fetchEarnings()
     } else {
       setStatus(undefined)
@@ -151,16 +515,21 @@ export const useSplitEarnings = (
       isActive = false
     }
   }, [
-    splitsClient,
+    requireDataClient,
+    dataClient,
+    splitsV1Client,
+    splitsV2Client,
     chainId,
     splitAddress,
     includeActiveBalances,
     stringErc20List,
+    manualTrigger,
   ])
 
   return {
     isLoading,
     splitEarnings,
+    refetch,
     status,
     error,
   }

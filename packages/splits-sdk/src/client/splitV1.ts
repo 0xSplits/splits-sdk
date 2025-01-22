@@ -3,6 +3,7 @@ import {
   Chain,
   GetContractReturnType,
   Hash,
+  InvalidAddressError,
   Log,
   PublicClient,
   Transport,
@@ -10,6 +11,7 @@ import {
   encodeEventTopics,
   getAddress,
   getContract,
+  isAddress,
   zeroAddress,
 } from 'viem'
 
@@ -27,12 +29,19 @@ import {
   getSplitMainAddress,
   ETHEREUM_TEST_CHAIN_IDS,
   BLAST_CHAIN_IDS,
+  getSplitV1StartBlock,
+  ChainId,
+  splitV1UpdatedEvent,
+  splitV1CreatedEvent,
+  SplitV1CreatedLogType,
+  SplitV1UpdatedLogType,
 } from '../constants'
 import {
   splitMainEthereumAbi,
   splitMainPolygonAbi,
 } from '../constants/abi/splitMain'
 import {
+  AccountNotFoundError,
   InvalidAuthError,
   TransactionFailedError,
   UnsupportedChainIdError,
@@ -45,9 +54,11 @@ import type {
   CancelControlTransferConfig,
   CreateSplitConfig,
   DistributeTokenConfig,
+  FormattedSplitEarnings,
   GetSplitBalanceConfig,
   InitiateControlTransferConfig,
   MakeSplitImmutableConfig,
+  Split,
   SplitRecipient,
   SplitsClientConfig,
   TransactionConfig,
@@ -57,8 +68,11 @@ import type {
   WithdrawFundsConfig,
 } from '../types'
 import {
+  fetchSplitActiveBalances,
+  fromBigIntToPercent,
   getBigIntFromPercent,
   getRecipientSortedAddressesAndAllocations,
+  getSplitCreateAndUpdateLogs,
 } from '../utils'
 import { validateAddress, validateSplitInputs } from '../utils/validation'
 import {
@@ -159,6 +173,7 @@ class SplitV1Transactions extends BaseTransactions {
     token,
     distributorAddress,
     chainId,
+    splitFields,
     transactionOverrides = {},
   }: DistributeTokenConfig): Promise<TransactionFormat> {
     validateAddress(splitAddress)
@@ -172,26 +187,31 @@ class SplitV1Transactions extends BaseTransactions {
       : zeroAddress
     validateAddress(distributorPayoutAddress)
 
-    this._requireDataClient()
-    if (!this._dataClient) throw new Error()
-
     const functionChainId = this._getFunctionChainId(chainId)
 
-    const { recipients, distributorFeePercent } =
-      await this._dataClient.getSplitMetadata({
+    let split: Pick<Split, 'recipients' | 'distributorFeePercent'>
+
+    if (splitFields) {
+      split = splitFields
+    } else {
+      this._requireDataClient()
+
+      split = await this._dataClient!.getSplitMetadata({
         chainId: functionChainId,
         splitAddress,
       })
+    }
+
     const [accounts, percentAllocations] =
       getRecipientSortedAddressesAndAllocations(
-        recipients.map((recipient) => {
+        split.recipients.map((recipient) => {
           return {
             percentAllocation: recipient.percentAllocation,
             address: recipient.recipient.address,
           }
         }),
       )
-    const distributorFee = getBigIntFromPercent(distributorFeePercent)
+    const distributorFee = getBigIntFromPercent(split.distributorFeePercent)
 
     const result = await this._executeContractFunction({
       contractAddress: getSplitMainAddress(functionChainId),
@@ -493,6 +513,153 @@ class SplitV1Transactions extends BaseTransactions {
     )
 
     return result
+  }
+
+  protected async _checkForSplitExistence({
+    splitAddress,
+    chainId,
+  }: {
+    splitAddress: Address
+    chainId: number
+  }): Promise<void> {
+    const formattedSplitAddress = getAddress(splitAddress)
+    const splitMainContract = this._getSplitMainContract(chainId)
+
+    const splitHash = await splitMainContract.read.getHash([
+      formattedSplitAddress,
+    ])
+    if (
+      splitHash ===
+      '0x0000000000000000000000000000000000000000000000000000000000000000'
+    ) {
+      // Split does not exist
+      throw new AccountNotFoundError('Split', formattedSplitAddress, chainId)
+    }
+  }
+
+  protected async _getSplitMetadataViaProvider({
+    splitAddress,
+    chainId,
+    cachedData,
+  }: {
+    splitAddress: Address
+    chainId: number
+    cachedData?: {
+      blocks?: {
+        createBlock: bigint
+        updateBlock?: bigint
+        latestScannedBlock: bigint
+      }
+      blockRange?: bigint
+    }
+  }): Promise<{ split: Split; blockRange: bigint }> {
+    if (chainId === ChainId.MAINNET)
+      throw new Error('Mainnet not supported for provider metadata')
+
+    const formattedSplitAddress = getAddress(splitAddress)
+    const publicClient = this._getPublicClient(chainId)
+
+    await this._checkForSplitExistence({ splitAddress, chainId })
+
+    const { blockRange, createLog, updateLog } =
+      await getSplitCreateAndUpdateLogs<'CreateSplit', 'UpdateSplit'>({
+        splitAddress,
+        publicClient,
+        splitCreatedEvent: splitV1CreatedEvent,
+        splitUpdatedEvent: splitV1UpdatedEvent,
+        addresses: [getSplitMainAddress(chainId)],
+        startBlockNumber: getSplitV1StartBlock(chainId),
+        cachedBlocks: cachedData?.blocks,
+        defaultBlockRange: cachedData?.blockRange,
+      })
+
+    if (!createLog)
+      throw new AccountNotFoundError(
+        'Split',
+        formattedSplitAddress,
+        publicClient.chain.id,
+      )
+
+    const split = await this._buildSplitFromLogs({
+      splitAddress: formattedSplitAddress,
+      chainId,
+      createLog,
+      updateLog: updateLog ? (updateLog as SplitV1UpdatedLogType) : undefined,
+    })
+
+    return { split, blockRange }
+  }
+
+  protected async _buildSplitFromLogs({
+    splitAddress,
+    chainId,
+    createLog,
+    updateLog,
+  }: {
+    splitAddress: Address
+    chainId: number
+    createLog: SplitV1CreatedLogType
+    updateLog?: SplitV1UpdatedLogType
+  }): Promise<Split> {
+    const splitMainContract = this._getSplitMainContract(chainId)
+    const controller = await splitMainContract.read.getController([
+      getAddress(splitAddress),
+    ])
+
+    const recipients = createLog.args.accounts.map((recipient, i) => {
+      return {
+        recipient: {
+          address: recipient,
+        },
+        ownership: BigInt(createLog.args.percentAllocations[i]),
+        percentAllocation: fromBigIntToPercent(
+          BigInt(createLog.args.percentAllocations[i]),
+          BigInt(1_000_000),
+        ),
+      }
+    })
+
+    const split: Split = {
+      address: splitAddress,
+      recipients,
+      distributorFeePercent: fromBigIntToPercent(
+        BigInt(createLog.args.distributorFee),
+      ),
+      distributeDirection: 'pull',
+      type: 'Split',
+      controller: {
+        address: controller,
+      },
+      distributionsPaused: false,
+      newPotentialController: {
+        address: zeroAddress,
+      },
+      createdBlock: Number(createLog.blockNumber),
+      updateBlock: Number(createLog.blockNumber),
+    }
+
+    if (!updateLog) return split
+
+    const updatedRecipients = updateLog.args.accounts.map((recipient, i) => {
+      return {
+        recipient: {
+          address: recipient,
+        },
+        ownership: BigInt(updateLog.args.percentAllocations[i]),
+        percentAllocation: fromBigIntToPercent(
+          BigInt(updateLog.args.percentAllocations[i]),
+          BigInt(1_000_000),
+        ),
+      }
+    })
+
+    split.recipients = updatedRecipients
+    split.distributorFeePercent = fromBigIntToPercent(
+      BigInt(updateLog.args.distributorFee),
+    )
+    split.updateBlock = Number(updateLog.blockNumber)
+
+    return split
   }
 
   private async _requireController(splitAddress: string) {
@@ -1141,6 +1308,105 @@ export class SplitV1Client extends SplitV1Transactions {
     ])
 
     return { hash }
+  }
+
+  async _doesSplitExist({
+    splitAddress,
+    chainId,
+  }: {
+    splitAddress: Address
+    chainId: number
+  }) {
+    try {
+      await this._checkForSplitExistence({ splitAddress, chainId })
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  async _getSplitFromLogs({
+    splitAddress,
+    chainId,
+    createLog,
+    updateLog,
+  }: {
+    splitAddress: Address
+    chainId: number
+    createLog: SplitV1CreatedLogType
+    updateLog?: SplitV1UpdatedLogType
+  }) {
+    return await this._buildSplitFromLogs({
+      splitAddress,
+      chainId,
+      createLog,
+      updateLog,
+    })
+  }
+
+  async getSplitMetadataViaProvider({
+    splitAddress,
+    chainId,
+    cachedData,
+  }: {
+    splitAddress: string
+    chainId?: number
+    cachedData?: {
+      blocks?: {
+        createBlock: bigint
+        updateBlock?: bigint
+        latestScannedBlock: bigint
+      }
+      blockRange?: bigint
+    }
+  }): Promise<{ split: Split; blockRange: bigint }> {
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+
+    if (!isAddress(splitAddress))
+      throw new InvalidAddressError({ address: splitAddress })
+    const { split, blockRange } = await this._getSplitMetadataViaProvider({
+      splitAddress,
+      chainId: functionChainId,
+      cachedData,
+    })
+    return { split, blockRange }
+  }
+
+  async getSplitActiveBalances({
+    splitAddress,
+    chainId,
+    erc20TokenList,
+  }: {
+    splitAddress: string
+    chainId?: number
+    erc20TokenList?: string[]
+  }): Promise<Pick<FormattedSplitEarnings, 'activeBalances'>> {
+    const functionChainId = this._getReadOnlyFunctionChainId(chainId)
+    const fullTokenList = [
+      zeroAddress,
+      ...(erc20TokenList ? erc20TokenList : []),
+    ]
+    const publicClient = this._getPublicClient(functionChainId)
+
+    if (!isAddress(splitAddress))
+      throw new InvalidAddressError({ address: splitAddress })
+
+    await this._checkForSplitExistence({
+      splitAddress,
+      chainId: functionChainId,
+    })
+
+    const activeBalances = await fetchSplitActiveBalances({
+      type: 'splitV1',
+      chainId: functionChainId,
+      splitAddress,
+      publicClient,
+      fullTokenList: fullTokenList.map(getAddress),
+    })
+
+    return {
+      activeBalances,
+    }
   }
 }
 

@@ -43,13 +43,13 @@ pnpm run lerna-version
 From each package directory that you want to publish:
 
 ```bash
-npm publish
+pnpm publish
 ```
 
 If you want to publish an alpha/beta version, apply the appropriate tag:
 
 ```bash
-npm publish --tag beta
+pnpm publish --tag beta
 ```
 
 ### Creating a Release

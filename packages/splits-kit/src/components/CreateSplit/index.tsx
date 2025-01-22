@@ -1,36 +1,48 @@
-import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
-import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
+import { RequestError } from '@0xsplits/splits-sdk-react/types'
+import { Address, Hex, Log } from 'viem'
+
 import CreateSplitForm from '../CreateSplit/CreateSplitForm'
 import { ADDRESS_ZERO } from '../../constants/addresses'
 import ComponentLayout from '../util/ComponentLayout'
-import { IAddress, Recipient } from '../../types'
+import { IAddress, Recipient, SplitType } from '../../types'
 import ChainLogo from '../util/ChainLogo'
+import {
+  CHAIN_INFO,
+  isSupportedChainId,
+  SupportedChainId,
+} from '../../constants/chains'
 import {
   DEFAULT_DISTRIBUTOR_FEE,
   DEFAULT_DISTRIBUTOR_FEE_OPTIONS,
-  DEFAULT_RECIPIENTS,
 } from '../../constants/splits'
-import { Log } from 'viem'
 
 export interface ICreateSplitProps {
-  chainId: SupportedChainId
+  chainId: number
+  type?: SplitType
+  salt?: Hex
   defaultDistributorFee?: number
-  defaultController?: IAddress
+  defaultOwner?: IAddress
   defaultRecipients?: Recipient[]
   defaultDistributorFeeOptions?: number[]
+  linkToApp?: boolean
+  supportsEns?: boolean
   width?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full'
   theme?: 'light' | 'dark' | 'system'
   displayChain?: boolean
-  onSuccess?: (events: Log[]) => void
+  onSuccess?: (args: { address: Address; events: Log[] }) => void
   onError?: (error: RequestError) => void
 }
 
 const CreateSplit = ({
   chainId,
+  type = 'v2Push',
+  salt,
   defaultDistributorFee = DEFAULT_DISTRIBUTOR_FEE,
-  defaultController = ADDRESS_ZERO,
-  defaultRecipients = DEFAULT_RECIPIENTS,
+  defaultOwner = ADDRESS_ZERO,
+  defaultRecipients = [],
   defaultDistributorFeeOptions = DEFAULT_DISTRIBUTOR_FEE_OPTIONS,
+  linkToApp = true,
+  supportsEns = true,
   width = 'lg',
   theme = 'system',
   displayChain = true,
@@ -44,17 +56,21 @@ const CreateSplit = ({
       theme={theme}
       title={'New Split contract'}
       corner={
-        displayChain
+        displayChain && isSupportedChainId(chainId)
           ? CHAIN_INFO[chainId] && <ChainLogo chainInfo={CHAIN_INFO[chainId]} />
           : undefined
       }
       body={
         <CreateSplitForm
           defaultDistributorFee={defaultDistributorFee}
-          defaultController={defaultController}
+          defaultOwner={defaultOwner}
           defaultRecipients={defaultRecipients}
           defaultDistributorFeeOptions={defaultDistributorFeeOptions}
-          chainId={chainId}
+          chainId={chainId as SupportedChainId}
+          type={type}
+          salt={salt}
+          linkToApp={linkToApp}
+          supportsEns={supportsEns}
           onSuccess={onSuccess}
           onError={onError}
         />
