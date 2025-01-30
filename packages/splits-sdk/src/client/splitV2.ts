@@ -317,7 +317,7 @@ class SplitV2Transactions extends BaseTransactions {
         address: [
           getSplitV2FactoryAddress(chainId, SplitV2Type.Pull),
           getSplitV2FactoryAddress(chainId, SplitV2Type.Push),
-          getSplitV2o1FactoryAddress(chainId, SplitV2Type.Pull),
+          getSplitV2o1FactoryAddress(chainId, SplitV2Type.Pull), // v2.1 and v2 share one common create event, clubbing the search for both in one here.
           getSplitV2o1FactoryAddress(chainId, SplitV2Type.Push),
         ],
         event: splitCreatedEvent,
