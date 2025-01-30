@@ -1,6 +1,6 @@
 {
   "name": "@0xsplits/splits-sdk",
-  "version": "4.1.2-alpha.0",
+  "version": "4.1.2",
   "description": "SDK for the 0xSplits protocol",
   "main": "./dist/src/index.js",
   "typings": "./dist/src/index.d.ts",
