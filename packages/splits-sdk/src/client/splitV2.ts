@@ -19,6 +19,7 @@ import {
   ZERO,
   getSplitV2FactoriesStartBlock,
   getSplitV2FactoryAddress,
+  getSplitV2o1FactoryAddress,
 } from '../constants'
 import { splitV2ABI } from '../constants/abi/splitV2'
 import { splitV2FactoryABI } from '../constants/abi/splitV2Factory'
@@ -54,6 +55,7 @@ import {
   BaseTransactions,
 } from './base'
 import { applyMixins } from './mixin'
+import { splitV2o1FactoryAbi } from '../constants/abi/splitV2o1Factory'
 
 type SplitFactoryABI = typeof splitV2FactoryABI
 type SplitV2ABI = typeof splitV2ABI
@@ -298,13 +300,27 @@ class SplitV2Transactions extends BaseTransactions {
   ): Promise<{ split: Split }> {
     const publicClient = this._getPublicClient(chainId)
 
-    const [createLogs, owner, paused] = await Promise.all([
+    const [createV2o1Logs, createV2Logs, owner, paused] = await Promise.all([
       publicClient.getLogs({
-        event: splitCreatedEvent,
+        address: [
+          getSplitV2o1FactoryAddress(chainId, SplitV2Type.Pull),
+          getSplitV2o1FactoryAddress(chainId, SplitV2Type.Push),
+        ],
+        event: splitV2o1CreatedEvent,
+        args: {
+          split: splitAddress,
+        },
+        strict: true,
+        fromBlock: getSplitV2FactoriesStartBlock(chainId),
+      }),
+      publicClient.getLogs({
         address: [
           getSplitV2FactoryAddress(chainId, SplitV2Type.Pull),
           getSplitV2FactoryAddress(chainId, SplitV2Type.Push),
+          getSplitV2o1FactoryAddress(chainId, SplitV2Type.Pull), // v2.1 and v2 share one common create event, clubbing the search for both in one here.
+          getSplitV2o1FactoryAddress(chainId, SplitV2Type.Push),
         ],
+        event: splitCreatedEvent,
         args: {
           split: splitAddress,
         },
@@ -315,7 +331,9 @@ class SplitV2Transactions extends BaseTransactions {
       this._paused(splitAddress, chainId),
     ])
 
-    if (!createLogs) throw new Error('Split not found')
+    if (!createV2Logs && !createV2o1Logs) throw new Error('Split not found')
+
+    const createLogs = createV2Logs ? createV2Logs : createV2o1Logs
 
     const updateLogs = await publicClient.getLogs({
       address: splitAddress,
@@ -1089,6 +1107,8 @@ class SplitV2Signature extends SplitV2Transactions {
 const splitUpdatedEvent = splitV2ABI[28]
 
 const splitCreatedEvent = splitV2FactoryABI[8]
+
+const splitV2o1CreatedEvent = splitV2o1FactoryAbi[7]
 
 const SigTypes = {
   SplitWalletMessage: [
