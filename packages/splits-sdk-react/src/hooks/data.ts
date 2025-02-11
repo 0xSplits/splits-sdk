@@ -402,9 +402,9 @@ export const useSplitMetadata = (
 export const useSplitEarnings = (
   chainId: number,
   splitAddress: string,
-  includeActiveBalances?: boolean,
-  erc20TokenList?: string[],
   options?: {
+    includeActiveBalances?: boolean
+    erc20TokenList?: string[]
     requireDataClient?: boolean
   },
 ): {
@@ -420,6 +420,8 @@ export const useSplitEarnings = (
   const splitsV2Client = getSplitsClient(context).splitV2
 
   const requireDataClient = options?.requireDataClient ?? true
+  const erc20TokenList = options?.erc20TokenList
+  const includeActiveBalances = options?.includeActiveBalances ?? false
 
   const [splitEarnings, setSplitEarnings] = useState<
     FormattedSplitEarnings | undefined
@@ -538,8 +540,10 @@ export const useSplitEarnings = (
 export const useContractEarnings = (
   chainId: number,
   contractAddress: string,
-  includeActiveBalances?: boolean,
-  erc20TokenList?: string[],
+  options?: {
+    includeActiveBalances?: boolean
+    erc20TokenList?: string[]
+  },
 ): {
   isLoading: boolean
   data: FormattedContractEarnings | undefined
@@ -557,6 +561,9 @@ export const useContractEarnings = (
     contractAddress ? 'loading' : undefined,
   )
   const [error, setError] = useState<RequestError>()
+
+  const erc20TokenList = options?.erc20TokenList
+  const includeActiveBalances = options?.includeActiveBalances ?? false
 
   const stringErc20List =
     erc20TokenList !== undefined ? JSON.stringify(erc20TokenList) : undefined
