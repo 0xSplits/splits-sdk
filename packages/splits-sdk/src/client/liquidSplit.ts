@@ -1,13 +1,11 @@
 import { decode } from 'base-64'
 import {
   Address,
-  Chain,
   GetContractReturnType,
   Hash,
   Hex,
   Log,
   PublicClient,
-  Transport,
   decodeEventLog,
   encodeEventTopics,
   getAddress,
@@ -171,11 +169,11 @@ class LiquidSplitTransactions extends BaseTransactions {
 
     const liquidSplitContract = this._getLiquidSplitContract(
       liquidSplitAddress,
-      this._walletClient!.chain.id,
+      this._walletClient!.chain!.id,
     )
     const owner = await liquidSplitContract.read.owner()
 
-    const walletAddress = this._walletClient!.account.address
+    const walletAddress = this._walletClient!.account?.address
 
     if (owner !== walletAddress)
       throw new InvalidAuthError(
@@ -186,7 +184,7 @@ class LiquidSplitTransactions extends BaseTransactions {
   protected _getLiquidSplitContract(
     liquidSplit: string,
     chainId: number,
-  ): GetContractReturnType<LS1155Abi, PublicClient<Transport, Chain>> {
+  ): GetContractReturnType<LS1155Abi, PublicClient> {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getAddress(liquidSplit),

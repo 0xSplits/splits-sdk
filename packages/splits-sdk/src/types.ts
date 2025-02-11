@@ -1,12 +1,9 @@
 import type {
   AccessList,
-  Account,
   Address,
-  Chain,
   Hash,
   Hex,
   PublicClient,
-  Transport,
   WalletClient,
 } from 'viem'
 import { TransactionType } from './constants'
@@ -37,30 +34,30 @@ export type ApiConfig = {
 }
 
 export type DataClientConfig = {
-  publicClient?: PublicClient<Transport, Chain>
+  publicClient?: PublicClient
   publicClients?: {
-    [chainId: number]: PublicClient<Transport, Chain>
+    [chainId: number]: PublicClient
   }
   apiConfig: ApiConfig
   includeEnsNames?: boolean
   // ensPublicClient can be used to fetch ens names when publicClient is not on mainnet (reverseRecords
   // only works on mainnet).
-  ensPublicClient?: PublicClient<Transport, Chain>
+  ensPublicClient?: PublicClient
 }
 
 // Splits
 export type SplitsClientConfig = {
   chainId?: number
-  publicClient?: PublicClient<Transport, Chain>
+  publicClient?: PublicClient
   publicClients?: {
-    [chainId: number]: PublicClient<Transport, Chain>
+    [chainId: number]: PublicClient
   }
-  walletClient?: WalletClient<Transport, Chain, Account>
+  walletClient?: WalletClient
   apiConfig?: ApiConfig
   includeEnsNames?: boolean
   // ensPublicClient can be used to fetch ens names when publicClient is not on mainnet (reverseRecords
   // only works on mainnet).
-  ensPublicClient?: PublicClient<Transport, Chain>
+  ensPublicClient?: PublicClient
 }
 
 export type BaseClientConfig = SplitsClientConfig & {

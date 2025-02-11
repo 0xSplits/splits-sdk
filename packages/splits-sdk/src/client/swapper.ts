@@ -1,12 +1,10 @@
 import {
   Address,
-  Chain,
   GetContractReturnType,
   Hash,
   Hex,
   Log,
   PublicClient,
-  Transport,
   decodeEventLog,
   encodeEventTopics,
   getAddress,
@@ -362,11 +360,11 @@ class SwapperTransactions extends BaseTransactions {
 
     const swapperContract = this._getSwapperContract(
       swapperAddress,
-      this._walletClient!.chain.id,
+      this._walletClient!.chain!.id,
     )
     const owner = await swapperContract.read.owner()
 
-    const walletAddress = this._walletClient!.account.address
+    const walletAddress = this._walletClient!.account?.address
 
     if (owner !== walletAddress)
       throw new InvalidAuthError(
@@ -376,7 +374,7 @@ class SwapperTransactions extends BaseTransactions {
 
   protected _getUniV3SwapContract(
     chainId: number,
-  ): GetContractReturnType<UniV3SwapAbi, PublicClient<Transport, Chain>> {
+  ): GetContractReturnType<UniV3SwapAbi, PublicClient> {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getUniV3SwapAddress(),
@@ -388,7 +386,7 @@ class SwapperTransactions extends BaseTransactions {
   protected _getSwapperContract(
     swapper: string,
     chainId: number,
-  ): GetContractReturnType<SwapperAbi, PublicClient<Transport, Chain>> {
+  ): GetContractReturnType<SwapperAbi, PublicClient> {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getAddress(swapper),

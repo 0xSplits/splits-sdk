@@ -1,12 +1,10 @@
 import {
   Address,
-  Chain,
   GetContractReturnType,
   Hash,
   Hex,
   Log,
   PublicClient,
-  Transport,
   decodeEventLog,
   encodeEventTopics,
   getAddress,
@@ -217,7 +215,7 @@ class WaterfallTransactions extends BaseTransactions {
   protected _getWaterfallContract(
     waterfallModule: string,
     chainId: number,
-  ): GetContractReturnType<WaterfallAbi, PublicClient<Transport, Chain>> {
+  ): GetContractReturnType<WaterfallAbi, PublicClient> {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getAddress(waterfallModule),

@@ -1,12 +1,10 @@
 import {
   Address,
-  Chain,
   GetContractReturnType,
   Hash,
   Hex,
   Log,
   PublicClient,
-  Transport,
   decodeEventLog,
   encodeEventTopics,
   getAddress,
@@ -116,7 +114,7 @@ class VestingTransactions extends BaseTransactions {
   protected _getVestingContract(
     vestingModule: string,
     chainId: number,
-  ): GetContractReturnType<VestingAbi, PublicClient<Transport, Chain>> {
+  ): GetContractReturnType<VestingAbi, PublicClient> {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getAddress(vestingModule),
@@ -127,7 +125,7 @@ class VestingTransactions extends BaseTransactions {
 
   protected _getVestingFactoryContract(
     chainId: number,
-  ): GetContractReturnType<VestingFactoryAbi, PublicClient<Transport, Chain>> {
+  ): GetContractReturnType<VestingFactoryAbi, PublicClient> {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getVestingFactoryAddress(chainId),

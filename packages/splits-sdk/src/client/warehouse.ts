@@ -1,12 +1,10 @@
 import {
   Address,
-  Chain,
   GetContractReturnType,
   Hash,
   Hex,
   Log,
   PublicClient,
-  Transport,
   TypedDataDomain,
   encodeEventTopics,
   fromHex,
@@ -70,7 +68,7 @@ class WarehouseTransactions extends BaseTransactions {
 
   protected _getWarehouseContract(
     chainId: number,
-  ): GetContractReturnType<WarehouseAbiType, PublicClient<Transport, Chain>> {
+  ): GetContractReturnType<WarehouseAbiType, PublicClient> {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getWarehouseAddress(),
@@ -1335,16 +1333,17 @@ class WarehouseSignature extends WarehouseTransactions {
     validateAddress(approveBySigArgs.tokenAddress)
     this._requireWalletClient()
 
-    const { domain } = await this._eip712Domain(this._walletClient!.chain.id)
+    const { domain } = await this._eip712Domain(this._walletClient!.chain!.id)
 
     this._requireWalletClient()
 
     const signature = await this._walletClient!.signTypedData({
+      account: this._walletClient!.account!,
       domain,
       types: SigTypes,
       primaryType: 'ERC6909XApproveAndCall',
       message: {
-        owner: this._walletClient!.account.address,
+        owner: this._walletClient!.account!.address,
         spender: approveBySigArgs.spenderAddress,
         temporary: false,
         operator: approveBySigArgs.operator,
@@ -1360,7 +1359,7 @@ class WarehouseSignature extends WarehouseTransactions {
     if (!signature) throw new Error('Error in signing data')
 
     return {
-      ownerAddress: this._walletClient!.account.address as Address,
+      ownerAddress: this._walletClient!.account!.address as Address,
       signature,
       ...approveBySigArgs,
     }
@@ -1374,14 +1373,15 @@ class WarehouseSignature extends WarehouseTransactions {
     validateAddress(temporaryApproveAndCallBySigArgs.targetAddress)
     this._requireWalletClient()
 
-    const { domain } = await this._eip712Domain(this._walletClient!.chain.id)
+    const { domain } = await this._eip712Domain(this._walletClient!.chain!.id)
 
     const signature = await this._walletClient!.signTypedData({
+      account: this._walletClient!.account!,
       domain,
       types: SigTypes,
       primaryType: 'ERC6909XApproveAndCall',
       message: {
-        owner: this._walletClient!.account.address,
+        owner: this._walletClient!.account!.address,
         spender: temporaryApproveAndCallBySigArgs.spenderAddress,
         temporary: true,
         operator: temporaryApproveAndCallBySigArgs.operator,
@@ -1397,7 +1397,7 @@ class WarehouseSignature extends WarehouseTransactions {
     if (!signature) throw new Error('Error in signing data')
 
     return {
-      ownerAddress: this._walletClient!.account.address as Address,
+      ownerAddress: this._walletClient!.account!.address as Address,
       signature,
       ...temporaryApproveAndCallBySigArgs,
     }

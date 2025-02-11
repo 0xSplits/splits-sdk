@@ -1,8 +1,6 @@
 import {
-  Chain,
   GetContractReturnType,
   PublicClient,
-  Transport,
   getAddress,
   getContract,
 } from 'viem'
@@ -30,7 +28,7 @@ class OracleTransactions extends BaseTransactions {
   protected _getOracleContract(
     oracle: string,
     chainId: number,
-  ): GetContractReturnType<UniV3OracleAbi, PublicClient<Transport, Chain>> {
+  ): GetContractReturnType<UniV3OracleAbi, PublicClient> {
     const publicClient = this._getPublicClient(chainId)
 
     return getContract({

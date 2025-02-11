@@ -126,7 +126,7 @@ export const useCreateSplit = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const chainId = splitsClient._walletClient?.chain.id
+        const chainId = splitsClient._walletClient?.chain?.id
         if (!chainId) {
           throw new Error('Wallet client required')
         }
@@ -144,7 +144,7 @@ export const useCreateSplit = (): {
         })
 
         const splitMainAbi =
-          splitsClient._walletClient?.chain.id === mainnet.id
+          splitsClient._walletClient?.chain?.id === mainnet.id
             ? splitMainEthereumAbi
             : splitMainPolygonAbi
         const event = events?.[0]
@@ -197,7 +197,7 @@ export const useUpdateSplit = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const chainId = splitsClient._walletClient?.chain.id
+        const chainId = splitsClient._walletClient?.chain?.id
         if (!chainId) {
           throw new Error('Wallet client required')
         }
@@ -261,7 +261,7 @@ export const useDistributeToken = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const chainId = splitsClient._walletClient?.chain.id
+        const chainId = splitsClient._walletClient?.chain?.id
         if (!chainId) {
           throw new Error('Wallet client required')
         }
@@ -316,7 +316,7 @@ export const useUpdateSplitAndDistributeToken = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const chainId = splitsClient._walletClient?.chain.id
+        const chainId = splitsClient._walletClient?.chain?.id
         if (!chainId) {
           throw new Error('Wallet client required')
         }
@@ -382,7 +382,7 @@ export const useWithdrawFunds = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const chainId = splitsClient._walletClient?.chain.id
+        const chainId = splitsClient._walletClient?.chain?.id
         if (!chainId) {
           throw new Error('Wallet client required')
         }
@@ -437,7 +437,7 @@ export const useInitiateControlTransfer = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const chainId = splitsClient._walletClient?.chain.id
+        const chainId = splitsClient._walletClient?.chain?.id
         if (!chainId) {
           throw new Error('Wallet client required')
         }
@@ -492,7 +492,7 @@ export const useCancelControlTransfer = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const chainId = splitsClient._walletClient?.chain.id
+        const chainId = splitsClient._walletClient?.chain?.id
         if (!chainId) {
           throw new Error('Wallet client required')
         }
@@ -547,7 +547,7 @@ export const useAcceptControlTransfer = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const chainId = splitsClient._walletClient?.chain.id
+        const chainId = splitsClient._walletClient?.chain?.id
         if (!chainId) {
           throw new Error('Wallet client required')
         }
@@ -602,7 +602,7 @@ export const useMakeSplitImmutable = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const chainId = splitsClient._walletClient?.chain.id
+        const chainId = splitsClient._walletClient?.chain?.id
         if (!chainId) {
           throw new Error('Wallet client required')
         }

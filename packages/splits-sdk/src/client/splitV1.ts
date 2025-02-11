@@ -1,12 +1,10 @@
 import {
   Address,
-  Chain,
   GetContractReturnType,
   Hash,
   InvalidAddressError,
   Log,
   PublicClient,
-  Transport,
   decodeEventLog,
   encodeEventTopics,
   getAddress,
@@ -577,7 +575,7 @@ class SplitV1Transactions extends BaseTransactions {
       throw new AccountNotFoundError(
         'Split',
         formattedSplitAddress,
-        publicClient.chain.id,
+        publicClient.chain!.id,
       )
 
     const split = await this._buildSplitFromLogs({
@@ -663,31 +661,31 @@ class SplitV1Transactions extends BaseTransactions {
   }
 
   private async _requireController(splitAddress: string) {
-    const chainId = this._walletClient!.chain.id
+    const chainId = this._walletClient!.chain!.id
     const splitMainContract = this._getSplitMainContract(chainId)
     const controller = await splitMainContract.read.getController([
       getAddress(splitAddress),
     ])
 
-    const walletAddress = this._walletClient!.account.address
+    const walletAddress = this._walletClient!.account?.address
 
-    if (controller.toLowerCase() !== walletAddress.toLowerCase())
+    if (controller.toLowerCase() !== walletAddress?.toLowerCase())
       throw new InvalidAuthError(
         `Action only available to the split controller. Split id: ${splitAddress}, split controller: ${controller}, wallet address: ${walletAddress}`,
       )
   }
 
   private async _requireNewPotentialController(splitAddress: string) {
-    const chainId = this._walletClient!.chain.id
+    const chainId = this._walletClient!.chain!.id
     const splitMainContract = this._getSplitMainContract(chainId)
     const newPotentialController =
       await splitMainContract.read.getNewPotentialController([
         getAddress(splitAddress),
       ])
 
-    const walletAddress = this._walletClient!.account.address
+    const walletAddress = this._walletClient!.account?.address
 
-    if (newPotentialController.toLowerCase() !== walletAddress.toLowerCase())
+    if (newPotentialController.toLowerCase() !== walletAddress?.toLowerCase())
       throw new InvalidAuthError(
         `Action only available to the split's new potential controller. Split new potential controller: ${newPotentialController}. Wallet address: ${walletAddress}`,
       )
@@ -695,10 +693,7 @@ class SplitV1Transactions extends BaseTransactions {
 
   protected _getSplitMainContract(
     chainId: number,
-  ): GetContractReturnType<
-    SplitMainEthereumAbiType,
-    PublicClient<Transport, Chain>
-  > {
+  ): GetContractReturnType<SplitMainEthereumAbiType, PublicClient> {
     const publicClient = this._getPublicClient(chainId)
 
     return getContract({

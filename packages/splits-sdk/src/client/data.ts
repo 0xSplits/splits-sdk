@@ -1,13 +1,6 @@
 import { Client } from '@urql/core'
 import { DocumentNode } from 'graphql'
-import {
-  Address,
-  Chain,
-  PublicClient,
-  Transport,
-  getAddress,
-  zeroAddress,
-} from 'viem'
+import { Address, PublicClient, getAddress, zeroAddress } from 'viem'
 import {
   DataClientConfig,
   FormattedContractEarnings,
@@ -84,11 +77,11 @@ import {
 } from '../utils'
 
 export class DataClient {
-  readonly _ensPublicClient: PublicClient<Transport, Chain> | undefined // DEPRECATED
-  readonly _publicClient: PublicClient<Transport, Chain> | undefined // DEPRECATED
+  readonly _ensPublicClient: PublicClient | undefined // DEPRECATED
+  readonly _publicClient: PublicClient | undefined // DEPRECATED
   readonly _publicClients:
     | {
-        [chainId: number]: PublicClient<Transport, Chain>
+        [chainId: number]: PublicClient
       }
     | undefined
   private readonly _graphqlClient: Client | undefined
@@ -124,7 +117,7 @@ export class DataClient {
     this._getPublicClient(chainId)
   }
 
-  protected _getPublicClient(chainId: number): PublicClient<Transport, Chain> {
+  protected _getPublicClient(chainId: number): PublicClient {
     if (this._publicClients && this._publicClients[chainId]) {
       return this._publicClients[chainId]
     }
@@ -380,9 +373,9 @@ export class DataClient {
       throw new MissingPublicClientError(
         'Public client required to get active balances. Please update your call to the client constructor, or set includeActiveBalances to false',
       )
-    if (functionPublicClient.chain.id !== chainId) {
+    if (functionPublicClient.chain?.id !== chainId) {
       throw new InvalidArgumentError(
-        `Public client is set to chain id ${functionPublicClient.chain.id}, but active balances are being fetched on chain ${chainId}. Active balances can only be fetched on the same chain as the public client.`,
+        `Public client is set to chain id ${functionPublicClient.chain?.id}, but active balances are being fetched on chain ${chainId}. Active balances can only be fetched on the same chain as the public client.`,
       )
     }
     const tokenList = erc20TokenList ?? []

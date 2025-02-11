@@ -1,13 +1,11 @@
 import {
   Address,
-  Chain,
   GetContractReturnType,
   Hash,
   Hex,
   InvalidAddressError,
   Log,
   PublicClient,
-  Transport,
   TypedDataDomain,
   decodeEventLog,
   encodeEventTopics,
@@ -249,7 +247,7 @@ class SplitV2Transactions extends BaseTransactions {
   protected async _distribute({
     splitAddress,
     tokenAddress: token,
-    distributorAddress = this._walletClient?.account.address as Address,
+    distributorAddress = this._walletClient?.account?.address as Address,
     chainId,
     splitFields,
     transactionOverrides = {},
@@ -509,7 +507,7 @@ class SplitV2Transactions extends BaseTransactions {
   protected _getSplitV2Contract(
     splitAddress: Address,
     chainId: number,
-  ): GetContractReturnType<SplitV2ABI, PublicClient<Transport, Chain>> {
+  ): GetContractReturnType<SplitV2ABI, PublicClient> {
     validateAddress(splitAddress)
     const publicClient = this._getPublicClient(chainId)
 
@@ -523,7 +521,7 @@ class SplitV2Transactions extends BaseTransactions {
   protected _getSplitV2FactoryContract(
     splitType: SplitV2Type,
     chainId: number,
-  ): GetContractReturnType<SplitFactoryABI, PublicClient<Transport, Chain>> {
+  ): GetContractReturnType<SplitFactoryABI, PublicClient> {
     const publicClient = this._getPublicClient(chainId)
 
     return getContract({
@@ -536,10 +534,7 @@ class SplitV2Transactions extends BaseTransactions {
   protected _getSplitV2o1FactoryContract(
     splitType: SplitV2Type,
     chainId: number,
-  ): GetContractReturnType<
-    SplitV2o1FactoryABI,
-    PublicClient<Transport, Chain>
-  > {
+  ): GetContractReturnType<SplitV2o1FactoryABI, PublicClient> {
     const publicClient = this._getPublicClient(chainId)
 
     return getContract({
@@ -572,12 +567,12 @@ class SplitV2Transactions extends BaseTransactions {
   protected async _requireOwner(splitAddress: Address) {
     const ownerAddress = await this._owner(
       splitAddress,
-      this._walletClient!.chain.id,
+      this._walletClient!.chain!.id,
     )
 
-    const walletAddress = this._walletClient!.account.address
+    const walletAddress = this._walletClient!.account?.address
 
-    if (ownerAddress.toLowerCase() !== walletAddress.toLowerCase())
+    if (ownerAddress.toLowerCase() !== walletAddress?.toLowerCase())
       throw new InvalidAuthError(
         `Action only available to the split controller. Split id: ${splitAddress}, split controller: ${ownerAddress}, wallet address: ${walletAddress}`,
       )
@@ -1437,6 +1432,7 @@ class SplitV2Signature extends SplitV2Transactions {
     this._requireWalletClient()
 
     const signature = await this._walletClient?.signTypedData({
+      account: this._walletClient!.account!,
       domain,
       types: SigTypes,
       primaryType: 'SplitWalletMessage',

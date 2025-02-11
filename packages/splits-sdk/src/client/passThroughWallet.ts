@@ -1,12 +1,10 @@
 import {
   Address,
-  Chain,
   GetContractReturnType,
   Hash,
   Hex,
   Log,
   PublicClient,
-  Transport,
   decodeEventLog,
   encodeEventTopics,
   getAddress,
@@ -172,7 +170,7 @@ class PassThroughWalletTransactions extends BaseTransactions {
 
     const passThroughWalletContract = this._getPassThroughWalletContract(
       passThroughWalletAddress,
-      this._walletClient!.chain.id,
+      this._walletClient!.chain!.id,
     )
     const owner = await passThroughWalletContract.read.owner()
 
@@ -185,10 +183,7 @@ class PassThroughWalletTransactions extends BaseTransactions {
   protected _getPassThroughWalletContract(
     passThroughWallet: string,
     chainId: number,
-  ): GetContractReturnType<
-    PassThroughWalletAbi,
-    PublicClient<Transport, Chain>
-  > {
+  ): GetContractReturnType<PassThroughWalletAbi, PublicClient> {
     const publicClient = this._getPublicClient(chainId)
 
     return getContract({

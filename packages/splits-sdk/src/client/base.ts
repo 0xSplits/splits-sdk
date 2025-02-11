@@ -7,9 +7,6 @@ import {
   encodeFunctionData,
   Log,
   Hex,
-  Transport,
-  Chain,
-  Account,
 } from 'viem'
 
 import { MULTICALL_3_ADDRESS, TransactionType } from '../constants'
@@ -36,12 +33,12 @@ import { DataClient } from './data'
 
 class BaseClient {
   readonly _chainId: number | undefined // DEPRECATED
-  readonly _ensPublicClient: PublicClient<Transport, Chain> | undefined // DEPRECATED
-  readonly _walletClient: WalletClient<Transport, Chain, Account> | undefined
-  readonly _publicClient: PublicClient<Transport, Chain> | undefined // DEPRECATED
+  readonly _ensPublicClient: PublicClient | undefined // DEPRECATED
+  readonly _walletClient: WalletClient | undefined
+  readonly _publicClient: PublicClient | undefined // DEPRECATED
   readonly _publicClients:
     | {
-        [chainId: number]: PublicClient<Transport, Chain>
+        [chainId: number]: PublicClient
       }
     | undefined
   readonly _apiConfig: ApiConfig | undefined
@@ -106,14 +103,16 @@ class BaseClient {
         'Wallet client must have an account attached to it to perform this action, please update your wallet client passed into the constructor',
       )
 
-    const chainId = this._walletClient.chain.id
+    const chainId = this._walletClient.chain?.id
+    if (!chainId)
+      throw new Error('Wallet client must have a chain attached to it')
     if (!this._supportedChainIds.includes(chainId))
       throw new UnsupportedChainIdError(chainId, this._supportedChainIds)
 
     this._requirePublicClient(chainId)
   }
 
-  _getPublicClient(chainId: number): PublicClient<Transport, Chain> {
+  _getPublicClient(chainId: number): PublicClient {
     if (!this._supportedChainIds.includes(chainId))
       throw new UnsupportedChainIdError(chainId, this._supportedChainIds)
 
@@ -126,9 +125,9 @@ class BaseClient {
         `Public client required on chain ${chainId} to perform this action, please update your call to the constructor`,
       )
 
-    if (this._publicClient.chain.id !== chainId) {
+    if (this._publicClient.chain?.id !== chainId) {
       throw new MissingPublicClientError(
-        `Public client is for chain ${this._publicClient.chain.id}, but attempting to use it on chain ${chainId}`,
+        `Public client is for chain ${this._publicClient.chain?.id}, but attempting to use it on chain ${chainId}`,
       )
     }
 
@@ -174,7 +173,7 @@ export class BaseTransactions extends BaseClient {
 
     if (this._transactionType === TransactionType.GasEstimate) {
       if (!this._walletClient?.account) throw new Error()
-      const publicClient = this._getPublicClient(this._walletClient.chain.id)
+      const publicClient = this._getPublicClient(this._walletClient.chain!.id)
 
       const gasEstimate = await publicClient.estimateContractGas({
         address: contractAddress,
@@ -200,7 +199,7 @@ export class BaseTransactions extends BaseClient {
       }
     } else if (this._transactionType === TransactionType.Transaction) {
       if (!this._walletClient?.account) throw new Error()
-      const publicClient = this._getPublicClient(this._walletClient.chain.id)
+      const publicClient = this._getPublicClient(this._walletClient.chain!.id)
       const { request } = await publicClient.simulateContract({
         address: contractAddress,
         abi: contractAbi,
@@ -234,15 +233,15 @@ export class BaseTransactions extends BaseClient {
     if (this._shouldRequireWalletClient) {
       if (
         argumentChainId !== undefined &&
-        this._walletClient!.chain.id !== argumentChainId
+        this._walletClient!.chain!.id !== argumentChainId
       ) {
         throw new InvalidArgumentError(
           `Passed in chain id ${argumentChainId} does not match walletClient chain id: ${
-            this._walletClient!.chain.id
+            this._walletClient!.chain!.id
           }.`,
         )
       }
-      return this._walletClient!.chain.id
+      return this._walletClient!.chain!.id
     }
 
     return this._getReadOnlyFunctionChainId(argumentChainId)
@@ -293,7 +292,7 @@ export class BaseClientMixin extends BaseTransactions {
     includeAll?: boolean
   }): Promise<Log[]> {
     this._requireWalletClient()
-    const chainId = this._walletClient!.chain.id
+    const chainId = this._walletClient!.chain!.id
     const publicClient = this._getPublicClient(chainId)
 
     const transaction = await publicClient.waitForTransactionReceipt({
