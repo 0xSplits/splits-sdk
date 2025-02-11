@@ -60,14 +60,14 @@ export const useSplitMetadataViaProvider = (
   },
 ): {
   isLoading: boolean
-  splitMetadata?: Split
+  data?: Split
+  status?: DataLoadStatus
+  error?: RequestError
   currentBlockRange?: {
     from: bigint
     to: bigint
   }
   cacheData?: SplitProviderSearchCacheData
-  status?: DataLoadStatus
-  error?: RequestError
 } => {
   const context = useContext(SplitsContext)
   const splitsV1Client = getSplitsClient(context).splitV1
@@ -289,7 +289,7 @@ export const useSplitMetadataViaProvider = (
 
   return {
     isLoading,
-    splitMetadata,
+    data: splitMetadata,
     currentBlockRange,
     cacheData,
     error,
@@ -305,7 +305,7 @@ export const useSplitMetadata = (
   },
 ): {
   isLoading: boolean
-  splitMetadata: Split | undefined
+  data: Split | undefined
   status?: DataLoadStatus
   error?: RequestError
 } => {
@@ -393,7 +393,7 @@ export const useSplitMetadata = (
 
   return {
     isLoading,
-    splitMetadata,
+    data: splitMetadata,
     error,
     status,
   }
@@ -409,7 +409,7 @@ export const useSplitEarnings = (
   },
 ): {
   isLoading: boolean
-  splitEarnings: FormattedSplitEarnings | undefined
+  data: FormattedSplitEarnings | undefined
   refetch: () => void
   status?: DataLoadStatus
   error?: RequestError
@@ -528,7 +528,7 @@ export const useSplitEarnings = (
 
   return {
     isLoading,
-    splitEarnings,
+    data: splitEarnings,
     refetch,
     status,
     error,
@@ -542,7 +542,7 @@ export const useContractEarnings = (
   erc20TokenList?: string[],
 ): {
   isLoading: boolean
-  contractEarnings: FormattedContractEarnings | undefined
+  data: FormattedContractEarnings | undefined
   status?: DataLoadStatus
   error?: RequestError
 } => {
@@ -613,7 +613,7 @@ export const useContractEarnings = (
 
   return {
     isLoading,
-    contractEarnings,
+    data: contractEarnings,
     status,
     error,
   }
@@ -624,7 +624,7 @@ export const useLiquidSplitMetadata = (
   liquidSplitAddress: string,
 ): {
   isLoading: boolean
-  liquidSplitMetadata: LiquidSplit | undefined
+  data: LiquidSplit | undefined
   status?: DataLoadStatus
   error?: RequestError
 } => {
@@ -682,7 +682,7 @@ export const useLiquidSplitMetadata = (
 
   return {
     isLoading,
-    liquidSplitMetadata,
+    data: liquidSplitMetadata,
     status,
     error,
   }
@@ -693,7 +693,7 @@ export const useSwapperMetadata = (
   swapperAddress: string,
 ): {
   isLoading: boolean
-  swapperMetadata: Swapper | undefined
+  data: Swapper | undefined
   status?: DataLoadStatus
   error?: RequestError
 } => {
@@ -749,14 +749,10 @@ export const useSwapperMetadata = (
 
   return {
     isLoading,
-    swapperMetadata,
+    data: swapperMetadata,
     status,
     error,
   }
-}
-
-const DEFAULT_OPTIONS = {
-  contractIds: undefined,
 }
 
 export const useUserEarnings = (
@@ -764,7 +760,7 @@ export const useUserEarnings = (
   userAddress: string,
 ): {
   isLoading: boolean
-  userEarnings?: FormattedUserEarnings
+  data?: FormattedUserEarnings
   status?: DataLoadStatus
   error?: RequestError
 } => {
@@ -822,7 +818,7 @@ export const useUserEarnings = (
 
   return {
     isLoading,
-    userEarnings,
+    data: userEarnings,
     status,
     error,
   }
@@ -836,15 +832,14 @@ export const useUserEarningsByContract = (
   },
 ): {
   isLoading: boolean
-  userEarningsByContract?: FormattedUserEarningsByContract
+  data?: FormattedUserEarningsByContract
   status?: DataLoadStatus
   error?: RequestError
 } => {
   const context = useContext(SplitsContext)
   const splitsClient = getSplitsClient(context).dataClient
 
-  const contractAddresses =
-    options?.contractAddresses ?? DEFAULT_OPTIONS.contractIds
+  const contractAddresses = options?.contractAddresses
   const contractAddressesString = JSON.stringify(contractAddresses)
 
   const [userEarningsByContract, setUserEarningsByContract] = useState<
@@ -899,7 +894,7 @@ export const useUserEarningsByContract = (
 
   return {
     isLoading,
-    userEarningsByContract,
+    data: userEarningsByContract,
     status,
     error,
   }
@@ -910,7 +905,7 @@ export const useVestingMetadata = (
   vestingModuleAddress: string,
 ): {
   isLoading: boolean
-  vestingMetadata: VestingModule | undefined
+  data: VestingModule | undefined
   status?: DataLoadStatus
   error?: RequestError
 } => {
@@ -968,7 +963,7 @@ export const useVestingMetadata = (
 
   return {
     isLoading,
-    vestingMetadata,
+    data: vestingMetadata,
     status,
     error,
   }
@@ -979,7 +974,7 @@ export const useWaterfallMetadata = (
   waterfallModuleAddress: string,
 ): {
   isLoading: boolean
-  waterfallMetadata: WaterfallModule | undefined
+  data: WaterfallModule | undefined
   status?: DataLoadStatus
   error?: RequestError
 } => {
@@ -1037,7 +1032,7 @@ export const useWaterfallMetadata = (
 
   return {
     isLoading,
-    waterfallMetadata,
+    data: waterfallMetadata,
     status,
     error,
   }
