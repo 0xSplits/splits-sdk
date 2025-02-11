@@ -132,7 +132,9 @@ export const useRecoverNonWaterfallFunds = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient._submitRecoverNonWaterfallFundsTransaction(argsDict)
+          await splitsClient._submitRecoverNonWaterfallFundsTransaction(
+            argsDict,
+          )
 
         setStatus('txInProgress')
         setTxHash(hash)
