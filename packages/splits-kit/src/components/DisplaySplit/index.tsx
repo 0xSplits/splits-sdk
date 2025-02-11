@@ -54,18 +54,21 @@ const DisplaySplit = ({
   onError,
 }: IDisplaySplitProps) => {
   const {
-    splitMetadata: split,
+    data: split,
     error: metadataError,
     isLoading: isLoadingMetadata,
   } = useSplitMetadata(chainId, address)
 
   const includeActiveBalances = true
   const {
-    splitEarnings,
+    data: splitEarnings,
     isLoading: isLoadingEarnings,
     error: earningsError,
     refetch: refetchEarnings,
-  } = useSplitEarnings(chainId, address, includeActiveBalances, erc20TokenList)
+  } = useSplitEarnings(chainId, address, {
+    includeActiveBalances,
+    erc20TokenList,
+  })
 
   const onSuccessWrapper = useCallback(
     (token: string) => {
@@ -200,7 +203,7 @@ export const DisplaySplitViaProvider = ({
   ])
 
   const {
-    splitMetadata: split,
+    data: split,
     currentBlockRange,
     cacheData,
     error: metadataError,
@@ -209,19 +212,15 @@ export const DisplaySplitViaProvider = ({
 
   const includeActiveBalances = true
   const {
-    splitEarnings,
+    data: splitEarnings,
     isLoading: isLoadingEarnings,
     error: earningsError,
     refetch: refetchEarnings,
-  } = useSplitEarnings(
-    chainId,
-    address,
+  } = useSplitEarnings(chainId, address, {
     includeActiveBalances,
     erc20TokenList,
-    {
-      requireDataClient: false,
-    },
-  )
+    requireDataClient: false,
+  })
 
   const onSuccessWrapper = useCallback(
     (token: string) => {
