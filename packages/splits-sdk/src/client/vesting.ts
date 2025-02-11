@@ -179,7 +179,7 @@ export class VestingClient extends VestingTransactions {
   }
 
   // Write actions
-  async submitCreateVestingModuleTransaction(
+  async _submitCreateVestingModuleTransaction(
     createVestingArgs: CreateVestingConfig,
   ): Promise<{
     txHash: Hash
@@ -196,7 +196,7 @@ export class VestingClient extends VestingTransactions {
     event: Log
   }> {
     const { txHash } =
-      await this.submitCreateVestingModuleTransaction(createVestingArgs)
+      await this._submitCreateVestingModuleTransaction(createVestingArgs)
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.createVestingModule,
@@ -217,7 +217,7 @@ export class VestingClient extends VestingTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitStartVestTransaction(startVestArgs: StartVestConfig): Promise<{
+  async _submitStartVestTransaction(startVestArgs: StartVestConfig): Promise<{
     txHash: Hash
   }> {
     const txHash = await this._startVestTransaction(startVestArgs)
@@ -230,7 +230,7 @@ export class VestingClient extends VestingTransactions {
   async startVest(startVestArgs: StartVestConfig): Promise<{
     events: Log[]
   }> {
-    const { txHash } = await this.submitStartVestTransaction(startVestArgs)
+    const { txHash } = await this._submitStartVestTransaction(startVestArgs)
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.startVest,
@@ -238,7 +238,7 @@ export class VestingClient extends VestingTransactions {
     return { events }
   }
 
-  async submitReleaseVestedFundsTransaction(
+  async _submitReleaseVestedFundsTransaction(
     releaseFundsArgs: ReleaseVestedFundsConfig,
   ): Promise<{
     txHash: Hash
@@ -256,7 +256,7 @@ export class VestingClient extends VestingTransactions {
     events: Log[]
   }> {
     const { txHash } =
-      await this.submitReleaseVestedFundsTransaction(releaseFundsArgs)
+      await this._submitReleaseVestedFundsTransaction(releaseFundsArgs)
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.releaseVestedFunds,

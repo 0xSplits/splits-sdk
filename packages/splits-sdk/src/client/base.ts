@@ -313,7 +313,7 @@ export class BaseClientMixin extends BaseTransactions {
     return []
   }
 
-  async submitMulticallTransaction(multicallArgs: MulticallConfig): Promise<{
+  async _submitMulticallTransaction(multicallArgs: MulticallConfig): Promise<{
     txHash: Hash
   }> {
     const multicallResult = await this._multicallTransaction(multicallArgs)
@@ -324,7 +324,7 @@ export class BaseClientMixin extends BaseTransactions {
   }
 
   async multicall(multicallArgs: MulticallConfig): Promise<{ events: Log[] }> {
-    const { txHash } = await this.submitMulticallTransaction(multicallArgs)
+    const { txHash } = await this._submitMulticallTransaction(multicallArgs)
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: [],

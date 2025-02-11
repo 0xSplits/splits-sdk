@@ -475,7 +475,7 @@ export class SwapperClient extends SwapperTransactions {
   }
 
   // Write actions
-  async submitCreateSwapperTransaction(
+  async _submitCreateSwapperTransaction(
     createSwapperArgs: CreateSwapperConfig,
   ): Promise<{
     txHash: Hash
@@ -492,7 +492,7 @@ export class SwapperClient extends SwapperTransactions {
     event: Log
   }> {
     const { txHash } =
-      await this.submitCreateSwapperTransaction(createSwapperArgs)
+      await this._submitCreateSwapperTransaction(createSwapperArgs)
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.createSwapper,
@@ -513,7 +513,7 @@ export class SwapperClient extends SwapperTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitUniV3FlashSwapTransaction(
+  async _submitUniV3FlashSwapTransaction(
     flashArgs: UniV3FlashSwapConfig,
   ): Promise<{
     txHash: Hash
@@ -528,7 +528,7 @@ export class SwapperClient extends SwapperTransactions {
   async uniV3FlashSwap(flashArgs: UniV3FlashSwapConfig): Promise<{
     event: Log
   }> {
-    const { txHash } = await this.submitUniV3FlashSwapTransaction(flashArgs)
+    const { txHash } = await this._submitUniV3FlashSwapTransaction(flashArgs)
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.uniV3FlashSwap,
@@ -542,7 +542,7 @@ export class SwapperClient extends SwapperTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitExecCallsTransaction(callArgs: SwapperExecCallsConfig): Promise<{
+  async _submitExecCallsTransaction(callArgs: SwapperExecCallsConfig): Promise<{
     txHash: Hash
   }> {
     const txHash = await this._execCallsTransaction(callArgs)
@@ -555,7 +555,7 @@ export class SwapperClient extends SwapperTransactions {
   async execCalls(callArgs: SwapperExecCallsConfig): Promise<{
     event: Log
   }> {
-    const { txHash } = await this.submitExecCallsTransaction(callArgs)
+    const { txHash } = await this._submitExecCallsTransaction(callArgs)
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.execCalls,
@@ -569,7 +569,7 @@ export class SwapperClient extends SwapperTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitSetPausedTransaction(pauseArgs: SwapperPauseConfig): Promise<{
+  async _submitSetPausedTransaction(pauseArgs: SwapperPauseConfig): Promise<{
     txHash: Hash
   }> {
     const txHash = await this._setPausedTransaction(pauseArgs)
@@ -582,7 +582,7 @@ export class SwapperClient extends SwapperTransactions {
   async setPaused(pauseArgs: SwapperPauseConfig): Promise<{
     event: Log
   }> {
-    const { txHash } = await this.submitSetPausedTransaction(pauseArgs)
+    const { txHash } = await this._submitSetPausedTransaction(pauseArgs)
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.setPaused,
@@ -596,7 +596,7 @@ export class SwapperClient extends SwapperTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitSetBeneficiaryTransaction(
+  async _submitSetBeneficiaryTransaction(
     args: SwapperSetBeneficiaryConfig,
   ): Promise<{
     txHash: Hash
@@ -611,7 +611,7 @@ export class SwapperClient extends SwapperTransactions {
   async setBeneficiary(args: SwapperSetBeneficiaryConfig): Promise<{
     event: Log
   }> {
-    const { txHash } = await this.submitSetBeneficiaryTransaction(args)
+    const { txHash } = await this._submitSetBeneficiaryTransaction(args)
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.setBeneficiary,
@@ -625,7 +625,7 @@ export class SwapperClient extends SwapperTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitSetTokenToBeneficiaryTransaction(
+  async _submitSetTokenToBeneficiaryTransaction(
     args: SwapperSetTokenToBeneficiaryConfig,
   ): Promise<{
     txHash: Hash
@@ -642,7 +642,7 @@ export class SwapperClient extends SwapperTransactions {
   ): Promise<{
     event: Log
   }> {
-    const { txHash } = await this.submitSetTokenToBeneficiaryTransaction(args)
+    const { txHash } = await this._submitSetTokenToBeneficiaryTransaction(args)
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.setTokenToBeneficiary,
@@ -656,7 +656,7 @@ export class SwapperClient extends SwapperTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitSetOracleTransaction(args: SwapperSetOracleConfig): Promise<{
+  async _submitSetOracleTransaction(args: SwapperSetOracleConfig): Promise<{
     txHash: Hash
   }> {
     const txHash = await this._setOracleTransaction(args)
@@ -669,7 +669,7 @@ export class SwapperClient extends SwapperTransactions {
   async setOracle(args: SwapperSetOracleConfig): Promise<{
     event: Log
   }> {
-    const { txHash } = await this.submitSetOracleTransaction(args)
+    const { txHash } = await this._submitSetOracleTransaction(args)
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.setOracle,
@@ -683,7 +683,7 @@ export class SwapperClient extends SwapperTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitSetDefaultScaledOfferFactorTransaction(
+  async _submitSetDefaultScaledOfferFactorTransaction(
     args: SwapperSetDefaultScaledOfferFactorConfig,
   ): Promise<{
     txHash: Hash
@@ -701,7 +701,7 @@ export class SwapperClient extends SwapperTransactions {
     event: Log
   }> {
     const { txHash } =
-      await this.submitSetDefaultScaledOfferFactorTransaction(args)
+      await this._submitSetDefaultScaledOfferFactorTransaction(args)
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.setDefaultScaledOfferFactor,
@@ -715,7 +715,7 @@ export class SwapperClient extends SwapperTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitSetScaledOfferFactorOverridesTransaction(
+  async _submitSetScaledOfferFactorOverridesTransaction(
     args: SwapperSetScaledOfferFactorOverridesConfig,
   ): Promise<{
     txHash: Hash
@@ -733,7 +733,7 @@ export class SwapperClient extends SwapperTransactions {
     event: Log
   }> {
     const { txHash } =
-      await this.submitSetScaledOfferFactorOverridesTransaction(args)
+      await this._submitSetScaledOfferFactorOverridesTransaction(args)
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.setScaledOfferFactorOverrides,

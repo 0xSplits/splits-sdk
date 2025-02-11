@@ -173,7 +173,7 @@ export class TemplatesClient extends TemplatesTransactions {
   }
 
   // Write actions
-  async submitCreateRecoupTransaction(
+  async _submitCreateRecoupTransaction(
     createRecoupArgs: CreateRecoupConfig,
   ): Promise<{
     txHash: Hash
@@ -190,7 +190,7 @@ export class TemplatesClient extends TemplatesTransactions {
     event: Log
   }> {
     const { txHash } =
-      await this.submitCreateRecoupTransaction(createRecoupArgs)
+      await this._submitCreateRecoupTransaction(createRecoupArgs)
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.createRecoup,
@@ -211,7 +211,7 @@ export class TemplatesClient extends TemplatesTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitCreateDiversifierTransaction(
+  async _submitCreateDiversifierTransaction(
     createDiversifierArgs: CreateDiversifierConfig,
   ): Promise<{
     txHash: Hash
@@ -231,7 +231,7 @@ export class TemplatesClient extends TemplatesTransactions {
     passThroughWalletAddress: Address
     event: Log
   }> {
-    const { txHash } = await this.submitCreateDiversifierTransaction(
+    const { txHash } = await this._submitCreateDiversifierTransaction(
       createDiversifierArgs,
     )
     const events = await this.getTransactionEvents({

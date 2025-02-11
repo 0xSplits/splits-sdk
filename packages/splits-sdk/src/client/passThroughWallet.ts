@@ -251,7 +251,7 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
   }
 
   // Write actions
-  async submitCreatePassThroughWalletTransaction(
+  async _submitCreatePassThroughWalletTransaction(
     createPassThroughArgs: CreatePassThroughWalletConfig,
   ): Promise<{
     txHash: Hash
@@ -271,7 +271,7 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
     passThroughWalletAddress: Address
     event: Log
   }> {
-    const { txHash } = await this.submitCreatePassThroughWalletTransaction(
+    const { txHash } = await this._submitCreatePassThroughWalletTransaction(
       createPassThroughArgs,
     )
     const events = await this.getTransactionEvents({
@@ -294,7 +294,7 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitPassThroughTokensTransaction(
+  async _submitPassThroughTokensTransaction(
     passThroughArgs: PassThroughTokensConfig,
   ): Promise<{
     txHash: Hash
@@ -310,7 +310,7 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
     event: Log
   }> {
     const { txHash } =
-      await this.submitPassThroughTokensTransaction(passThroughArgs)
+      await this._submitPassThroughTokensTransaction(passThroughArgs)
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.passThroughTokens,
@@ -324,7 +324,7 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitSetPassThroughTransaction(args: SetPassThroughConfig): Promise<{
+  async _submitSetPassThroughTransaction(args: SetPassThroughConfig): Promise<{
     txHash: Hash
   }> {
     const txHash = await this._setPassThroughTransaction(args)
@@ -335,7 +335,7 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
   }
 
   async setPassThrough(args: SetPassThroughConfig): Promise<{ event: Log }> {
-    const { txHash } = await this.submitSetPassThroughTransaction(args)
+    const { txHash } = await this._submitSetPassThroughTransaction(args)
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.setPassThrough,
@@ -349,7 +349,7 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitSetPausedTransaction(
+  async _submitSetPausedTransaction(
     pauseArgs: PassThroughWalletPauseConfig,
   ): Promise<{
     txHash: Hash
@@ -363,7 +363,7 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
   async setPaused(pauseArgs: PassThroughWalletPauseConfig): Promise<{
     event: Log
   }> {
-    const { txHash } = await this.submitSetPausedTransaction(pauseArgs)
+    const { txHash } = await this._submitSetPausedTransaction(pauseArgs)
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.setPaused,
@@ -377,7 +377,7 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitExecCallsTransaction(
+  async _submitExecCallsTransaction(
     args: PassThroughWalletExecCallsConfig,
   ): Promise<{
     txHash: Hash
@@ -392,7 +392,7 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
   async execCalls(args: PassThroughWalletExecCallsConfig): Promise<{
     event: Log
   }> {
-    const { txHash } = await this.submitExecCallsTransaction(args)
+    const { txHash } = await this._submitExecCallsTransaction(args)
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.execCalls,

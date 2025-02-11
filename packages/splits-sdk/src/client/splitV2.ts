@@ -660,7 +660,7 @@ export class SplitV2Client extends SplitV2Transactions {
     this.sign = new SplitV2Signature(clientArgs)
   }
 
-  async submitCreateSplitTransaction(
+  async _submitCreateSplitTransaction(
     createSplitArgs: CreateSplitV2Config,
   ): Promise<{
     txHash: Hash
@@ -679,7 +679,7 @@ export class SplitV2Client extends SplitV2Transactions {
     splitAddress: Address
     event: Log
   }> {
-    const { txHash } = await this.submitCreateSplitTransaction(createSplitArgs)
+    const { txHash } = await this._submitCreateSplitTransaction(createSplitArgs)
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.splitCreated,
@@ -741,7 +741,7 @@ export class SplitV2Client extends SplitV2Transactions {
     throw new TransactionFailedError()
   }
 
-  async submitTransferOwnershipTransaction(
+  async _submitTransferOwnershipTransaction(
     transferOwnershipArgs: TransferOwnershipConfig,
   ): Promise<{
     txHash: Hash
@@ -758,7 +758,7 @@ export class SplitV2Client extends SplitV2Transactions {
   ): Promise<{
     event: Log
   }> {
-    const { txHash } = await this.submitTransferOwnershipTransaction(
+    const { txHash } = await this._submitTransferOwnershipTransaction(
       transferOwnershipArgs,
     )
 
@@ -776,7 +776,7 @@ export class SplitV2Client extends SplitV2Transactions {
     throw new TransactionFailedError()
   }
 
-  async submitSetPauseTransaction(setPausedArgs: SetPausedConfig): Promise<{
+  async _submitSetPauseTransaction(setPausedArgs: SetPausedConfig): Promise<{
     txHash: Hash
   }> {
     const txHash = await this._setPaused(setPausedArgs)
@@ -789,7 +789,7 @@ export class SplitV2Client extends SplitV2Transactions {
   async setPause(setPausedArgs: SetPausedConfig): Promise<{
     event: Log
   }> {
-    const { txHash } = await this.submitSetPauseTransaction(setPausedArgs)
+    const { txHash } = await this._submitSetPauseTransaction(setPausedArgs)
 
     const events = await this.getTransactionEvents({
       txHash,
@@ -805,7 +805,7 @@ export class SplitV2Client extends SplitV2Transactions {
     throw new TransactionFailedError()
   }
 
-  async submitExecCallsTransaction(
+  async _submitExecCallsTransaction(
     execCallsArgs: SplitV2ExecCallsConfig,
   ): Promise<{
     txHash: Hash
@@ -820,7 +820,7 @@ export class SplitV2Client extends SplitV2Transactions {
   async execCalls(execCallsArgs: SplitV2ExecCallsConfig): Promise<{
     event: Log
   }> {
-    const { txHash } = await this.submitExecCallsTransaction(execCallsArgs)
+    const { txHash } = await this._submitExecCallsTransaction(execCallsArgs)
 
     const events = await this.getTransactionEvents({
       txHash,
@@ -836,7 +836,7 @@ export class SplitV2Client extends SplitV2Transactions {
     throw new TransactionFailedError()
   }
 
-  async submitDistributeTransaction(
+  async _submitDistributeTransaction(
     distributeArgs: DistributeSplitConfig,
   ): Promise<{
     txHash: Hash
@@ -851,7 +851,7 @@ export class SplitV2Client extends SplitV2Transactions {
   async distribute(distributeArgs: DistributeSplitConfig): Promise<{
     event: Log
   }> {
-    const { txHash } = await this.submitDistributeTransaction(distributeArgs)
+    const { txHash } = await this._submitDistributeTransaction(distributeArgs)
 
     const events = await this.getTransactionEvents({
       txHash,
@@ -867,7 +867,7 @@ export class SplitV2Client extends SplitV2Transactions {
     throw new TransactionFailedError()
   }
 
-  async submitUpdateSplitTransaction(
+  async _submitUpdateSplitTransaction(
     updateSplitArgs: UpdateSplitV2Config,
   ): Promise<{
     txHash: Hash
@@ -882,7 +882,7 @@ export class SplitV2Client extends SplitV2Transactions {
   async updateSplit(updateSplitArgs: UpdateSplitV2Config): Promise<{
     event: Log
   }> {
-    const { txHash } = await this.submitUpdateSplitTransaction(updateSplitArgs)
+    const { txHash } = await this._submitUpdateSplitTransaction(updateSplitArgs)
 
     const events = await this.getTransactionEvents({
       txHash,

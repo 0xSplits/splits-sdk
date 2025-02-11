@@ -814,7 +814,7 @@ export class SplitV1Client extends SplitV1Transactions {
   /
   */
   // Write actions
-  async submitCreateSplitTransaction(
+  async _submitCreateSplitTransaction(
     createSplitArgs: CreateSplitConfig,
   ): Promise<{
     txHash: Hash
@@ -830,7 +830,7 @@ export class SplitV1Client extends SplitV1Transactions {
     splitAddress: Address
     event: Log
   }> {
-    const { txHash } = await this.submitCreateSplitTransaction(createSplitArgs)
+    const { txHash } = await this._submitCreateSplitTransaction(createSplitArgs)
 
     const functionChainId = this._getFunctionChainId(createSplitArgs.chainId)
     const eventTopics = this.getEventTopics(
@@ -870,7 +870,7 @@ export class SplitV1Client extends SplitV1Transactions {
     throw new TransactionFailedError()
   }
 
-  async submitUpdateSplitTransaction(
+  async _submitUpdateSplitTransaction(
     updateSplitArgs: UpdateSplitConfig,
   ): Promise<{
     txHash: Hash
@@ -885,7 +885,7 @@ export class SplitV1Client extends SplitV1Transactions {
   async updateSplit(updateSplitArgs: UpdateSplitConfig): Promise<{
     event: Log
   }> {
-    const { txHash } = await this.submitUpdateSplitTransaction(updateSplitArgs)
+    const { txHash } = await this._submitUpdateSplitTransaction(updateSplitArgs)
     const eventTopics = this.getEventTopics(
       this._getFunctionChainId(updateSplitArgs.chainId),
     )
@@ -899,7 +899,7 @@ export class SplitV1Client extends SplitV1Transactions {
     throw new TransactionFailedError()
   }
 
-  async submitDistributeTokenTransaction(
+  async _submitDistributeTokenTransaction(
     distributeTokenArgs: DistributeTokenConfig,
   ): Promise<{
     txHash: Hash
@@ -915,7 +915,7 @@ export class SplitV1Client extends SplitV1Transactions {
     event: Log
   }> {
     const { txHash } =
-      await this.submitDistributeTokenTransaction(distributeTokenArgs)
+      await this._submitDistributeTokenTransaction(distributeTokenArgs)
     const eventTopics = this.getEventTopics(
       this._getFunctionChainId(distributeTokenArgs.chainId),
     )
@@ -934,7 +934,7 @@ export class SplitV1Client extends SplitV1Transactions {
     throw new TransactionFailedError()
   }
 
-  async submitUpdateSplitAndDistributeTokenTransaction(
+  async _submitUpdateSplitAndDistributeTokenTransaction(
     updateAndDistributeArgs: UpdateSplitAndDistributeTokenConfig,
   ): Promise<{
     txHash: Hash
@@ -954,7 +954,7 @@ export class SplitV1Client extends SplitV1Transactions {
     event: Log
   }> {
     const { txHash } =
-      await this.submitUpdateSplitAndDistributeTokenTransaction(
+      await this._submitUpdateSplitAndDistributeTokenTransaction(
         updateAndDistributeArgs,
       )
     const eventTopics = this.getEventTopics(
@@ -975,7 +975,7 @@ export class SplitV1Client extends SplitV1Transactions {
     throw new TransactionFailedError()
   }
 
-  async submitWithdrawFundsTransaction(
+  async _submitWithdrawFundsTransaction(
     withdrawArgs: WithdrawFundsConfig,
   ): Promise<{
     txHash: Hash
@@ -990,7 +990,7 @@ export class SplitV1Client extends SplitV1Transactions {
   async withdrawFunds(withdrawArgs: WithdrawFundsConfig): Promise<{
     event: Log
   }> {
-    const { txHash } = await this.submitWithdrawFundsTransaction(withdrawArgs)
+    const { txHash } = await this._submitWithdrawFundsTransaction(withdrawArgs)
     const eventTopics = this.getEventTopics(
       this._getFunctionChainId(withdrawArgs.chainId),
     )
@@ -1004,7 +1004,7 @@ export class SplitV1Client extends SplitV1Transactions {
     throw new TransactionFailedError()
   }
 
-  async submitInitiateControlTransferTransaction(
+  async _submitInitiateControlTransferTransaction(
     initiateTransferArgs: InitiateControlTransferConfig,
   ): Promise<{
     txHash: Hash
@@ -1023,7 +1023,7 @@ export class SplitV1Client extends SplitV1Transactions {
     event: Log
   }> {
     const { txHash } =
-      await this.submitInitiateControlTransferTransaction(initiateTransferArgs)
+      await this._submitInitiateControlTransferTransaction(initiateTransferArgs)
     const eventTopics = this.getEventTopics(
       this._getFunctionChainId(initiateTransferArgs.chainId),
     )
@@ -1037,7 +1037,7 @@ export class SplitV1Client extends SplitV1Transactions {
     throw new TransactionFailedError()
   }
 
-  async submitCancelControlTransferTransaction(
+  async _submitCancelControlTransferTransaction(
     cancelTransferArgs: CancelControlTransferConfig,
   ): Promise<{
     txHash: Hash
@@ -1056,7 +1056,7 @@ export class SplitV1Client extends SplitV1Transactions {
     event: Log
   }> {
     const { txHash } =
-      await this.submitCancelControlTransferTransaction(cancelTransferArgs)
+      await this._submitCancelControlTransferTransaction(cancelTransferArgs)
     const eventTopics = this.getEventTopics(
       this._getFunctionChainId(cancelTransferArgs.chainId),
     )
@@ -1070,7 +1070,7 @@ export class SplitV1Client extends SplitV1Transactions {
     throw new TransactionFailedError()
   }
 
-  async submitAcceptControlTransferTransaction(
+  async _submitAcceptControlTransferTransaction(
     acceptTransferArgs: AcceptControlTransferConfig,
   ): Promise<{
     txHash: Hash
@@ -1089,7 +1089,7 @@ export class SplitV1Client extends SplitV1Transactions {
     event: Log
   }> {
     const { txHash } =
-      await this.submitAcceptControlTransferTransaction(acceptTransferArgs)
+      await this._submitAcceptControlTransferTransaction(acceptTransferArgs)
     const eventTopics = this.getEventTopics(
       this._getFunctionChainId(acceptTransferArgs.chainId),
     )
@@ -1103,7 +1103,7 @@ export class SplitV1Client extends SplitV1Transactions {
     throw new TransactionFailedError()
   }
 
-  async submitMakeSplitImmutableTransaction(
+  async _submitMakeSplitImmutableTransaction(
     makeImmutableArgs: MakeSplitImmutableConfig,
   ): Promise<{
     txHash: Hash
@@ -1121,7 +1121,7 @@ export class SplitV1Client extends SplitV1Transactions {
     event: Log
   }> {
     const { txHash } =
-      await this.submitMakeSplitImmutableTransaction(makeImmutableArgs)
+      await this._submitMakeSplitImmutableTransaction(makeImmutableArgs)
     const eventTopics = this.getEventTopics(
       this._getFunctionChainId(makeImmutableArgs.chainId),
     )

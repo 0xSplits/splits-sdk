@@ -909,7 +909,7 @@ export class WarehouseClient extends WarehouseTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitWithdrawTransaction(
+  async _submitWithdrawTransaction(
     withdrawArgs: WarehouseWithdrawConfig,
   ): Promise<{
     txHash: Hash
@@ -924,7 +924,7 @@ export class WarehouseClient extends WarehouseTransactions {
   async withdraw(
     withdrawArgs: WarehouseWithdrawConfig,
   ): Promise<{ event: Log }> {
-    const { txHash } = await this.submitWithdrawTransaction(withdrawArgs)
+    const { txHash } = await this._submitWithdrawTransaction(withdrawArgs)
 
     const events = await this.getTransactionEvents({
       txHash,
@@ -942,7 +942,7 @@ export class WarehouseClient extends WarehouseTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitBatchWithdrawTransaction(
+  async _submitBatchWithdrawTransaction(
     batchWithdrawArgs: WarehouseBatchWithdrawConfig,
   ): Promise<{
     txHash: Hash
@@ -958,7 +958,7 @@ export class WarehouseClient extends WarehouseTransactions {
     batchWithdrawArgs: WarehouseBatchWithdrawConfig,
   ): Promise<{ events: Log[] }> {
     const { txHash } =
-      await this.submitBatchWithdrawTransaction(batchWithdrawArgs)
+      await this._submitBatchWithdrawTransaction(batchWithdrawArgs)
 
     const events = await this.getTransactionEvents({
       txHash,

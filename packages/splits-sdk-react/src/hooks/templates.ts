@@ -32,7 +32,7 @@ export const useCreateRecoup = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitCreateRecoupTransaction(argsDict)
+          await splitsClient._submitCreateRecoupTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -81,7 +81,7 @@ export const useCreateDiversifier = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitCreateDiversifierTransaction(argsDict)
+          await splitsClient._submitCreateDiversifierTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)

@@ -108,7 +108,7 @@ export const useCreateSplitV2 = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitCreateSplitTransaction(argsDict)
+          await splitsClient._submitCreateSplitTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -169,7 +169,7 @@ export const useUpdateSplitV2 = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitUpdateSplitTransaction(argsDict)
+          await splitsClient._submitUpdateSplitTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -227,7 +227,7 @@ export const useDistributeTokenV2 = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitDistributeTransaction(argsDict)
+          await splitsClient._submitDistributeTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -276,7 +276,7 @@ export const useTransferOwnership = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitTransferOwnershipTransaction(argsDict)
+          await splitsClient._submitTransferOwnershipTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -323,7 +323,7 @@ export const useSetPause = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitSetPauseTransaction(argsDict)
+          await splitsClient._submitSetPauseTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -370,7 +370,7 @@ export const useExecCalls = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitExecCallsTransaction(argsDict)
+          await splitsClient._submitExecCallsTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)

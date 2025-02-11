@@ -33,7 +33,7 @@ export const useCreateVestingModule = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitCreateVestingModuleTransaction(argsDict)
+          await splitsClient._submitCreateVestingModuleTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -80,7 +80,7 @@ export const useStartVest = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitStartVestTransaction(argsDict)
+          await splitsClient._submitStartVestTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -129,7 +129,7 @@ export const useReleaseVestedFunds = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitReleaseVestedFundsTransaction(argsDict)
+          await splitsClient._submitReleaseVestedFundsTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
