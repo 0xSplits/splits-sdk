@@ -91,7 +91,7 @@ export class OracleClient extends OracleTransactions {
 
     const quoteAmounts = multicallResponse.map((data) => {
       return data.status === 'success'
-        ? (data.result as bigint[])[0]
+        ? (data.result as unknown as bigint[])[0]
         : BigInt(0)
     })
 
