@@ -516,10 +516,7 @@ class SplitV2Transactions extends BaseTransactions {
     return getContract({
       address: splitAddress,
       abi: splitV2ABI,
-      // @ts-expect-error v1/v2 viem support
       client: publicClient,
-      publicClient: publicClient,
-      walletClient: this._walletClient,
     })
   }
 
@@ -532,10 +529,7 @@ class SplitV2Transactions extends BaseTransactions {
     return getContract({
       address: getSplitV2FactoryAddress(chainId, splitType),
       abi: splitV2FactoryABI,
-      // @ts-expect-error v1/v2 viem support
       client: publicClient,
-      publicClient: publicClient,
-      walletClient: this._walletClient,
     })
   }
 
@@ -551,10 +545,7 @@ class SplitV2Transactions extends BaseTransactions {
     return getContract({
       address: getSplitV2o1FactoryAddress(chainId, splitType),
       abi: splitV2o1FactoryAbi,
-      // @ts-expect-error v1/v2 viem support
       client: publicClient,
-      publicClient: publicClient,
-      walletClient: this._walletClient,
     })
   }
 

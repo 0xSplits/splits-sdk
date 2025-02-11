@@ -381,9 +381,7 @@ class SwapperTransactions extends BaseTransactions {
     return getContract({
       address: getUniV3SwapAddress(),
       abi: uniV3SwapAbi,
-      // @ts-expect-error v1/v2 viem support
       client: publicClient,
-      publicClient: publicClient,
     })
   }
 
@@ -395,9 +393,7 @@ class SwapperTransactions extends BaseTransactions {
     return getContract({
       address: getAddress(swapper),
       abi: swapperAbi,
-      // @ts-expect-error v1/v2 viem support
       client: publicClient,
-      publicClient: publicClient,
     })
   }
 }

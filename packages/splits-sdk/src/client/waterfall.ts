@@ -222,9 +222,7 @@ class WaterfallTransactions extends BaseTransactions {
     return getContract({
       address: getAddress(waterfallModule),
       abi: waterfallAbi,
-      // @ts-expect-error v1/v2 viem support
       client: publicClient,
-      publicClient: publicClient,
     })
   }
 }

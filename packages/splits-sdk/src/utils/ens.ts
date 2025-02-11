@@ -15,9 +15,7 @@ const fetchEnsNames = async (
   const reverseRecords = getContract({
     address: REVERSE_RECORDS_ADDRESS,
     abi: reverseRecordsAbi,
-    // @ts-expect-error v1/v2 viem support
     client: publicClient,
-    publicClient,
   })
 
   const allNames = await reverseRecords.read.getNames([addresses])

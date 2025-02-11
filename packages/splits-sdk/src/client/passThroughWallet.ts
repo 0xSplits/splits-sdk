@@ -194,9 +194,7 @@ class PassThroughWalletTransactions extends BaseTransactions {
     return getContract({
       address: getAddress(passThroughWallet),
       abi: passThroughWalletAbi,
-      // @ts-expect-error v1/v2 viem support
       client: publicClient,
-      publicClient: publicClient,
     })
   }
 }

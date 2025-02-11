@@ -704,9 +704,7 @@ class SplitV1Transactions extends BaseTransactions {
     return getContract({
       address: getSplitMainAddress(chainId),
       abi: splitMainEthereumAbi,
-      // @ts-expect-error v1/v2 viem support
       client: publicClient,
-      publicClient: publicClient,
     })
   }
 

@@ -191,9 +191,7 @@ class LiquidSplitTransactions extends BaseTransactions {
     return getContract({
       address: getAddress(liquidSplit),
       abi: ls1155CloneAbi,
-      // @ts-expect-error v1/v2 viem support
       client: publicClient,
-      publicClient: publicClient,
     })
   }
 }

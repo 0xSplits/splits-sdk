@@ -75,7 +75,7 @@ class WarehouseTransactions extends BaseTransactions {
     return getContract({
       address: getWarehouseAddress(),
       abi: warehouseAbi,
-      publicClient: publicClient,
+      client: publicClient,
     })
   }
 

@@ -21,9 +21,7 @@ export const getTokenData = async (
   const tokenContract = getContract({
     abi: erc20Abi,
     address: token,
-    // @ts-expect-error v1/v2 viem support
     client: publicClient,
-    publicClient,
   })
   // TODO: error handling? For bad erc20...
 

@@ -453,9 +453,7 @@ export const searchLogs = async <
     const splitContract = getContract({
       address: formattedSplitAddress,
       abi: splitV2o1Abi,
-      // @ts-expect-error v1/v2 viem support
       client: publicClient,
-      publicClient: publicClient,
     })
 
     const blockNumber = await splitContract.read.updateBlockNumber()

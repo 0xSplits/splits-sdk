@@ -44,7 +44,7 @@
   },
   "peerDependencies": {
     "react": "17.x.x || 18.x.x",
-    "viem": "^1.0.0 || ^2.0.0"
+    "viem": "^2.0.0"
   },
   "peerDependenciesMeta": {
     "viem": {

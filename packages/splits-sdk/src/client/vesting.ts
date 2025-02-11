@@ -121,9 +121,7 @@ class VestingTransactions extends BaseTransactions {
     return getContract({
       address: getAddress(vestingModule),
       abi: vestingAbi,
-      // @ts-expect-error v1/v2 viem support
       client: publicClient,
-      publicClient: publicClient,
     })
   }
 
@@ -134,9 +132,7 @@ class VestingTransactions extends BaseTransactions {
     return getContract({
       address: getVestingFactoryAddress(chainId),
       abi: vestingFactoryAbi,
-      // @ts-expect-error v1/v2 viem support
       client: publicClient,
-      publicClient: publicClient,
     })
   }
 }
