@@ -1,12 +1,9 @@
 import {
   Address,
-  Chain,
   GetContractReturnType,
   Hash,
   Hex,
   Log,
-  PublicClient,
-  Transport,
   TypedDataDomain,
   encodeEventTopics,
   fromHex,
@@ -51,7 +48,7 @@ import {
 import { TransactionFailedError } from '../errors'
 import { applyMixins } from './mixin'
 import { getNumberFromPercent, validateAddress } from '../utils'
-
+import { SplitsPublicClient } from '../types'
 type WarehouseAbiType = typeof warehouseAbi
 
 const nativeTokenAddress: Address = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
@@ -70,12 +67,12 @@ class WarehouseTransactions extends BaseTransactions {
 
   protected _getWarehouseContract(
     chainId: number,
-  ): GetContractReturnType<WarehouseAbiType, PublicClient<Transport, Chain>> {
+  ): GetContractReturnType<WarehouseAbiType, SplitsPublicClient> {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getWarehouseAddress(),
       abi: warehouseAbi,
-      publicClient: publicClient,
+      client: publicClient,
     })
   }
 
@@ -909,7 +906,7 @@ export class WarehouseClient extends WarehouseTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitWithdrawTransaction(
+  async _submitWithdrawTransaction(
     withdrawArgs: WarehouseWithdrawConfig,
   ): Promise<{
     txHash: Hash
@@ -924,7 +921,7 @@ export class WarehouseClient extends WarehouseTransactions {
   async withdraw(
     withdrawArgs: WarehouseWithdrawConfig,
   ): Promise<{ event: Log }> {
-    const { txHash } = await this.submitWithdrawTransaction(withdrawArgs)
+    const { txHash } = await this._submitWithdrawTransaction(withdrawArgs)
 
     const events = await this.getTransactionEvents({
       txHash,
@@ -942,7 +939,7 @@ export class WarehouseClient extends WarehouseTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitBatchWithdrawTransaction(
+  async _submitBatchWithdrawTransaction(
     batchWithdrawArgs: WarehouseBatchWithdrawConfig,
   ): Promise<{
     txHash: Hash
@@ -958,7 +955,7 @@ export class WarehouseClient extends WarehouseTransactions {
     batchWithdrawArgs: WarehouseBatchWithdrawConfig,
   ): Promise<{ events: Log[] }> {
     const { txHash } =
-      await this.submitBatchWithdrawTransaction(batchWithdrawArgs)
+      await this._submitBatchWithdrawTransaction(batchWithdrawArgs)
 
     const events = await this.getTransactionEvents({
       txHash,
@@ -1335,16 +1332,17 @@ class WarehouseSignature extends WarehouseTransactions {
     validateAddress(approveBySigArgs.tokenAddress)
     this._requireWalletClient()
 
-    const { domain } = await this._eip712Domain(this._walletClient!.chain.id)
+    const { domain } = await this._eip712Domain(this._walletClient!.chain!.id)
 
     this._requireWalletClient()
 
     const signature = await this._walletClient!.signTypedData({
+      account: this._walletClient!.account!,
       domain,
       types: SigTypes,
       primaryType: 'ERC6909XApproveAndCall',
       message: {
-        owner: this._walletClient!.account.address,
+        owner: this._walletClient!.account!.address,
         spender: approveBySigArgs.spenderAddress,
         temporary: false,
         operator: approveBySigArgs.operator,
@@ -1360,7 +1358,7 @@ class WarehouseSignature extends WarehouseTransactions {
     if (!signature) throw new Error('Error in signing data')
 
     return {
-      ownerAddress: this._walletClient!.account.address as Address,
+      ownerAddress: this._walletClient!.account!.address as Address,
       signature,
       ...approveBySigArgs,
     }
@@ -1374,14 +1372,15 @@ class WarehouseSignature extends WarehouseTransactions {
     validateAddress(temporaryApproveAndCallBySigArgs.targetAddress)
     this._requireWalletClient()
 
-    const { domain } = await this._eip712Domain(this._walletClient!.chain.id)
+    const { domain } = await this._eip712Domain(this._walletClient!.chain!.id)
 
     const signature = await this._walletClient!.signTypedData({
+      account: this._walletClient!.account!,
       domain,
       types: SigTypes,
       primaryType: 'ERC6909XApproveAndCall',
       message: {
-        owner: this._walletClient!.account.address,
+        owner: this._walletClient!.account!.address,
         spender: temporaryApproveAndCallBySigArgs.spenderAddress,
         temporary: true,
         operator: temporaryApproveAndCallBySigArgs.operator,
@@ -1397,7 +1396,7 @@ class WarehouseSignature extends WarehouseTransactions {
     if (!signature) throw new Error('Error in signing data')
 
     return {
-      ownerAddress: this._walletClient!.account.address as Address,
+      ownerAddress: this._walletClient!.account!.address as Address,
       signature,
       ...temporaryApproveAndCallBySigArgs,
     }

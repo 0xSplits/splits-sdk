@@ -1,13 +1,10 @@
 import { decode } from 'base-64'
 import {
   Address,
-  Chain,
   GetContractReturnType,
   Hash,
   Hex,
   Log,
-  PublicClient,
-  Transport,
   decodeEventLog,
   encodeEventTopics,
   getAddress,
@@ -41,6 +38,7 @@ import type {
   TransactionConfig,
   TransactionFormat,
   ReadContractArgs,
+  SplitsPublicClient,
 } from '../types'
 import {
   getBigIntFromPercent,
@@ -171,11 +169,11 @@ class LiquidSplitTransactions extends BaseTransactions {
 
     const liquidSplitContract = this._getLiquidSplitContract(
       liquidSplitAddress,
-      this._walletClient!.chain.id,
+      this._walletClient!.chain!.id,
     )
     const owner = await liquidSplitContract.read.owner()
 
-    const walletAddress = this._walletClient!.account.address
+    const walletAddress = this._walletClient!.account?.address
 
     if (owner !== walletAddress)
       throw new InvalidAuthError(
@@ -186,14 +184,12 @@ class LiquidSplitTransactions extends BaseTransactions {
   protected _getLiquidSplitContract(
     liquidSplit: string,
     chainId: number,
-  ): GetContractReturnType<LS1155Abi, PublicClient<Transport, Chain>> {
+  ): GetContractReturnType<LS1155Abi, SplitsPublicClient> {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getAddress(liquidSplit),
       abi: ls1155CloneAbi,
-      // @ts-expect-error v1/v2 viem support
       client: publicClient,
-      publicClient: publicClient,
     })
   }
 }
@@ -244,7 +240,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
   }
 
   // Write actions
-  async submitCreateLiquidSplitTransaction(
+  async _submitCreateLiquidSplitTransaction(
     createLiquidSplitArgs: CreateLiquidSplitConfig,
   ): Promise<{
     txHash: Hash
@@ -264,7 +260,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
     liquidSplitAddress: Address
     event: Log
   }> {
-    const { txHash } = await this.submitCreateLiquidSplitTransaction(
+    const { txHash } = await this._submitCreateLiquidSplitTransaction(
       createLiquidSplitArgs,
     )
 
@@ -288,7 +284,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitDistributeTokenTransaction(
+  async _submitDistributeTokenTransaction(
     distributeTokenArgs: DistributeLiquidSplitTokenConfig,
   ): Promise<{
     txHash: Hash
@@ -306,7 +302,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
     event: Log
   }> {
     const { txHash } =
-      await this.submitDistributeTokenTransaction(distributeTokenArgs)
+      await this._submitDistributeTokenTransaction(distributeTokenArgs)
 
     const { token } = distributeTokenArgs
     const eventTopic =
@@ -324,7 +320,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitTransferOwnershipTransaction(
+  async _submitTransferOwnershipTransaction(
     transferOwnershipArgs: TransferLiquidSplitOwnershipConfig,
   ): Promise<{
     txHash: Hash
@@ -343,7 +339,7 @@ export class LiquidSplitClient extends LiquidSplitTransactions {
   ): Promise<{
     event: Log
   }> {
-    const { txHash } = await this.submitTransferOwnershipTransaction(
+    const { txHash } = await this._submitTransferOwnershipTransaction(
       transferOwnershipArgs,
     )
     const events = await this.getTransactionEvents({

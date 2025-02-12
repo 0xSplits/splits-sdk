@@ -1,12 +1,9 @@
 import {
   Address,
-  Chain,
   GetContractReturnType,
   Hash,
   Hex,
   Log,
-  PublicClient,
-  Transport,
   decodeEventLog,
   encodeEventTopics,
   getAddress,
@@ -36,6 +33,7 @@ import type {
   StartVestConfig,
   TransactionConfig,
   TransactionFormat,
+  SplitsPublicClient,
 } from '../types'
 import { validateAddress, validateVestingPeriod } from '../utils/validation'
 
@@ -116,27 +114,23 @@ class VestingTransactions extends BaseTransactions {
   protected _getVestingContract(
     vestingModule: string,
     chainId: number,
-  ): GetContractReturnType<VestingAbi, PublicClient<Transport, Chain>> {
+  ): GetContractReturnType<VestingAbi, SplitsPublicClient> {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getAddress(vestingModule),
       abi: vestingAbi,
-      // @ts-expect-error v1/v2 viem support
       client: publicClient,
-      publicClient: publicClient,
     })
   }
 
   protected _getVestingFactoryContract(
     chainId: number,
-  ): GetContractReturnType<VestingFactoryAbi, PublicClient<Transport, Chain>> {
+  ): GetContractReturnType<VestingFactoryAbi, SplitsPublicClient> {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getVestingFactoryAddress(chainId),
       abi: vestingFactoryAbi,
-      // @ts-expect-error v1/v2 viem support
       client: publicClient,
-      publicClient: publicClient,
     })
   }
 }
@@ -179,7 +173,7 @@ export class VestingClient extends VestingTransactions {
   }
 
   // Write actions
-  async submitCreateVestingModuleTransaction(
+  async _submitCreateVestingModuleTransaction(
     createVestingArgs: CreateVestingConfig,
   ): Promise<{
     txHash: Hash
@@ -196,7 +190,7 @@ export class VestingClient extends VestingTransactions {
     event: Log
   }> {
     const { txHash } =
-      await this.submitCreateVestingModuleTransaction(createVestingArgs)
+      await this._submitCreateVestingModuleTransaction(createVestingArgs)
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.createVestingModule,
@@ -217,7 +211,7 @@ export class VestingClient extends VestingTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitStartVestTransaction(startVestArgs: StartVestConfig): Promise<{
+  async _submitStartVestTransaction(startVestArgs: StartVestConfig): Promise<{
     txHash: Hash
   }> {
     const txHash = await this._startVestTransaction(startVestArgs)
@@ -230,7 +224,7 @@ export class VestingClient extends VestingTransactions {
   async startVest(startVestArgs: StartVestConfig): Promise<{
     events: Log[]
   }> {
-    const { txHash } = await this.submitStartVestTransaction(startVestArgs)
+    const { txHash } = await this._submitStartVestTransaction(startVestArgs)
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.startVest,
@@ -238,7 +232,7 @@ export class VestingClient extends VestingTransactions {
     return { events }
   }
 
-  async submitReleaseVestedFundsTransaction(
+  async _submitReleaseVestedFundsTransaction(
     releaseFundsArgs: ReleaseVestedFundsConfig,
   ): Promise<{
     txHash: Hash
@@ -256,7 +250,7 @@ export class VestingClient extends VestingTransactions {
     events: Log[]
   }> {
     const { txHash } =
-      await this.submitReleaseVestedFundsTransaction(releaseFundsArgs)
+      await this._submitReleaseVestedFundsTransaction(releaseFundsArgs)
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.releaseVestedFunds,

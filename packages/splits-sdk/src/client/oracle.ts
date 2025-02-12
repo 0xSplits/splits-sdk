@@ -1,11 +1,4 @@
-import {
-  Chain,
-  GetContractReturnType,
-  PublicClient,
-  Transport,
-  getAddress,
-  getContract,
-} from 'viem'
+import { GetContractReturnType, getAddress, getContract } from 'viem'
 
 import { BaseTransactions } from './base'
 import { TransactionType, ORACLE_CHAIN_IDS } from '../constants'
@@ -13,6 +6,7 @@ import { uniV3OracleAbi } from '../constants/abi/uniV3Oracle'
 import type {
   QuoteParams,
   SplitsClientConfig,
+  SplitsPublicClient,
   TransactionConfig,
 } from '../types'
 import { validateAddress } from '../utils/validation'
@@ -30,15 +24,13 @@ class OracleTransactions extends BaseTransactions {
   protected _getOracleContract(
     oracle: string,
     chainId: number,
-  ): GetContractReturnType<UniV3OracleAbi, PublicClient<Transport, Chain>> {
+  ): GetContractReturnType<UniV3OracleAbi, SplitsPublicClient> {
     const publicClient = this._getPublicClient(chainId)
 
     return getContract({
       address: getAddress(oracle),
       abi: uniV3OracleAbi,
-      // @ts-expect-error v1/v2 viem support
       client: publicClient,
-      publicClient: publicClient,
     })
   }
 }
@@ -93,7 +85,7 @@ export class OracleClient extends OracleTransactions {
 
     const quoteAmounts = multicallResponse.map((data) => {
       return data.status === 'success'
-        ? (data.result as bigint[])[0]
+        ? (data.result as unknown as bigint[])[0]
         : BigInt(0)
     })
 

@@ -1,13 +1,10 @@
 import {
   Address,
-  Chain,
   GetContractReturnType,
   Hash,
   Hex,
   InvalidAddressError,
   Log,
-  PublicClient,
-  Transport,
   TypedDataDomain,
   decodeEventLog,
   encodeEventTopics,
@@ -49,6 +46,7 @@ import {
   SplitV2ExecCallsConfig,
   SplitV2Type,
   SplitsClientConfig,
+  SplitsPublicClient,
   TransactionConfig,
   TransactionFormat,
   TransferOwnershipConfig,
@@ -249,7 +247,7 @@ class SplitV2Transactions extends BaseTransactions {
   protected async _distribute({
     splitAddress,
     tokenAddress: token,
-    distributorAddress = this._walletClient?.account.address as Address,
+    distributorAddress = this._walletClient?.account?.address as Address,
     chainId,
     splitFields,
     transactionOverrides = {},
@@ -509,52 +507,40 @@ class SplitV2Transactions extends BaseTransactions {
   protected _getSplitV2Contract(
     splitAddress: Address,
     chainId: number,
-  ): GetContractReturnType<SplitV2ABI, PublicClient<Transport, Chain>> {
+  ): GetContractReturnType<SplitV2ABI, SplitsPublicClient> {
     validateAddress(splitAddress)
     const publicClient = this._getPublicClient(chainId)
 
     return getContract({
       address: splitAddress,
       abi: splitV2ABI,
-      // @ts-expect-error v1/v2 viem support
       client: publicClient,
-      publicClient: publicClient,
-      walletClient: this._walletClient,
     })
   }
 
   protected _getSplitV2FactoryContract(
     splitType: SplitV2Type,
     chainId: number,
-  ): GetContractReturnType<SplitFactoryABI, PublicClient<Transport, Chain>> {
+  ): GetContractReturnType<SplitFactoryABI, SplitsPublicClient> {
     const publicClient = this._getPublicClient(chainId)
 
     return getContract({
       address: getSplitV2FactoryAddress(chainId, splitType),
       abi: splitV2FactoryABI,
-      // @ts-expect-error v1/v2 viem support
       client: publicClient,
-      publicClient: publicClient,
-      walletClient: this._walletClient,
     })
   }
 
   protected _getSplitV2o1FactoryContract(
     splitType: SplitV2Type,
     chainId: number,
-  ): GetContractReturnType<
-    SplitV2o1FactoryABI,
-    PublicClient<Transport, Chain>
-  > {
+  ): GetContractReturnType<SplitV2o1FactoryABI, SplitsPublicClient> {
     const publicClient = this._getPublicClient(chainId)
 
     return getContract({
       address: getSplitV2o1FactoryAddress(chainId, splitType),
       abi: splitV2o1FactoryAbi,
-      // @ts-expect-error v1/v2 viem support
       client: publicClient,
-      publicClient: publicClient,
-      walletClient: this._walletClient,
     })
   }
 
@@ -581,12 +567,12 @@ class SplitV2Transactions extends BaseTransactions {
   protected async _requireOwner(splitAddress: Address) {
     const ownerAddress = await this._owner(
       splitAddress,
-      this._walletClient!.chain.id,
+      this._walletClient!.chain!.id,
     )
 
-    const walletAddress = this._walletClient!.account.address
+    const walletAddress = this._walletClient!.account?.address
 
-    if (ownerAddress.toLowerCase() !== walletAddress.toLowerCase())
+    if (ownerAddress.toLowerCase() !== walletAddress?.toLowerCase())
       throw new InvalidAuthError(
         `Action only available to the split controller. Split id: ${splitAddress}, split controller: ${ownerAddress}, wallet address: ${walletAddress}`,
       )
@@ -660,7 +646,7 @@ export class SplitV2Client extends SplitV2Transactions {
     this.sign = new SplitV2Signature(clientArgs)
   }
 
-  async submitCreateSplitTransaction(
+  async _submitCreateSplitTransaction(
     createSplitArgs: CreateSplitV2Config,
   ): Promise<{
     txHash: Hash
@@ -679,7 +665,7 @@ export class SplitV2Client extends SplitV2Transactions {
     splitAddress: Address
     event: Log
   }> {
-    const { txHash } = await this.submitCreateSplitTransaction(createSplitArgs)
+    const { txHash } = await this._submitCreateSplitTransaction(createSplitArgs)
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.splitCreated,
@@ -741,7 +727,7 @@ export class SplitV2Client extends SplitV2Transactions {
     throw new TransactionFailedError()
   }
 
-  async submitTransferOwnershipTransaction(
+  async _submitTransferOwnershipTransaction(
     transferOwnershipArgs: TransferOwnershipConfig,
   ): Promise<{
     txHash: Hash
@@ -758,7 +744,7 @@ export class SplitV2Client extends SplitV2Transactions {
   ): Promise<{
     event: Log
   }> {
-    const { txHash } = await this.submitTransferOwnershipTransaction(
+    const { txHash } = await this._submitTransferOwnershipTransaction(
       transferOwnershipArgs,
     )
 
@@ -776,7 +762,7 @@ export class SplitV2Client extends SplitV2Transactions {
     throw new TransactionFailedError()
   }
 
-  async submitSetPauseTransaction(setPausedArgs: SetPausedConfig): Promise<{
+  async _submitSetPauseTransaction(setPausedArgs: SetPausedConfig): Promise<{
     txHash: Hash
   }> {
     const txHash = await this._setPaused(setPausedArgs)
@@ -789,7 +775,7 @@ export class SplitV2Client extends SplitV2Transactions {
   async setPause(setPausedArgs: SetPausedConfig): Promise<{
     event: Log
   }> {
-    const { txHash } = await this.submitSetPauseTransaction(setPausedArgs)
+    const { txHash } = await this._submitSetPauseTransaction(setPausedArgs)
 
     const events = await this.getTransactionEvents({
       txHash,
@@ -805,7 +791,7 @@ export class SplitV2Client extends SplitV2Transactions {
     throw new TransactionFailedError()
   }
 
-  async submitExecCallsTransaction(
+  async _submitExecCallsTransaction(
     execCallsArgs: SplitV2ExecCallsConfig,
   ): Promise<{
     txHash: Hash
@@ -820,7 +806,7 @@ export class SplitV2Client extends SplitV2Transactions {
   async execCalls(execCallsArgs: SplitV2ExecCallsConfig): Promise<{
     event: Log
   }> {
-    const { txHash } = await this.submitExecCallsTransaction(execCallsArgs)
+    const { txHash } = await this._submitExecCallsTransaction(execCallsArgs)
 
     const events = await this.getTransactionEvents({
       txHash,
@@ -836,7 +822,7 @@ export class SplitV2Client extends SplitV2Transactions {
     throw new TransactionFailedError()
   }
 
-  async submitDistributeTransaction(
+  async _submitDistributeTransaction(
     distributeArgs: DistributeSplitConfig,
   ): Promise<{
     txHash: Hash
@@ -851,7 +837,7 @@ export class SplitV2Client extends SplitV2Transactions {
   async distribute(distributeArgs: DistributeSplitConfig): Promise<{
     event: Log
   }> {
-    const { txHash } = await this.submitDistributeTransaction(distributeArgs)
+    const { txHash } = await this._submitDistributeTransaction(distributeArgs)
 
     const events = await this.getTransactionEvents({
       txHash,
@@ -867,7 +853,7 @@ export class SplitV2Client extends SplitV2Transactions {
     throw new TransactionFailedError()
   }
 
-  async submitUpdateSplitTransaction(
+  async _submitUpdateSplitTransaction(
     updateSplitArgs: UpdateSplitV2Config,
   ): Promise<{
     txHash: Hash
@@ -882,7 +868,7 @@ export class SplitV2Client extends SplitV2Transactions {
   async updateSplit(updateSplitArgs: UpdateSplitV2Config): Promise<{
     event: Log
   }> {
-    const { txHash } = await this.submitUpdateSplitTransaction(updateSplitArgs)
+    const { txHash } = await this._submitUpdateSplitTransaction(updateSplitArgs)
 
     const events = await this.getTransactionEvents({
       txHash,
@@ -1446,6 +1432,7 @@ class SplitV2Signature extends SplitV2Transactions {
     this._requireWalletClient()
 
     const signature = await this._walletClient?.signTypedData({
+      account: this._walletClient!.account!,
       domain,
       types: SigTypes,
       primaryType: 'SplitWalletMessage',

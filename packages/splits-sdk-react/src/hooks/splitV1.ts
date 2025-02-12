@@ -126,14 +126,14 @@ export const useCreateSplit = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const chainId = splitsClient._walletClient?.chain.id
+        const chainId = splitsClient._walletClient?.chain?.id
         if (!chainId) {
           throw new Error('Wallet client required')
         }
         const eventTopics = splitsClient.getEventTopics(chainId)
 
         const { txHash: hash } =
-          await splitsClient.submitCreateSplitTransaction(argsDict)
+          await splitsClient._submitCreateSplitTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -144,7 +144,7 @@ export const useCreateSplit = (): {
         })
 
         const splitMainAbi =
-          splitsClient._walletClient?.chain.id === mainnet.id
+          splitsClient._walletClient?.chain?.id === mainnet.id
             ? splitMainEthereumAbi
             : splitMainPolygonAbi
         const event = events?.[0]
@@ -197,14 +197,14 @@ export const useUpdateSplit = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const chainId = splitsClient._walletClient?.chain.id
+        const chainId = splitsClient._walletClient?.chain?.id
         if (!chainId) {
           throw new Error('Wallet client required')
         }
         const eventTopics = splitsClient.getEventTopics(chainId)
 
         const { txHash: hash } =
-          await splitsClient.submitUpdateSplitTransaction(argsDict)
+          await splitsClient._submitUpdateSplitTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -261,14 +261,14 @@ export const useDistributeToken = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const chainId = splitsClient._walletClient?.chain.id
+        const chainId = splitsClient._walletClient?.chain?.id
         if (!chainId) {
           throw new Error('Wallet client required')
         }
         const eventTopics = splitsClient.getEventTopics(chainId)
 
         const { txHash: hash } =
-          await splitsClient.submitDistributeTokenTransaction(argsDict)
+          await splitsClient._submitDistributeTokenTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -316,14 +316,14 @@ export const useUpdateSplitAndDistributeToken = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const chainId = splitsClient._walletClient?.chain.id
+        const chainId = splitsClient._walletClient?.chain?.id
         if (!chainId) {
           throw new Error('Wallet client required')
         }
         const eventTopics = splitsClient.getEventTopics(chainId)
 
         const { txHash: hash } =
-          await splitsClient.submitUpdateSplitAndDistributeTokenTransaction(
+          await splitsClient._submitUpdateSplitAndDistributeTokenTransaction(
             argsDict,
           )
 
@@ -382,14 +382,14 @@ export const useWithdrawFunds = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const chainId = splitsClient._walletClient?.chain.id
+        const chainId = splitsClient._walletClient?.chain?.id
         if (!chainId) {
           throw new Error('Wallet client required')
         }
         const eventTopics = splitsClient.getEventTopics(chainId)
 
         const { txHash: hash } =
-          await splitsClient.submitWithdrawFundsTransaction(argsDict)
+          await splitsClient._submitWithdrawFundsTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -437,14 +437,14 @@ export const useInitiateControlTransfer = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const chainId = splitsClient._walletClient?.chain.id
+        const chainId = splitsClient._walletClient?.chain?.id
         if (!chainId) {
           throw new Error('Wallet client required')
         }
         const eventTopics = splitsClient.getEventTopics(chainId)
 
         const { txHash: hash } =
-          await splitsClient.submitInitiateControlTransferTransaction(argsDict)
+          await splitsClient._submitInitiateControlTransferTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -492,14 +492,14 @@ export const useCancelControlTransfer = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const chainId = splitsClient._walletClient?.chain.id
+        const chainId = splitsClient._walletClient?.chain?.id
         if (!chainId) {
           throw new Error('Wallet client required')
         }
         const eventTopics = splitsClient.getEventTopics(chainId)
 
         const { txHash: hash } =
-          await splitsClient.submitCancelControlTransferTransaction(argsDict)
+          await splitsClient._submitCancelControlTransferTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -547,14 +547,14 @@ export const useAcceptControlTransfer = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const chainId = splitsClient._walletClient?.chain.id
+        const chainId = splitsClient._walletClient?.chain?.id
         if (!chainId) {
           throw new Error('Wallet client required')
         }
         const eventTopics = splitsClient.getEventTopics(chainId)
 
         const { txHash: hash } =
-          await splitsClient.submitAcceptControlTransferTransaction(argsDict)
+          await splitsClient._submitAcceptControlTransferTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -602,14 +602,14 @@ export const useMakeSplitImmutable = (): {
         setError(undefined)
         setTxHash(undefined)
 
-        const chainId = splitsClient._walletClient?.chain.id
+        const chainId = splitsClient._walletClient?.chain?.id
         if (!chainId) {
           throw new Error('Wallet client required')
         }
         const eventTopics = splitsClient.getEventTopics(chainId)
 
         const { txHash: hash } =
-          await splitsClient.submitMakeSplitImmutableTransaction(argsDict)
+          await splitsClient._submitMakeSplitImmutableTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)

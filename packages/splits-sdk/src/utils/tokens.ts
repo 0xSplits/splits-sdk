@@ -1,12 +1,13 @@
-import { Address, getContract, PublicClient, zeroAddress } from 'viem'
+import { Address, getContract, zeroAddress } from 'viem'
 
 import { CHAIN_INFO } from '../constants'
 import { erc20Abi } from '../constants/abi/erc20'
+import { SplitsPublicClient } from '../types'
 
 export const getTokenData = async (
   chainId: number,
   token: Address,
-  publicClient: PublicClient,
+  publicClient: SplitsPublicClient,
 ): Promise<{
   symbol: string
   decimals: number
@@ -21,9 +22,7 @@ export const getTokenData = async (
   const tokenContract = getContract({
     abi: erc20Abi,
     address: token,
-    // @ts-expect-error v1/v2 viem support
     client: publicClient,
-    publicClient,
   })
   // TODO: error handling? For bad erc20...
 

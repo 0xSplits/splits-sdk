@@ -36,7 +36,7 @@ export const useCreateWaterfallModule = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitCreateWaterfallModuleTransaction(argsDict)
+          await splitsClient._submitCreateWaterfallModuleTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -83,7 +83,7 @@ export const useWaterfallFunds = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitWaterfallFundsTransaction(argsDict)
+          await splitsClient._submitWaterfallFundsTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -132,7 +132,9 @@ export const useRecoverNonWaterfallFunds = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitRecoverNonWaterfallFundsTransaction(argsDict)
+          await splitsClient._submitRecoverNonWaterfallFundsTransaction(
+            argsDict,
+          )
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -181,7 +183,7 @@ export const useWithdrawWaterfallPullFunds = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitWithdrawPullFundsTransaction(argsDict)
+          await splitsClient._submitWithdrawPullFundsTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)

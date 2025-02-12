@@ -37,7 +37,7 @@ export const useCreatePassThroughWallet = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitCreatePassThroughWalletTransaction(argsDict)
+          await splitsClient._submitCreatePassThroughWalletTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -87,7 +87,7 @@ export const usePassThroughTokens = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitPassThroughTokensTransaction(argsDict)
+          await splitsClient._submitPassThroughTokensTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -135,7 +135,7 @@ export const usePassThroughWalletPause = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitSetPausedTransaction(argsDict)
+          await splitsClient._submitSetPausedTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -185,7 +185,7 @@ export const usePassThroughWalletExecCalls = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitExecCallsTransaction(argsDict)
+          await splitsClient._submitExecCallsTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)

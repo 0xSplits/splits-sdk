@@ -50,7 +50,7 @@ export const useWithdrawWarehouse = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitWithdrawTransaction(argsDict)
+          await splitsClient._submitWithdrawTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -99,7 +99,7 @@ export const useBatchWithdrawWarehouse = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitBatchWithdrawTransaction(argsDict)
+          await splitsClient._submitBatchWithdrawTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)

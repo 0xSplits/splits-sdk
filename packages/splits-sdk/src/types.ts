@@ -1,8 +1,6 @@
 import type {
   AccessList,
-  Account,
   Address,
-  Chain,
   Hash,
   Hex,
   PublicClient,
@@ -36,31 +34,39 @@ export type ApiConfig = {
   serverURL?: string
 }
 
+// OP stack chains are not typed the same way as other chains,
+// so we need to use any here. Chain type will cause the caller
+// to throw an error if the chain is base, optimism, etc.
+// TODO: can we have a generic here? Problem is it needs to get
+// passed through in so many places, it's pretty ugly.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type SplitsPublicClient = PublicClient<Transport, any>
+
 export type DataClientConfig = {
-  publicClient?: PublicClient<Transport, Chain>
+  publicClient?: SplitsPublicClient
   publicClients?: {
-    [chainId: number]: PublicClient<Transport, Chain>
+    [chainId: number]: SplitsPublicClient
   }
   apiConfig: ApiConfig
   includeEnsNames?: boolean
   // ensPublicClient can be used to fetch ens names when publicClient is not on mainnet (reverseRecords
   // only works on mainnet).
-  ensPublicClient?: PublicClient<Transport, Chain>
+  ensPublicClient?: SplitsPublicClient
 }
 
 // Splits
 export type SplitsClientConfig = {
   chainId?: number
-  publicClient?: PublicClient<Transport, Chain>
+  publicClient?: SplitsPublicClient
   publicClients?: {
-    [chainId: number]: PublicClient<Transport, Chain>
+    [chainId: number]: SplitsPublicClient
   }
-  walletClient?: WalletClient<Transport, Chain, Account>
+  walletClient?: WalletClient
   apiConfig?: ApiConfig
   includeEnsNames?: boolean
   // ensPublicClient can be used to fetch ens names when publicClient is not on mainnet (reverseRecords
   // only works on mainnet).
-  ensPublicClient?: PublicClient<Transport, Chain>
+  ensPublicClient?: SplitsPublicClient
 }
 
 export type BaseClientConfig = SplitsClientConfig & {

@@ -180,8 +180,8 @@ importers:
         specifier: ^4.17.21
         version: 4.17.21
       viem:
-        specifier: ^1.0.0 || ^2.0.0
-        version: 1.18.9(bufferutil@4.0.8)(typescript@5.2.2)(utf-8-validate@5.0.10)
+        specifier: ^2.0.0
+        version: 2.21.35(bufferutil@4.0.8)(typescript@5.2.2)(utf-8-validate@5.0.10)
     devDependencies:
       '@types/base-64':
         specifier: ^1.0.1
@@ -205,8 +205,8 @@ importers:
         specifier: 17.x.x || 18.x.x
         version: 18.2.0
       viem:
-        specifier: ^1.0.0 || ^2.0.0
-        version: 1.18.9(bufferutil@4.0.8)(typescript@5.2.2)(utf-8-validate@5.0.10)
+        specifier: ^2.0.0
+        version: 2.21.35(bufferutil@4.0.8)(typescript@5.2.2)(utf-8-validate@5.0.10)
     devDependencies:
       '@types/react':
         specifier: ^18.0.24
@@ -235,12 +235,6 @@ packages:
     resolution:
       {
         integrity: sha512-/3DDPKHqqIqxUULp8yP4zODUY1i+2xvVWsv8A79xGWdCAG+8sb0hRh0Rk2QyOJUnnbyPUAZYcpBuRe3nS2OIUg==,
-      }
-
-  '@adraffy/ens-normalize@1.9.4':
-    resolution:
-      {
-        integrity: sha512-UK0bHA7hh9cR39V+4gl2/NnBBjoXIxkuWAPCaY4X7fbH4L/azIi7ilWOCjMUYfpJgraLUAqkRi2BqrjME8Rynw==,
       }
 
   '@alloc/quick-lru@5.2.0':
@@ -2476,6 +2470,7 @@ packages:
         integrity: sha512-JSBDMiDKSzQVngfRjOdFXgFfklaXI4K9nLF49Auh21lmBWRLIK3+xTErTWD4KU54pb6coM6ESE7Awz/FNU3zgQ==,
       }
     engines: { node: '>=10.10.0' }
+    deprecated: Use @eslint/config-array instead
 
   '@humanwhocodes/module-importer@1.0.1':
     resolution:
@@ -2489,6 +2484,7 @@ packages:
       {
         integrity: sha512-dvuCeX5fC9dXgJn9t+X5atfmgQAzUOWqS1254Gh0m6i8wKd10ebXkfNKiRK+1GWi/yTvvLDHpoxLr0xxxeslWw==,
       }
+    deprecated: Use @eslint/object-schema instead
 
   '@hutson/parse-repository-url@3.0.2':
     resolution:
@@ -2947,12 +2943,6 @@ packages:
       }
     engines: { node: ^14.21.3 || >=16 }
 
-  '@noble/curves@1.2.0':
-    resolution:
-      {
-        integrity: sha512-oYclrNgRaM9SsBUBVbb8M6DTV7ZHRTKugureoYEncY5c65HOmRzvSiTE3y5CYaPYJA/GVkrhXEoF0M3Ya9PMnw==,
-      }
-
   '@noble/curves@1.4.2':
     resolution:
       {
@@ -2965,13 +2955,6 @@ packages:
         integrity: sha512-TlaHRXDehJuRNR9TfZDNQ45mMEd5dwUwmicsafcIX4SsNiqnCHKjE/1alYPd/lDRVhxdhUAlv8uEhMCI5zjIJQ==,
       }
     engines: { node: ^14.21.3 || >=16 }
-
-  '@noble/hashes@1.3.2':
-    resolution:
-      {
-        integrity: sha512-MVC8EAQp7MvEcm30KWENFjgR+Mkmf+D189XJTkFIlwohU5hcBbn1ZkKq7KVTi2Hme3PMGF390DaL52beVrIihQ==,
-      }
-    engines: { node: '>= 16' }
 
   '@noble/hashes@1.4.0':
     resolution:
@@ -4078,22 +4061,10 @@ packages:
       }
     engines: { node: '>=16' }
 
-  '@scure/base@1.1.3':
-    resolution:
-      {
-        integrity: sha512-/+SgoRjLq7Xlf0CWuLHq2LUZeL/w65kfzAPG5NH9pcmBhs+nunQTn4gvdwgMTIXnt9b2C/1SeL2XiysZEyIC9Q==,
-      }
-
   '@scure/base@1.1.9':
     resolution:
       {
         integrity: sha512-8YKhl8GHiNI/pU2VMaofa2Tor7PJRAjwQLBBuilkJ9L5+13yVbC7JO/wS7piioAvPSwR3JKM1IJ/u4xQzbcXKg==,
-      }
-
-  '@scure/bip32@1.3.2':
-    resolution:
-      {
-        integrity: sha512-N1ZhksgwD3OBlwTv3R6KFEcPojl/W4ElJOeCZdi+vuI5QmTFwLq3OFf2zd2ROpKvxFdgZ6hUpb0dx9bVNEwYCA==,
       }
 
   '@scure/bip32@1.4.0':
@@ -4106,12 +4077,6 @@ packages:
     resolution:
       {
         integrity: sha512-8EnFYkqEQdnkuGBVpCzKxyIwDCBLDVj3oiX0EKUFre/tOjL/Hqba1D6n/8RcmaQy4f95qQFrO2A8Sr6ybh4NRw==,
-      }
-
-  '@scure/bip39@1.2.1':
-    resolution:
-      {
-        integrity: sha512-Z3/Fsz1yr904dduJD0NpiyRHhRYHdcnyh73FZWiV+/qhWi83wNJ3NWolYqCEN+ZWsUz2TWwajJggcRE9r1zUYg==,
       }
 
   '@scure/bip39@1.3.0':
@@ -5755,20 +5720,6 @@ packages:
         integrity: sha512-nne9/IiQ/hzIhY6pdDnbBtz7DjPTKrY00P/zvPSm5pOFkl6xuGrGnXn/VtTNNfNtAfZ9/1RtehkszU9qcTii0Q==,
       }
 
-  abitype@0.9.8:
-    resolution:
-      {
-        integrity: sha512-puLifILdm+8sjyss4S+fsUN09obiT1g2YW6CtcQF+QDzxR0euzgEB29MZujC6zMk2a6SVmtttq1fc6+YFA7WYQ==,
-      }
-    peerDependencies:
-      typescript: '>=5.0.4'
-      zod: ^3 >=3.19.1
-    peerDependenciesMeta:
-      typescript:
-        optional: true
-      zod:
-        optional: true
-
   abitype@1.0.6:
     resolution:
       {
@@ -5802,6 +5753,7 @@ packages:
       {
         integrity: sha512-cmMwop9x+8KFhxvKrKfPYmN6/pKTYYHBqLa0DfvVZcKMJWNyWLnaqND7dx/qn66R7ewM1UX5XMaDVP5wlVTaVA==,
       }
+    deprecated: package has been renamed to acorn-import-attributes
     peerDependencies:
       acorn: ^8
 
@@ -6054,6 +6006,7 @@ packages:
         integrity: sha512-QZW4EDmGwlYur0Yyf/b2uGucHQMa8aFUP7eu9ddR73vvhFyt4V0Vl3QHPcTNJ8l6qYOBdxgXdnBXQrHilfRQBg==,
       }
     engines: { node: ^12.13.0 || ^14.15.0 || >=16.0.0 }
+    deprecated: This package is no longer supported.
 
   arg@4.1.3:
     resolution:
@@ -8115,6 +8068,7 @@ packages:
         integrity: sha512-N4VuiPjXDUa4xVeV/GC/RV3hQW9Nw+Y463lkWaKKXKYMvmRiRDAtfpuPFLN+E1/6ZhyR8J2ig+eVREnYgUsiag==,
       }
     engines: { node: ^12.22.0 || ^14.17.0 || >=16.0.0 }
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
 
   espree@9.6.1:
@@ -8698,6 +8652,7 @@ packages:
         integrity: sha512-f9m+BEN5jkg6a0fZjleidjN51VE1X+mPFQ2DJ0uv1V39oCLCbsGe6yjbBnp7eK7z/+GAon99a3nHuqbuuthyPg==,
       }
     engines: { node: ^12.13.0 || ^14.15.0 || >=16.0.0 }
+    deprecated: This package is no longer supported.
 
   gensync@1.0.0-beta.2:
     resolution:
@@ -8882,18 +8837,21 @@ packages:
       {
         integrity: sha512-hkLPepehmnKk41pUGm3sYxoFs/umurYfYJCerbXEyFIWcAzvpipAgVkBqqT9RBKMGjnq6kMuyYwha6csxbiM1A==,
       }
+    deprecated: Glob versions prior to v9 are no longer supported
 
   glob@7.1.6:
     resolution:
       {
         integrity: sha512-LwaxwyZ72Lk7vZINtNNrywX0ZuLyStrdDtabefZKAY5ZGJhVtgdznluResxNmPitE0SAO+O26sWTHeKSI2wMBA==,
       }
+    deprecated: Glob versions prior to v9 are no longer supported
 
   glob@7.2.3:
     resolution:
       {
         integrity: sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==,
       }
+    deprecated: Glob versions prior to v9 are no longer supported
 
   glob@8.1.0:
     resolution:
@@ -8901,6 +8859,7 @@ packages:
         integrity: sha512-r8hpEjiQEYlF2QU0df3dS+nxxSIreXQS1qRhMJM0Q5NDdR386C7jb7Hwwod8Fgiuex+k0GFjgft18yvxm5XoCQ==,
       }
     engines: { node: '>=12' }
+    deprecated: Glob versions prior to v9 are no longer supported
 
   glob@9.3.5:
     resolution:
@@ -9378,6 +9337,7 @@ packages:
       {
         integrity: sha512-k92I/b08q4wvFscXCLvqfsHCrjrF7yiXsQuIVvVE7N82W3+aqpzuUdBbfhWcy/FZR3/4IgflMgKLOsvPDrGCJA==,
       }
+    deprecated: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
 
   inherits@2.0.4:
     resolution:
@@ -9736,14 +9696,6 @@ packages:
         integrity: sha512-WhB9zCku7EGTj/HQQRz5aUQEUeoQZH2bWcltRErOpymJ4boYE6wL9Tbr23krRPSZ+C5zqNSrSw+Cc7sZZ4b7vg==,
       }
     engines: { node: '>=0.10.0' }
-
-  isows@1.0.3:
-    resolution:
-      {
-        integrity: sha512-2cKei4vlmg2cxEjm3wVSqn8pcoRF/LX/wpifuuNquFO4SQmPwarClT+SUCA2lt+l581tTeZIPIZuIDo2jWN1fg==,
-      }
-    peerDependencies:
-      ws: '*'
 
   isows@1.0.6:
     resolution:
@@ -10405,6 +10357,7 @@ packages:
       {
         integrity: sha512-pDo3lu8Jhfjqls6GkMgpahsF9kCyayhgykjyLMNFTKWrpVdAQtYyB4muAMWozBB4ig/dtWAmsMxLEI8wuz+DYQ==,
       }
+    deprecated: This package is deprecated. Use require('node:util').isDeepStrictEqual instead.
 
   lodash.ismatch@4.4.0:
     resolution:
@@ -11372,6 +11325,7 @@ packages:
         integrity: sha512-/vBvz5Jfr9dT/aFWd0FIRf+T/Q2WBsLENygUaFUqstqsycmZAP/t5BvFJTK0viFmSUxiUKTUplWy5vt+rvKIxg==,
       }
     engines: { node: ^12.13.0 || ^14.15.0 || >=16.0.0 }
+    deprecated: This package is no longer supported.
 
   nth-check@2.1.1:
     resolution:
@@ -12678,6 +12632,7 @@ packages:
         integrity: sha512-AEtWXYfopBj2z5N5PbkAOeNHRPUg5q+Nen7QLxV8M2zJq1ym6/lCz3fYNTCXe19puu2d06jfHhrP7v/S2PtMMw==,
       }
     engines: { node: ^14.17.0 || ^16.13.0 || >=18.0.0 }
+    deprecated: This package is no longer supported. Please use @npmcli/package-json instead.
 
   read-pkg-up@3.0.0:
     resolution:
@@ -12965,6 +12920,7 @@ packages:
       {
         integrity: sha512-mwqeW5XsA2qAejG46gYdENaxXjx9onRNCfn7L0duuP4hCuTIi/QO7PDK07KJfp1d+izWPrzEJDcSqBa0OZQriA==,
       }
+    deprecated: Rimraf versions prior to v4 are no longer supported
     hasBin: true
 
   rimraf@2.7.1:
@@ -12972,6 +12928,7 @@ packages:
       {
         integrity: sha512-uWjbaKIK3T1OSVptzX7Nl6PvQ3qAGtKEtVRjRuazjfL3Bx5eI409VZSqgND+4UNnmzLVdPj9FqFJNPqBZFve4w==,
       }
+    deprecated: Rimraf versions prior to v4 are no longer supported
     hasBin: true
 
   rimraf@3.0.2:
@@ -12979,6 +12936,7 @@ packages:
       {
         integrity: sha512-JZkJMZkAGFFPP2YqXZXPbMlMBgsxzE8ILs4lMIX/2o0L9UBw9O/Y3o6wFw/i9YLapcUJWwqbi3kdxIPdC62TIA==,
       }
+    deprecated: Rimraf versions prior to v4 are no longer supported
     hasBin: true
 
   rimraf@4.4.1:
@@ -14550,17 +14508,6 @@ packages:
       }
     engines: { node: '>= 0.8' }
 
-  viem@1.18.9:
-    resolution:
-      {
-        integrity: sha512-eAXtoTwAFA3YEgjTYMb5ZTQrDC0UPx5qyZ4sv90TirVKepcM9mBPksTkC1SSWya0UdxhBmhEBL/CiYMjmGCTWg==,
-      }
-    peerDependencies:
-      typescript: '>=5.0.4'
-    peerDependenciesMeta:
-      typescript:
-        optional: true
-
   viem@2.21.35:
     resolution:
       {
@@ -14868,20 +14815,6 @@ packages:
       }
     engines: { node: '>=8' }
 
-  ws@6.2.2:
-    resolution:
-      {
-        integrity: sha512-zmhltoSR8u1cnDsD43TX59mzoMZsLKqUweyYBAIvTngR3shc0W6aOZylZmq/7hqyVxPdi+5Ud2QInblgyE72fw==,
-      }
-    peerDependencies:
-      bufferutil: ^4.0.1
-      utf-8-validate: ^5.0.2
-    peerDependenciesMeta:
-      bufferutil:
-        optional: true
-      utf-8-validate:
-        optional: true
-
   ws@6.2.3:
     resolution:
       {
@@ -14905,36 +14838,6 @@ packages:
     peerDependencies:
       bufferutil: ^4.0.1
       utf-8-validate: ^5.0.2
-    peerDependenciesMeta:
-      bufferutil:
-        optional: true
-      utf-8-validate:
-        optional: true
-
-  ws@7.5.9:
-    resolution:
-      {
-        integrity: sha512-F+P9Jil7UiSKSkppIiD94dN07AwvFixvLIj1Og1Rl9GGMuNipJnV9JzjD6XuqmAeiswGvUmNLjr5cFuXwNS77Q==,
-      }
-    engines: { node: '>=8.3.0' }
-    peerDependencies:
-      bufferutil: ^4.0.1
-      utf-8-validate: ^5.0.2
-    peerDependenciesMeta:
-      bufferutil:
-        optional: true
-      utf-8-validate:
-        optional: true
-
-  ws@8.13.0:
-    resolution:
-      {
-        integrity: sha512-x9vcZYTrFPC7aSIbj7sRCYo7L/Xb8Iy+pW0ng0wt2vCJv7M9HOMy0UoN3rr+IFC7hb7vXoqS+P9ktyLLLhO+LA==,
-      }
-    engines: { node: '>=10.0.0' }
-    peerDependencies:
-      bufferutil: ^4.0.1
-      utf-8-validate: '>=5.0.2'
     peerDependenciesMeta:
       bufferutil:
         optional: true
@@ -15144,8 +15047,6 @@ snapshots:
   '@aashutoshrathi/word-wrap@1.2.6': {}
 
   '@adraffy/ens-normalize@1.11.0': {}
-
-  '@adraffy/ens-normalize@1.9.4': {}
 
   '@alloc/quick-lru@5.2.0': {}
 
@@ -17173,8 +17074,8 @@ snapshots:
     dependencies:
       '@ethereumjs/tx': 4.2.0
       '@metamask/superstruct': 3.1.0
-      '@noble/hashes': 1.3.2
-      '@scure/base': 1.1.3
+      '@noble/hashes': 1.5.0
+      '@scure/base': 1.1.9
       '@types/debug': 4.1.12
       debug: 4.3.4
       pony-cause: 2.1.11
@@ -17187,8 +17088,8 @@ snapshots:
     dependencies:
       '@ethereumjs/tx': 4.2.0
       '@metamask/superstruct': 3.1.0
-      '@noble/hashes': 1.3.2
-      '@scure/base': 1.1.3
+      '@noble/hashes': 1.5.0
+      '@scure/base': 1.1.9
       '@types/debug': 4.1.12
       debug: 4.3.4
       pony-cause: 2.1.11
@@ -17250,10 +17151,6 @@ snapshots:
 
   '@noble/ciphers@1.0.0': {}
 
-  '@noble/curves@1.2.0':
-    dependencies:
-      '@noble/hashes': 1.3.2
-
   '@noble/curves@1.4.2':
     dependencies:
       '@noble/hashes': 1.4.0
@@ -17261,8 +17158,6 @@ snapshots:
   '@noble/curves@1.6.0':
     dependencies:
       '@noble/hashes': 1.5.0
-
-  '@noble/hashes@1.3.2': {}
 
   '@noble/hashes@1.4.0': {}
 
@@ -18058,15 +17953,7 @@ snapshots:
 
   '@safe-global/safe-gateway-typescript-sdk@3.13.2': {}
 
-  '@scure/base@1.1.3': {}
-
   '@scure/base@1.1.9': {}
-
-  '@scure/bip32@1.3.2':
-    dependencies:
-      '@noble/curves': 1.2.0
-      '@noble/hashes': 1.3.2
-      '@scure/base': 1.1.3
 
   '@scure/bip32@1.4.0':
     dependencies:
@@ -18079,11 +17966,6 @@ snapshots:
       '@noble/curves': 1.6.0
       '@noble/hashes': 1.5.0
       '@scure/base': 1.1.9
-
-  '@scure/bip39@1.2.1':
-    dependencies:
-      '@noble/hashes': 1.3.2
-      '@scure/base': 1.1.3
 
   '@scure/bip39@1.3.0':
     dependencies:
@@ -18740,7 +18622,7 @@ snapshots:
       util: 0.12.5
       util-deprecate: 1.0.2
       watchpack: 2.4.0
-      ws: 8.14.2(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      ws: 8.18.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - bufferutil
       - encoding
@@ -19575,7 +19457,7 @@ snapshots:
       '@walletconnect/jsonrpc-utils': 1.0.8
       '@walletconnect/safe-json': 1.0.2
       events: 3.3.0
-      ws: 7.5.9(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      ws: 7.5.10(bufferutil@4.0.8)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -19884,10 +19766,6 @@ snapshots:
       through: 2.3.8
 
   abbrev@1.1.1: {}
-
-  abitype@0.9.8(typescript@5.2.2):
-    optionalDependencies:
-      typescript: 5.2.2
 
   abitype@1.0.6(typescript@5.2.2):
     optionalDependencies:
@@ -22376,10 +22254,6 @@ snapshots:
 
   isobject@3.0.1: {}
 
-  isows@1.0.3(ws@8.13.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)):
-    dependencies:
-      ws: 8.13.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
-
   isows@1.0.6(ws@8.18.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)):
     dependencies:
       ws: 8.18.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
@@ -24372,7 +24246,7 @@ snapshots:
       progress: 2.0.3
       proxy-from-env: 1.1.0
       rimraf: 2.7.1
-      ws: 6.2.2(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      ws: 6.2.3(bufferutil@4.0.8)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -25739,23 +25613,6 @@ snapshots:
 
   vary@1.1.2: {}
 
-  viem@1.18.9(bufferutil@4.0.8)(typescript@5.2.2)(utf-8-validate@5.0.10):
-    dependencies:
-      '@adraffy/ens-normalize': 1.9.4
-      '@noble/curves': 1.2.0
-      '@noble/hashes': 1.3.2
-      '@scure/bip32': 1.3.2
-      '@scure/bip39': 1.2.1
-      abitype: 0.9.8(typescript@5.2.2)
-      isows: 1.0.3(ws@8.13.0(bufferutil@4.0.8)(utf-8-validate@5.0.10))
-      ws: 8.13.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
-    optionalDependencies:
-      typescript: 5.2.2
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-      - zod
-
   viem@2.21.35(bufferutil@4.0.8)(typescript@5.2.2)(utf-8-validate@5.0.10):
     dependencies:
       '@adraffy/ens-normalize': 1.11.0
@@ -26033,13 +25890,6 @@ snapshots:
       type-fest: 0.4.1
       write-json-file: 3.2.0
 
-  ws@6.2.2(bufferutil@4.0.8)(utf-8-validate@5.0.10):
-    dependencies:
-      async-limiter: 1.0.1
-    optionalDependencies:
-      bufferutil: 4.0.8
-      utf-8-validate: 5.0.10
-
   ws@6.2.3(bufferutil@4.0.8)(utf-8-validate@5.0.10):
     dependencies:
       async-limiter: 1.0.1
@@ -26048,16 +25898,6 @@ snapshots:
       utf-8-validate: 5.0.10
 
   ws@7.5.10(bufferutil@4.0.8)(utf-8-validate@5.0.10):
-    optionalDependencies:
-      bufferutil: 4.0.8
-      utf-8-validate: 5.0.10
-
-  ws@7.5.9(bufferutil@4.0.8)(utf-8-validate@5.0.10):
-    optionalDependencies:
-      bufferutil: 4.0.8
-      utf-8-validate: 5.0.10
-
-  ws@8.13.0(bufferutil@4.0.8)(utf-8-validate@5.0.10):
     optionalDependencies:
       bufferutil: 4.0.8
       utf-8-validate: 5.0.10

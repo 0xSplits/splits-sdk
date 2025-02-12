@@ -1,11 +1,12 @@
-import { Address, getContract, PublicClient } from 'viem'
+import { Address, getContract } from 'viem'
 import { normalize } from 'viem/ens'
 
 import { REVERSE_RECORDS_ADDRESS } from '../constants'
 import { reverseRecordsAbi } from '../constants/abi/reverseRecords'
+import { SplitsPublicClient } from '../types'
 
 const fetchEnsNames = async (
-  publicClient: PublicClient,
+  publicClient: SplitsPublicClient,
   addresses: Address[],
 ): Promise<string[]> => {
   // Do nothing if not on mainnet
@@ -15,9 +16,7 @@ const fetchEnsNames = async (
   const reverseRecords = getContract({
     address: REVERSE_RECORDS_ADDRESS,
     abi: reverseRecordsAbi,
-    // @ts-expect-error v1/v2 viem support
     client: publicClient,
-    publicClient,
   })
 
   const allNames = await reverseRecords.read.getNames([addresses])
@@ -25,7 +24,7 @@ const fetchEnsNames = async (
 }
 
 export const addEnsNames = async (
-  publicClient: PublicClient,
+  publicClient: SplitsPublicClient,
   recipients: { address: Address; ensName?: string }[],
 ): Promise<void> => {
   const addresses = recipients.map((recipient) => recipient.address)

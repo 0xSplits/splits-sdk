@@ -1,12 +1,9 @@
 import {
   Address,
-  Chain,
   GetContractReturnType,
   Hash,
   Hex,
   Log,
-  PublicClient,
-  Transport,
   decodeEventLog,
   encodeEventTopics,
   getAddress,
@@ -34,6 +31,7 @@ import type {
   ReadContractArgs,
   RecoverNonWaterfallFundsConfig,
   SplitsClientConfig,
+  SplitsPublicClient,
   TransactionConfig,
   TransactionFormat,
   WaterfallFundsConfig,
@@ -217,14 +215,12 @@ class WaterfallTransactions extends BaseTransactions {
   protected _getWaterfallContract(
     waterfallModule: string,
     chainId: number,
-  ): GetContractReturnType<WaterfallAbi, PublicClient<Transport, Chain>> {
+  ): GetContractReturnType<WaterfallAbi, SplitsPublicClient> {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getAddress(waterfallModule),
       abi: waterfallAbi,
-      // @ts-expect-error v1/v2 viem support
       client: publicClient,
-      publicClient: publicClient,
     })
   }
 }
@@ -272,7 +268,7 @@ export class WaterfallClient extends WaterfallTransactions {
   }
 
   // Write actions
-  async submitCreateWaterfallModuleTransaction(
+  async _submitCreateWaterfallModuleTransaction(
     createWaterfallArgs: CreateWaterfallConfig,
   ): Promise<{
     txHash: Hash
@@ -292,7 +288,7 @@ export class WaterfallClient extends WaterfallTransactions {
     event: Log
   }> {
     const { txHash } =
-      await this.submitCreateWaterfallModuleTransaction(createWaterfallArgs)
+      await this._submitCreateWaterfallModuleTransaction(createWaterfallArgs)
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.createWaterfallModule,
@@ -313,7 +309,7 @@ export class WaterfallClient extends WaterfallTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitWaterfallFundsTransaction(
+  async _submitWaterfallFundsTransaction(
     waterfallFundsArgs: WaterfallFundsConfig,
   ): Promise<{
     txHash: Hash
@@ -329,7 +325,7 @@ export class WaterfallClient extends WaterfallTransactions {
     event: Log
   }> {
     const { txHash } =
-      await this.submitWaterfallFundsTransaction(waterfallFundsArgs)
+      await this._submitWaterfallFundsTransaction(waterfallFundsArgs)
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.waterfallFunds,
@@ -343,7 +339,7 @@ export class WaterfallClient extends WaterfallTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitRecoverNonWaterfallFundsTransaction(
+  async _submitRecoverNonWaterfallFundsTransaction(
     recoverFundsArgs: RecoverNonWaterfallFundsConfig,
   ): Promise<{
     txHash: Hash
@@ -362,7 +358,7 @@ export class WaterfallClient extends WaterfallTransactions {
     event: Log
   }> {
     const { txHash } =
-      await this.submitRecoverNonWaterfallFundsTransaction(recoverFundsArgs)
+      await this._submitRecoverNonWaterfallFundsTransaction(recoverFundsArgs)
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.recoverNonWaterfallFunds,
@@ -376,7 +372,7 @@ export class WaterfallClient extends WaterfallTransactions {
     throw new TransactionFailedError()
   }
 
-  async submitWithdrawPullFundsTransaction(
+  async _submitWithdrawPullFundsTransaction(
     withdrawFundsArgs: WithdrawWaterfallPullFundsConfig,
   ): Promise<{
     txHash: Hash
@@ -394,7 +390,7 @@ export class WaterfallClient extends WaterfallTransactions {
     event: Log
   }> {
     const { txHash } =
-      await this.submitWithdrawPullFundsTransaction(withdrawFundsArgs)
+      await this._submitWithdrawPullFundsTransaction(withdrawFundsArgs)
     const events = await this.getTransactionEvents({
       txHash,
       eventTopics: this.eventTopics.withdrawPullFunds,

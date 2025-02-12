@@ -30,6 +30,33 @@ pnpm install
 pnpm run lerna-build
 ```
 
+### Local linking
+
+Can use yalc to link the locally built sdk to other projects.
+
+```bash
+pnpm install -g yalc
+```
+
+In the package you want to link, run:
+
+```bash
+yalc publish
+```
+
+In the project you want to link to, run (replace @0xsplits/splits-sdk with whatever package you are linking to the local package):
+
+```bash
+yalc add @0xsplits/splits-sdk
+```
+
+To unlink the package, run:
+
+```bash
+yalc remove @0xsplits/splits-sdk
+```
+
+
 ### Update versions and prepare for npm publish
 
 From the root directory:

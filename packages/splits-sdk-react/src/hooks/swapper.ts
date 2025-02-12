@@ -39,7 +39,7 @@ export const useCreateSwapper = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitCreateSwapperTransaction(argsDict)
+          await splitsClient._submitCreateSwapperTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -86,7 +86,7 @@ export const useUniV3FlashSwap = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitUniV3FlashSwapTransaction(argsDict)
+          await splitsClient._submitUniV3FlashSwapTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -133,7 +133,7 @@ export const useSwapperExecCalls = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitExecCallsTransaction(argsDict)
+          await splitsClient._submitExecCallsTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -180,7 +180,7 @@ export const useSwapperPause = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitSetPausedTransaction(argsDict)
+          await splitsClient._submitSetPausedTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -229,7 +229,7 @@ export const useSwapperSetBeneficiary = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitSetBeneficiaryTransaction(argsDict)
+          await splitsClient._submitSetBeneficiaryTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -278,7 +278,7 @@ export const useSwapperSetTokenToBeneficiary = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitSetTokenToBeneficiaryTransaction(argsDict)
+          await splitsClient._submitSetTokenToBeneficiaryTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -325,7 +325,7 @@ export const useSwapperSetOracle = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitSetOracleTransaction(argsDict)
+          await splitsClient._submitSetOracleTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -374,7 +374,7 @@ export const useSwapperSetDefaultScaledOfferFactor = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitSetDefaultScaledOfferFactorTransaction(
+          await splitsClient._submitSetDefaultScaledOfferFactorTransaction(
             argsDict,
           )
 
@@ -425,7 +425,7 @@ export const useSwapperSetScaledOfferFactorOverrides = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitSetScaledOfferFactorOverridesTransaction(
+          await splitsClient._submitSetScaledOfferFactorOverridesTransaction(
             argsDict,
           )
 

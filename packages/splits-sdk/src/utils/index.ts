@@ -1,11 +1,4 @@
-import {
-  Address,
-  PublicClient,
-  encodePacked,
-  getAddress,
-  keccak256,
-  zeroAddress,
-} from 'viem'
+import { Address, encodePacked, getAddress, keccak256, zeroAddress } from 'viem'
 
 import {
   LIQUID_SPLIT_NFT_COUNT,
@@ -16,6 +9,7 @@ import {
   ContractRecoupTranche,
   RecoupTrancheInput,
   SplitRecipient,
+  SplitsPublicClient,
   SplitV2Type,
   WaterfallTrancheInput,
 } from '../types'
@@ -70,7 +64,7 @@ export const getTrancheRecipientsAndSizes = async (
   chainId: number,
   token: Address,
   tranches: WaterfallTrancheInput[],
-  publicClient: PublicClient,
+  publicClient: SplitsPublicClient,
 ): Promise<[Address[], bigint[]]> => {
   const recipients: Address[] = []
   const sizes: bigint[] = []
@@ -94,7 +88,7 @@ export const getRecoupTranchesAndSizes = async (
   chainId: number,
   token: Address,
   tranches: RecoupTrancheInput[],
-  publicClient: PublicClient,
+  publicClient: SplitsPublicClient,
 ): Promise<[ContractRecoupTranche[], bigint[]]> => {
   const recoupTranches: ContractRecoupTranche[] = []
   const sizes: bigint[] = []

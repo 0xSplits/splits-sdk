@@ -1,14 +1,6 @@
-import {
-  Address,
-  Chain,
-  getAddress,
-  getContract,
-  GetLogsReturnType,
-  PublicClient,
-  Transport,
-} from 'viem'
+import { Address, getAddress, getContract, GetLogsReturnType } from 'viem'
 
-import { SplitV2Type } from '../types'
+import { SplitsPublicClient, SplitV2Type } from '../types'
 import {
   getSplitV2FactoriesStartBlock,
   getSplitV2FactoryAddress,
@@ -59,14 +51,14 @@ const getRandomTimeMs: (maxMs: number) => number = (maxMs) => {
 
 // Return true if the public client supports a large enough logs request to fetch erc20 tranfer history
 export const isLogsPublicClient = (
-  publicClient: PublicClient<Transport, Chain | undefined>,
+  publicClient: SplitsPublicClient,
 ): boolean => {
   return (
     isAlchemyPublicClient(publicClient) || isInfuraPublicClient(publicClient)
   )
 }
 
-export const isAlchemyPublicClient: (arg0: PublicClient) => boolean = (
+export const isAlchemyPublicClient: (arg0: SplitsPublicClient) => boolean = (
   rpcPublicClient,
 ) => {
   if (rpcPublicClient.transport?.url?.includes('.alchemy.')) return true
@@ -75,7 +67,7 @@ export const isAlchemyPublicClient: (arg0: PublicClient) => boolean = (
   return false
 }
 
-export const isInfuraPublicClient: (arg0: PublicClient) => boolean = (
+export const isInfuraPublicClient: (arg0: SplitsPublicClient) => boolean = (
   rpcPublicClient,
 ) => {
   if (rpcPublicClient.transport?.url?.includes('.infura.')) return true
@@ -111,10 +103,10 @@ export const getLargestValidBlockRange = async ({
   publicClient,
 }: {
   maxBlockRange?: bigint
-  publicClient: PublicClient<Transport, Chain>
+  publicClient: SplitsPublicClient
 }) => {
   const fallbackBlockRange = BigInt(625)
-  const chainId = publicClient.chain.id
+  const chainId = publicClient.chain!.id
   const startBlockNumber = getSplitV2FactoriesStartBlock(chainId)
 
   const blockRangeOptions = [
@@ -207,7 +199,7 @@ export const getSplitCreateAndUpdateLogs = async <
   splitV2Version,
 }: {
   splitAddress: Address
-  publicClient: PublicClient<Transport, Chain>
+  publicClient: SplitsPublicClient
   splitCreatedEvent: SplitCreatedEventType
   splitUpdatedEvent: SplitUpdatedEventType
   addresses: Address[]
@@ -317,7 +309,7 @@ export const getSplitCreateAndUpdateLogs = async <
       throw new AccountNotFoundError(
         'Split',
         formattedSplitAddress,
-        publicClient.chain.id,
+        publicClient.chain!.id,
       )
   }
 
@@ -425,7 +417,7 @@ export const searchLogs = async <
   splitV2Version,
 }: {
   formattedSplitAddress: Address
-  publicClient: PublicClient<Transport, Chain>
+  publicClient: SplitsPublicClient
   splitCreatedEvent: SplitCreatedEventType
   splitUpdatedEvent: SplitUpdatedEventType
   addresses: Address[]
@@ -453,9 +445,7 @@ export const searchLogs = async <
     const splitContract = getContract({
       address: formattedSplitAddress,
       abi: splitV2o1Abi,
-      // @ts-expect-error v1/v2 viem support
       client: publicClient,
-      publicClient: publicClient,
     })
 
     const blockNumber = await splitContract.read.updateBlockNumber()

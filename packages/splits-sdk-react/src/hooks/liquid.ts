@@ -35,7 +35,7 @@ export const useCreateLiquidSplit = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitCreateLiquidSplitTransaction(argsDict)
+          await splitsClient._submitCreateLiquidSplitTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -84,7 +84,7 @@ export const useDistributeLiquidSplitToken = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitDistributeTokenTransaction(argsDict)
+          await splitsClient._submitDistributeTokenTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
@@ -133,7 +133,7 @@ export const useTransferLiquidSplitOwnership = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitTransferOwnershipTransaction(argsDict)
+          await splitsClient._submitTransferOwnershipTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)

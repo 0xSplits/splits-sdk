@@ -27,7 +27,7 @@ export const useMulticall = (): {
         setTxHash(undefined)
 
         const { txHash: hash } =
-          await splitsClient.submitMulticallTransaction(argsDict)
+          await splitsClient._submitMulticallTransaction(argsDict)
 
         setStatus('txInProgress')
         setTxHash(hash)
