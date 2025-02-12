@@ -1,9 +1,4 @@
-import {
-  GetContractReturnType,
-  PublicClient,
-  getAddress,
-  getContract,
-} from 'viem'
+import { GetContractReturnType, getAddress, getContract } from 'viem'
 
 import { BaseTransactions } from './base'
 import { TransactionType, ORACLE_CHAIN_IDS } from '../constants'
@@ -11,6 +6,7 @@ import { uniV3OracleAbi } from '../constants/abi/uniV3Oracle'
 import type {
   QuoteParams,
   SplitsClientConfig,
+  SplitsPublicClient,
   TransactionConfig,
 } from '../types'
 import { validateAddress } from '../utils/validation'
@@ -28,7 +24,7 @@ class OracleTransactions extends BaseTransactions {
   protected _getOracleContract(
     oracle: string,
     chainId: number,
-  ): GetContractReturnType<UniV3OracleAbi, PublicClient> {
+  ): GetContractReturnType<UniV3OracleAbi, SplitsPublicClient> {
     const publicClient = this._getPublicClient(chainId)
 
     return getContract({

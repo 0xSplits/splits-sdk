@@ -4,7 +4,6 @@ import {
   Hash,
   Hex,
   Log,
-  PublicClient,
   decodeEventLog,
   encodeEventTopics,
   getAddress,
@@ -32,6 +31,7 @@ import type {
   ReadContractArgs,
   RecoverNonWaterfallFundsConfig,
   SplitsClientConfig,
+  SplitsPublicClient,
   TransactionConfig,
   TransactionFormat,
   WaterfallFundsConfig,
@@ -215,7 +215,7 @@ class WaterfallTransactions extends BaseTransactions {
   protected _getWaterfallContract(
     waterfallModule: string,
     chainId: number,
-  ): GetContractReturnType<WaterfallAbi, PublicClient> {
+  ): GetContractReturnType<WaterfallAbi, SplitsPublicClient> {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getAddress(waterfallModule),

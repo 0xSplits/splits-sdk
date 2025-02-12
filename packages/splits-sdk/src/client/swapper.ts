@@ -4,7 +4,6 @@ import {
   Hash,
   Hex,
   Log,
-  PublicClient,
   decodeEventLog,
   encodeEventTopics,
   getAddress,
@@ -35,6 +34,7 @@ import type {
   CreateSwapperConfig,
   ReadContractArgs,
   SplitsClientConfig,
+  SplitsPublicClient,
   SwapperExecCallsConfig,
   SwapperPauseConfig,
   SwapperSetBeneficiaryConfig,
@@ -374,7 +374,7 @@ class SwapperTransactions extends BaseTransactions {
 
   protected _getUniV3SwapContract(
     chainId: number,
-  ): GetContractReturnType<UniV3SwapAbi, PublicClient> {
+  ): GetContractReturnType<UniV3SwapAbi, SplitsPublicClient> {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getUniV3SwapAddress(),
@@ -386,7 +386,7 @@ class SwapperTransactions extends BaseTransactions {
   protected _getSwapperContract(
     swapper: string,
     chainId: number,
-  ): GetContractReturnType<SwapperAbi, PublicClient> {
+  ): GetContractReturnType<SwapperAbi, SplitsPublicClient> {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getAddress(swapper),

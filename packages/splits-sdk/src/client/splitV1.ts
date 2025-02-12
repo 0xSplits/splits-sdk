@@ -4,7 +4,6 @@ import {
   Hash,
   InvalidAddressError,
   Log,
-  PublicClient,
   decodeEventLog,
   encodeEventTopics,
   getAddress,
@@ -59,6 +58,7 @@ import type {
   Split,
   SplitRecipient,
   SplitsClientConfig,
+  SplitsPublicClient,
   TransactionConfig,
   TransactionFormat,
   UpdateSplitAndDistributeTokenConfig,
@@ -693,7 +693,7 @@ class SplitV1Transactions extends BaseTransactions {
 
   protected _getSplitMainContract(
     chainId: number,
-  ): GetContractReturnType<SplitMainEthereumAbiType, PublicClient> {
+  ): GetContractReturnType<SplitMainEthereumAbiType, SplitsPublicClient> {
     const publicClient = this._getPublicClient(chainId)
 
     return getContract({

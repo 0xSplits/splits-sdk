@@ -4,6 +4,7 @@ import type {
   Hash,
   Hex,
   PublicClient,
+  Transport,
   WalletClient,
 } from 'viem'
 import { TransactionType } from './constants'
@@ -33,31 +34,39 @@ export type ApiConfig = {
   serverURL?: string
 }
 
+// OP stack chains are not typed the same way as other chains,
+// so we need to use any here. Chain type will cause the caller
+// to throw an error if the chain is base, optimism, etc.
+// TODO: can we have a generic here? Problem is it needs to get
+// passed through in so many places, it's pretty ugly.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type SplitsPublicClient = PublicClient<Transport, any>
+
 export type DataClientConfig = {
-  publicClient?: PublicClient
+  publicClient?: SplitsPublicClient
   publicClients?: {
-    [chainId: number]: PublicClient
+    [chainId: number]: SplitsPublicClient
   }
   apiConfig: ApiConfig
   includeEnsNames?: boolean
   // ensPublicClient can be used to fetch ens names when publicClient is not on mainnet (reverseRecords
   // only works on mainnet).
-  ensPublicClient?: PublicClient
+  ensPublicClient?: SplitsPublicClient
 }
 
 // Splits
 export type SplitsClientConfig = {
   chainId?: number
-  publicClient?: PublicClient
+  publicClient?: SplitsPublicClient
   publicClients?: {
-    [chainId: number]: PublicClient
+    [chainId: number]: SplitsPublicClient
   }
   walletClient?: WalletClient
   apiConfig?: ApiConfig
   includeEnsNames?: boolean
   // ensPublicClient can be used to fetch ens names when publicClient is not on mainnet (reverseRecords
   // only works on mainnet).
-  ensPublicClient?: PublicClient
+  ensPublicClient?: SplitsPublicClient
 }
 
 export type BaseClientConfig = SplitsClientConfig & {

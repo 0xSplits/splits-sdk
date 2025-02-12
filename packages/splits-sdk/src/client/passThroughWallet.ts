@@ -4,7 +4,6 @@ import {
   Hash,
   Hex,
   Log,
-  PublicClient,
   decodeEventLog,
   encodeEventTopics,
   getAddress,
@@ -33,6 +32,7 @@ import type {
   PassThroughWalletPauseConfig,
   SetPassThroughConfig,
   SplitsClientConfig,
+  SplitsPublicClient,
   TransactionConfig,
   TransactionFormat,
 } from '../types'
@@ -183,7 +183,7 @@ class PassThroughWalletTransactions extends BaseTransactions {
   protected _getPassThroughWalletContract(
     passThroughWallet: string,
     chainId: number,
-  ): GetContractReturnType<PassThroughWalletAbi, PublicClient> {
+  ): GetContractReturnType<PassThroughWalletAbi, SplitsPublicClient> {
     const publicClient = this._getPublicClient(chainId)
 
     return getContract({

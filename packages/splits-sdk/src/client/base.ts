@@ -1,5 +1,4 @@
 import {
-  PublicClient,
   WalletClient,
   Address,
   Abi,
@@ -24,6 +23,7 @@ import type {
   BaseClientConfig,
   CallData,
   MulticallConfig,
+  SplitsPublicClient,
   TransactionConfig,
   TransactionFormat,
   TransactionOverrides,
@@ -33,12 +33,12 @@ import { DataClient } from './data'
 
 class BaseClient {
   readonly _chainId: number | undefined // DEPRECATED
-  readonly _ensPublicClient: PublicClient | undefined // DEPRECATED
+  readonly _ensPublicClient: SplitsPublicClient | undefined // DEPRECATED
   readonly _walletClient: WalletClient | undefined
-  readonly _publicClient: PublicClient | undefined // DEPRECATED
+  readonly _publicClient: SplitsPublicClient | undefined // DEPRECATED
   readonly _publicClients:
     | {
-        [chainId: number]: PublicClient
+        [chainId: number]: SplitsPublicClient
       }
     | undefined
   readonly _apiConfig: ApiConfig | undefined
@@ -112,7 +112,7 @@ class BaseClient {
     this._requirePublicClient(chainId)
   }
 
-  _getPublicClient(chainId: number): PublicClient {
+  _getPublicClient(chainId: number): SplitsPublicClient {
     if (!this._supportedChainIds.includes(chainId))
       throw new UnsupportedChainIdError(chainId, this._supportedChainIds)
 
@@ -299,7 +299,7 @@ export class BaseClientMixin extends BaseTransactions {
       hash: txHash,
     })
     if (transaction.status === 'success') {
-      const events = transaction.logs?.filter((log) => {
+      const events = transaction.logs?.filter((log: { topics: Hex[] }) => {
         if (includeAll) return true
         if (log.topics[0]) return eventTopics.includes(log.topics[0])
 

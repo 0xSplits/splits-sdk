@@ -4,7 +4,6 @@ import {
   Hash,
   Hex,
   Log,
-  PublicClient,
   decodeEventLog,
   encodeEventTopics,
   getAddress,
@@ -34,6 +33,7 @@ import type {
   StartVestConfig,
   TransactionConfig,
   TransactionFormat,
+  SplitsPublicClient,
 } from '../types'
 import { validateAddress, validateVestingPeriod } from '../utils/validation'
 
@@ -114,7 +114,7 @@ class VestingTransactions extends BaseTransactions {
   protected _getVestingContract(
     vestingModule: string,
     chainId: number,
-  ): GetContractReturnType<VestingAbi, PublicClient> {
+  ): GetContractReturnType<VestingAbi, SplitsPublicClient> {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getAddress(vestingModule),
@@ -125,7 +125,7 @@ class VestingTransactions extends BaseTransactions {
 
   protected _getVestingFactoryContract(
     chainId: number,
-  ): GetContractReturnType<VestingFactoryAbi, PublicClient> {
+  ): GetContractReturnType<VestingFactoryAbi, SplitsPublicClient> {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getVestingFactoryAddress(chainId),

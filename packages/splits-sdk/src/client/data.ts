@@ -1,6 +1,6 @@
 import { Client } from '@urql/core'
 import { DocumentNode } from 'graphql'
-import { Address, PublicClient, getAddress, zeroAddress } from 'viem'
+import { Address, getAddress, zeroAddress } from 'viem'
 import {
   DataClientConfig,
   FormattedContractEarnings,
@@ -11,6 +11,7 @@ import {
   LiquidSplit,
   Split,
   SplitsContract,
+  SplitsPublicClient,
   Swapper,
   VestingModule,
   WaterfallModule,
@@ -77,11 +78,11 @@ import {
 } from '../utils'
 
 export class DataClient {
-  readonly _ensPublicClient: PublicClient | undefined // DEPRECATED
-  readonly _publicClient: PublicClient | undefined // DEPRECATED
+  readonly _ensPublicClient: SplitsPublicClient | undefined // DEPRECATED
+  readonly _publicClient: SplitsPublicClient | undefined // DEPRECATED
   readonly _publicClients:
     | {
-        [chainId: number]: PublicClient
+        [chainId: number]: SplitsPublicClient
       }
     | undefined
   private readonly _graphqlClient: Client | undefined
@@ -117,7 +118,7 @@ export class DataClient {
     this._getPublicClient(chainId)
   }
 
-  protected _getPublicClient(chainId: number): PublicClient {
+  protected _getPublicClient(chainId: number): SplitsPublicClient {
     if (this._publicClients && this._publicClients[chainId]) {
       return this._publicClients[chainId]
     }

@@ -5,7 +5,6 @@ import {
   Hex,
   InvalidAddressError,
   Log,
-  PublicClient,
   TypedDataDomain,
   decodeEventLog,
   encodeEventTopics,
@@ -47,6 +46,7 @@ import {
   SplitV2ExecCallsConfig,
   SplitV2Type,
   SplitsClientConfig,
+  SplitsPublicClient,
   TransactionConfig,
   TransactionFormat,
   TransferOwnershipConfig,
@@ -507,7 +507,7 @@ class SplitV2Transactions extends BaseTransactions {
   protected _getSplitV2Contract(
     splitAddress: Address,
     chainId: number,
-  ): GetContractReturnType<SplitV2ABI, PublicClient> {
+  ): GetContractReturnType<SplitV2ABI, SplitsPublicClient> {
     validateAddress(splitAddress)
     const publicClient = this._getPublicClient(chainId)
 
@@ -521,7 +521,7 @@ class SplitV2Transactions extends BaseTransactions {
   protected _getSplitV2FactoryContract(
     splitType: SplitV2Type,
     chainId: number,
-  ): GetContractReturnType<SplitFactoryABI, PublicClient> {
+  ): GetContractReturnType<SplitFactoryABI, SplitsPublicClient> {
     const publicClient = this._getPublicClient(chainId)
 
     return getContract({
@@ -534,7 +534,7 @@ class SplitV2Transactions extends BaseTransactions {
   protected _getSplitV2o1FactoryContract(
     splitType: SplitV2Type,
     chainId: number,
-  ): GetContractReturnType<SplitV2o1FactoryABI, PublicClient> {
+  ): GetContractReturnType<SplitV2o1FactoryABI, SplitsPublicClient> {
     const publicClient = this._getPublicClient(chainId)
 
     return getContract({

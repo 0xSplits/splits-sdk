@@ -5,7 +5,6 @@ import {
   Hash,
   Hex,
   Log,
-  PublicClient,
   decodeEventLog,
   encodeEventTopics,
   getAddress,
@@ -39,6 +38,7 @@ import type {
   TransactionConfig,
   TransactionFormat,
   ReadContractArgs,
+  SplitsPublicClient,
 } from '../types'
 import {
   getBigIntFromPercent,
@@ -184,7 +184,7 @@ class LiquidSplitTransactions extends BaseTransactions {
   protected _getLiquidSplitContract(
     liquidSplit: string,
     chainId: number,
-  ): GetContractReturnType<LS1155Abi, PublicClient> {
+  ): GetContractReturnType<LS1155Abi, SplitsPublicClient> {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getAddress(liquidSplit),

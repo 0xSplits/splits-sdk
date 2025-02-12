@@ -4,7 +4,6 @@ import {
   Hash,
   Hex,
   Log,
-  PublicClient,
   TypedDataDomain,
   encodeEventTopics,
   fromHex,
@@ -49,7 +48,7 @@ import {
 import { TransactionFailedError } from '../errors'
 import { applyMixins } from './mixin'
 import { getNumberFromPercent, validateAddress } from '../utils'
-
+import { SplitsPublicClient } from '../types'
 type WarehouseAbiType = typeof warehouseAbi
 
 const nativeTokenAddress: Address = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
@@ -68,7 +67,7 @@ class WarehouseTransactions extends BaseTransactions {
 
   protected _getWarehouseContract(
     chainId: number,
-  ): GetContractReturnType<WarehouseAbiType, PublicClient> {
+  ): GetContractReturnType<WarehouseAbiType, SplitsPublicClient> {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
       address: getWarehouseAddress(),

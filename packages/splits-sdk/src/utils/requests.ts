@@ -1,12 +1,6 @@
-import {
-  Address,
-  getAddress,
-  getContract,
-  GetLogsReturnType,
-  PublicClient,
-} from 'viem'
+import { Address, getAddress, getContract, GetLogsReturnType } from 'viem'
 
-import { SplitV2Type } from '../types'
+import { SplitsPublicClient, SplitV2Type } from '../types'
 import {
   getSplitV2FactoriesStartBlock,
   getSplitV2FactoryAddress,
@@ -56,13 +50,15 @@ const getRandomTimeMs: (maxMs: number) => number = (maxMs) => {
 }
 
 // Return true if the public client supports a large enough logs request to fetch erc20 tranfer history
-export const isLogsPublicClient = (publicClient: PublicClient): boolean => {
+export const isLogsPublicClient = (
+  publicClient: SplitsPublicClient,
+): boolean => {
   return (
     isAlchemyPublicClient(publicClient) || isInfuraPublicClient(publicClient)
   )
 }
 
-export const isAlchemyPublicClient: (arg0: PublicClient) => boolean = (
+export const isAlchemyPublicClient: (arg0: SplitsPublicClient) => boolean = (
   rpcPublicClient,
 ) => {
   if (rpcPublicClient.transport?.url?.includes('.alchemy.')) return true
@@ -71,7 +67,7 @@ export const isAlchemyPublicClient: (arg0: PublicClient) => boolean = (
   return false
 }
 
-export const isInfuraPublicClient: (arg0: PublicClient) => boolean = (
+export const isInfuraPublicClient: (arg0: SplitsPublicClient) => boolean = (
   rpcPublicClient,
 ) => {
   if (rpcPublicClient.transport?.url?.includes('.infura.')) return true
@@ -107,7 +103,7 @@ export const getLargestValidBlockRange = async ({
   publicClient,
 }: {
   maxBlockRange?: bigint
-  publicClient: PublicClient
+  publicClient: SplitsPublicClient
 }) => {
   const fallbackBlockRange = BigInt(625)
   const chainId = publicClient.chain!.id
@@ -203,7 +199,7 @@ export const getSplitCreateAndUpdateLogs = async <
   splitV2Version,
 }: {
   splitAddress: Address
-  publicClient: PublicClient
+  publicClient: SplitsPublicClient
   splitCreatedEvent: SplitCreatedEventType
   splitUpdatedEvent: SplitUpdatedEventType
   addresses: Address[]
@@ -421,7 +417,7 @@ export const searchLogs = async <
   splitV2Version,
 }: {
   formattedSplitAddress: Address
-  publicClient: PublicClient
+  publicClient: SplitsPublicClient
   splitCreatedEvent: SplitCreatedEventType
   splitUpdatedEvent: SplitUpdatedEventType
   addresses: Address[]

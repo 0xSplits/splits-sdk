@@ -1,10 +1,4 @@
-import {
-  zeroAddress,
-  Address,
-  MulticallReturnType,
-  PublicClient,
-  getAddress,
-} from 'viem'
+import { zeroAddress, Address, MulticallReturnType, getAddress } from 'viem'
 
 import {
   CHAIN_INFO,
@@ -14,7 +8,7 @@ import {
 } from '../constants'
 import { erc20Abi } from '../constants/abi/erc20'
 import { splitV2ABI } from '../constants/abi/splitV2'
-import { FormattedTokenBalances, Token } from '../types'
+import { FormattedTokenBalances, Token, SplitsPublicClient } from '../types'
 import { fromBigIntToTokenValue, isAlchemyPublicClient } from '.'
 import { retryExponentialBackoff } from './requests'
 import { IBalance } from '../subgraph/types'
@@ -23,7 +17,7 @@ import { splitMainPolygonAbi } from '../constants/abi'
 
 export const fetchERC20TransferredTokens = async (
   chainId: number,
-  publicClient: PublicClient,
+  publicClient: SplitsPublicClient,
   splitAddress: Address,
 ): Promise<string[]> => {
   const tokens = new Set<string>([])
@@ -58,7 +52,7 @@ export const fetchERC20TransferredTokens = async (
 export const fetchActiveBalances: (
   arg0: number,
   arg1: Address,
-  arg2: PublicClient,
+  arg2: SplitsPublicClient,
   arg3: Address[],
 ) => Promise<FormattedTokenBalances> = async (
   chainId,
@@ -100,7 +94,7 @@ export const fetchSplitActiveBalances = async ({
   type: SplitType
   chainId: number
   splitAddress: Address
-  publicClient: PublicClient
+  publicClient: SplitsPublicClient
   fullTokenList: Address[]
 }) => {
   const balances: FormattedTokenBalances = {}
@@ -139,7 +133,7 @@ export const fetchSplitActiveBalances = async ({
 export const fetchContractBalancesWithAlchemy: (
   arg0: number,
   arg1: Address,
-  arg2: PublicClient,
+  arg2: SplitsPublicClient,
 ) => Promise<FormattedTokenBalances> = async (
   chainId,
   address,
@@ -237,7 +231,7 @@ export const fetchContractBalancesWithAlchemy: (
 type TokenData = { [address: string]: Token }
 const fetchTokenData: (
   arg0: Address[],
-  arg1: PublicClient,
+  arg1: SplitsPublicClient,
 ) => Promise<TokenData> = async (tokens, publicClient) => {
   const filteredTokens = tokens.filter((token) => token !== zeroAddress)
   const contractCalls = getTokenDataCalls(filteredTokens)
