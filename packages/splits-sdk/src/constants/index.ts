@@ -169,6 +169,8 @@ export enum ChainId {
   BLAST = 81457,
   SHAPE = 360,
   WORLDCHAIN = 480,
+  PLUME = 98866,
+  PLUME_TESTNET = 98867,
 }
 
 export const ETHEREUM_CHAIN_IDS = [ChainId.MAINNET]
@@ -183,6 +185,7 @@ export const BASE_CHAIN_IDS = [ChainId.BASE, ChainId.BASE_SEPOLIA]
 export const BLAST_CHAIN_IDS = [ChainId.BLAST]
 export const SHAPE_CHAIN_IDS = [ChainId.SHAPE]
 export const WORLD_CHAIN_IDS = [ChainId.WORLDCHAIN]
+export const PLUME_CHAIN_IDS = [ChainId.PLUME, ChainId.PLUME_TESTNET]
 
 export const ALL_CHAIN_IDS = [
   ...ETHEREUM_CHAIN_IDS,
@@ -197,6 +200,7 @@ export const ALL_CHAIN_IDS = [
   ...BLAST_CHAIN_IDS,
   ...SHAPE_CHAIN_IDS,
   ...WORLD_CHAIN_IDS,
+  ...PLUME_CHAIN_IDS,
 ]
 
 export const SPLITS_SUPPORTED_CHAIN_IDS = [
@@ -232,6 +236,8 @@ export const SPLITS_V2_SUPPORTED_CHAIN_IDS = [
   ChainId.BSC,
   ChainId.SHAPE,
   ChainId.WORLDCHAIN,
+  ChainId.PLUME,
+  ChainId.PLUME_TESTNET,
 ]
 
 export const SPLITS_SUBGRAPH_CHAIN_IDS = ALL_CHAIN_IDS.slice()
@@ -388,6 +394,20 @@ export const CHAIN_INFO: {
       symbol: 'ETH',
     },
     startBlockV2: 9116639,
+  },
+  [ChainId.PLUME]: {
+    startBlock: 865172,
+    nativeCurrency: {
+      symbol: 'PLUME',
+    },
+    startBlockV2: 865172,
+  },
+  [ChainId.PLUME_TESTNET]: {
+    startBlock: 1759,
+    nativeCurrency: {
+      symbol: 'PLUME',
+    },
+    startBlockV2: 1759,
   },
 }
 
