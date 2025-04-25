@@ -111,7 +111,12 @@ export const getSwapperFactoryAddress = (): Address => {
   return SWAPPER_FACTORY_ADDRESS
 }
 
-export const getUniV3SwapAddress = (chainId: number): Address => {
+/**
+ * @param chainId - The chain ID to get the UniV3Swap address for.
+ * @returns The UniV3Swap address for the given chain ID.
+ * @dev It is recommended to pass in the chainId.
+ */
+export const getUniV3SwapAddress = (chainId?: number): Address => {
   if (chainId === ChainId.POLYGON)
     return '0x8d582AEDf0326348960054021ab0b748B3A2BA66'
   if (chainId === ChainId.OPTIMISM)
