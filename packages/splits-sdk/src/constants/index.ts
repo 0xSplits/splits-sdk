@@ -114,6 +114,8 @@ export const getSwapperFactoryAddress = (): Address => {
 export const getUniV3SwapAddress = (chainId: number): Address => {
   if (chainId === ChainId.POLYGON)
     return '0x8d582AEDf0326348960054021ab0b748B3A2BA66'
+  if (chainId === ChainId.OPTIMISM)
+    return '0x8d582AEDf0326348960054021ab0b748B3A2BA66'
   return UNI_V3_SWAP_ADDRESS
 }
 
