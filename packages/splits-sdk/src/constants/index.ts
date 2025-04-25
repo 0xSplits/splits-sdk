@@ -3,6 +3,7 @@ import { SplitV2Type } from '../types'
 import { splitMainPolygonAbi } from './abi/splitMain'
 import { splitV2ABI } from './abi/splitV2'
 import { splitV2FactoryABI } from './abi/splitV2Factory'
+import { InvalidArgumentError } from '../errors'
 
 export const PERCENTAGE_SCALE = BigInt(1e6)
 
@@ -117,6 +118,12 @@ export const getSwapperFactoryAddress = (): Address => {
  * @dev It is recommended to pass in the chainId.
  */
 export const getUniV3SwapAddress = (chainId?: number): Address => {
+  if (!chainId) return UNI_V3_SWAP_ADDRESS
+
+  if (!PERMISSIONLESS_SWAPPER_CHAIN_IDS.includes(chainId))
+    throw new InvalidArgumentError(
+      `Chain - ${chainId} is not supported for permissionless swaps`,
+    )
   if (chainId === ChainId.POLYGON)
     return '0x8d582AEDf0326348960054021ab0b748B3A2BA66'
   if (chainId === ChainId.OPTIMISM)
@@ -277,6 +284,14 @@ export const SWAPPER_CHAIN_IDS = [
   ChainId.OPTIMISM,
   ChainId.ARBITRUM,
 ]
+
+export const PERMISSIONLESS_SWAPPER_CHAIN_IDS = [
+  ChainId.MAINNET,
+  ChainId.POLYGON,
+  ChainId.OPTIMISM,
+  ChainId.ARBITRUM,
+]
+
 export const PASS_THROUGH_WALLET_CHAIN_IDS = SWAPPER_CHAIN_IDS.slice()
 export const ORACLE_CHAIN_IDS = SWAPPER_CHAIN_IDS.slice()
 export const DIVERSIFIER_CHAIN_IDS = SWAPPER_CHAIN_IDS.slice()
