@@ -146,7 +146,7 @@ class SwapperTransactions extends BaseTransactions {
       swapperAddress,
     })
 
-    const swapRecipient = getUniV3SwapAddress()
+    const swapRecipient = getUniV3SwapAddress(functionChainId)
     const deadlineTime = Math.floor(Date.now() / 1000) + transactionTimeLimit
 
     const quoteParams: ContractQuoteParams[] = []
@@ -174,7 +174,7 @@ class SwapperTransactions extends BaseTransactions {
     ]
 
     const result = await this._executeContractFunction({
-      contractAddress: getUniV3SwapAddress(),
+      contractAddress: getUniV3SwapAddress(functionChainId),
       contractAbi: uniV3SwapAbi,
       functionName: 'initFlash',
       functionArgs: [swapperAddress, flashParams],
@@ -377,7 +377,7 @@ class SwapperTransactions extends BaseTransactions {
   ): GetContractReturnType<UniV3SwapAbi, SplitsPublicClient> {
     const publicClient = this._getPublicClient(chainId)
     return getContract({
-      address: getUniV3SwapAddress(),
+      address: getUniV3SwapAddress(chainId),
       abi: uniV3SwapAbi,
       client: publicClient,
     })
