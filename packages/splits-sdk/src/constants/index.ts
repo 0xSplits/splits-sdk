@@ -311,6 +311,7 @@ export const LIQUID_SPLIT_URI_BASE_64_HEADER = 'data:application/json;base64,'
 export const CHAIN_INFO: {
   [chainId: number]: {
     startBlock: number
+    wrappedNativeTokenAddress?: Address
     nativeCurrency: { symbol: string }
     startBlockV2?: number
   }
@@ -320,6 +321,7 @@ export const CHAIN_INFO: {
     nativeCurrency: {
       symbol: 'ETH',
     },
+    wrappedNativeTokenAddress: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
     startBlockV2: 19451952,
   },
   [ChainId.SEPOLIA]: {
@@ -327,6 +329,7 @@ export const CHAIN_INFO: {
     nativeCurrency: {
       symbol: 'ETH',
     },
+    wrappedNativeTokenAddress: '0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14',
     startBlockV2: 5467056,
   },
   [ChainId.HOLESKY]: {
@@ -341,6 +344,7 @@ export const CHAIN_INFO: {
     nativeCurrency: {
       symbol: 'MATIC',
     },
+    wrappedNativeTokenAddress: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270',
     startBlockV2: 54572664,
   },
   [ChainId.OPTIMISM]: {
@@ -348,6 +352,7 @@ export const CHAIN_INFO: {
     nativeCurrency: {
       symbol: 'ETH',
     },
+    wrappedNativeTokenAddress: '0x4200000000000000000000000000000000000006',
     startBlockV2: 117327692,
   },
   [ChainId.ARBITRUM]: {
@@ -355,6 +360,7 @@ export const CHAIN_INFO: {
     nativeCurrency: {
       symbol: 'ETH',
     },
+    wrappedNativeTokenAddress: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
     startBlockV2: 189649987,
   },
   [ChainId.GNOSIS]: {
@@ -390,6 +396,7 @@ export const CHAIN_INFO: {
     nativeCurrency: {
       symbol: 'ETH',
     },
+    wrappedNativeTokenAddress: '0x4200000000000000000000000000000000000006',
     startBlockV2: 11732477,
   },
   [ChainId.BASE_SEPOLIA]: {

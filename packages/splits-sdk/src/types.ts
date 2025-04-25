@@ -1,3 +1,4 @@
+import { Dictionary } from 'lodash'
 import type {
   AccessList,
   Address,
@@ -647,11 +648,47 @@ export type WaterfallModule = {
   tranches: WaterfallTranche[]
 }
 
+type UniswapV3TWAPPairDetails = Dictionary<{
+  base: Address
+  quote: Address
+  pool: string
+  fee: number
+  period: number
+}>
+
+type ChainlinkPairDetails = Dictionary<{
+  base: Address
+  quote: Address
+}>
+
+type BaseOracle = {
+  address: Address
+}
+
+type UnknownOracle = BaseOracle & {
+  type: 'unknown'
+}
+
+type UniswapV3TWAPOracle = BaseOracle & {
+  type: 'uniswapV3TWAP'
+  defaultPeriod: number
+  pairDetails: UniswapV3TWAPPairDetails
+}
+
+type ChainlinkOracle = BaseOracle & {
+  type: 'chainlink'
+  sequencerFeed?: string
+  chainlinkPairDetails: ChainlinkPairDetails
+}
+
+type Oracle = UnknownOracle | UniswapV3TWAPOracle | ChainlinkOracle
+
 export type Swapper = {
   type: 'Swapper'
   address: Address
   beneficiary: Recipient
   tokenToBeneficiary: Token
+  oracle: Oracle
   owner: Recipient | null
   paused: boolean
   defaultScaledOfferFactorPercent: number

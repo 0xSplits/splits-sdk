@@ -254,6 +254,7 @@ export const protectedFormatSwapper = (gqlSwapper: ISwapper): Swapper => {
     tokenToBeneficiary: {
       address: gqlSwapper.tokenToBeneficiary,
     },
+    oracle: gqlSwapper.oracle,
     owner:
       gqlSwapper.owner !== zeroAddress
         ? {
