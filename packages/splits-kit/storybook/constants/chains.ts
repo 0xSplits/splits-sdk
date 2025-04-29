@@ -17,7 +17,7 @@ import {
   Chain,
   shape,
   worldchain,
-  plume,
+  plumeMainnet,
 } from 'viem/chains'
 
 import { CHAIN_INFO, SupportedChainId } from '../../src/constants/chains'
@@ -159,9 +159,9 @@ export const STORYBOOK_CHAIN_INFO: ChainInfo = {
       `https://worldchain-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
     ],
   },
-  [plume.id]: {
-    ...CHAIN_INFO[plume.id],
-    viemChain: plume,
+  [plumeMainnet.id]: {
+    ...CHAIN_INFO[plumeMainnet.id],
+    viemChain: plumeMainnet,
     rpcUrls: ['https://phoenix-rpc.plumenetwork.xyz'],
   },
 }
