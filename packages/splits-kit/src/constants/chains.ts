@@ -16,6 +16,7 @@ import {
   zoraSepolia,
   shape,
   worldchain,
+  plumeMainnet,
 } from 'viem/chains'
 
 export const SupportedChainsList = [
@@ -36,6 +37,7 @@ export const SupportedChainsList = [
   zoraSepolia,
   shape,
   worldchain,
+  plumeMainnet,
 ] as const
 
 type SupportedChain = (typeof SupportedChainsList)[number]
@@ -180,6 +182,13 @@ export const CHAIN_INFO: ChainInfo = {
     logoUrl: '/networks/worldchain_logo.svg',
     nativeCurrency: {
       symbol: 'ETH',
+    },
+  },
+  [plumeMainnet.id]: {
+    label: 'Plume',
+    logoUrl: '/networks/plume_logo.svg',
+    nativeCurrency: {
+      symbol: 'PLUME',
     },
   },
 }
