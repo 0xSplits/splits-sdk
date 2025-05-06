@@ -31,9 +31,12 @@ describe('Client config validation', () => {
 })
 
 describe('Oracle reads', () => {
+  const chainId = 1
   const publicClient = new mockPublicClient()
+  publicClient.chain = { id: chainId } as Chain
+
   const client = new OracleClient({
-    chainId: 1,
+    chainId,
     publicClient,
   })
 

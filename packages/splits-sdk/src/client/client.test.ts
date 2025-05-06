@@ -123,11 +123,13 @@ const mockWalletClientNewController = jest.fn(() => {
 })
 
 describe('Client config validation', () => {
+  const chainId = 1
   const publicClient = new mockPublicClient()
+  publicClient.chain = { id: chainId } as Chain
 
   test('Including ens names with no provider fails', () => {
     expect(
-      () => new SplitsClient({ chainId: 1, includeEnsNames: true }),
+      () => new SplitsClient({ chainId, includeEnsNames: true }),
     ).toThrow(InvalidConfigError)
   })
 
@@ -135,7 +137,7 @@ describe('Client config validation', () => {
     expect(
       () =>
         new SplitsClient({
-          chainId: 1,
+          chainId,
           includeEnsNames: true,
           ensPublicClient: publicClient,
         }),
@@ -146,7 +148,7 @@ describe('Client config validation', () => {
     expect(
       () =>
         new SplitsClient({
-          chainId: 1,
+          chainId,
           includeEnsNames: true,
           publicClient,
         }),
@@ -155,10 +157,13 @@ describe('Client config validation', () => {
 })
 
 describe('SplitMain writes', () => {
+  const chainId = 1
   const publicClient = new mockPublicClient()
+  publicClient.chain = { id: chainId } as Chain
+
   const walletClient = new mockWalletClient()
   const splitsClient = new SplitsClient({
-    chainId: 1,
+    chainId,
     apiConfig: {
       apiKey: '1',
     },
@@ -200,7 +205,7 @@ describe('SplitMain writes', () => {
 
     test('Create split fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -215,7 +220,7 @@ describe('SplitMain writes', () => {
 
     test('Create split fails with no signer', async () => {
       const badSplitsClient = new SplitsClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -304,7 +309,7 @@ describe('SplitMain writes', () => {
 
     test('Update split fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -320,7 +325,7 @@ describe('SplitMain writes', () => {
 
     test('Update split fails with no signer', async () => {
       const badSplitsClient = new SplitsClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -337,7 +342,7 @@ describe('SplitMain writes', () => {
     test('Update split fails from non controller', async () => {
       const nonControllerSigner = new mockWalletClientNonController()
       const badSplitsClient = new SplitsClient({
-        chainId: 1,
+        chainId,
         publicClient,
         walletClient: nonControllerSigner,
       })
@@ -421,7 +426,7 @@ describe('SplitMain writes', () => {
 
     test('Distribute token fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -436,7 +441,7 @@ describe('SplitMain writes', () => {
 
     test('Distribute token fails with no signer', async () => {
       const badSplitsClient = new SplitsClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -584,7 +589,7 @@ describe('SplitMain writes', () => {
 
     test('Update and distribute fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -601,7 +606,7 @@ describe('SplitMain writes', () => {
 
     test('Update and distribute fails with no signer', async () => {
       const badSplitsClient = new SplitsClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -619,7 +624,7 @@ describe('SplitMain writes', () => {
     test('Update and distribute fails from non controller', async () => {
       const nonControllerSigner = new mockWalletClientNonController()
       const badSplitsClient = new SplitsClient({
-        chainId: 1,
+        chainId,
         publicClient,
         walletClient: nonControllerSigner,
       })
@@ -792,7 +797,7 @@ describe('SplitMain writes', () => {
 
     test('Withdraw fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -807,7 +812,7 @@ describe('SplitMain writes', () => {
 
     test('Withdraw fails with no signer', async () => {
       const badSplitsClient = new SplitsClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -873,7 +878,7 @@ describe('SplitMain writes', () => {
 
     test('Initiate transfer fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -888,7 +893,7 @@ describe('SplitMain writes', () => {
 
     test('Initate transfer fails with no signer', async () => {
       const badSplitsClient = new SplitsClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -904,7 +909,7 @@ describe('SplitMain writes', () => {
     test('Initiate transfer fails from non controller', async () => {
       const nonControllerSigner = new mockWalletClientNonController()
       const badSplitsClient = new SplitsClient({
-        chainId: 1,
+        chainId,
         publicClient,
         walletClient: nonControllerSigner,
       })
@@ -955,7 +960,7 @@ describe('SplitMain writes', () => {
 
     test('Cancel transfer fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -969,7 +974,7 @@ describe('SplitMain writes', () => {
 
     test('Cancel transfer fails with no signer', async () => {
       const badSplitsClient = new SplitsClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -984,7 +989,7 @@ describe('SplitMain writes', () => {
     test('Cancel transfer fails from non controller', async () => {
       const nonControllerSigner = new mockWalletClientNonController()
       const badSplitsClient = new SplitsClient({
-        chainId: 1,
+        chainId,
         publicClient,
         walletClient: nonControllerSigner,
       })
@@ -1026,7 +1031,7 @@ describe('SplitMain writes', () => {
 
     test('Accept transfer fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -1040,7 +1045,7 @@ describe('SplitMain writes', () => {
 
     test('Accept transfer fails with no signer', async () => {
       const badSplitsClient = new SplitsClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -1064,7 +1069,7 @@ describe('SplitMain writes', () => {
     test('Accept transfer passes', async () => {
       const walletClient = new mockWalletClientNewController()
       const splitsClient = new SplitsClient({
-        chainId: 1,
+        chainId,
         publicClient,
         walletClient,
       })
@@ -1110,7 +1115,7 @@ describe('SplitMain writes', () => {
 
     test('Make immutable fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -1124,7 +1129,7 @@ describe('SplitMain writes', () => {
 
     test('Make immutable fails with no signer', async () => {
       const badSplitsClient = new SplitsClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -1139,7 +1144,7 @@ describe('SplitMain writes', () => {
     test('Make immutable fails from non controller', async () => {
       const nonControllerSigner = new mockWalletClientNonController()
       const badSplitsClient = new SplitsClient({
-        chainId: 1,
+        chainId,
         publicClient,
         walletClient: nonControllerSigner,
       })
@@ -1169,9 +1174,12 @@ describe('SplitMain writes', () => {
 })
 
 describe('SplitMain reads', () => {
+  const chainId = 1
   const publicClient = new mockPublicClient()
+  publicClient.chain = { id: chainId } as Chain
+
   const splitsClient = new SplitsClient({
-    chainId: 1,
+    chainId,
     publicClient,
   })
 
@@ -1191,7 +1199,7 @@ describe('SplitMain reads', () => {
 
     test('Get balance fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
-        chainId: 1,
+        chainId,
       })
 
       await expect(
@@ -1235,7 +1243,7 @@ describe('SplitMain reads', () => {
 
     test('Predict immutable address fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
-        chainId: 1,
+        chainId,
       })
 
       await expect(
@@ -1278,7 +1286,7 @@ describe('SplitMain reads', () => {
 
     test('Get controller fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
-        chainId: 1,
+        chainId,
       })
 
       await expect(
@@ -1307,7 +1315,7 @@ describe('SplitMain reads', () => {
 
     test('Get potential controller fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
-        chainId: 1,
+        chainId,
       })
 
       await expect(
@@ -1339,7 +1347,7 @@ describe('SplitMain reads', () => {
 
     test('Get hash fails with no provider', async () => {
       const badSplitsClient = new SplitsClient({
-        chainId: 1,
+        chainId,
       })
 
       await expect(
