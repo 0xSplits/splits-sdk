@@ -466,9 +466,9 @@ class SplitV2Transactions extends BaseTransactions {
 
     if (createLog) type = getSplitType(chainId, createLog.address)
     else {
-      this._requirePublicClient(chainId)
+      const publicClient = this._getPublicClient(chainId)
 
-      const code = await this._publicClient?.getBytecode({
+      const code = await publicClient.getBytecode({
         address: splitAddress,
       })
 

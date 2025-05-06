@@ -4,6 +4,7 @@ import { SplitsPublicClient, SplitV2Type } from '../types'
 import {
   getSplitV2FactoriesStartBlock,
   getSplitV2FactoryAddress,
+  INVALID_BLOCK_NUMBER_CHAIN_IDS,
 } from '../constants'
 import { splitV2FactoryABI } from '../constants/abi/splitV2Factory'
 import { splitMainPolygonAbi, splitV2ABI } from '../constants/abi'
@@ -441,7 +442,10 @@ export const searchLogs = async <
   let createLog: SplitCreatedLogType | undefined = undefined
   let updateLog: SplitUpdatedLogType | undefined = currentUpdateLog
 
-  if (splitV2Version === 'splitV2o1') {
+  if (
+    splitV2Version === 'splitV2o1' &&
+    !INVALID_BLOCK_NUMBER_CHAIN_IDS.includes(publicClient.chain?.id)
+  ) {
     const splitContract = getContract({
       address: formattedSplitAddress,
       abi: splitV2o1Abi,

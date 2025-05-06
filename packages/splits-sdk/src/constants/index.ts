@@ -256,7 +256,28 @@ export const SPLITS_V2_SUPPORTED_CHAIN_IDS = [
   ChainId.PLUME_TESTNET,
 ]
 
-export const SPLITS_SUBGRAPH_CHAIN_IDS = ALL_CHAIN_IDS.slice()
+// These chains use a different value for block.number than the actual block number
+// for the transaction. This breaks the regular flow in the SDK for the splitV2o1
+// contract. Need to fall back to the regular logs flow for these chains.
+export const INVALID_BLOCK_NUMBER_CHAIN_IDS = [
+  ChainId.ARBITRUM,
+  ChainId.PLUME,
+  ChainId.PLUME_TESTNET,
+]
+export const SPLITS_SUBGRAPH_CHAIN_IDS = [
+  ChainId.MAINNET,
+  ChainId.OPTIMISM,
+  ChainId.BASE,
+  ChainId.ZORA,
+  ChainId.POLYGON,
+  ChainId.ARBITRUM,
+  ChainId.GNOSIS,
+  ChainId.BSC,
+  ChainId.BLAST,
+  ChainId.HOLESKY,
+  ChainId.SEPOLIA,
+  ChainId.BASE_SEPOLIA,
+]
 export const WATERFALL_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
   (id) =>
     id !== ChainId.ZORA_SEPOLIA &&
