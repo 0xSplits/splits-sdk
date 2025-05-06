@@ -201,6 +201,7 @@ export const protectedFormatSplit = (gqlSplit: ISplit): Split => {
     distributeDirection: gqlSplit.distributeDirection,
     distributionsPaused: gqlSplit.distributionsPaused,
     createdBlock: gqlSplit.createdBlock,
+    totalOwnership,
     recipients: gqlSplit.recipients
       .sort((a, b) => {
         return a.idx - b.idx

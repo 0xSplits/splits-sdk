@@ -625,6 +625,7 @@ export type Split = {
   distributorFeePercent: number
   distributionsPaused: boolean
   distributeDirection: 'pull' | 'push'
+  totalOwnership: bigint
   recipients: {
     percentAllocation: number
     ownership: bigint

@@ -619,6 +619,7 @@ class SplitV1Transactions extends BaseTransactions {
 
     const split: Split = {
       address: splitAddress,
+      totalOwnership: BigInt(1_000_000),
       recipients,
       distributorFeePercent: fromBigIntToPercent(
         BigInt(createLog.args.distributorFee),
