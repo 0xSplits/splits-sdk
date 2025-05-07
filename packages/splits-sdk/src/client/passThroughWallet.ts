@@ -348,7 +348,7 @@ export class PassThroughWalletClient extends PassThroughWalletTransactions {
     txHash: Hash
   }> {
     const txHash = await this._setPausedTransaction(pauseArgs)
-    if (!this._isContractTransaction(txHash)) throw new Error('Invalid reponse')
+    if (!this._isContractTransaction(txHash)) throw new Error('Invalid response')
 
     return { txHash }
   }
