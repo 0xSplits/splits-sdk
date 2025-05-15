@@ -1,6 +1,8 @@
 import { Client } from '@urql/core'
 import { DocumentNode } from 'graphql'
 import { Address, getAddress, zeroAddress } from 'viem'
+
+import { SPLITS_SUBGRAPH_CHAIN_IDS } from '../constants'
 import {
   DataClientConfig,
   FormattedContractEarnings,
@@ -137,6 +139,12 @@ export class DataClient {
   ): Promise<ResponseType> {
     if (!this._graphqlClient) {
       throw new UnsupportedSubgraphChainIdError()
+    }
+
+    if (variables?.chainId && typeof variables.chainId === 'string') {
+      if (!SPLITS_SUBGRAPH_CHAIN_IDS.includes(Number(variables.chainId))) {
+        throw new UnsupportedSubgraphChainIdError()
+      }
     }
 
     const response = await this._graphqlClient

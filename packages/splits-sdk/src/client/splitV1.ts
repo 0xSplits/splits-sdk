@@ -24,7 +24,6 @@ import {
   TransactionType,
   ZORA_CHAIN_IDS,
   getSplitMainAddress,
-  ETHEREUM_TEST_CHAIN_IDS,
   BLAST_CHAIN_IDS,
   getSplitV1StartBlock,
   ChainId,
@@ -81,7 +80,8 @@ import {
 import { applyMixins } from './mixin'
 
 const polygonAbiChainIds = [
-  ...ETHEREUM_TEST_CHAIN_IDS,
+  ChainId.SEPOLIA,
+  ChainId.HOLESKY,
   ...POLYGON_CHAIN_IDS,
   ...OPTIMISM_CHAIN_IDS,
   ...ARBITRUM_CHAIN_IDS,
@@ -181,8 +181,8 @@ class SplitV1Transactions extends BaseTransactions {
     const distributorPayoutAddress = distributorAddress
       ? distributorAddress
       : this._walletClient?.account
-      ? this._walletClient.account.address
-      : zeroAddress
+        ? this._walletClient.account.address
+        : zeroAddress
     validateAddress(distributorPayoutAddress)
 
     const functionChainId = this._getFunctionChainId(chainId)
@@ -264,8 +264,8 @@ class SplitV1Transactions extends BaseTransactions {
     const distributorPayoutAddress = distributorAddress
       ? distributorAddress
       : this._walletClient?.account
-      ? this._walletClient.account.address
-      : zeroAddress
+        ? this._walletClient.account.address
+        : zeroAddress
     validateAddress(distributorPayoutAddress)
 
     const result = await this._executeContractFunction({
@@ -445,8 +445,8 @@ class SplitV1Transactions extends BaseTransactions {
     const distributorPayoutAddress = distributorAddress
       ? distributorAddress
       : this._walletClient?.account
-      ? this._walletClient.account.address
-      : zeroAddress
+        ? this._walletClient.account.address
+        : zeroAddress
     validateAddress(distributorPayoutAddress)
 
     const distributeCalls = await Promise.all(
