@@ -17,6 +17,7 @@ import {
   NATIVE_TOKEN_ADDRESS,
   PULL_SPLIT_V2o1_ADDRESS,
   PUSH_SPLIT_V2o1_ADDRESS,
+  SPLITS_SUBGRAPH_CHAIN_IDS,
   SPLITS_V2_SUPPORTED_CHAIN_IDS,
   SplitV2CreatedLogType,
   SplitV2UpdatedLogType,
@@ -264,7 +265,10 @@ class SplitV2Transactions extends BaseTransactions {
 
     if (splitFields) {
       split = splitFields
-    } else if (this._dataClient)
+    } else if (
+      this._dataClient &&
+      SPLITS_SUBGRAPH_CHAIN_IDS.includes(functionChainId)
+    )
       split = await this._dataClient.getSplitMetadata({
         chainId: functionChainId,
         splitAddress,
