@@ -108,10 +108,13 @@ describe('Client config validation', () => {
 })
 
 describe('Pass through wallet writes', () => {
+  const chainId = 1
   const publicClient = new mockPublicClient()
+  publicClient.chain = { id: chainId } as Chain
+
   const walletClient = new mockWalletClient()
   const client = new PassThroughWalletClient({
-    chainId: 1,
+    chainId,
     publicClient,
     walletClient,
   })
@@ -151,7 +154,7 @@ describe('Pass through wallet writes', () => {
 
     test('Create pass through wallet fails with no provider', async () => {
       const badClient = new PassThroughWalletClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -167,7 +170,7 @@ describe('Pass through wallet writes', () => {
 
     test('Create pass through wallet fails with no signer', async () => {
       const badClient = new PassThroughWalletClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -223,7 +226,7 @@ describe('Pass through wallet writes', () => {
 
     test('Pass through tokens fails with no provider', async () => {
       const badClient = new PassThroughWalletClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -238,7 +241,7 @@ describe('Pass through wallet writes', () => {
 
     test('Pass through tokens fails with no signer', async () => {
       const badClient = new PassThroughWalletClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -286,7 +289,7 @@ describe('Pass through wallet writes', () => {
 
     test('Set pass through fails with no provider', async () => {
       const badClient = new PassThroughWalletClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -301,7 +304,7 @@ describe('Pass through wallet writes', () => {
 
     test('Set pass through fails with no signer', async () => {
       const badClient = new PassThroughWalletClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -317,7 +320,7 @@ describe('Pass through wallet writes', () => {
     test('Set pass through fails from non owner', async () => {
       const nonOwnerSigner = new mockWalletClientNonOwner()
       const badClient = new PassThroughWalletClient({
-        chainId: 1,
+        chainId,
         publicClient,
         walletClient: nonOwnerSigner,
       })
@@ -363,7 +366,7 @@ describe('Pass through wallet writes', () => {
 
     test('Set paused fails with no provider', async () => {
       const badClient = new PassThroughWalletClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -378,7 +381,7 @@ describe('Pass through wallet writes', () => {
 
     test('Set paused fails with no signer', async () => {
       const badClient = new PassThroughWalletClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -394,7 +397,7 @@ describe('Pass through wallet writes', () => {
     test('Set paused fails from non owner', async () => {
       const nonOwnerSigner = new mockWalletClientNonOwner()
       const badClient = new PassThroughWalletClient({
-        chainId: 1,
+        chainId,
         publicClient,
         walletClient: nonOwnerSigner,
       })
@@ -446,7 +449,7 @@ describe('Pass through wallet writes', () => {
 
     test('Exec calls fails with no provider', async () => {
       const badClient = new PassThroughWalletClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -461,7 +464,7 @@ describe('Pass through wallet writes', () => {
 
     test('Exec calls fails with no signer', async () => {
       const badClient = new PassThroughWalletClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -477,7 +480,7 @@ describe('Pass through wallet writes', () => {
     test('Exec calls fails from non owner', async () => {
       const nonOwnerSigner = new mockWalletClientNonOwner()
       const badClient = new PassThroughWalletClient({
-        chainId: 1,
+        chainId,
         publicClient,
         walletClient: nonOwnerSigner,
       })
@@ -513,9 +516,12 @@ describe('Pass through wallet writes', () => {
 })
 
 describe('Pass through wallet reads', () => {
+  const chainId = 1
   const publicClient = new mockPublicClient()
+  publicClient.chain = { id: chainId } as Chain
+
   const client = new PassThroughWalletClient({
-    chainId: 1,
+    chainId,
     publicClient,
   })
 
@@ -532,7 +538,7 @@ describe('Pass through wallet reads', () => {
 
     test('Get pass through fails with no provider', async () => {
       const badClient = new PassThroughWalletClient({
-        chainId: 1,
+        chainId,
       })
 
       await expect(
