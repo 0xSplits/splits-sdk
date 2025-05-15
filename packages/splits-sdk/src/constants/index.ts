@@ -171,6 +171,7 @@ export enum ChainId {
   MAINNET = 1,
   SEPOLIA = 11155111,
   HOLESKY = 17000,
+  HOODI = 560048,
   POLYGON = 137,
   OPTIMISM = 10,
   OPTIMISM_SEPOLIA = 11155420,
@@ -190,7 +191,11 @@ export enum ChainId {
 }
 
 export const ETHEREUM_CHAIN_IDS = [ChainId.MAINNET]
-export const ETHEREUM_TEST_CHAIN_IDS = [ChainId.SEPOLIA, ChainId.HOLESKY]
+export const ETHEREUM_TEST_CHAIN_IDS = [
+  ChainId.SEPOLIA,
+  ChainId.HOLESKY,
+  ChainId.HOODI,
+]
 export const POLYGON_CHAIN_IDS = [ChainId.POLYGON]
 export const OPTIMISM_CHAIN_IDS = [ChainId.OPTIMISM, ChainId.OPTIMISM_SEPOLIA]
 export const ARBITRUM_CHAIN_IDS = [ChainId.ARBITRUM]
@@ -224,7 +229,8 @@ export const SPLITS_SUPPORTED_CHAIN_IDS = [
   4,
   42,
   ...ETHEREUM_CHAIN_IDS,
-  ...ETHEREUM_TEST_CHAIN_IDS,
+  ChainId.SEPOLIA,
+  ChainId.HOLESKY,
   ...POLYGON_CHAIN_IDS,
   ...OPTIMISM_CHAIN_IDS,
   ...ARBITRUM_CHAIN_IDS,
@@ -244,6 +250,7 @@ export const SPLITS_V2_SUPPORTED_CHAIN_IDS = [
   ChainId.ARBITRUM,
   ChainId.SEPOLIA,
   ChainId.HOLESKY,
+  ChainId.HOODI,
   ChainId.BASE_SEPOLIA,
   ChainId.ZORA_SEPOLIA,
   ChainId.OPTIMISM_SEPOLIA,
@@ -359,6 +366,13 @@ export const CHAIN_INFO: {
       symbol: 'ETH',
     },
     startBlockV2: 1121603,
+  },
+  [ChainId.HOODI]: {
+    startBlock: 106772,
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
+    startBlockV2: 106772,
   },
   [ChainId.POLYGON]: {
     startBlock: 25303316,

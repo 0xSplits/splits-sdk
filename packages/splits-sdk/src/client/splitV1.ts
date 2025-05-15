@@ -24,7 +24,6 @@ import {
   TransactionType,
   ZORA_CHAIN_IDS,
   getSplitMainAddress,
-  ETHEREUM_TEST_CHAIN_IDS,
   BLAST_CHAIN_IDS,
   getSplitV1StartBlock,
   ChainId,
@@ -81,7 +80,8 @@ import {
 import { applyMixins } from './mixin'
 
 const polygonAbiChainIds = [
-  ...ETHEREUM_TEST_CHAIN_IDS,
+  ChainId.SEPOLIA,
+  ChainId.HOLESKY,
   ...POLYGON_CHAIN_IDS,
   ...OPTIMISM_CHAIN_IDS,
   ...ARBITRUM_CHAIN_IDS,
