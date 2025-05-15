@@ -181,8 +181,8 @@ class SplitV1Transactions extends BaseTransactions {
     const distributorPayoutAddress = distributorAddress
       ? distributorAddress
       : this._walletClient?.account
-      ? this._walletClient.account.address
-      : zeroAddress
+        ? this._walletClient.account.address
+        : zeroAddress
     validateAddress(distributorPayoutAddress)
 
     const functionChainId = this._getFunctionChainId(chainId)
@@ -264,8 +264,8 @@ class SplitV1Transactions extends BaseTransactions {
     const distributorPayoutAddress = distributorAddress
       ? distributorAddress
       : this._walletClient?.account
-      ? this._walletClient.account.address
-      : zeroAddress
+        ? this._walletClient.account.address
+        : zeroAddress
     validateAddress(distributorPayoutAddress)
 
     const result = await this._executeContractFunction({
@@ -445,8 +445,8 @@ class SplitV1Transactions extends BaseTransactions {
     const distributorPayoutAddress = distributorAddress
       ? distributorAddress
       : this._walletClient?.account
-      ? this._walletClient.account.address
-      : zeroAddress
+        ? this._walletClient.account.address
+        : zeroAddress
     validateAddress(distributorPayoutAddress)
 
     const distributeCalls = await Promise.all(
