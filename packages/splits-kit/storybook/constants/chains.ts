@@ -11,6 +11,7 @@ import {
   base,
   zora,
   sepolia,
+  hoodi,
   optimismSepolia,
   baseSepolia,
   zoraSepolia,
@@ -116,39 +117,39 @@ export const STORYBOOK_CHAIN_INFO: ChainInfo = {
     ...CHAIN_INFO[sepolia.id],
     viemChain: sepolia,
     rpcUrls: [
-      // TODO: rpc url
       `https://sepolia.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
     ],
+  },
+  [hoodi.id]: {
+    ...CHAIN_INFO[hoodi.id],
+    viemChain: hoodi,
+    rpcUrls: [`https://eth-hoodi.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`],
   },
   [optimismSepolia.id]: {
     ...CHAIN_INFO[optimismSepolia.id],
     viemChain: optimismSepolia,
     rpcUrls: [
-      // TODO: rpc url
-      `https://base-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
+      `https://opt-sepolia.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
     ],
   },
   [baseSepolia.id]: {
     ...CHAIN_INFO[baseSepolia.id],
     viemChain: baseSepolia,
     rpcUrls: [
-      // TODO: rpc url
-      `https://base-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
+      `https://base-sepolia.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
     ],
   },
   [zoraSepolia.id]: {
     ...CHAIN_INFO[zoraSepolia.id],
     viemChain: zoraSepolia,
     rpcUrls: [
-      // TODO: rpc url
-      `https://base-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
+      `https://zora-sepolia.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
     ],
   },
   [shape.id]: {
     ...CHAIN_INFO[shape.id],
     viemChain: shape,
     rpcUrls: [
-      // TODO: rpc url
       `https://shape-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
     ],
   },
