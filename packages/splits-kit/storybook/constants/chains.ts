@@ -123,7 +123,9 @@ export const STORYBOOK_CHAIN_INFO: ChainInfo = {
   [hoodi.id]: {
     ...CHAIN_INFO[hoodi.id],
     viemChain: hoodi,
-    rpcUrls: [`https://eth-hoodi.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`],
+    rpcUrls: [
+      `https://eth-hoodi.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
+    ],
   },
   [optimismSepolia.id]: {
     ...CHAIN_INFO[optimismSepolia.id],
