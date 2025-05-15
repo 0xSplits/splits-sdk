@@ -11,6 +11,7 @@ import {
   base,
   zora,
   sepolia,
+  hoodi,
   optimismSepolia,
   baseSepolia,
   zoraSepolia,
@@ -32,6 +33,7 @@ export const SupportedChainsList = [
   zora,
   base,
   sepolia,
+  hoodi,
   optimismSepolia,
   baseSepolia,
   zoraSepolia,
@@ -144,6 +146,13 @@ export const CHAIN_INFO: ChainInfo = {
 
   [sepolia.id]: {
     label: 'Sepolia',
+    logoUrl: '/networks/ethereum_logo.svg',
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
+  },
+  [hoodi.id]: {
+    label: 'Hoodi',
     logoUrl: '/networks/ethereum_logo.svg',
     nativeCurrency: {
       symbol: 'ETH',
