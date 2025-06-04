@@ -1,6 +1,7 @@
 {
   "name": "0xsplits",
   "private": true,
+  "packageManager": "pnpm@10.9.0",
   "scripts": {
     "lerna-build": "lerna run build",
     "eslint": "eslint . --ext '.ts,.tsx'",
