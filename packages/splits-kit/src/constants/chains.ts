@@ -18,6 +18,8 @@ import {
   shape,
   worldchain,
   plumeMainnet,
+  abstract,
+  abstractTestnet,
 } from 'viem/chains'
 
 export const SupportedChainsList = [
@@ -40,6 +42,8 @@ export const SupportedChainsList = [
   shape,
   worldchain,
   plumeMainnet,
+  abstract,
+  abstractTestnet,
 ] as const
 
 type SupportedChain = (typeof SupportedChainsList)[number]
@@ -198,6 +202,20 @@ export const CHAIN_INFO: ChainInfo = {
     logoUrl: '/networks/plume_logo.svg',
     nativeCurrency: {
       symbol: 'PLUME',
+    },
+  },
+  [abstract.id]: {
+    label: 'Abstract',
+    logoUrl: '/networks/abstract_logo.svg',
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
+  },
+  [abstractTestnet.id]: {
+    label: 'Abstract Testnet',
+    logoUrl: '/networks/abstract_logo.svg',
+    nativeCurrency: {
+      symbol: 'ETH',
     },
   },
 }

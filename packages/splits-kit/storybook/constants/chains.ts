@@ -19,6 +19,8 @@ import {
   shape,
   worldchain,
   plumeMainnet,
+  abstract,
+  abstractTestnet,
 } from 'viem/chains'
 
 import { CHAIN_INFO, SupportedChainId } from '../../src/constants/chains'
@@ -166,5 +168,19 @@ export const STORYBOOK_CHAIN_INFO: ChainInfo = {
     ...CHAIN_INFO[plumeMainnet.id],
     viemChain: plumeMainnet,
     rpcUrls: ['https://phoenix-rpc.plumenetwork.xyz'],
+  },
+  [abstract.id]: {
+    ...CHAIN_INFO[abstract.id],
+    viemChain: abstract,
+    rpcUrls: [
+      `https://abstract-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
+    ],
+  },
+  [abstractTestnet.id]: {
+    ...CHAIN_INFO[abstractTestnet.id],
+    viemChain: abstractTestnet,
+    rpcUrls: [
+      `https://abstract-testnet.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
+    ],
   },
 }

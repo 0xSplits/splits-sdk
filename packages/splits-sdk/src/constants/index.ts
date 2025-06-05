@@ -188,6 +188,8 @@ export enum ChainId {
   WORLDCHAIN = 480,
   PLUME = 98866,
   PLUME_TESTNET = 98867,
+  ABSTRACT = 2741,
+  ABSTRACT_SEPOLIA = 11124,
 }
 
 export const ETHEREUM_CHAIN_IDS = [ChainId.MAINNET]
@@ -207,6 +209,7 @@ export const BLAST_CHAIN_IDS = [ChainId.BLAST]
 export const SHAPE_CHAIN_IDS = [ChainId.SHAPE]
 export const WORLD_CHAIN_IDS = [ChainId.WORLDCHAIN]
 export const PLUME_CHAIN_IDS = [ChainId.PLUME, ChainId.PLUME_TESTNET]
+export const ABSTRACT_CHAIN_IDS = [ChainId.ABSTRACT, ChainId.ABSTRACT_SEPOLIA]
 
 export const ALL_CHAIN_IDS = [
   ...ETHEREUM_CHAIN_IDS,
@@ -261,6 +264,8 @@ export const SPLITS_V2_SUPPORTED_CHAIN_IDS = [
   ChainId.WORLDCHAIN,
   ChainId.PLUME,
   ChainId.PLUME_TESTNET,
+  ChainId.ABSTRACT,
+  ChainId.ABSTRACT_SEPOLIA,
 ]
 
 // These chains use a different value for block.number than the actual block number
@@ -474,6 +479,20 @@ export const CHAIN_INFO: {
       symbol: 'PLUME',
     },
     startBlockV2: 1759,
+  },
+  [ChainId.ABSTRACT]: {
+    startBlock: 10981976,
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
+    startBlockV2: 10981976,
+  },
+  [ChainId.ABSTRACT_SEPOLIA]: {
+    startBlock: 10205725,
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
+    startBlockV2: 10205725,
   },
 }
 
