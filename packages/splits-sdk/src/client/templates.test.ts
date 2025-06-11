@@ -126,10 +126,13 @@ describe('Client config validation', () => {
 })
 
 describe('Template writes', () => {
+  const chainId = 1
   const publicClient = new mockPublicClient()
+  publicClient.chain = { id: chainId } as Chain
+
   const walletClient = new mockWalletClient()
   const templatesClient = new TemplatesClient({
-    chainId: 1,
+    chainId,
     publicClient,
     walletClient,
   })
@@ -175,7 +178,7 @@ describe('Template writes', () => {
 
     test('Create recoup fails with no provider', async () => {
       const badClient = new TemplatesClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -192,7 +195,7 @@ describe('Template writes', () => {
 
     test('Create recoup fails with no signer', async () => {
       const badClient = new TemplatesClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -294,7 +297,7 @@ describe('Template writes', () => {
 
     test('Create diversifier fails with no provider', async () => {
       const badClient = new TemplatesClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -311,7 +314,7 @@ describe('Template writes', () => {
 
     test('Create diversifier fails with no signer', async () => {
       const badClient = new TemplatesClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 

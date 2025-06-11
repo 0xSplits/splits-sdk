@@ -107,10 +107,13 @@ describe('Client config validation', () => {
 })
 
 describe('Waterfall writes', () => {
+  const chainId = 1
   const publicClient = new mockPublicClient()
+  publicClient.chain = { id: chainId } as Chain
+
   const walletClient = new mockWalletClient()
   const waterfallClient = new WaterfallClient({
-    chainId: 1,
+    chainId,
     apiConfig: {
       apiKey: '1',
     },
@@ -161,7 +164,7 @@ describe('Waterfall writes', () => {
 
     test('Create waterfall fails with no provider', async () => {
       const badClient = new WaterfallClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -176,7 +179,7 @@ describe('Waterfall writes', () => {
 
     test('Create waterfall fails with no signer', async () => {
       const badClient = new WaterfallClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -273,7 +276,7 @@ describe('Waterfall writes', () => {
 
     test('Waterfall funds fails with no provider', async () => {
       const badClient = new WaterfallClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -287,7 +290,7 @@ describe('Waterfall writes', () => {
 
     test('Waterfall funds fails with no signer', async () => {
       const badClient = new WaterfallClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -366,7 +369,7 @@ describe('Waterfall writes', () => {
 
     test('Recover non waterfall funds fails with no provider', async () => {
       const badClient = new WaterfallClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -382,7 +385,7 @@ describe('Waterfall writes', () => {
 
     test('Recover non waterfall funds fails with no signer', async () => {
       const badClient = new WaterfallClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -546,7 +549,7 @@ describe('Waterfall writes', () => {
 
     test('Withdraw pull funds fails with no provider', async () => {
       const badClient = new WaterfallClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -561,7 +564,7 @@ describe('Waterfall writes', () => {
 
     test('Withdraw pull funds fails with no signer', async () => {
       const badClient = new WaterfallClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -593,9 +596,12 @@ describe('Waterfall writes', () => {
 })
 
 describe('Waterfall reads', () => {
+  const chainId = 1
   const publicClient = new mockPublicClient()
+  publicClient.chain = { id: chainId } as Chain
+
   const waterfallClient = new WaterfallClient({
-    chainId: 1,
+    chainId,
     publicClient,
   })
 
@@ -612,7 +618,7 @@ describe('Waterfall reads', () => {
 
     test('Get distributed funds fails with no provider', async () => {
       const badClient = new WaterfallClient({
-        chainId: 1,
+        chainId,
       })
 
       await expect(
@@ -644,7 +650,7 @@ describe('Waterfall reads', () => {
 
     test('Get funds pending withdrawal fails with no provider', async () => {
       const badClient = new WaterfallClient({
-        chainId: 1,
+        chainId,
       })
 
       await expect(
@@ -677,7 +683,7 @@ describe('Waterfall reads', () => {
 
     test('Get tranches fails with no provider', async () => {
       const badClient = new WaterfallClient({
-        chainId: 1,
+        chainId,
       })
 
       await expect(
@@ -716,7 +722,7 @@ describe('Waterfall reads', () => {
 
     test('Get non waterfall recipient fails with no provider', async () => {
       const badClient = new WaterfallClient({
-        chainId: 1,
+        chainId,
       })
 
       await expect(
@@ -751,7 +757,7 @@ describe('Waterfall reads', () => {
 
     test('Get token with no provider', async () => {
       const badClient = new WaterfallClient({
-        chainId: 1,
+        chainId,
       })
 
       await expect(
@@ -784,7 +790,7 @@ describe('Waterfall reads', () => {
 
     test('Get pull balance fails with no provider', async () => {
       const badClient = new WaterfallClient({
-        chainId: 1,
+        chainId,
       })
 
       await expect(
