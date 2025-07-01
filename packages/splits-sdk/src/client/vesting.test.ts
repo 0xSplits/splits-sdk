@@ -98,10 +98,13 @@ describe('Client config validation', () => {
 })
 
 describe('Vesting writes', () => {
+  const chainId = 1
   const publicClient = new mockPublicClient()
+  publicClient.chain = { id: chainId } as Chain
+
   const walletClient = new mockWalletClient()
   const vestingClient = new VestingClient({
-    chainId: 1,
+    chainId,
     publicClient,
     walletClient,
   })
@@ -140,7 +143,7 @@ describe('Vesting writes', () => {
 
     test('Create veingst fails with no provider', async () => {
       const badClient = new VestingClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -155,7 +158,7 @@ describe('Vesting writes', () => {
 
     test('Create vesting fails with no signer', async () => {
       const badClient = new VestingClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -207,7 +210,7 @@ describe('Vesting writes', () => {
 
     test('Start vest fails with no provider', async () => {
       const badClient = new VestingClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -222,7 +225,7 @@ describe('Vesting writes', () => {
 
     test('Start vest fails with no signer', async () => {
       const badClient = new VestingClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -270,7 +273,7 @@ describe('Vesting writes', () => {
 
     test('Release vested funds fails with no provider', async () => {
       const badClient = new VestingClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -285,7 +288,7 @@ describe('Vesting writes', () => {
 
     test('Release vested funds fails with no signer', async () => {
       const badClient = new VestingClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -316,9 +319,12 @@ describe('Vesting writes', () => {
 })
 
 describe('Vesting reads', () => {
+  const chainId = 1
   const publicClient = new mockPublicClient()
+  publicClient.chain = { id: chainId } as Chain
+
   const vestingClient = new VestingClient({
-    chainId: 1,
+    chainId,
     publicClient,
   })
 
@@ -336,7 +342,7 @@ describe('Vesting reads', () => {
 
     test('Predict vesting module address fails with no provider', async () => {
       const badClient = new VestingClient({
-        chainId: 1,
+        chainId,
       })
 
       await expect(
@@ -378,7 +384,7 @@ describe('Vesting reads', () => {
 
     test('Get beneficiary fails with no provider', async () => {
       const badClient = new VestingClient({
-        chainId: 1,
+        chainId,
       })
 
       await expect(
@@ -410,7 +416,7 @@ describe('Vesting reads', () => {
 
     test('Get vesting period fails with no provider', async () => {
       const badClient = new VestingClient({
-        chainId: 1,
+        chainId,
       })
 
       await expect(
@@ -443,7 +449,7 @@ describe('Vesting reads', () => {
 
     test('Get vested amount fails with no provider', async () => {
       const badClient = new VestingClient({
-        chainId: 1,
+        chainId,
       })
 
       await expect(
@@ -478,7 +484,7 @@ describe('Vesting reads', () => {
 
     test('Get vested and unreleased amount fails with no provider', async () => {
       const badClient = new VestingClient({
-        chainId: 1,
+        chainId,
       })
 
       await expect(

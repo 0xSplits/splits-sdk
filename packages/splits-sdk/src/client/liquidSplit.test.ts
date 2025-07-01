@@ -146,10 +146,13 @@ describe('Client config validation', () => {
 })
 
 describe('Liquid split writes', () => {
+  const chainId = 1
   const publicClient = new mockPublicClient()
+  publicClient.chain = { id: chainId } as Chain
+
   const walletClient = new mockWalletClient()
   const liquidSplitClient = new LiquidSplitClient({
-    chainId: 1,
+    chainId,
     apiConfig: {
       apiKey: '1',
     },
@@ -198,7 +201,7 @@ describe('Liquid split writes', () => {
 
     test('Create liquid split fails with no provider', async () => {
       const badClient = new LiquidSplitClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -213,7 +216,7 @@ describe('Liquid split writes', () => {
 
     test('Create liquid split fails with no signer', async () => {
       const badClient = new LiquidSplitClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -499,9 +502,12 @@ describe('Liquid split writes', () => {
 })
 
 describe('Liquid split reads', () => {
+  const chainId = 1
   const publicClient = new mockPublicClient()
+  publicClient.chain = { id: chainId } as Chain
+
   const liquidSplitClient = new LiquidSplitClient({
-    chainId: 1,
+    chainId,
     publicClient,
   })
 
@@ -518,7 +524,7 @@ describe('Liquid split reads', () => {
 
     test('Get distributor fee fails with no provider', async () => {
       const badClient = new LiquidSplitClient({
-        chainId: 1,
+        chainId,
       })
 
       await expect(
@@ -550,7 +556,7 @@ describe('Liquid split reads', () => {
 
     test('Get payout split fails with no provider', async () => {
       const badClient = new LiquidSplitClient({
-        chainId: 1,
+        chainId,
       })
 
       await expect(
@@ -582,7 +588,7 @@ describe('Liquid split reads', () => {
 
     test('Get owner fails with no provider', async () => {
       const badClient = new LiquidSplitClient({
-        chainId: 1,
+        chainId,
       })
 
       await expect(
@@ -614,7 +620,7 @@ describe('Liquid split reads', () => {
 
     test('Get uri fails with no provider', async () => {
       const badClient = new LiquidSplitClient({
-        chainId: 1,
+        chainId,
       })
 
       await expect(
@@ -647,7 +653,7 @@ describe('Liquid split reads', () => {
 
     test('Get scaled percent balance fails with no provider', async () => {
       const badClient = new LiquidSplitClient({
-        chainId: 1,
+        chainId,
       })
 
       await expect(
@@ -683,7 +689,7 @@ describe('Liquid split reads', () => {
 
     test('Get image fails with no provider', async () => {
       const badClient = new LiquidSplitClient({
-        chainId: 1,
+        chainId,
       })
 
       await expect(

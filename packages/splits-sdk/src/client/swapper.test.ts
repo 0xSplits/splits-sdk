@@ -136,10 +136,13 @@ describe('Client config validation', () => {
 })
 
 describe('Swapper writes', () => {
+  const chainId = 1
   const publicClient = new mockPublicClient()
+  publicClient.chain = { id: chainId } as Chain
+
   const walletClient = new mockWalletClient()
   const client = new SwapperClient({
-    chainId: 1,
+    chainId,
     publicClient,
     walletClient,
   })
@@ -189,7 +192,7 @@ describe('Swapper writes', () => {
 
     test('Create swapper fails with no provider', async () => {
       const badClient = new SwapperClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -209,7 +212,7 @@ describe('Swapper writes', () => {
 
     test('Create swapper fails with no signer', async () => {
       const badClient = new SwapperClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -292,7 +295,7 @@ describe('Swapper writes', () => {
 
     test('Set beneficiary fails with no provider', async () => {
       const badClient = new SwapperClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -307,7 +310,7 @@ describe('Swapper writes', () => {
 
     test('Set beneficiary fails with no signer', async () => {
       const badClient = new SwapperClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -323,7 +326,7 @@ describe('Swapper writes', () => {
     test('Set beneficiary fails from non owner', async () => {
       const nonOwnerSigner = new mockWalletClientNonOwner()
       const badClient = new SwapperClient({
-        chainId: 1,
+        chainId,
         publicClient,
         walletClient: nonOwnerSigner,
       })
@@ -371,7 +374,7 @@ describe('Swapper writes', () => {
 
     test('Set token to beneficiary fails with no provider', async () => {
       const badClient = new SwapperClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -386,7 +389,7 @@ describe('Swapper writes', () => {
 
     test('Set token to beneficiary fails with no signer', async () => {
       const badClient = new SwapperClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -402,7 +405,7 @@ describe('Swapper writes', () => {
     test('Set token to beneficiary fails from non owner', async () => {
       const nonOwnerSigner = new mockWalletClientNonOwner()
       const badClient = new SwapperClient({
-        chainId: 1,
+        chainId,
         publicClient,
         walletClient: nonOwnerSigner,
       })
@@ -450,7 +453,7 @@ describe('Swapper writes', () => {
 
     test('Set oracle fails with no provider', async () => {
       const badClient = new SwapperClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -465,7 +468,7 @@ describe('Swapper writes', () => {
 
     test('Set oracle fails with no signer', async () => {
       const badClient = new SwapperClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -481,7 +484,7 @@ describe('Swapper writes', () => {
     test('Set oracle fails from non owner', async () => {
       const nonOwnerSigner = new mockWalletClientNonOwner()
       const badClient = new SwapperClient({
-        chainId: 1,
+        chainId,
         publicClient,
         walletClient: nonOwnerSigner,
       })
@@ -529,7 +532,7 @@ describe('Swapper writes', () => {
 
     test('Set default scale fails with no provider', async () => {
       const badClient = new SwapperClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -544,7 +547,7 @@ describe('Swapper writes', () => {
 
     test('Set default scale fails with no signer', async () => {
       const badClient = new SwapperClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -560,7 +563,7 @@ describe('Swapper writes', () => {
     test('Set default scale fails from non owner', async () => {
       const nonOwnerSigner = new mockWalletClientNonOwner()
       const badClient = new SwapperClient({
-        chainId: 1,
+        chainId,
         publicClient,
         walletClient: nonOwnerSigner,
       })
@@ -628,7 +631,7 @@ describe('Swapper writes', () => {
 
     test('Set scale factor overrides fails with no provider', async () => {
       const badClient = new SwapperClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -643,7 +646,7 @@ describe('Swapper writes', () => {
 
     test('Set scaled factor overrides fails with no signer', async () => {
       const badClient = new SwapperClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -659,7 +662,7 @@ describe('Swapper writes', () => {
     test('Set scale factor overrides fails from non owner', async () => {
       const nonOwnerSigner = new mockWalletClientNonOwner()
       const badClient = new SwapperClient({
-        chainId: 1,
+        chainId,
         publicClient,
         walletClient: nonOwnerSigner,
       })
@@ -714,7 +717,7 @@ describe('Swapper writes', () => {
 
     test('Set paused fails with no provider', async () => {
       const badClient = new SwapperClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -729,7 +732,7 @@ describe('Swapper writes', () => {
 
     test('Set paused fails with no signer', async () => {
       const badClient = new SwapperClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -745,7 +748,7 @@ describe('Swapper writes', () => {
     test('Set paused fails from non owner', async () => {
       const nonOwnerSigner = new mockWalletClientNonOwner()
       const badClient = new SwapperClient({
-        chainId: 1,
+        chainId,
         publicClient,
         walletClient: nonOwnerSigner,
       })
@@ -797,7 +800,7 @@ describe('Swapper writes', () => {
 
     test('Exec calls fails with no provider', async () => {
       const badClient = new SwapperClient({
-        chainId: 1,
+        chainId,
         walletClient: new mockWalletClient(),
       })
 
@@ -812,7 +815,7 @@ describe('Swapper writes', () => {
 
     test('Exec calls fails with no signer', async () => {
       const badClient = new SwapperClient({
-        chainId: 1,
+        chainId,
         publicClient,
       })
 
@@ -828,7 +831,7 @@ describe('Swapper writes', () => {
     test('Exec calls fails from non owner', async () => {
       const nonOwnerSigner = new mockWalletClientNonOwner()
       const badClient = new SwapperClient({
-        chainId: 1,
+        chainId,
         publicClient,
         walletClient: nonOwnerSigner,
       })
@@ -864,9 +867,12 @@ describe('Swapper writes', () => {
 })
 
 describe('Swapper reads', () => {
+  const chainId = 1
   const publicClient = new mockPublicClient()
+  publicClient.chain = { id: chainId } as Chain
+
   const client = new SwapperClient({
-    chainId: 1,
+    chainId,
     publicClient,
   })
 
@@ -883,7 +889,7 @@ describe('Swapper reads', () => {
 
     test('Get beneficiary fails with no provider', async () => {
       const badClient = new SwapperClient({
-        chainId: 1,
+        chainId,
       })
 
       await expect(
@@ -915,7 +921,7 @@ describe('Swapper reads', () => {
 
     test('Get token to beneficiary fails with no provider', async () => {
       const badClient = new SwapperClient({
-        chainId: 1,
+        chainId,
       })
 
       await expect(
@@ -947,7 +953,7 @@ describe('Swapper reads', () => {
 
     test('Get oracle fails with no provider', async () => {
       const badClient = new SwapperClient({
-        chainId: 1,
+        chainId,
       })
 
       await expect(
@@ -979,7 +985,7 @@ describe('Swapper reads', () => {
 
     test('Get default scale fails with no provider', async () => {
       const badClient = new SwapperClient({
-        chainId: 1,
+        chainId,
       })
 
       await expect(
@@ -1018,7 +1024,7 @@ describe('Swapper reads', () => {
 
     test('Get default scale fails with no provider', async () => {
       const badClient = new SwapperClient({
-        chainId: 1,
+        chainId,
       })
 
       await expect(
