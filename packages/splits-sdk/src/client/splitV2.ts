@@ -379,12 +379,10 @@ class SplitV2Transactions extends BaseTransactions {
     chainId: number
   }): Promise<SplitV2Versions> {
     try {
-      const [, name, version] = await this._getSplitV2Contract(
+      const [, , version] = await this._getSplitV2Contract(
         splitAddress,
         chainId,
       ).read.eip712Domain()
-
-      if (name !== 'splitWallet') throw new Error()
 
       if (version === '2') return 'splitV2'
       else if (version === '2.1') return 'splitV2o1'
@@ -505,7 +503,7 @@ class SplitV2Transactions extends BaseTransactions {
     else {
       const publicClient = this._getPublicClient(chainId)
 
-      const code = await publicClient.getBytecode({
+      const code = await publicClient.getCode({
         address: splitAddress,
       })
 

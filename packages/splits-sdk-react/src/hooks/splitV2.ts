@@ -55,14 +55,14 @@ export const useCreateSplitV2 = (): {
           eventTopics: splitsClient.eventTopics.splitCreated,
         })
 
-        let abi: Abi = splitV2FactoryABI
+        let abi: Abi = splitV2o2FactoryAbi
 
-        if (argsDict.version === 'splitV2o2') {
-          abi = splitV2o2FactoryAbi
+        if (argsDict.version === 'splitV2') {
+          abi = splitV2FactoryABI
         } else if (argsDict.version === 'splitV2o1') {
           abi = splitV2o1FactoryAbi
         } else {
-          abi = splitV2FactoryABI
+          abi = splitV2o2FactoryAbi
         }
 
         const event = events?.[0]
