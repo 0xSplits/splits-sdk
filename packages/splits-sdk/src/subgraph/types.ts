@@ -35,7 +35,7 @@ export type GqlSplit = GqlAccountSharedFields & {
   __typename: 'Split'
   id: Scalars['ID']
   recipients: GqlRecipient[]
-  type: 'split' | 'splitV2' | 'splitV2o1'
+  type: 'split' | 'splitV2' | 'splitV2o1' | 'splitV2o2'
   distributorFee: Scalars['String']
   distributeDirection: 'push' | 'pull'
   distributionsPaused: Scalars['Boolean']
@@ -610,7 +610,7 @@ type IAccountSharedFields = IAccount & {
   }
 }
 
-export type SplitV2Versions = 'splitV2' | 'splitV2o1'
+export type SplitV2Versions = 'splitV2' | 'splitV2o1' | 'splitV2o2'
 
 export type ISplit = IAccountSharedFields & {
   type: 'split' | SplitV2Versions

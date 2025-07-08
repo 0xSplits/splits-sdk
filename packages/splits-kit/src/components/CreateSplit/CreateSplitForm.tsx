@@ -21,7 +21,7 @@ import { SplitV2Type } from '@0xsplits/splits-sdk/types'
 import {
   splitMainEthereumAbi,
   splitMainPolygonAbi,
-  splitV2o1FactoryAbi,
+  splitV2o2FactoryAbi,
 } from '@0xsplits/splits-sdk/constants/abi'
 import { mainnet } from 'viem/chains'
 
@@ -149,7 +149,7 @@ const CreateSplitForm = ({
         const events = await createSplitV2(args)
         if (events) {
           const log = decodeEventLog({
-            abi: splitV2o1FactoryAbi,
+            abi: splitV2o2FactoryAbi,
             data: events[0].data,
             topics: events[0].topics,
           })
@@ -256,8 +256,8 @@ const CreateSplitForm = ({
                 isWrongChain
                   ? `Switch to ${CHAIN_INFO[chainId].label} to distribute funds`
                   : !isConnected
-                  ? 'Connect wallet'
-                  : ''
+                    ? 'Connect wallet'
+                    : ''
               }
             >
               <Button

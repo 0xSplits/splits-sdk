@@ -195,7 +195,11 @@ export const useSplitMetadataViaProvider = (
 
             if (createLog) break
             if (updateLog && cachedCreateBlock) break
-            if (updateLog && version === 'splitV2o1') break
+            if (
+              (updateLog && version === 'splitV2o1') ||
+              (updateLog && version === 'splitV2o2')
+            )
+              break
 
             currentBlockNumber = startBlock - BigInt(1)
           }

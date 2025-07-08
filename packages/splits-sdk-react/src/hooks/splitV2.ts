@@ -1,4 +1,4 @@
-import { Address, Log, decodeEventLog } from 'viem'
+import { Abi, Address, Log, decodeEventLog } from 'viem'
 import { useCallback, useContext, useState } from 'react'
 import {
   CreateSplitV2Config,
@@ -12,75 +12,12 @@ import {
 import {
   splitV2FactoryABI,
   splitV2o1FactoryAbi,
+  splitV2o2FactoryAbi,
 } from '@0xsplits/splits-sdk/constants/abi'
 
 import { SplitsContext } from '../context'
 import { ContractExecutionStatus, RequestError } from '../types'
 import { getSplitsClient } from '../utils'
-
-export const _useCreateSplitOldV2 = (): {
-  createSplit: (arg0: CreateSplitV2Config) => Promise<Log[] | undefined>
-  splitAddress?: Address
-  status?: ContractExecutionStatus
-  txHash?: string
-  error?: RequestError
-} => {
-  const context = useContext(SplitsContext)
-  const splitsClient = getSplitsClient(context).splitV2
-
-  const [splitAddress, setSplitAddress] = useState<Address>()
-  const [status, setStatus] = useState<ContractExecutionStatus>()
-  const [txHash, setTxHash] = useState<string>()
-  const [error, setError] = useState<RequestError>()
-
-  const createSplit = useCallback(
-    async (argsDict: CreateSplitV2Config) => {
-      if (!splitsClient) throw new Error('Invalid chain id for split v2')
-
-      try {
-        setStatus('pendingApproval')
-        setSplitAddress(undefined)
-        setError(undefined)
-        setTxHash(undefined)
-
-        const { txHash: hash } =
-          await splitsClient._submitCreateSplitTransactionOldV2(argsDict)
-
-        setStatus('txInProgress')
-        setTxHash(hash)
-
-        const events = await splitsClient.getTransactionEvents({
-          txHash: hash,
-          eventTopics: splitsClient.eventTopics.splitCreated,
-        })
-
-        const event = events?.[0]
-        const decodedLog = event
-          ? decodeEventLog({
-              abi: splitV2FactoryABI,
-              data: event.data,
-              topics: event.topics,
-            })
-          : undefined
-        const splitId =
-          decodedLog?.eventName === 'SplitCreated'
-            ? decodedLog.args.split
-            : undefined
-
-        setSplitAddress(splitId)
-        setStatus('complete')
-
-        return events
-      } catch (e) {
-        setStatus('error')
-        setError(e)
-      }
-    },
-    [splitsClient],
-  )
-
-  return { createSplit, splitAddress, status, txHash, error }
-}
 
 export const useCreateSplitV2 = (): {
   createSplit: (arg0: CreateSplitV2Config) => Promise<Log[] | undefined>
@@ -118,17 +55,27 @@ export const useCreateSplitV2 = (): {
           eventTopics: splitsClient.eventTopics.splitCreated,
         })
 
+        let abi: Abi = splitV2FactoryABI
+
+        if (argsDict.version === 'splitV2o2') {
+          abi = splitV2o2FactoryAbi
+        } else if (argsDict.version === 'splitV2o1') {
+          abi = splitV2o1FactoryAbi
+        } else {
+          abi = splitV2FactoryABI
+        }
+
         const event = events?.[0]
         const decodedLog = event
           ? decodeEventLog({
-              abi: splitV2o1FactoryAbi,
+              abi,
               data: event.data,
               topics: event.topics,
             })
           : undefined
         const splitId =
-          decodedLog?.eventName === 'SplitCreated'
-            ? decodedLog.args.split
+          decodedLog?.eventName === 'SplitCreated' && decodedLog.args
+            ? (decodedLog.args[0] as Address)
             : undefined
 
         setSplitAddress(splitId)

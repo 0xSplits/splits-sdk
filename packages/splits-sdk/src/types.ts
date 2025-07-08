@@ -9,6 +9,7 @@ import type {
   WalletClient,
 } from 'viem'
 import { TransactionType } from './constants'
+import { SplitV2Versions } from './subgraph/types'
 
 // INPUTS
 
@@ -314,6 +315,7 @@ export type CreateSplitV2Config = {
   creatorAddress?: Address
   salt?: Hex
   chainId?: number
+  version?: SplitV2Versions
 } & TransactionOverridesDict
 
 export type UpdateSplitV2Config = {

@@ -527,7 +527,8 @@ export class DataClient {
       !response ||
       (response.type !== 'split' &&
         response.type !== 'splitV2' &&
-        response.type !== 'splitV2o1')
+        response.type !== 'splitV2o1' &&
+        response.type !== 'splitV2o2')
     )
       throw new AccountNotFoundError('split', splitAddress, chainId)
 

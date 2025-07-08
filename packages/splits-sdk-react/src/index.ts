@@ -62,7 +62,6 @@ export {
   usePassThroughTokens,
   usePassThroughWalletPause,
   usePassThroughWalletExecCalls,
-  _useCreateSplitOldV2,
   useCreateSplitV2,
   useDistributeTokenV2,
   useBatchWithdrawWarehouse,
