@@ -508,21 +508,13 @@ class SplitV2Transactions extends BaseTransactions {
       })
 
       if (
-        code?.includes(
-          [
-            PULL_SPLIT_V2o1_ADDRESS.toLowerCase().slice(2),
-            PULL_SPLIT_V2o2_ADDRESS.toLowerCase().slice(2),
-          ].join(''),
-        )
+        code?.includes(PULL_SPLIT_V2o1_ADDRESS.toLowerCase().slice(2)) ||
+        code?.includes(PULL_SPLIT_V2o2_ADDRESS.toLowerCase().slice(2))
       ) {
         type = 'pull'
       } else if (
-        code?.includes(
-          [
-            PUSH_SPLIT_V2o1_ADDRESS.toLowerCase().slice(2),
-            PUSH_SPLIT_V2o2_ADDRESS.toLowerCase().slice(2),
-          ].join(''),
-        )
+        code?.includes(PUSH_SPLIT_V2o1_ADDRESS.toLowerCase().slice(2)) ||
+        code?.includes(PUSH_SPLIT_V2o2_ADDRESS.toLowerCase().slice(2))
       ) {
         type = 'push'
       } else {
