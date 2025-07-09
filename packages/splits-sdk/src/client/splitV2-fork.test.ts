@@ -27,7 +27,6 @@ import { ALICE, BOB } from '../testing/vitest/constants'
 import { publicClient, testClient, walletClient } from '../testing/utils'
 import { SplitRecipient, SplitV2Type } from '../types'
 import { splitV2ABI } from '../constants/abi/splitV2'
-import { splitV2FactoryABI } from '../constants/abi/splitV2Factory'
 import { splitV2o2FactoryAbi } from '../constants/abi'
 import { getSplitV2o2FactoryAddress } from '../constants'
 
@@ -121,7 +120,7 @@ describe('Split v2 writes', () => {
       })
 
       const decodedLog = decodeEventLog({
-        abi: splitV2FactoryABI,
+        abi: splitV2o2FactoryAbi,
         topics: event.topics,
         data: event.data,
       })
@@ -155,7 +154,7 @@ describe('Split v2 writes', () => {
       })
 
       const decodedLog = decodeEventLog({
-        abi: splitV2FactoryABI,
+        abi: splitV2o2FactoryAbi,
         topics: event.topics,
         data: event.data,
       })
@@ -190,7 +189,7 @@ describe('Split v2 writes', () => {
       })
 
       const decodedLog = decodeEventLog({
-        abi: splitV2FactoryABI,
+        abi: splitV2o2FactoryAbi,
         topics: event.topics,
         data: event.data,
       })
