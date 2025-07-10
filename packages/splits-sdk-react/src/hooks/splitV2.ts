@@ -73,6 +73,8 @@ export const useCreateSplitV2 = (): {
               topics: event.topics,
             })
           : undefined
+
+        // With each version the split factory contract has a different event topic. The first arg of the event is the split id across all versions.
         const splitId =
           decodedLog?.eventName === 'SplitCreated' && decodedLog.args
             ? (decodedLog.args[0] as Address)

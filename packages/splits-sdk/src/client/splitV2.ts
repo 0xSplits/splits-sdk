@@ -76,7 +76,7 @@ import { splitV2o1FactoryAbi, splitV2o2FactoryAbi } from '../constants/abi'
 
 type SplitV2ABI = typeof splitV2ABI
 
-type V2Type = 'splitV2' | 'splitV2o1' | 'splitV2o2'
+const DEFAULT_V2_VERSION = 'splitV2o2'
 
 const VALID_ERC1271_SIG = '0x1626ba7e'
 
@@ -92,15 +92,15 @@ class SplitV2Transactions extends BaseTransactions {
   protected _getSplitV2FactoryContract(
     splitType: SplitV2Type,
     chainId: number,
-    v2Type: V2Type,
+    version: SplitV2Versions,
   ) {
-    if (v2Type === 'splitV2') {
+    if (version === 'splitV2') {
       return getContract({
         address: getSplitV2FactoryAddress(chainId, splitType),
         abi: splitV2FactoryABI,
         client: this._getPublicClient(chainId),
       })
-    } else if (v2Type === 'splitV2o1') {
+    } else if (version === 'splitV2o1') {
       return getContract({
         address: getSplitV2o1FactoryAddress(chainId, splitType),
         abi: splitV2o1FactoryAbi,
@@ -124,11 +124,9 @@ class SplitV2Transactions extends BaseTransactions {
     creatorAddress = zeroAddress,
     salt,
     chainId,
+    version = DEFAULT_V2_VERSION,
     transactionOverrides = {},
-    v2Type = 'splitV2o2',
-  }: CreateSplitV2Config & {
-    v2Type: V2Type
-  }): Promise<TransactionFormat> {
+  }: CreateSplitV2Config): Promise<TransactionFormat> {
     const {
       recipientAddresses,
       recipientAllocations,
@@ -164,7 +162,7 @@ class SplitV2Transactions extends BaseTransactions {
     const contract = this._getSplitV2FactoryContract(
       splitType,
       functionChainId,
-      v2Type,
+      version,
     )
 
     return this._executeContractFunction({
@@ -681,7 +679,6 @@ export class SplitV2Client extends SplitV2Transactions {
   }> {
     const txHash = await this._createSplit({
       ...createSplitArgs,
-      v2Type: createSplitArgs.version ?? 'splitV2o2',
     })
     if (!this._isContractTransaction(txHash))
       throw new Error('Invalid response')
@@ -880,7 +877,6 @@ export class SplitV2Client extends SplitV2Transactions {
 
   private async _predictDeterministicAddress(
     createSplitArgs: CreateSplitV2Config,
-    v2Type: V2Type,
   ): Promise<{ splitAddress: Address }> {
     if (!createSplitArgs.ownerAddress)
       createSplitArgs.ownerAddress = zeroAddress
@@ -908,7 +904,7 @@ export class SplitV2Client extends SplitV2Transactions {
     const factory = this._getSplitV2FactoryContract(
       createSplitArgs.splitType ?? SplitV2Type.Pull,
       functionChainId,
-      v2Type,
+      createSplitArgs.version ?? DEFAULT_V2_VERSION,
     )
 
     let splitAddress
@@ -945,16 +941,10 @@ export class SplitV2Client extends SplitV2Transactions {
   ): Promise<{
     splitAddress: Address
   }> {
-    return await this._predictDeterministicAddress(
-      createSplitArgs,
-      createSplitArgs.version ?? 'splitV2o2',
-    )
+    return await this._predictDeterministicAddress(createSplitArgs)
   }
 
-  private async _isDeployed(
-    createSplitArgs: CreateSplitV2Config,
-    v2Type: V2Type,
-  ): Promise<{
+  private async _isDeployed(createSplitArgs: CreateSplitV2Config): Promise<{
     splitAddress: Address
     deployed: boolean
   }> {
@@ -983,7 +973,7 @@ export class SplitV2Client extends SplitV2Transactions {
     const factory = this._getSplitV2FactoryContract(
       createSplitArgs.splitType ?? SplitV2Type.Pull,
       functionChainId,
-      v2Type,
+      createSplitArgs.version ?? DEFAULT_V2_VERSION,
     )
 
     if (!createSplitArgs.salt) throw new SaltRequired()
@@ -1008,10 +998,7 @@ export class SplitV2Client extends SplitV2Transactions {
     splitAddress: Address
     deployed: boolean
   }> {
-    return await this._isDeployed(
-      createSplitArgs,
-      createSplitArgs.version ?? 'splitV2o2',
-    )
+    return await this._isDeployed(createSplitArgs)
   }
 
   async getSplitBalance({
@@ -1259,7 +1246,6 @@ class SplitV2GasEstimates extends SplitV2Transactions {
   async createSplit(createSplitArgs: CreateSplitV2Config): Promise<bigint> {
     const gasEstimate = await this._createSplit({
       ...createSplitArgs,
-      v2Type: createSplitArgs.version ?? 'splitV2o2',
     })
     if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
 
@@ -1319,7 +1305,6 @@ class SplitV2CallData extends SplitV2Transactions {
   async createSplit(createSplitArgs: CreateSplitV2Config): Promise<CallData> {
     const callData = await this._createSplit({
       ...createSplitArgs,
-      v2Type: createSplitArgs.version ?? 'splitV2o2',
     })
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
