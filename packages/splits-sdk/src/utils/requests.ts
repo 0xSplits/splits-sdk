@@ -12,6 +12,7 @@ import { sleep } from '.'
 import { AccountNotFoundError } from '../errors'
 import { SplitV2Versions } from '../subgraph/types'
 import { splitV2o1Abi } from '../constants/abi/splitV2o1'
+import { splitV2o2FactoryAbi } from '../constants/abi/splitV2o2Factory'
 
 /**
  * Retries a function n number of times with exponential backoff before giving up
@@ -147,6 +148,8 @@ export const getLargestValidBlockRange = async ({
 type SplitCreatedEventType =
   | (typeof splitV2FactoryABI)[8]
   | (typeof splitMainPolygonAbi)[14]
+  | (typeof splitV2o2FactoryAbi)[1]
+  | (typeof splitV2o2FactoryAbi)[2]
 
 type SplitUpdatedEventType =
   | (typeof splitV2ABI)[28]
@@ -443,7 +446,7 @@ export const searchLogs = async <
   let updateLog: SplitUpdatedLogType | undefined = currentUpdateLog
 
   if (
-    splitV2Version === 'splitV2o1' &&
+    (splitV2Version === 'splitV2o1' || splitV2Version === 'splitV2o2') &&
     !INVALID_BLOCK_NUMBER_CHAIN_IDS.includes(publicClient.chain?.id)
   ) {
     const splitContract = getContract({

@@ -12,7 +12,7 @@ Developer tools for integrating with the 0xSplits contracts and subgraph data
 
 ## Testing
 
-Update the `.env` file with appropriate values for the variables present [here](packages/splits-sdk/.env.sample).
+Update the `.env` file with appropriate values for the variables present [here](packages/splits-sdk/.env.sample). If you see any failing forked tests it could be because of the outdated block number, make sure to update it to the most recent one. This should be automated in the future.
 
 Run mocked tests with `pnpm run test`.
 Run forked tests with `pnpm run vitest`.
