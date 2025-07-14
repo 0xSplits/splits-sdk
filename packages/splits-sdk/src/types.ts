@@ -302,7 +302,7 @@ export type SplitV2 = {
   totalAllocation: bigint
   paused: boolean
   type: SplitV2Type
-  controllerAddress: Address
+  ownerAddress: Address
   creatorAddress: Address
 }
 
