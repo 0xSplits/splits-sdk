@@ -303,8 +303,6 @@ export type SplitV2 = {
   paused: boolean
   type: SplitV2Type
   ownerAddress: Address
-  // Deprecated
-  controllerAddress: Address
   creatorAddress: Address
 }
 
