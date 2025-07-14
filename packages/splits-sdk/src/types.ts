@@ -302,6 +302,8 @@ export type SplitV2 = {
   totalAllocation: bigint
   paused: boolean
   type: SplitV2Type
+  ownerAddress: Address
+  // Deprecated
   controllerAddress: Address
   creatorAddress: Address
 }
