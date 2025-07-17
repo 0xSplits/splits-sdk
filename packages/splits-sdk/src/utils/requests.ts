@@ -51,7 +51,7 @@ const getRandomTimeMs: (maxMs: number) => number = (maxMs) => {
   return Math.random() * maxMs
 }
 
-// Return true if the public client supports a large enough logs request to fetch erc20 tranfer history
+// Return true if the public client supports a large enough logs request to fetch erc20 transfer history
 export const isLogsPublicClient = (
   publicClient: SplitsPublicClient,
 ): boolean => {
