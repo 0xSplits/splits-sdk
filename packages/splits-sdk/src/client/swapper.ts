@@ -21,11 +21,16 @@ import {
   getSwapperFactoryAddress,
   SWAPPER_CHAIN_IDS,
   getUniV3SwapAddress,
+  PERMISSIONLESS_SWAPPER_CHAIN_IDS,
 } from '../constants'
 import { swapperFactoryAbi } from '../constants/abi/swapperFactory'
 import { uniV3SwapAbi } from '../constants/abi/uniV3Swap'
 import { swapperAbi } from '../constants/abi/swapper'
-import { InvalidAuthError, TransactionFailedError } from '../errors'
+import {
+  InvalidArgumentError,
+  InvalidAuthError,
+  TransactionFailedError,
+} from '../errors'
 import { applyMixins } from './mixin'
 import type {
   CallData,
@@ -134,8 +139,8 @@ class SwapperTransactions extends BaseTransactions {
     const excessRecipientAddress = excessRecipient
       ? excessRecipient
       : this._walletClient?.account
-      ? this._walletClient.account.address
-      : zeroAddress
+        ? this._walletClient.account.address
+        : zeroAddress
     validateAddress(excessRecipientAddress)
 
     this._requireDataClient()
@@ -145,6 +150,20 @@ class SwapperTransactions extends BaseTransactions {
       chainId: functionChainId,
       swapperAddress,
     })
+
+    if (!PERMISSIONLESS_SWAPPER_CHAIN_IDS.includes(functionChainId)) {
+      if (inputAssets.length > 1) {
+        throw new InvalidArgumentError(
+          `${functionChainId} swappers only support one input asset`,
+        )
+      }
+
+      if (inputAssets[0]?.token !== tokenToBeneficiary.address) {
+        throw new InvalidArgumentError(
+          `${functionChainId} swappers only support the tokenToBeneficiary as the input asset`,
+        )
+      }
+    }
 
     const swapRecipient = getUniV3SwapAddress(functionChainId)
     const deadlineTime = Math.floor(Date.now() / 1000) + transactionTimeLimit
