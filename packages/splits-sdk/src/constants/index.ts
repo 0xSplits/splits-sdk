@@ -130,10 +130,6 @@ export const getSwapperFactoryAddress = (): Address => {
 export const getUniV3SwapAddress = (chainId?: number): Address => {
   if (!chainId) return UNI_V3_SWAP_ADDRESS
 
-  if (!PERMISSIONLESS_SWAPPER_CHAIN_IDS.includes(chainId))
-    throw new InvalidArgumentError(
-      `Chain - ${chainId} is not supported for permissionless swaps`,
-    )
   if (chainId === ChainId.POLYGON)
     return '0x8d582AEDf0326348960054021ab0b748B3A2BA66'
   if (chainId === ChainId.OPTIMISM)
