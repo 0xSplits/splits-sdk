@@ -154,13 +154,13 @@ class SwapperTransactions extends BaseTransactions {
     if (!PERMISSIONLESS_SWAPPER_CHAIN_IDS.includes(functionChainId)) {
       if (inputAssets.length > 1) {
         throw new InvalidArgumentError(
-          `${functionChainId} swappers only support one input asset`,
+          `Chain id: ${functionChainId} - swappers only support one input asset, swapper owners can use the execCalls function to execute multiple swaps.`,
         )
       }
 
       if (inputAssets[0]?.token !== tokenToBeneficiary.address) {
         throw new InvalidArgumentError(
-          `${functionChainId} swappers only support the tokenToBeneficiary as the input asset`,
+          `Chain id: ${functionChainId} - swappers only support the tokenToBeneficiary as the input asset, swapper owners can use the execCalls function to execute this swap.`,
         )
       }
     }
