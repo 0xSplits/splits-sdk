@@ -20,6 +20,8 @@ import {
   plumeMainnet,
   abstract,
   abstractTestnet,
+  ronin,
+  saigon,
 } from 'viem/chains'
 
 export const SupportedChainsList = [
@@ -44,6 +46,8 @@ export const SupportedChainsList = [
   plumeMainnet,
   abstract,
   abstractTestnet,
+  ronin,
+  saigon,
 ] as const
 
 type SupportedChain = (typeof SupportedChainsList)[number]
@@ -216,6 +220,20 @@ export const CHAIN_INFO: ChainInfo = {
     logoUrl: '/networks/abstract_logo.svg',
     nativeCurrency: {
       symbol: 'ETH',
+    },
+  },
+  [ronin.id]: {
+    label: 'Ronin',
+    logoUrl: '/networks/ronin_logo.svg',
+    nativeCurrency: {
+      symbol: 'RON',
+    },
+  },
+  [saigon.id]: {
+    label: 'Saigon',
+    logoUrl: '/networks/ronin_logo.svg',
+    nativeCurrency: {
+      symbol: 'RON',
     },
   },
 }
