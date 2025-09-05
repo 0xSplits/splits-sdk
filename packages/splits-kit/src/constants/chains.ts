@@ -22,6 +22,7 @@ import {
   abstractTestnet,
   ronin,
   saigon,
+  celo,
 } from 'viem/chains'
 
 export const SupportedChainsList = [
@@ -48,6 +49,7 @@ export const SupportedChainsList = [
   abstractTestnet,
   ronin,
   saigon,
+  celo,
 ] as const
 
 type SupportedChain = (typeof SupportedChainsList)[number]
@@ -234,6 +236,13 @@ export const CHAIN_INFO: ChainInfo = {
     logoUrl: '/networks/ronin_logo.svg',
     nativeCurrency: {
       symbol: 'RON',
+    },
+  },
+  [celo.id]: {
+    label: 'Celo',
+    logoUrl: '/networks/celo_logo.svg',
+    nativeCurrency: {
+      symbol: 'CELO',
     },
   },
 }

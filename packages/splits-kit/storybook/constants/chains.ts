@@ -23,6 +23,7 @@ import {
   abstractTestnet,
   ronin,
   saigon,
+  celo,
 } from 'viem/chains'
 
 import { CHAIN_INFO, SupportedChainId } from '../../src/constants/chains'
@@ -197,6 +198,13 @@ export const STORYBOOK_CHAIN_INFO: ChainInfo = {
     viemChain: saigon,
     rpcUrls: [
       `https://ronin-saigon.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
+    ],
+  },
+  [celo.id]: {
+    ...CHAIN_INFO[celo.id],
+    viemChain: celo,
+    rpcUrls: [
+      `https://celo-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
     ],
   },
 }
