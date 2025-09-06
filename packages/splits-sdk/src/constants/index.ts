@@ -206,6 +206,7 @@ export enum ChainId {
   ABSTRACT_SEPOLIA = 11124,
   RONIN = 2020,
   SAIGON = 2021,
+  CELO = 42220,
 }
 
 export const ETHEREUM_CHAIN_IDS = [ChainId.MAINNET]
@@ -227,6 +228,7 @@ export const WORLD_CHAIN_IDS = [ChainId.WORLDCHAIN]
 export const PLUME_CHAIN_IDS = [ChainId.PLUME, ChainId.PLUME_TESTNET]
 export const ABSTRACT_CHAIN_IDS = [ChainId.ABSTRACT, ChainId.ABSTRACT_SEPOLIA]
 export const RONIN_CHAIN_IDS = [ChainId.RONIN, ChainId.SAIGON]
+export const CELO_CHAIN_IDS = [ChainId.CELO]
 
 export const ALL_CHAIN_IDS = [
   ...ETHEREUM_CHAIN_IDS,
@@ -285,6 +287,7 @@ export const SPLITS_V2_SUPPORTED_CHAIN_IDS = [
   ChainId.ABSTRACT_SEPOLIA,
   ChainId.RONIN,
   ChainId.SAIGON,
+  ChainId.CELO,
 ]
 
 // These chains use a different value for block.number than the actual block number
@@ -526,6 +529,13 @@ export const CHAIN_INFO: {
       symbol: 'RON',
     },
     startBlockV2: 40078691,
+  },
+  [ChainId.CELO]: {
+    startBlock: 45209822,
+    nativeCurrency: {
+      symbol: 'CELO',
+    },
+    startBlockV2: 45209822,
   },
 }
 
