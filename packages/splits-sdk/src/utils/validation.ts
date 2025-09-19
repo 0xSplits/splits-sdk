@@ -1,4 +1,4 @@
-import { isAddress, zeroAddress } from 'viem'
+import { Call, isAddress, zeroAddress } from 'viem'
 
 import { SPLITS_MAX_PRECISION_DECIMALS } from '../constants'
 import {
@@ -273,6 +273,12 @@ export const validateUniV3SwapInputAssets = (
   inputAssets.map((inputAsset) => {
     // TODO: validate encoded path?
     validateAddress(inputAsset.token)
+  })
+}
+
+export const validateCalls = (calls: Call[]): void => {
+  calls.map((call) => {
+    validateAddress(call.to)
   })
 }
 
