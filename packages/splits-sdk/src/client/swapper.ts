@@ -489,7 +489,7 @@ export class SwapperClient extends SwapperTransactions {
           eventName: 'CreateSwapper',
         })[0],
       ],
-      uniV3FlashSwap: [
+      swapperFlash: [
         encodeEventTopics({
           abi: swapperAbi,
           eventName: 'Flash',
@@ -600,7 +600,7 @@ export class SwapperClient extends SwapperTransactions {
     const { txHash } = await this._submitUniV3FlashSwapTransaction(flashArgs)
     const events = await this.getTransactionEvents({
       txHash,
-      eventTopics: this.eventTopics.uniV3FlashSwap,
+      eventTopics: this.eventTopics.swapperFlash,
     })
     const event = events.length > 0 ? events[0] : undefined
     if (event)
@@ -629,7 +629,7 @@ export class SwapperClient extends SwapperTransactions {
     const { txHash } = await this._submitUniversalSwapTransaction(flashArgs)
     const events = await this.getTransactionEvents({
       txHash,
-      eventTopics: this.eventTopics.uniV3FlashSwap,
+      eventTopics: this.eventTopics.swapperFlash,
     })
     const event = events.length > 0 ? events[0] : undefined
     if (event)

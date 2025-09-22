@@ -94,7 +94,7 @@ export const useUniV3FlashSwap = (): {
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics: splitsClient.eventTopics.uniV3FlashSwap,
+          eventTopics: splitsClient.eventTopics.swapperFlash,
         })
 
         setStatus('complete')
@@ -141,7 +141,7 @@ export const useUniversalSwap = (): {
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics: splitsClient.eventTopics.uniV3FlashSwap,
+          eventTopics: splitsClient.eventTopics.swapperFlash,
         })
 
         setStatus('complete')
