@@ -1002,6 +1002,13 @@ class SwapperGasEstimates extends SwapperTransactions {
     return gasEstimate
   }
 
+  async universalSwap(flashArgs: UniversalSwapConfig): Promise<bigint> {
+    const gasEstimate = await this._universalSwapTransaction(flashArgs)
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+
   async execCalls(callArgs: SwapperExecCallsConfig): Promise<bigint> {
     const gasEstimate = await this._execCallsTransaction(callArgs)
     if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
@@ -1082,6 +1089,13 @@ class SwapperCallData extends SwapperTransactions {
 
   async uniV3FlashSwap(flashArgs: UniV3FlashSwapConfig): Promise<CallData> {
     const callData = await this._uniV3FlashSwapTransaction(flashArgs)
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
+
+    return callData
+  }
+
+  async universalSwap(flashArgs: UniversalSwapConfig): Promise<CallData> {
+    const callData = await this._universalSwapTransaction(flashArgs)
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData
