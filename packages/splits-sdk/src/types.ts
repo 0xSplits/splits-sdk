@@ -532,7 +532,6 @@ export type UniversalSwapConfig = {
     token: string
     amountIn: bigint
   }[]
-  transactionTimeLimit?: number
   chainId?: number
 } & TransactionOverridesDict
 

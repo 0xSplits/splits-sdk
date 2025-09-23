@@ -354,7 +354,6 @@ export const PERMISSIONLESS_SWAPPER_CHAIN_IDS = [
   ChainId.POLYGON,
   ChainId.OPTIMISM,
   ChainId.ARBITRUM,
-  ChainId.BASE,
 ]
 
 export const PASS_THROUGH_WALLET_CHAIN_IDS = SWAPPER_CHAIN_IDS.slice()

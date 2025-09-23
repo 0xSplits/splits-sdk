@@ -229,18 +229,18 @@ class SwapperTransactions extends BaseTransactions {
         : zeroAddress
     validateAddress(excessRecipientAddress)
 
-    this._requireDataClient()
+    this._requirePublicClient(functionChainId)
 
-    // TO DO: handle bad swapper id/no metadata found
-    const { tokenToBeneficiary } = await this._dataClient!.getSwapperMetadata({
-      chainId: functionChainId,
-      swapperAddress,
+    const tokenToBeneficiary = await this._publicClient!.readContract({
+      address: getAddress(swapperAddress),
+      abi: swapperAbi,
+      functionName: 'tokenToBeneficiary',
     })
 
     const quoteParams: ContractQuoteParams[] = []
     inputAssets.map((inputAsset) => {
       quoteParams.push([
-        [inputAsset.token, tokenToBeneficiary.address],
+        [inputAsset.token, tokenToBeneficiary],
         inputAsset.amountIn,
         '0x',
       ])
