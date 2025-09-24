@@ -15,6 +15,7 @@ import {
 import { SplitsContext } from '../context'
 import { ContractExecutionStatus, RequestError } from '../types'
 import { getSplitsClient } from '../utils'
+import { UniversalSwapConfig } from '@0xsplits/splits-sdk/types'
 
 export const useCreateSwapper = (): {
   createSwapper: (arg0: CreateSwapperConfig) => Promise<Log[] | undefined>
@@ -93,7 +94,7 @@ export const useUniV3FlashSwap = (): {
 
         const events = await splitsClient.getTransactionEvents({
           txHash: hash,
-          eventTopics: splitsClient.eventTopics.uniV3FlashSwap,
+          eventTopics: splitsClient.eventTopics.swapperFlash,
         })
 
         setStatus('complete')
@@ -108,6 +109,53 @@ export const useUniV3FlashSwap = (): {
   )
 
   return { uniV3FlashSwap, status, txHash, error }
+}
+
+export const useUniversalSwap = (): {
+  universalSwap: (arg0: UniversalSwapConfig) => Promise<Log[] | undefined>
+  status?: ContractExecutionStatus
+  txHash?: string
+  error?: RequestError
+} => {
+  const context = useContext(SplitsContext)
+  const splitsClient = getSplitsClient(context).swapper
+
+  const [status, setStatus] = useState<ContractExecutionStatus>()
+  const [txHash, setTxHash] = useState<string>()
+  const [error, setError] = useState<RequestError>()
+
+  const universalSwap = useCallback(
+    async (argsDict: UniversalSwapConfig) => {
+      if (!splitsClient) throw new Error('Invalid chain id for swapper')
+
+      try {
+        setStatus('pendingApproval')
+        setError(undefined)
+        setTxHash(undefined)
+
+        const { txHash: hash } =
+          await splitsClient._submitUniversalSwapTransaction(argsDict)
+
+        setStatus('txInProgress')
+        setTxHash(hash)
+
+        const events = await splitsClient.getTransactionEvents({
+          txHash: hash,
+          eventTopics: splitsClient.eventTopics.swapperFlash,
+        })
+
+        setStatus('complete')
+
+        return events
+      } catch (e) {
+        setStatus('error')
+        setError(e)
+      }
+    },
+    [splitsClient],
+  )
+
+  return { universalSwap, status, txHash, error }
 }
 
 export const useSwapperExecCalls = (): {

@@ -50,6 +50,7 @@ export {
   useCreateRecoup,
   useCreateSwapper,
   useUniV3FlashSwap,
+  useUniversalSwap,
   useSwapperExecCalls,
   useSwapperPause,
   useSwapperSetBeneficiary,

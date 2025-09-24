@@ -22,6 +22,7 @@ import {
   SWAPPER_CHAIN_IDS,
   getUniV3SwapAddress,
   PERMISSIONLESS_SWAPPER_CHAIN_IDS,
+  UNIVERSAL_SWAP_ADDRESS,
 } from '../constants'
 import { swapperFactoryAbi } from '../constants/abi/swapperFactory'
 import { uniV3SwapAbi } from '../constants/abi/uniV3Swap'
@@ -50,6 +51,7 @@ import type {
   TransactionConfig,
   TransactionFormat,
   UniV3FlashSwapConfig,
+  UniversalSwapConfig,
 } from '../types'
 import {
   getFormattedOracleParams,
@@ -58,11 +60,13 @@ import {
 } from '../utils'
 import {
   validateAddress,
+  validateCalls,
   validateOracleParams,
   validateScaledOfferFactor,
   validateScaledOfferFactorOverrides,
   validateUniV3SwapInputAssets,
 } from '../utils/validation'
+import { universalSwapAbi } from '../constants/abi/universalSwap'
 
 type SwapperAbi = typeof swapperAbi
 type UniV3SwapAbi = typeof uniV3SwapAbi
@@ -195,6 +199,58 @@ class SwapperTransactions extends BaseTransactions {
     const result = await this._executeContractFunction({
       contractAddress: getUniV3SwapAddress(functionChainId),
       contractAbi: uniV3SwapAbi,
+      functionName: 'initFlash',
+      functionArgs: [swapperAddress, flashParams],
+      transactionOverrides,
+    })
+
+    return result
+  }
+
+  protected async _universalSwapTransaction({
+    swapperAddress,
+    excessRecipient,
+    calls,
+    inputAssets,
+    chainId,
+    transactionOverrides = {},
+  }: UniversalSwapConfig): Promise<TransactionFormat> {
+    validateAddress(swapperAddress)
+    validateCalls(calls)
+
+    if (this._shouldRequireWalletClient) this._requireWalletClient()
+
+    const functionChainId = this._getFunctionChainId(chainId)
+
+    const excessRecipientAddress = excessRecipient
+      ? excessRecipient
+      : this._walletClient?.account
+        ? this._walletClient.account.address
+        : zeroAddress
+    validateAddress(excessRecipientAddress)
+
+    this._requirePublicClient(functionChainId)
+
+    const tokenToBeneficiary = await this._publicClient!.readContract({
+      address: getAddress(swapperAddress),
+      abi: swapperAbi,
+      functionName: 'tokenToBeneficiary',
+    })
+
+    const quoteParams: ContractQuoteParams[] = []
+    inputAssets.map((inputAsset) => {
+      quoteParams.push([
+        [inputAsset.token, tokenToBeneficiary],
+        inputAsset.amountIn,
+        '0x',
+      ])
+    })
+
+    const flashParams = [quoteParams, [calls, excessRecipientAddress]]
+
+    const result = await this._executeContractFunction({
+      contractAddress: UNIVERSAL_SWAP_ADDRESS,
+      contractAbi: universalSwapAbi,
       functionName: 'initFlash',
       functionArgs: [swapperAddress, flashParams],
       transactionOverrides,
@@ -433,7 +489,7 @@ export class SwapperClient extends SwapperTransactions {
           eventName: 'CreateSwapper',
         })[0],
       ],
-      uniV3FlashSwap: [
+      swapperFlash: [
         encodeEventTopics({
           abi: swapperAbi,
           eventName: 'Flash',
@@ -544,7 +600,36 @@ export class SwapperClient extends SwapperTransactions {
     const { txHash } = await this._submitUniV3FlashSwapTransaction(flashArgs)
     const events = await this.getTransactionEvents({
       txHash,
-      eventTopics: this.eventTopics.uniV3FlashSwap,
+      eventTopics: this.eventTopics.swapperFlash,
+    })
+    const event = events.length > 0 ? events[0] : undefined
+    if (event)
+      return {
+        event,
+      }
+
+    throw new TransactionFailedError()
+  }
+
+  async _submitUniversalSwapTransaction(
+    flashArgs: UniversalSwapConfig,
+  ): Promise<{
+    txHash: Hash
+  }> {
+    const txHash = await this._universalSwapTransaction(flashArgs)
+    if (!this._isContractTransaction(txHash))
+      throw new Error('Invalid response')
+
+    return { txHash }
+  }
+
+  async universalSwap(flashArgs: UniversalSwapConfig): Promise<{
+    event: Log
+  }> {
+    const { txHash } = await this._submitUniversalSwapTransaction(flashArgs)
+    const events = await this.getTransactionEvents({
+      txHash,
+      eventTopics: this.eventTopics.swapperFlash,
     })
     const event = events.length > 0 ? events[0] : undefined
     if (event)
@@ -917,6 +1002,13 @@ class SwapperGasEstimates extends SwapperTransactions {
     return gasEstimate
   }
 
+  async universalSwap(flashArgs: UniversalSwapConfig): Promise<bigint> {
+    const gasEstimate = await this._universalSwapTransaction(flashArgs)
+    if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
+
+    return gasEstimate
+  }
+
   async execCalls(callArgs: SwapperExecCallsConfig): Promise<bigint> {
     const gasEstimate = await this._execCallsTransaction(callArgs)
     if (!this._isBigInt(gasEstimate)) throw new Error('Invalid response')
@@ -997,6 +1089,13 @@ class SwapperCallData extends SwapperTransactions {
 
   async uniV3FlashSwap(flashArgs: UniV3FlashSwapConfig): Promise<CallData> {
     const callData = await this._uniV3FlashSwapTransaction(flashArgs)
+    if (!this._isCallData(callData)) throw new Error('Invalid response')
+
+    return callData
+  }
+
+  async universalSwap(flashArgs: UniversalSwapConfig): Promise<CallData> {
+    const callData = await this._universalSwapTransaction(flashArgs)
     if (!this._isCallData(callData)) throw new Error('Invalid response')
 
     return callData

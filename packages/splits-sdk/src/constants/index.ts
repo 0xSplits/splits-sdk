@@ -79,6 +79,9 @@ export const PULL_SPLIT_V2o2_ADDRESS =
 export const PUSH_SPLIT_V2o2_ADDRESS =
   '0x1e2086A7e84a32482ac03000D56925F607CCB708'
 
+export const UNIVERSAL_SWAP_ADDRESS =
+  '0xd0647614beb4a003095596826116f43d8461af5e'
+
 export const getSplitMainAddress = (chainId: number): Address => {
   if (chainId === ChainId.BSC) return SPLIT_MAIN_ADDRESS_BSC
   if (chainId === ChainId.HOLESKY) return SPLIT_MAIN_ADDRESS_HOLESKY

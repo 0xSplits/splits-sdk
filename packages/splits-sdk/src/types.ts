@@ -2,6 +2,7 @@ import { Dictionary } from 'lodash'
 import type {
   AccessList,
   Address,
+  Call,
   Hash,
   Hex,
   PublicClient,
@@ -520,6 +521,17 @@ export type UniV3FlashSwapConfig = {
     amountOutMin: bigint
   }[]
   transactionTimeLimit?: number
+  chainId?: number
+} & TransactionOverridesDict
+
+export type UniversalSwapConfig = {
+  swapperAddress: string
+  excessRecipient?: string // defaults to wallet client account
+  calls: Call[]
+  inputAssets: {
+    token: string
+    amountIn: bigint
+  }[]
   chainId?: number
 } & TransactionOverridesDict
 
