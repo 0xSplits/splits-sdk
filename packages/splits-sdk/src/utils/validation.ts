@@ -28,11 +28,16 @@ const getNumDigitsAfterDecimal = (value: number): number => {
 export const validateSplitRecipients = (
   recipients: SplitRecipient[],
   maxPrecisionDecimals: number,
+  maxRecipients?: number,
 ): void => {
   const seenAddresses = new Set<string>([])
   let totalPercentAllocation = 0
   if (recipients.length < 2)
     throw new InvalidRecipientsError('At least two recipients are required')
+  if (maxRecipients && recipients.length > maxRecipients)
+    throw new InvalidRecipientsError(
+      `Too many recipients: ${recipients.length}. Maximum allowed is ${maxRecipients}`,
+    )
 
   recipients.forEach((recipient) => {
     if (!isAddress(recipient.address))

@@ -22,6 +22,7 @@ import { getTokenData } from './tokens'
 import {
   InvalidDistributorFeePercentErrorV2,
   InvalidTotalAllocation,
+  InvalidRecipientsError,
 } from '../errors'
 import { IRecipient } from '../subgraph/types'
 
@@ -141,11 +142,14 @@ export const getAddressAndAllocationFromRecipients = (
 }
 
 export const MAX_V2_DISTRIBUTION_INCENTIVE = 6.5535
+export const MAX_PULL_SPLIT_RECIPIENTS = 500
+export const MAX_PUSH_SPLIT_RECIPIENTS = 400
 
 export const getValidatedSplitV2Config = (
   recipients: SplitRecipient[],
   distributorFeePercent: number,
   totalAllocationPercent?: number,
+  maxRecipients?: number,
 ): {
   recipientAddresses: Address[]
   recipientAllocations: bigint[]
@@ -154,6 +158,11 @@ export const getValidatedSplitV2Config = (
 } => {
   const { recipientAddresses, recipientAllocations } =
     getAddressAndAllocationFromRecipients(recipients)
+
+  if (maxRecipients && recipients.length > maxRecipients)
+    throw new InvalidRecipientsError(
+      `Too many recipients: ${recipients.length}. Maximum allowed is ${maxRecipients}`,
+    )
 
   if (distributorFeePercent > MAX_V2_DISTRIBUTION_INCENTIVE)
     throw new InvalidDistributorFeePercentErrorV2(distributorFeePercent)

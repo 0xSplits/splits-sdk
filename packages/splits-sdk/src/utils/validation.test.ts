@@ -111,6 +111,53 @@ describe('Recipients validation', () => {
       validateSplitRecipients(recipients, SPLITS_MAX_PRECISION_DECIMALS),
     ).not.toThrow()
   })
+
+  test('Too many recipients fails when maxRecipients specified', () => {
+    const manyRecipients: SplitRecipient[] = Array.from(
+      { length: 501 },
+      (_, i) => ({
+        address: `0x${i.toString(16).padStart(40, '0')}`,
+        percentAllocation: 100 / 501,
+      }),
+    )
+    expect(() =>
+      validateSplitRecipients(
+        manyRecipients,
+        SPLITS_MAX_PRECISION_DECIMALS,
+        500,
+      ),
+    ).toThrow(InvalidRecipientsError)
+  })
+
+  test('Exactly maxRecipients passes', () => {
+    const manyRecipients: SplitRecipient[] = Array.from(
+      { length: 500 },
+      (_, i) => ({
+        address: `0x${i.toString(16).padStart(40, '0')}`,
+        percentAllocation: 100 / 500,
+      }),
+    )
+    expect(() =>
+      validateSplitRecipients(
+        manyRecipients,
+        SPLITS_MAX_PRECISION_DECIMALS,
+        500,
+      ),
+    ).not.toThrow()
+  })
+
+  test('No maxRecipients allows any number', () => {
+    const manyRecipients: SplitRecipient[] = Array.from(
+      { length: 600 },
+      (_, i) => ({
+        address: `0x${i.toString(16).padStart(40, '0')}`,
+        percentAllocation: 100 / 600,
+      }),
+    )
+    expect(() =>
+      validateSplitRecipients(manyRecipients, SPLITS_MAX_PRECISION_DECIMALS),
+    ).not.toThrow()
+  })
 })
 
 describe('Tranches validation', () => {

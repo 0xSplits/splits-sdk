@@ -15,6 +15,7 @@ import {
 import {
   InvalidConfigError,
   InvalidDistributorFeePercentErrorV2,
+  InvalidRecipientsError,
   InvalidTotalAllocation,
   MissingPublicClientError,
   MissingWalletClientError,
@@ -296,6 +297,92 @@ describe('Split v2 writes', () => {
           }),
       ).rejects.toThrow(InvalidTotalAllocation)
     })
+
+    test('fails when pull split has more than 500 recipients', async () => {
+      const sender = ALICE
+      const client = createClient(sender)
+
+      const tooManyRecipients: SplitRecipient[] = Array.from(
+        { length: 501 },
+        (_, i) => ({
+          address: `0x${i.toString(16).padStart(40, '0')}` as Address,
+          percentAllocation: 100 / 501,
+        }),
+      )
+
+      await expect(
+        async () =>
+          await client.createSplit({
+            recipients: tooManyRecipients,
+            distributorFeePercent: 0,
+            splitType: SplitV2Type.Pull,
+          }),
+      ).rejects.toThrow(InvalidRecipientsError)
+    })
+
+    test('fails when push split has more than 400 recipients', async () => {
+      const sender = ALICE
+      const client = createClient(sender)
+
+      const tooManyRecipients: SplitRecipient[] = Array.from(
+        { length: 401 },
+        (_, i) => ({
+          address: `0x${i.toString(16).padStart(40, '0')}` as Address,
+          percentAllocation: 100 / 401,
+        }),
+      )
+
+      await expect(
+        async () =>
+          await client.createSplit({
+            recipients: tooManyRecipients,
+            distributorFeePercent: 0,
+            splitType: SplitV2Type.Push,
+          }),
+      ).rejects.toThrow(InvalidRecipientsError)
+    })
+
+    test('succeeds when pull split has exactly 500 recipients', async () => {
+      const sender = ALICE
+      const client = createClient(sender)
+
+      const maxRecipients: SplitRecipient[] = Array.from(
+        { length: 500 },
+        (_, i) => ({
+          address: `0x${(i + 1).toString(16).padStart(40, '0')}` as Address,
+          percentAllocation: 100 / 500,
+        }),
+      )
+
+      const { splitAddress } = await client.createSplit({
+        recipients: maxRecipients,
+        distributorFeePercent: 0,
+        splitType: SplitV2Type.Pull,
+      })
+
+      expect(splitAddress).toBeDefined()
+    })
+
+    test('succeeds when push split has exactly 400 recipients', async () => {
+      const sender = ALICE
+      const client = createClient(sender)
+
+      const maxRecipients: SplitRecipient[] = Array.from(
+        { length: 400 },
+        (_, i) => ({
+          address: `0x${(i + 1).toString(16).padStart(40, '0')}` as Address,
+          percentAllocation: 100 / 400,
+        }),
+      )
+
+      const { splitAddress } = await client.createSplit({
+        recipients: maxRecipients,
+        distributorFeePercent: 0,
+        splitType: SplitV2Type.Push,
+      })
+
+      expect(splitAddress).toBeDefined()
+    })
   })
 
   describe('Transfer ownership', () => {
@@ -554,6 +641,82 @@ describe('Split v2 writes', () => {
         expect(decodedLog.args.distributor).toEqual(zeroAddress)
         expect(decodedLog.args.token).toEqual(nativeTokenAddress)
       }
+    })
+
+    test('distribute ETH with 500 pull split recipients succeeds', async () => {
+      const sender = ALICE
+      const client = createClient(sender)
+
+      const maxRecipients: SplitRecipient[] = Array.from(
+        { length: 500 },
+        (_, i) => ({
+          address: `0x${(i + 1).toString(16).padStart(40, '0')}` as Address,
+          percentAllocation: 100 / 500,
+        }),
+      )
+
+      const { splitAddress } = await client.createSplit({
+        recipients: maxRecipients,
+        distributorFeePercent: 0,
+        splitType: SplitV2Type.Pull,
+      })
+
+      testClient.setBalance({
+        address: splitAddress,
+        value: parseEther('1'),
+      })
+
+      const { event } = await client.distribute({
+        splitAddress,
+        distributorAddress: zeroAddress,
+        tokenAddress: nativeTokenAddress,
+      })
+
+      const decodedLog = decodeEventLog({
+        abi: splitV2ABI,
+        topics: event.topics,
+        data: event.data,
+      })
+
+      expect(decodedLog.eventName).toEqual('SplitDistributed')
+    })
+
+    test('distribute ETH with 400 push split recipients succeeds', async () => {
+      const sender = ALICE
+      const client = createClient(sender)
+
+      const maxRecipients: SplitRecipient[] = Array.from(
+        { length: 400 },
+        (_, i) => ({
+          address: `0x${(i + 1).toString(16).padStart(40, '0')}` as Address,
+          percentAllocation: 100 / 400,
+        }),
+      )
+
+      const { splitAddress } = await client.createSplit({
+        recipients: maxRecipients,
+        distributorFeePercent: 0,
+        splitType: SplitV2Type.Push,
+      })
+
+      testClient.setBalance({
+        address: splitAddress,
+        value: parseEther('1'),
+      })
+
+      const { event } = await client.distribute({
+        splitAddress,
+        distributorAddress: zeroAddress,
+        tokenAddress: nativeTokenAddress,
+      })
+
+      const decodedLog = decodeEventLog({
+        abi: splitV2ABI,
+        topics: event.topics,
+        data: event.data,
+      })
+
+      expect(decodedLog.eventName).toEqual('SplitDistributed')
     })
   })
 
