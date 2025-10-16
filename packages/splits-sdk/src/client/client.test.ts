@@ -128,9 +128,9 @@ describe('Client config validation', () => {
   publicClient.chain = { id: chainId } as Chain
 
   test('Including ens names with no provider fails', () => {
-    expect(
-      () => new SplitsClient({ chainId, includeEnsNames: true }),
-    ).toThrow(InvalidConfigError)
+    expect(() => new SplitsClient({ chainId, includeEnsNames: true })).toThrow(
+      InvalidConfigError,
+    )
   })
 
   test('Including ens names with only ens provider passes', () => {

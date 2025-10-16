@@ -3,7 +3,6 @@ import { SplitV2Type } from '../types'
 import { splitMainPolygonAbi } from './abi/splitMain'
 import { splitV2ABI } from './abi/splitV2'
 import { splitV2FactoryABI } from './abi/splitV2Factory'
-import { InvalidArgumentError } from '../errors'
 
 export const PERCENTAGE_SCALE = BigInt(1e6)
 

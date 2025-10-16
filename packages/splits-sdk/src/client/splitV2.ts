@@ -15,10 +15,6 @@ import {
 } from 'viem'
 import {
   NATIVE_TOKEN_ADDRESS,
-  PULL_SPLIT_V2o1_ADDRESS,
-  PULL_SPLIT_V2o2_ADDRESS,
-  PUSH_SPLIT_V2o1_ADDRESS,
-  PUSH_SPLIT_V2o2_ADDRESS,
   SPLITS_SUBGRAPH_CHAIN_IDS,
   SPLITS_V2_SUPPORTED_CHAIN_IDS,
   SplitV2CreatedLogType,
@@ -66,6 +62,8 @@ import {
   getSplitCreateAndUpdateLogs,
   MAX_PULL_SPLIT_RECIPIENTS,
   MAX_PUSH_SPLIT_RECIPIENTS,
+  getSplitV2TypeFromBytecode,
+  getMaxSplitV2Recipients,
 } from '../utils'
 import {
   BaseClientMixin,
@@ -257,18 +255,8 @@ class SplitV2Transactions extends BaseTransactions {
       address: splitAddress,
     })
 
-    let maxRecipients: number = 500
-    if (
-      code?.includes(PULL_SPLIT_V2o1_ADDRESS.toLowerCase().slice(2)) ||
-      code?.includes(PULL_SPLIT_V2o2_ADDRESS.toLowerCase().slice(2))
-    ) {
-      maxRecipients = MAX_PULL_SPLIT_RECIPIENTS
-    } else if (
-      code?.includes(PUSH_SPLIT_V2o1_ADDRESS.toLowerCase().slice(2)) ||
-      code?.includes(PUSH_SPLIT_V2o2_ADDRESS.toLowerCase().slice(2))
-    ) {
-      maxRecipients = MAX_PUSH_SPLIT_RECIPIENTS
-    }
+    const splitV2Type = getSplitV2TypeFromBytecode(code)
+    const maxSplitV2Recipients = getMaxSplitV2Recipients(splitV2Type)
 
     const {
       recipientAddresses,
@@ -279,7 +267,7 @@ class SplitV2Transactions extends BaseTransactions {
       recipients,
       distributorFeePercent,
       totalAllocationPercent,
-      maxRecipients,
+      maxSplitV2Recipients,
     )
 
     recipientAddresses.map((recipient) => validateAddress(recipient))
@@ -535,17 +523,9 @@ class SplitV2Transactions extends BaseTransactions {
         address: splitAddress,
       })
 
-      if (
-        code?.includes(PULL_SPLIT_V2o1_ADDRESS.toLowerCase().slice(2)) ||
-        code?.includes(PULL_SPLIT_V2o2_ADDRESS.toLowerCase().slice(2))
-      ) {
-        type = 'pull'
-      } else if (
-        code?.includes(PUSH_SPLIT_V2o1_ADDRESS.toLowerCase().slice(2)) ||
-        code?.includes(PUSH_SPLIT_V2o2_ADDRESS.toLowerCase().slice(2))
-      ) {
-        type = 'push'
-      } else {
+      try {
+        type = getSplitV2TypeFromBytecode(code)
+      } catch {
         throw new Error(`failed to identify type of split ${splitAddress}`)
       }
     }

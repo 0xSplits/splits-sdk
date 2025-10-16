@@ -37,8 +37,8 @@ export function SecondaryButton(btn: IButton): JSX.Element {
         isDisabled
           ? `disabled cursor-default opacity-50`
           : btn.isActive
-          ? `opacity-50`
-          : `hover:border-black/20 hover:shadow dark:hover:border-white/40 focus:ring-2`
+            ? `opacity-50`
+            : `hover:border-black/20 hover:shadow dark:hover:border-white/40 focus:ring-2`
       }
       ${btn.className}`}
     >
@@ -77,8 +77,8 @@ export default function Button(btn: IButton): JSX.Element {
         isDisabled
           ? `disabled cursor-default opacity-30`
           : btn.isActive
-          ? `opacity-50`
-          : `shadow ring-gray-100 hover:border-black hover:bg-gray-700 focus:ring-2 dark:ring-gray-800 dark:hover:border-gray-100 dark:hover:bg-gray-200`
+            ? `opacity-50`
+            : `shadow ring-gray-100 hover:border-black hover:bg-gray-700 focus:ring-2 dark:ring-gray-800 dark:hover:border-gray-100 dark:hover:bg-gray-200`
       }
       ${btn.className}`}
     >
