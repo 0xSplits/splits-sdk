@@ -10,8 +10,10 @@ import {
 import {
   LIQUID_SPLIT_NFT_COUNT,
   PERCENTAGE_SCALE,
+  PULL_SPLIT_V2_ADDRESS,
   PULL_SPLIT_V2o1_ADDRESS,
   PULL_SPLIT_V2o2_ADDRESS,
+  PUSH_SPLIT_V2_ADDRESS,
   PUSH_SPLIT_V2o1_ADDRESS,
   PUSH_SPLIT_V2o2_ADDRESS,
   getSplitV2FactoryAddress,
@@ -223,16 +225,18 @@ export const getSplitV2TypeFromBytecode = (
 ): SplitV2Type => {
   if (
     code?.includes(PULL_SPLIT_V2o1_ADDRESS.toLowerCase().slice(2)) ||
-    code?.includes(PULL_SPLIT_V2o2_ADDRESS.toLowerCase().slice(2))
+    code?.includes(PULL_SPLIT_V2o2_ADDRESS.toLowerCase().slice(2)) ||
+    code?.includes(PULL_SPLIT_V2_ADDRESS.toLowerCase().slice(2))
   ) {
     return SplitV2Type.Pull
   } else if (
     code?.includes(PUSH_SPLIT_V2o1_ADDRESS.toLowerCase().slice(2)) ||
-    code?.includes(PUSH_SPLIT_V2o2_ADDRESS.toLowerCase().slice(2))
+    code?.includes(PUSH_SPLIT_V2o2_ADDRESS.toLowerCase().slice(2)) ||
+    code?.includes(PUSH_SPLIT_V2_ADDRESS.toLowerCase().slice(2))
   ) {
     return SplitV2Type.Push
   } else {
-    throw new Error('Unable to determine SplitV2 type from contract bytecode')
+    throw new Error('SplitV2 type cannot be determined from bytecode')
   }
 }
 
