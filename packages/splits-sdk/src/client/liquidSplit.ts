@@ -75,8 +75,8 @@ class LiquidSplitTransactions extends BaseTransactions {
     const ownerAddress = owner
       ? owner
       : this._walletClient?.account
-      ? this._walletClient.account.address
-      : zeroAddress
+        ? this._walletClient.account.address
+        : zeroAddress
     validateAddress(ownerAddress)
 
     const [accounts, percentAllocations] =
@@ -111,8 +111,8 @@ class LiquidSplitTransactions extends BaseTransactions {
     const distributorPayoutAddress = distributorAddress
       ? distributorAddress
       : this._walletClient?.account
-      ? this._walletClient.account.address
-      : zeroAddress
+        ? this._walletClient.account.address
+        : zeroAddress
     validateAddress(distributorPayoutAddress)
 
     this._requireDataClient()

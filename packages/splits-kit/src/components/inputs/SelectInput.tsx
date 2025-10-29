@@ -44,8 +44,8 @@ const SelectInput = <ValueType,>({
                 open
                   ? `border-gray-300 dark:border-gray-600`
                   : isDisabled
-                  ? `cursor-not-allowed border-gray-200 bg-black/5 dark:border-gray-700 dark:bg-white/5`
-                  : `border-gray-200 dark:border-gray-700`
+                    ? `cursor-not-allowed border-gray-200 bg-black/5 dark:border-gray-700 dark:bg-white/5`
+                    : `border-gray-200 dark:border-gray-700`
               }`}
             >
               <div className="w-full py-2 px-3 text-left">

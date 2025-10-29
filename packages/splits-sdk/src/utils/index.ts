@@ -1,8 +1,21 @@
-import { Address, encodePacked, getAddress, keccak256, zeroAddress } from 'viem'
+import {
+  Address,
+  encodePacked,
+  getAddress,
+  Hex,
+  keccak256,
+  zeroAddress,
+} from 'viem'
 
 import {
   LIQUID_SPLIT_NFT_COUNT,
   PERCENTAGE_SCALE,
+  PULL_SPLIT_V2_ADDRESS,
+  PULL_SPLIT_V2o1_ADDRESS,
+  PULL_SPLIT_V2o2_ADDRESS,
+  PUSH_SPLIT_V2_ADDRESS,
+  PUSH_SPLIT_V2o1_ADDRESS,
+  PUSH_SPLIT_V2o2_ADDRESS,
   getSplitV2FactoryAddress,
 } from '../constants'
 import {
@@ -22,6 +35,7 @@ import { getTokenData } from './tokens'
 import {
   InvalidDistributorFeePercentErrorV2,
   InvalidTotalAllocation,
+  InvalidRecipientsError,
 } from '../errors'
 import { IRecipient } from '../subgraph/types'
 
@@ -141,11 +155,14 @@ export const getAddressAndAllocationFromRecipients = (
 }
 
 export const MAX_V2_DISTRIBUTION_INCENTIVE = 6.5535
+export const MAX_PULL_SPLIT_RECIPIENTS = 500
+export const MAX_PUSH_SPLIT_RECIPIENTS = 400
 
 export const getValidatedSplitV2Config = (
   recipients: SplitRecipient[],
   distributorFeePercent: number,
   totalAllocationPercent?: number,
+  maxRecipients?: number,
 ): {
   recipientAddresses: Address[]
   recipientAllocations: bigint[]
@@ -154,6 +171,11 @@ export const getValidatedSplitV2Config = (
 } => {
   const { recipientAddresses, recipientAllocations } =
     getAddressAndAllocationFromRecipients(recipients)
+
+  if (maxRecipients && recipients.length > maxRecipients)
+    throw new InvalidRecipientsError(
+      `Too many recipients: ${recipients.length}. Maximum allowed is ${maxRecipients}`,
+    )
 
   if (distributorFeePercent > MAX_V2_DISTRIBUTION_INCENTIVE)
     throw new InvalidDistributorFeePercentErrorV2(distributorFeePercent)
@@ -190,6 +212,43 @@ export const getSplitType = (
   )
     return SplitV2Type.Pull
   return SplitV2Type.Push
+}
+
+/**
+ * Determines the SplitV2 type (Pull or Push) by analyzing the contract bytecode
+ * @param code - The contract bytecode
+ * @returns The type of split (SplitV2Type.Pull or SplitV2Type.Push)
+ * @throws Error if split type cannot be determined from bytecode
+ */
+export const getSplitV2TypeFromBytecode = (
+  code: Hex | undefined,
+): SplitV2Type => {
+  if (
+    code?.includes(PULL_SPLIT_V2o1_ADDRESS.toLowerCase().slice(2)) ||
+    code?.includes(PULL_SPLIT_V2o2_ADDRESS.toLowerCase().slice(2)) ||
+    code?.includes(PULL_SPLIT_V2_ADDRESS.toLowerCase().slice(2))
+  ) {
+    return SplitV2Type.Pull
+  } else if (
+    code?.includes(PUSH_SPLIT_V2o1_ADDRESS.toLowerCase().slice(2)) ||
+    code?.includes(PUSH_SPLIT_V2o2_ADDRESS.toLowerCase().slice(2)) ||
+    code?.includes(PUSH_SPLIT_V2_ADDRESS.toLowerCase().slice(2))
+  ) {
+    return SplitV2Type.Push
+  } else {
+    throw new Error('SplitV2 type cannot be determined from bytecode')
+  }
+}
+
+/**
+ * Returns the maximum number of recipients allowed for a given SplitV2 type
+ * @param splitType - The type of split (SplitV2Type.Pull or SplitV2Type.Push)
+ * @returns The maximum number of recipients allowed
+ */
+export const getMaxSplitV2Recipients = (splitType: SplitV2Type): number => {
+  return splitType === SplitV2Type.Pull
+    ? MAX_PULL_SPLIT_RECIPIENTS
+    : MAX_PUSH_SPLIT_RECIPIENTS
 }
 
 export const getAccountsAndPercentAllocations: (

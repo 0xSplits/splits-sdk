@@ -16,8 +16,8 @@ const AddressDisplay = ({
   const displayName = showFullAddress
     ? address
     : ens
-    ? shortenENS(ens)
-    : shortenAddress(address)
+      ? shortenENS(ens)
+      : shortenAddress(address)
 
   return (
     <div

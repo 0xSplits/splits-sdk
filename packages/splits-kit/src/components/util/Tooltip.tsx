@@ -24,7 +24,7 @@ export default function Tooltip({
       () => {
         setActive(true)
       },
-      isContentHover ? 0 : delay ?? 100,
+      isContentHover ? 0 : (delay ?? 100),
     )
     return () => {
       clearTimeout(timer.current)

@@ -78,10 +78,10 @@ const TotalAllocated = ({
               round(totalAllocated, SPLIT_RECIPIENT_MAX_DECIMALS) > 100.0
                 ? `text-red-500 dark:text-red-800 ring-red-500 dark:ring-red-800`
                 : round(totalAllocated, SPLIT_RECIPIENT_MAX_DECIMALS) == 100.0
-                ? `text-green-500 dark:text-green-600 ring-green-500 dark:ring-green-600`
-                : round(totalAllocated, SPLIT_RECIPIENT_MAX_DECIMALS) > 0
-                ? `text-blue-500 dark:text-blue-600 ring-blue-500 dark:ring-blue-600`
-                : undefined
+                  ? `text-green-500 dark:text-green-600 ring-green-500 dark:ring-green-600`
+                  : round(totalAllocated, SPLIT_RECIPIENT_MAX_DECIMALS) > 0
+                    ? `text-blue-500 dark:text-blue-600 ring-blue-500 dark:ring-blue-600`
+                    : undefined
             }
           />
         </div>
