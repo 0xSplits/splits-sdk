@@ -10,6 +10,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# claude local config
+.claude/settings.local.json
+
 # build
 packages/*/dist
 
