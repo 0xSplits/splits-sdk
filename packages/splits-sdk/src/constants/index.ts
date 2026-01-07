@@ -324,10 +324,7 @@ export const SPLITS_SUBGRAPH_CHAIN_IDS = [
   ChainId.BASE_SEPOLIA,
 ]
 export const WATERFALL_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
-  (id) =>
-    id !== ChainId.ZORA_SEPOLIA &&
-    id !== ChainId.BASE_SEPOLIA &&
-    id !== ChainId.BLAST,
+  (id) => id !== ChainId.ZORA_SEPOLIA && id !== ChainId.BLAST,
 )
 export const LIQUID_SPLIT_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
   (id) =>
