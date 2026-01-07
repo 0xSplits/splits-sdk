@@ -317,6 +317,8 @@ export class DataClient {
     contractAddresses?: string[]
   }): Promise<{
     contractEarnings: FormattedEarningsByContract
+    splitmainBalances: FormattedTokenBalances
+    warehouseBalances: FormattedTokenBalances
   }> {
     const response = await this._loadAccount(userAddress, chainId)
 
@@ -327,8 +329,13 @@ export class DataClient {
       contractAddresses,
     )
 
+    const splitmainBalances = formatAccountBalances(response.splitmainBalances)
+    const warehouseBalances = formatAccountBalances(response.warehouseBalances)
+
     return {
       contractEarnings,
+      splitmainBalances,
+      warehouseBalances,
     }
   }
 
@@ -663,22 +670,19 @@ export class DataClient {
       )
     }
 
-    const { contractEarnings } = await this._getUserBalancesByContract({
-      chainId,
-      userAddress,
-      contractAddresses,
-    })
-    const [withdrawn, activeBalances] = Object.values(contractEarnings).reduce(
-      (
-        acc,
-        {
-          withdrawn: contractWithdrawn,
-          activeBalances: contractActiveBalances,
-        },
-      ) => {
+    const { contractEarnings, splitmainBalances, warehouseBalances } =
+      await this._getUserBalancesByContract({
+        chainId,
+        userAddress,
+        contractAddresses,
+      })
+
+    // Aggregate withdrawn amounts from per-contract earnings
+    const withdrawn = Object.values(contractEarnings).reduce(
+      (acc, { withdrawn: contractWithdrawn }) => {
         Object.keys(contractWithdrawn).map((tokenId) => {
-          if (!acc[0][tokenId])
-            acc[0][tokenId] = {
+          if (!acc[tokenId])
+            acc[tokenId] = {
               symbol: contractWithdrawn[tokenId].symbol,
               decimals: contractWithdrawn[tokenId].decimals,
               rawAmount: BigInt(0),
@@ -686,38 +690,27 @@ export class DataClient {
             }
 
           const rawAmount =
-            acc[0][tokenId].rawAmount + contractWithdrawn[tokenId].rawAmount
+            acc[tokenId].rawAmount + contractWithdrawn[tokenId].rawAmount
           const formattedAmount = fromBigIntToTokenValue(
             rawAmount,
             contractWithdrawn[tokenId].decimals,
           )
-          acc[0][tokenId].rawAmount = rawAmount
-          acc[0][tokenId].formattedAmount = formattedAmount
-        })
-        Object.keys(contractActiveBalances).map((tokenId) => {
-          if (!acc[1][tokenId])
-            acc[1][tokenId] = {
-              symbol: contractActiveBalances[tokenId].symbol,
-              decimals: contractActiveBalances[tokenId].decimals,
-              rawAmount: BigInt(0),
-              formattedAmount: '0',
-            }
-
-          const rawAmount =
-            acc[1][tokenId].rawAmount +
-            contractActiveBalances[tokenId].rawAmount
-          const formattedAmount = fromBigIntToTokenValue(
-            rawAmount,
-            contractActiveBalances[tokenId].decimals,
-          )
-          acc[1][tokenId].rawAmount = rawAmount
-          acc[1][tokenId].formattedAmount = formattedAmount
+          acc[tokenId].rawAmount = rawAmount
+          acc[tokenId].formattedAmount = formattedAmount
         })
 
         return acc
       },
-      [{} as FormattedTokenBalances, {} as FormattedTokenBalances],
+      {} as FormattedTokenBalances,
     )
+
+    // Active balances include both splitmain and warehouse balances
+    // Note: per-contract activeBalances in earningsByContract only includes
+    // splitmain balances as the subgraph doesn't track warehouse balances per contract
+    const activeBalances = mergeFormattedTokenBalances([
+      splitmainBalances,
+      warehouseBalances,
+    ])
 
     return {
       withdrawn,
