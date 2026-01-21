@@ -68,6 +68,7 @@ export type {
   FormattedContractEarnings,
   FormattedSplitEarnings,
   FormattedUserEarnings,
+  FormattedContractUserEarnings,
   FormattedEarningsByContract,
   FormattedUserEarningsByContract,
   WaterfallTranche,
