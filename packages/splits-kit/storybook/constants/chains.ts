@@ -26,7 +26,11 @@ import {
   celo,
 } from 'viem/chains'
 
-import { CHAIN_INFO, SupportedChainId } from '../../src/constants/chains'
+import {
+  CHAIN_INFO,
+  SupportedChainId,
+  tempoTestnet,
+} from '../../src/constants/chains'
 
 interface L1StorybookChainInfo {
   readonly viemChain: Chain
@@ -171,6 +175,11 @@ export const STORYBOOK_CHAIN_INFO: ChainInfo = {
     ...CHAIN_INFO[plumeMainnet.id],
     viemChain: plumeMainnet,
     rpcUrls: ['https://phoenix-rpc.plumenetwork.xyz'],
+  },
+  [tempoTestnet.id]: {
+    ...CHAIN_INFO[tempoTestnet.id],
+    viemChain: tempoTestnet,
+    rpcUrls: ['https://rpc.moderato.tempo.xyz'],
   },
   [abstract.id]: {
     ...CHAIN_INFO[abstract.id],

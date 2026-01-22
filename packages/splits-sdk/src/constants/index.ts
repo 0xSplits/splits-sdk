@@ -209,6 +209,7 @@ export enum ChainId {
   WORLDCHAIN = 480,
   PLUME = 98866,
   PLUME_TESTNET = 98867,
+  TEMPO_TESTNET = 42431,
   ABSTRACT = 2741,
   ABSTRACT_SEPOLIA = 11124,
   RONIN = 2020,
@@ -234,6 +235,7 @@ export const BLAST_CHAIN_IDS = [ChainId.BLAST]
 export const SHAPE_CHAIN_IDS = [ChainId.SHAPE]
 export const WORLD_CHAIN_IDS = [ChainId.WORLDCHAIN]
 export const PLUME_CHAIN_IDS = [ChainId.PLUME, ChainId.PLUME_TESTNET]
+export const TEMPO_CHAIN_IDS = [ChainId.TEMPO_TESTNET]
 export const ABSTRACT_CHAIN_IDS = [ChainId.ABSTRACT, ChainId.ABSTRACT_SEPOLIA]
 export const RONIN_CHAIN_IDS = [ChainId.RONIN, ChainId.SAIGON]
 export const CELO_CHAIN_IDS = [ChainId.CELO]
@@ -253,6 +255,7 @@ export const ALL_CHAIN_IDS = [
   ...SHAPE_CHAIN_IDS,
   ...WORLD_CHAIN_IDS,
   ...PLUME_CHAIN_IDS,
+  ...TEMPO_CHAIN_IDS,
   ...AVALANCHE_CHAIN_IDS,
 ]
 
@@ -293,6 +296,7 @@ export const SPLITS_V2_SUPPORTED_CHAIN_IDS = [
   ChainId.WORLDCHAIN,
   ChainId.PLUME,
   ChainId.PLUME_TESTNET,
+  ChainId.TEMPO_TESTNET,
   ChainId.ABSTRACT,
   ChainId.ABSTRACT_SEPOLIA,
   ChainId.RONIN,
@@ -509,6 +513,13 @@ export const CHAIN_INFO: {
       symbol: 'PLUME',
     },
     startBlockV2: 1759,
+  },
+  [ChainId.TEMPO_TESTNET]: {
+    startBlock: 80320,
+    nativeCurrency: {
+      symbol: 'USD',
+    },
+    startBlockV2: 80320,
   },
   [ChainId.ABSTRACT]: {
     startBlock: 10981976,
