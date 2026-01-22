@@ -24,6 +24,24 @@ import {
   saigon,
   celo,
 } from 'viem/chains'
+import { defineChain } from 'viem'
+
+export const tempoTestnet = defineChain({
+  id: 42431,
+  name: 'Tempo Testnet',
+  nativeCurrency: {
+    name: 'USD',
+    symbol: 'USD',
+    decimals: 18,
+  },
+  rpcUrls: {
+    default: { http: ['https://rpc.moderato.tempo.xyz'] },
+  },
+  blockExplorers: {
+    default: { name: 'Tempo Explorer', url: 'https://explore.tempo.xyz' },
+  },
+  testnet: true,
+})
 
 export const SupportedChainsList = [
   mainnet,
@@ -45,6 +63,7 @@ export const SupportedChainsList = [
   shape,
   worldchain,
   plumeMainnet,
+  tempoTestnet,
   abstract,
   abstractTestnet,
   ronin,
@@ -208,6 +227,13 @@ export const CHAIN_INFO: ChainInfo = {
     logoUrl: '/networks/plume_logo.svg',
     nativeCurrency: {
       symbol: 'PLUME',
+    },
+  },
+  [tempoTestnet.id]: {
+    label: 'Tempo Testnet',
+    logoUrl: '/networks/ethereum_logo.svg',
+    nativeCurrency: {
+      symbol: 'USD',
     },
   },
   [abstract.id]: {
