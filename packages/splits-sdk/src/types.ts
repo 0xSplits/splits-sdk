@@ -600,8 +600,31 @@ export type FormattedTokenBalances = {
   }
 }
 
+/**
+ * Earnings from a specific contract. The distinction between withdrawn and activeBalances
+ * is not reliably tracked at the per-contract level, so use `balance` instead.
+ */
+export type FormattedContractUserEarnings = {
+  /**
+   * Total balance (withdrawn + activeBalances combined).
+   * Use this field instead of withdrawn/activeBalances which are not reliably tracked
+   * at the per-contract level.
+   */
+  balance: FormattedTokenBalances
+  /**
+   * @deprecated Use `balance` instead. The distinction between withdrawn and activeBalances
+   * is not reliably tracked at the per-contract level.
+   */
+  withdrawn: FormattedTokenBalances
+  /**
+   * @deprecated Use `balance` instead. The distinction between withdrawn and activeBalances
+   * is not reliably tracked at the per-contract level.
+   */
+  activeBalances: FormattedTokenBalances
+}
+
 export type FormattedEarningsByContract = {
-  [contractAddress: string]: FormattedUserEarnings
+  [contractAddress: string]: FormattedContractUserEarnings
 }
 
 export type FormattedContractEarnings = {

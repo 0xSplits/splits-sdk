@@ -9,7 +9,7 @@ import { getAddress } from 'viem'
 import { SupportedChainId } from './constants'
 import { FormattedEarningsByContract, FormattedTokenBalances } from '../types'
 import _ from 'lodash'
-import { fromBigIntToTokenValue } from '../utils/numbers'
+import { fromBigIntToTokenValue, mergeFormattedTokenBalances } from '../utils'
 
 export const USER_FIELDS_FRAGMENT = gql`
   fragment UserFieldsFragment on User {
@@ -53,8 +53,10 @@ export const formatContractEarnings = (
       const withdrawn = formatAccountBalances(
         contractEarnings[gqlContractEarning].withdrawals,
       )
+      const balance = mergeFormattedTokenBalances([withdrawn, activeBalances])
 
       acc[contractId] = {
+        balance,
         withdrawn,
         activeBalances,
       }

@@ -317,6 +317,8 @@ export class DataClient {
     contractAddresses?: string[]
   }): Promise<{
     contractEarnings: FormattedEarningsByContract
+    withdrawn: FormattedTokenBalances
+    activeBalances: FormattedTokenBalances
   }> {
     const response = await this._loadAccount(userAddress, chainId)
 
@@ -327,8 +329,19 @@ export class DataClient {
       contractAddresses,
     )
 
+    const withdrawn =
+      response.type === 'user' ? formatAccountBalances(response.withdrawn) : {}
+    const splitmainBalances = formatAccountBalances(response.splitmainBalances)
+    const warehouseBalances = formatAccountBalances(response.warehouseBalances)
+    const activeBalances = mergeFormattedTokenBalances([
+      splitmainBalances,
+      warehouseBalances,
+    ])
+
     return {
       contractEarnings,
+      withdrawn,
+      activeBalances,
     }
   }
 
@@ -663,61 +676,12 @@ export class DataClient {
       )
     }
 
-    const { contractEarnings } = await this._getUserBalancesByContract({
-      chainId,
-      userAddress,
-      contractAddresses,
-    })
-    const [withdrawn, activeBalances] = Object.values(contractEarnings).reduce(
-      (
-        acc,
-        {
-          withdrawn: contractWithdrawn,
-          activeBalances: contractActiveBalances,
-        },
-      ) => {
-        Object.keys(contractWithdrawn).map((tokenId) => {
-          if (!acc[0][tokenId])
-            acc[0][tokenId] = {
-              symbol: contractWithdrawn[tokenId].symbol,
-              decimals: contractWithdrawn[tokenId].decimals,
-              rawAmount: BigInt(0),
-              formattedAmount: '0',
-            }
-
-          const rawAmount =
-            acc[0][tokenId].rawAmount + contractWithdrawn[tokenId].rawAmount
-          const formattedAmount = fromBigIntToTokenValue(
-            rawAmount,
-            contractWithdrawn[tokenId].decimals,
-          )
-          acc[0][tokenId].rawAmount = rawAmount
-          acc[0][tokenId].formattedAmount = formattedAmount
-        })
-        Object.keys(contractActiveBalances).map((tokenId) => {
-          if (!acc[1][tokenId])
-            acc[1][tokenId] = {
-              symbol: contractActiveBalances[tokenId].symbol,
-              decimals: contractActiveBalances[tokenId].decimals,
-              rawAmount: BigInt(0),
-              formattedAmount: '0',
-            }
-
-          const rawAmount =
-            acc[1][tokenId].rawAmount +
-            contractActiveBalances[tokenId].rawAmount
-          const formattedAmount = fromBigIntToTokenValue(
-            rawAmount,
-            contractActiveBalances[tokenId].decimals,
-          )
-          acc[1][tokenId].rawAmount = rawAmount
-          acc[1][tokenId].formattedAmount = formattedAmount
-        })
-
-        return acc
-      },
-      [{} as FormattedTokenBalances, {} as FormattedTokenBalances],
-    )
+    const { contractEarnings, withdrawn, activeBalances } =
+      await this._getUserBalancesByContract({
+        chainId,
+        userAddress,
+        contractAddresses,
+      })
 
     return {
       withdrawn,
