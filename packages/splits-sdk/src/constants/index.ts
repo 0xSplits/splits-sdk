@@ -209,6 +209,7 @@ export enum ChainId {
   WORLDCHAIN = 480,
   PLUME = 98866,
   PLUME_TESTNET = 98867,
+  TEMPO = 4217,
   TEMPO_TESTNET = 42431,
   ABSTRACT = 2741,
   ABSTRACT_SEPOLIA = 11124,
@@ -235,7 +236,7 @@ export const BLAST_CHAIN_IDS = [ChainId.BLAST]
 export const SHAPE_CHAIN_IDS = [ChainId.SHAPE]
 export const WORLD_CHAIN_IDS = [ChainId.WORLDCHAIN]
 export const PLUME_CHAIN_IDS = [ChainId.PLUME, ChainId.PLUME_TESTNET]
-export const TEMPO_CHAIN_IDS = [ChainId.TEMPO_TESTNET]
+export const TEMPO_CHAIN_IDS = [ChainId.TEMPO, ChainId.TEMPO_TESTNET]
 export const ABSTRACT_CHAIN_IDS = [ChainId.ABSTRACT, ChainId.ABSTRACT_SEPOLIA]
 export const RONIN_CHAIN_IDS = [ChainId.RONIN, ChainId.SAIGON]
 export const CELO_CHAIN_IDS = [ChainId.CELO]
@@ -296,6 +297,7 @@ export const SPLITS_V2_SUPPORTED_CHAIN_IDS = [
   ChainId.WORLDCHAIN,
   ChainId.PLUME,
   ChainId.PLUME_TESTNET,
+  ChainId.TEMPO,
   ChainId.TEMPO_TESTNET,
   ChainId.ABSTRACT,
   ChainId.ABSTRACT_SEPOLIA,
@@ -513,6 +515,14 @@ export const CHAIN_INFO: {
       symbol: 'PLUME',
     },
     startBlockV2: 1759,
+  },
+  // TODO(PE-5998): Replace placeholder start blocks with deployment block.
+  [ChainId.TEMPO]: {
+    startBlock: 1,
+    nativeCurrency: {
+      symbol: 'USD',
+    },
+    startBlockV2: 1,
   },
   [ChainId.TEMPO_TESTNET]: {
     startBlock: 80320,
