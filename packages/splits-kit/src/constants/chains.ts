@@ -43,6 +43,22 @@ export const tempoTestnet = defineChain({
   testnet: true,
 })
 
+export const tempoMainnet = defineChain({
+  id: 4217,
+  name: 'Tempo',
+  nativeCurrency: {
+    name: 'USD',
+    symbol: 'USD',
+    decimals: 18,
+  },
+  rpcUrls: {
+    default: { http: ['https://rpc.tempo.xyz'] },
+  },
+  blockExplorers: {
+    default: { name: 'Tempo Explorer', url: 'https://explore.tempo.xyz' },
+  },
+})
+
 export const SupportedChainsList = [
   mainnet,
   polygon,
@@ -64,6 +80,7 @@ export const SupportedChainsList = [
   worldchain,
   plumeMainnet,
   tempoTestnet,
+  tempoMainnet,
   abstract,
   abstractTestnet,
   ronin,
@@ -231,6 +248,13 @@ export const CHAIN_INFO: ChainInfo = {
   },
   [tempoTestnet.id]: {
     label: 'Tempo Testnet',
+    logoUrl: '/networks/ethereum_logo.svg',
+    nativeCurrency: {
+      symbol: 'USD',
+    },
+  },
+  [tempoMainnet.id]: {
+    label: 'Tempo',
     logoUrl: '/networks/ethereum_logo.svg',
     nativeCurrency: {
       symbol: 'USD',

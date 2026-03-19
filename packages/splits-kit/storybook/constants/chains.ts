@@ -30,6 +30,7 @@ import {
   CHAIN_INFO,
   SupportedChainId,
   tempoTestnet,
+  tempoMainnet,
 } from '../../src/constants/chains'
 
 interface L1StorybookChainInfo {
@@ -180,6 +181,11 @@ export const STORYBOOK_CHAIN_INFO: ChainInfo = {
     ...CHAIN_INFO[tempoTestnet.id],
     viemChain: tempoTestnet,
     rpcUrls: ['https://rpc.moderato.tempo.xyz'],
+  },
+  [tempoMainnet.id]: {
+    ...CHAIN_INFO[tempoMainnet.id],
+    viemChain: tempoMainnet,
+    rpcUrls: ['https://rpc.tempo.xyz'],
   },
   [abstract.id]: {
     ...CHAIN_INFO[abstract.id],
