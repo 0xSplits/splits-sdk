@@ -516,13 +516,12 @@ export const CHAIN_INFO: {
     },
     startBlockV2: 1759,
   },
-  // TODO(PE-5998): Replace placeholder start blocks with deployment block.
   [ChainId.TEMPO]: {
-    startBlock: 1,
+    startBlock: 4711932,
     nativeCurrency: {
       symbol: 'USD',
     },
-    startBlockV2: 1,
+    startBlockV2: 4711932,
   },
   [ChainId.TEMPO_TESTNET]: {
     startBlock: 80320,
