@@ -12,7 +12,7 @@ npm install @0xsplits/splits-sdk
 
 ## Documentation
 
-Detailed documentation for the SDK can be found [here](https://docs.splits.org/sdk)
+Detailed documentation for the SDK can be found [here](https://splits.org/protocol/docs/sdk)
 
 ### Viem vs Ethers
 
@@ -25,4 +25,4 @@ yarn add @0xsplits/splits-sdk@2
 npm install @0xsplits/splits-sdk@2
 ```
 
-Documentation for the old Ethers version can be found [here](https://docs.splits.org/sdk-ethers)
+Documentation for the old Ethers version can be found [here](https://splits.org/protocol/docs/sdk-ethers)

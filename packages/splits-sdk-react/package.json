@@ -38,7 +38,7 @@
   "bugs": {
     "url": "https://github.com/0xSplits/splits-sdk/issues"
   },
-  "homepage": "https://docs.splits.org/sdk",
+  "homepage": "https://splits.org/protocol/docs/sdk",
   "dependencies": {
     "@0xsplits/splits-sdk": "workspace:*"
   },
