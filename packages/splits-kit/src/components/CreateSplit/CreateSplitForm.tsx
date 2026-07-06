@@ -179,7 +179,7 @@ const CreateSplitForm = ({
     connectedAddress,
   )}`
 
-  const docsLink = `https://docs.splits.org/core/split${
+  const docsLink = `https://splits.org/protocol/docs/core/split${
     type === 'v1' ? '' : '-v2'
   }`
 

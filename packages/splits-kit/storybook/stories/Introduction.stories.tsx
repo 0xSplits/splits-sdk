@@ -12,7 +12,7 @@ const Components = () => {
         <a
           className="underline"
           target="_blank"
-          href="https://docs.splits.org/splits-kit"
+          href="https://splits.org/protocol/docs/splits-kit"
         >
           docs
         </a>
