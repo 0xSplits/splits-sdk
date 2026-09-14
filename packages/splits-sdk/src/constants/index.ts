@@ -584,11 +584,11 @@ export const CHAIN_INFO: {
     startBlockV2: 72287712,
   },
   [ChainId.ROBINHOOD]: {
-    startBlock: 60866871,
+    startBlock: 60856806,
     nativeCurrency: {
       symbol: 'ETH',
     },
-    startBlockV2: 60866871,
+    startBlockV2: 60856806,
   },
 }
 
