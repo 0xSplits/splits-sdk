@@ -26,6 +26,21 @@ import {
 } from 'viem/chains'
 import { defineChain } from 'viem'
 
+export const robinhood = defineChain({
+  id: 4663,
+  name: 'Robinhood Chain',
+  nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+  rpcUrls: {
+    default: { http: ['https://rpc.mainnet.chain.robinhood.com'] },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Blockscout',
+      url: 'https://robinhoodchain.blockscout.com',
+    },
+  },
+})
+
 export const tempoTestnet = defineChain({
   id: 42431,
   name: 'Tempo Testnet',
@@ -86,6 +101,7 @@ export const SupportedChainsList = [
   ronin,
   saigon,
   celo,
+  robinhood,
 ] as const
 
 type SupportedChain = (typeof SupportedChainsList)[number]
@@ -293,6 +309,13 @@ export const CHAIN_INFO: ChainInfo = {
     logoUrl: '/networks/celo_logo.svg',
     nativeCurrency: {
       symbol: 'CELO',
+    },
+  },
+  [robinhood.id]: {
+    label: 'Robinhood Chain',
+    logoUrl: '/networks/robinhood_logo.jpg',
+    nativeCurrency: {
+      symbol: 'ETH',
     },
   },
 }

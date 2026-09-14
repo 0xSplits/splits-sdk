@@ -31,6 +31,7 @@ import {
   SupportedChainId,
   tempoTestnet,
   tempoMainnet,
+  robinhood,
 } from '../../src/constants/chains'
 
 interface L1StorybookChainInfo {
@@ -48,6 +49,13 @@ type ChainInfo = {
 }
 
 export const STORYBOOK_CHAIN_INFO: ChainInfo = {
+  [robinhood.id]: {
+    ...CHAIN_INFO[robinhood.id],
+    viemChain: robinhood,
+    rpcUrls: [
+      `https://robinhood-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
+    ],
+  },
   [mainnet.id]: {
     ...CHAIN_INFO[mainnet.id],
     viemChain: mainnet,
