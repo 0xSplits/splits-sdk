@@ -313,7 +313,7 @@ export const CHAIN_INFO: ChainInfo = {
   },
   [robinhood.id]: {
     label: 'Robinhood Chain',
-    logoUrl: '/networks/robinhood_logo.jpg',
+    logoUrl: '/networks/robinhood_logo.svg',
     nativeCurrency: {
       symbol: 'ETH',
     },
