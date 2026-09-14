@@ -217,6 +217,7 @@ export enum ChainId {
   SAIGON = 2021,
   CELO = 42220,
   AVALANCHE = 43114,
+  ROBINHOOD = 4663,
 }
 
 export const ETHEREUM_CHAIN_IDS = [ChainId.MAINNET]
@@ -241,6 +242,7 @@ export const ABSTRACT_CHAIN_IDS = [ChainId.ABSTRACT, ChainId.ABSTRACT_SEPOLIA]
 export const RONIN_CHAIN_IDS = [ChainId.RONIN, ChainId.SAIGON]
 export const CELO_CHAIN_IDS = [ChainId.CELO]
 export const AVALANCHE_CHAIN_IDS = [ChainId.AVALANCHE]
+export const ROBINHOOD_CHAIN_IDS = [ChainId.ROBINHOOD]
 
 export const ALL_CHAIN_IDS = [
   ...ETHEREUM_CHAIN_IDS,
@@ -258,6 +260,7 @@ export const ALL_CHAIN_IDS = [
   ...PLUME_CHAIN_IDS,
   ...TEMPO_CHAIN_IDS,
   ...AVALANCHE_CHAIN_IDS,
+  ...ROBINHOOD_CHAIN_IDS,
 ]
 
 export const SPLITS_SUPPORTED_CHAIN_IDS = [
@@ -305,6 +308,7 @@ export const SPLITS_V2_SUPPORTED_CHAIN_IDS = [
   ChainId.SAIGON,
   ChainId.CELO,
   ChainId.AVALANCHE,
+  ChainId.ROBINHOOD,
 ]
 
 // These chains use a different value for block.number than the actual block number
@@ -314,6 +318,7 @@ export const INVALID_BLOCK_NUMBER_CHAIN_IDS = [
   ChainId.ARBITRUM,
   ChainId.PLUME,
   ChainId.PLUME_TESTNET,
+  ChainId.ROBINHOOD,
 ]
 export const SPLITS_SUBGRAPH_CHAIN_IDS = [
   ChainId.MAINNET,
@@ -330,25 +335,31 @@ export const SPLITS_SUBGRAPH_CHAIN_IDS = [
   ChainId.BASE_SEPOLIA,
 ]
 export const WATERFALL_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
-  (id) => id !== ChainId.ZORA_SEPOLIA && id !== ChainId.BLAST,
+  (id) =>
+    id !== ChainId.ZORA_SEPOLIA &&
+    id !== ChainId.BLAST &&
+    id !== ChainId.ROBINHOOD,
 )
 export const LIQUID_SPLIT_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
   (id) =>
     id !== ChainId.ZORA_SEPOLIA &&
     id !== ChainId.BASE_SEPOLIA &&
-    id !== ChainId.BLAST,
+    id !== ChainId.BLAST &&
+    id !== ChainId.ROBINHOOD,
 )
 export const VESTING_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
   (id) =>
     id !== ChainId.ZORA_SEPOLIA &&
     id !== ChainId.BASE_SEPOLIA &&
-    id !== ChainId.BLAST,
+    id !== ChainId.BLAST &&
+    id !== ChainId.ROBINHOOD,
 )
 export const TEMPLATES_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
   (id) =>
     id !== ChainId.ZORA_SEPOLIA &&
     id !== ChainId.BASE_SEPOLIA &&
-    id !== ChainId.BLAST,
+    id !== ChainId.BLAST &&
+    id !== ChainId.ROBINHOOD,
 )
 
 export const SWAPPER_CHAIN_IDS = [
@@ -571,6 +582,13 @@ export const CHAIN_INFO: {
       symbol: 'AVAX',
     },
     startBlockV2: 72287712,
+  },
+  [ChainId.ROBINHOOD]: {
+    startBlock: 60856806,
+    nativeCurrency: {
+      symbol: 'ETH',
+    },
+    startBlockV2: 60856806,
   },
 }
 
