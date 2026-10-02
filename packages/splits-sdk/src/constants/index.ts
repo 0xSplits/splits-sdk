@@ -218,6 +218,8 @@ export enum ChainId {
   CELO = 42220,
   AVALANCHE = 43114,
   ROBINHOOD = 4663,
+  ARC = 5042,
+  ARC_TESTNET = 5042002,
 }
 
 export const ETHEREUM_CHAIN_IDS = [ChainId.MAINNET]
@@ -243,6 +245,7 @@ export const RONIN_CHAIN_IDS = [ChainId.RONIN, ChainId.SAIGON]
 export const CELO_CHAIN_IDS = [ChainId.CELO]
 export const AVALANCHE_CHAIN_IDS = [ChainId.AVALANCHE]
 export const ROBINHOOD_CHAIN_IDS = [ChainId.ROBINHOOD]
+export const ARC_CHAIN_IDS = [ChainId.ARC, ChainId.ARC_TESTNET]
 
 export const ALL_CHAIN_IDS = [
   ...ETHEREUM_CHAIN_IDS,
@@ -261,6 +264,7 @@ export const ALL_CHAIN_IDS = [
   ...TEMPO_CHAIN_IDS,
   ...AVALANCHE_CHAIN_IDS,
   ...ROBINHOOD_CHAIN_IDS,
+  ...ARC_CHAIN_IDS,
 ]
 
 export const SPLITS_SUPPORTED_CHAIN_IDS = [
@@ -309,6 +313,8 @@ export const SPLITS_V2_SUPPORTED_CHAIN_IDS = [
   ChainId.CELO,
   ChainId.AVALANCHE,
   ChainId.ROBINHOOD,
+  ChainId.ARC,
+  ChainId.ARC_TESTNET,
 ]
 
 // These chains use a different value for block.number than the actual block number
@@ -338,28 +344,36 @@ export const WATERFALL_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
   (id) =>
     id !== ChainId.ZORA_SEPOLIA &&
     id !== ChainId.BLAST &&
-    id !== ChainId.ROBINHOOD,
+    id !== ChainId.ROBINHOOD &&
+    id !== ChainId.ARC &&
+    id !== ChainId.ARC_TESTNET,
 )
 export const LIQUID_SPLIT_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
   (id) =>
     id !== ChainId.ZORA_SEPOLIA &&
     id !== ChainId.BASE_SEPOLIA &&
     id !== ChainId.BLAST &&
-    id !== ChainId.ROBINHOOD,
+    id !== ChainId.ROBINHOOD &&
+    id !== ChainId.ARC &&
+    id !== ChainId.ARC_TESTNET,
 )
 export const VESTING_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
   (id) =>
     id !== ChainId.ZORA_SEPOLIA &&
     id !== ChainId.BASE_SEPOLIA &&
     id !== ChainId.BLAST &&
-    id !== ChainId.ROBINHOOD,
+    id !== ChainId.ROBINHOOD &&
+    id !== ChainId.ARC &&
+    id !== ChainId.ARC_TESTNET,
 )
 export const TEMPLATES_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
   (id) =>
     id !== ChainId.ZORA_SEPOLIA &&
     id !== ChainId.BASE_SEPOLIA &&
     id !== ChainId.BLAST &&
-    id !== ChainId.ROBINHOOD,
+    id !== ChainId.ROBINHOOD &&
+    id !== ChainId.ARC &&
+    id !== ChainId.ARC_TESTNET,
 )
 
 export const SWAPPER_CHAIN_IDS = [
@@ -589,6 +603,20 @@ export const CHAIN_INFO: {
       symbol: 'ETH',
     },
     startBlockV2: 60856806,
+  },
+  [ChainId.ARC]: {
+    startBlock: 23917367,
+    nativeCurrency: {
+      symbol: 'USDC',
+    },
+    startBlockV2: 23917367,
+  },
+  [ChainId.ARC_TESTNET]: {
+    startBlock: 65151061,
+    nativeCurrency: {
+      symbol: 'USDC',
+    },
+    startBlockV2: 65151061,
   },
 }
 
