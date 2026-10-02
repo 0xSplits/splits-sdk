@@ -32,6 +32,8 @@ import {
   tempoTestnet,
   tempoMainnet,
   robinhood,
+  arc,
+  arcTestnet,
 } from '../../src/constants/chains'
 
 interface L1StorybookChainInfo {
@@ -229,5 +231,17 @@ export const STORYBOOK_CHAIN_INFO: ChainInfo = {
     rpcUrls: [
       `https://celo-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
     ],
+  },
+  [arc.id]: {
+    ...CHAIN_INFO[arc.id],
+    viemChain: arc,
+    rpcUrls: [
+      `https://arc-mainnet.g.alchemy.com/v2/${process.env.STORYBOOK_ALCHEMY_API_KEY}`,
+    ],
+  },
+  [arcTestnet.id]: {
+    ...CHAIN_INFO[arcTestnet.id],
+    viemChain: arcTestnet,
+    rpcUrls: ['https://rpc.testnet.arc.io'],
   },
 }

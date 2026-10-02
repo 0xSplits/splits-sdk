@@ -74,6 +74,40 @@ export const tempoMainnet = defineChain({
   },
 })
 
+export const arc = defineChain({
+  id: 5042,
+  name: 'Arc',
+  nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 18 },
+  rpcUrls: {
+    default: { http: ['https://rpc.mainnet.arc.io'] },
+  },
+  blockExplorers: {
+    default: { name: 'Arc Explorer', url: 'https://explorer.arc.io' },
+  },
+  contracts: {
+    multicall3: { address: '0xcA11bde05977b3631167028862bE2a173976CA11' },
+  },
+})
+
+export const arcTestnet = defineChain({
+  id: 5042002,
+  name: 'Arc Testnet',
+  nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 18 },
+  rpcUrls: {
+    default: { http: ['https://rpc.testnet.arc.io'] },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Arc Testnet Explorer',
+      url: 'https://explorer.testnet.arc.io',
+    },
+  },
+  contracts: {
+    multicall3: { address: '0xcA11bde05977b3631167028862bE2a173976CA11' },
+  },
+  testnet: true,
+})
+
 export const SupportedChainsList = [
   mainnet,
   polygon,
@@ -102,6 +136,8 @@ export const SupportedChainsList = [
   saigon,
   celo,
   robinhood,
+  arc,
+  arcTestnet,
 ] as const
 
 type SupportedChain = (typeof SupportedChainsList)[number]
@@ -316,6 +352,20 @@ export const CHAIN_INFO: ChainInfo = {
     logoUrl: '/networks/robinhood_logo.svg',
     nativeCurrency: {
       symbol: 'ETH',
+    },
+  },
+  [arc.id]: {
+    label: 'Arc',
+    logoUrl: '/networks/arc_logo.svg',
+    nativeCurrency: {
+      symbol: 'USDC',
+    },
+  },
+  [arcTestnet.id]: {
+    label: 'Arc Testnet',
+    logoUrl: '/networks/arc_logo.svg',
+    nativeCurrency: {
+      symbol: 'USDC',
     },
   },
 }
