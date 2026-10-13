@@ -24,7 +24,6 @@ import {
   TransactionType,
   ZORA_CHAIN_IDS,
   getSplitMainAddress,
-  BLAST_CHAIN_IDS,
   getSplitV1StartBlock,
   ChainId,
   splitV1UpdatedEvent,
@@ -89,7 +88,6 @@ const polygonAbiChainIds = [
   ...BSC_CHAIN_IDS,
   ...ZORA_CHAIN_IDS,
   ...BASE_CHAIN_IDS,
-  ...BLAST_CHAIN_IDS,
 ]
 
 type SplitMainEthereumAbiType = typeof splitMainEthereumAbi

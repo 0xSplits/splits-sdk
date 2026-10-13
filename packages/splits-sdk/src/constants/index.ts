@@ -204,7 +204,6 @@ export enum ChainId {
   BASE = 8453,
   BASE_SEPOLIA = 84532,
   FOUNDRY = 31337,
-  BLAST = 81457,
   SHAPE = 360,
   WORLDCHAIN = 480,
   PLUME = 98866,
@@ -235,7 +234,6 @@ export const GNOSIS_CHAIN_IDS = [ChainId.GNOSIS]
 export const BSC_CHAIN_IDS = [ChainId.BSC]
 export const ZORA_CHAIN_IDS = [ChainId.ZORA, ChainId.ZORA_SEPOLIA]
 export const BASE_CHAIN_IDS = [ChainId.BASE, ChainId.BASE_SEPOLIA]
-export const BLAST_CHAIN_IDS = [ChainId.BLAST]
 export const SHAPE_CHAIN_IDS = [ChainId.SHAPE]
 export const WORLD_CHAIN_IDS = [ChainId.WORLDCHAIN]
 export const PLUME_CHAIN_IDS = [ChainId.PLUME, ChainId.PLUME_TESTNET]
@@ -257,7 +255,6 @@ export const ALL_CHAIN_IDS = [
   ...BSC_CHAIN_IDS,
   ...ZORA_CHAIN_IDS,
   ...BASE_CHAIN_IDS,
-  ...BLAST_CHAIN_IDS,
   ...SHAPE_CHAIN_IDS,
   ...WORLD_CHAIN_IDS,
   ...PLUME_CHAIN_IDS,
@@ -281,7 +278,6 @@ export const SPLITS_SUPPORTED_CHAIN_IDS = [
   ...BSC_CHAIN_IDS,
   ...ZORA_CHAIN_IDS,
   ...BASE_CHAIN_IDS,
-  ...BLAST_CHAIN_IDS,
 ]
 
 export const SPLITS_V2_SUPPORTED_CHAIN_IDS = [
@@ -335,7 +331,6 @@ export const SPLITS_SUBGRAPH_CHAIN_IDS = [
   ChainId.ARBITRUM,
   ChainId.GNOSIS,
   ChainId.BSC,
-  ChainId.BLAST,
   ChainId.HOLESKY,
   ChainId.SEPOLIA,
   ChainId.BASE_SEPOLIA,
@@ -343,7 +338,6 @@ export const SPLITS_SUBGRAPH_CHAIN_IDS = [
 export const WATERFALL_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
   (id) =>
     id !== ChainId.ZORA_SEPOLIA &&
-    id !== ChainId.BLAST &&
     id !== ChainId.ROBINHOOD &&
     id !== ChainId.ARC &&
     id !== ChainId.ARC_TESTNET,
@@ -352,7 +346,6 @@ export const LIQUID_SPLIT_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
   (id) =>
     id !== ChainId.ZORA_SEPOLIA &&
     id !== ChainId.BASE_SEPOLIA &&
-    id !== ChainId.BLAST &&
     id !== ChainId.ROBINHOOD &&
     id !== ChainId.ARC &&
     id !== ChainId.ARC_TESTNET,
@@ -361,7 +354,6 @@ export const VESTING_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
   (id) =>
     id !== ChainId.ZORA_SEPOLIA &&
     id !== ChainId.BASE_SEPOLIA &&
-    id !== ChainId.BLAST &&
     id !== ChainId.ROBINHOOD &&
     id !== ChainId.ARC &&
     id !== ChainId.ARC_TESTNET,
@@ -370,7 +362,6 @@ export const TEMPLATES_CHAIN_IDS = ALL_CHAIN_IDS.slice().filter(
   (id) =>
     id !== ChainId.ZORA_SEPOLIA &&
     id !== ChainId.BASE_SEPOLIA &&
-    id !== ChainId.BLAST &&
     id !== ChainId.ROBINHOOD &&
     id !== ChainId.ARC &&
     id !== ChainId.ARC_TESTNET,
@@ -506,12 +497,6 @@ export const CHAIN_INFO: {
       symbol: 'ETH',
     },
     startBlockV2: 7243250,
-  },
-  [ChainId.BLAST]: {
-    startBlock: 220516,
-    nativeCurrency: {
-      symbol: 'ETH',
-    },
   },
   [ChainId.SHAPE]: {
     startBlock: 5448039,
