@@ -156,6 +156,7 @@ export interface L1ChainInfo {
   readonly logoUrl: string
   readonly nativeCurrency: {
     symbol: string
+    erc20Address?: string
   }
 }
 
@@ -359,6 +360,7 @@ export const CHAIN_INFO: ChainInfo = {
     logoUrl: '/networks/arc_logo.svg',
     nativeCurrency: {
       symbol: 'USDC',
+      erc20Address: '0x3600000000000000000000000000000000000000',
     },
   },
   [arcTestnet.id]: {
@@ -366,6 +368,7 @@ export const CHAIN_INFO: ChainInfo = {
     logoUrl: '/networks/arc_logo.svg',
     nativeCurrency: {
       symbol: 'USDC',
+      erc20Address: '0x3600000000000000000000000000000000000000',
     },
   },
 }

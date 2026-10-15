@@ -1,8 +1,9 @@
 import { RequestError } from '@0xsplits/splits-sdk-react/dist/types'
 import { FormattedSplitEarnings, Split } from '@0xsplits/splits-sdk'
+import { zeroAddress } from 'viem'
 
 import DistributeBalance from './DistributeBalance'
-import { SupportedChainId } from '../../constants/chains'
+import { CHAIN_INFO, SupportedChainId } from '../../constants/chains'
 
 const SplitBalances = ({
   chainId,
@@ -19,7 +20,16 @@ const SplitBalances = ({
   onSuccess: (token: string) => void
   onError?: (error: RequestError) => void
 }) => {
-  const balances = formattedSplitEarnings?.activeBalances
+  const activeBalances = formattedSplitEarnings?.activeBalances
+  const nativeErc20 = CHAIN_INFO[chainId].nativeCurrency.erc20Address
+  const balances =
+    nativeErc20 && activeBalances?.[nativeErc20]
+      ? Object.fromEntries(
+          Object.entries(activeBalances).filter(
+            ([token]) => token !== zeroAddress,
+          ),
+        )
+      : activeBalances
   const hasBalances = balances && Object.keys(balances).length > 0
   return (
     <div className="space-y-1 text-xs">
